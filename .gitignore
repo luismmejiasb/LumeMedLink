@@ -1,0 +1,19 @@
+# Gradle / Kotlin
+.gradle/
+build/
+*/build/
+local.properties
+.kotlin/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Xcode (iOS target)
+xcuserdata/
+DerivedData/
+*.xcuserstate
+
+# OS
+.DS_Store
