@@ -18,10 +18,14 @@ Multiplatform with Compose Multiplatform for the UI (stable on iOS since 2025).
 - Platform APIs (Keystore/Keychain, BiometricPrompt/LAContext, FLAG_SECURE/privacy cover) enter
   through `expect`/`actual` seams that live in `core/` only (ADR-0008).
 - **The Swift kits do not cross.** LumeUIKit, LumeNetworking and LumeFileManager are Swift and stay
-  in LumeMed's world. What crosses is their **constitutions**: the design tokens are ported to a
-  Compose theme (`designkit` module), and the networking doctrine is re-implemented over Ktor
-  (ADR-0004). Mirroring code across languages would freeze both sides; mirroring doctrine keeps each
-  side honest to its platform.
+  in LumeMed's world. What crosses is their **constitutions**: the networking doctrine is
+  re-implemented over Ktor (ADR-0004), and the design language arrives through
+  **`LumeUIComposer`** — the family's Compose twin of LumeUIKit (`../LumeUIComposer`), a separate
+  repo whose own Slice 0 viability decision belongs to the author and is still open. Two honest
+  postures until it lands: if the twin survives, this app consumes it like LumeMed consumes
+  LumeUIKit (local path in dev, versioned later); if it is archived, this repo grows an internal
+  `designkit` module with the ported tokens, shaped so its components can be promoted to a kit
+  later. Either way: mirroring doctrine, never code across languages.
 
 ## Consequences
 

@@ -13,9 +13,14 @@
   dependencias con denylist nombrado (Firebase Analytics/Crashlytics, Sentry, loaders de imágenes
   con red propia). **Cada gate se ensaya con archivo-cebo antes de confiar en su verde** — la
   lección fundante de la familia. Al aterrizar, las etiquetas [manual] del §13 migran a [lint].
-- **S0.3 · Designkit.** Los tokens de LumeUIKit portados a un theme de Compose (paleta, tipografía,
-  espaciado, radios, roles de botón). Fuente: el theme del kit Swift, transcrito y verificado contra
-  el catálogo `LumeUIExample` a ojo — el lenguaje se comparte, el código no (ADR-0002).
+- **S0.3 · Design system.** Depende de la decisión pendiente del autor sobre **LumeUIComposer** (el
+  gemelo de LumeUIKit en Compose, `../LumeUIComposer`, hoy esqueleto con su Slice 0 sin juzgar):
+  - Si el gemelo sigue → este repo lo consume por path local (como LumeMed consume LumeUIKit) y
+    este slice se reduce a cablear el theme.
+  - Si se archiva → módulo `designkit` interno con los tokens portados de LumeUIKit, verificados
+    contra el catálogo `LumeUIExample` a ojo (ADR-0002).
+  **Este slice no se empieza antes de esa decisión** — construir el fallback con el gemelo vivo es
+  duplicar; construir contra el gemelo antes de su veredicto es apostar el shell a un spike.
 
 ## FASE 1 — Lado médico (no gated)
 
