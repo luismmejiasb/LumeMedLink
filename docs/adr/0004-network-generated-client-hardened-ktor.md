@@ -24,8 +24,11 @@ Kotlin; the doctrine can.
   image loaders fetching on their own — profile photo bytes ride the stack, views receive bitmaps.
 - Declared to the OS as well: Android `networkSecurityConfig` with cleartext off explicitly; iOS ATS
   with no exceptions.
-- **Pinning deferred**, same reasoning as LumeMed: it defends the least-likely threats here (T5/T6)
-  and makes certificate rotation a forced release. Re-evaluated at production traffic.
+- **Pinning deferred — this repo's own decision, not an inherited one.** LumeMed's constitution
+  mandates pinning through its kit's seam; what exists there besides the mandate is an unresolved
+  audit candidate, not a deferral decision. The reasoning here stands on its own: pinning defends
+  T5 (network attacker), the least likely level of this profile, and makes every certificate
+  rotation a forced app release. Re-evaluated at production traffic.
 
 ## Consequences
 

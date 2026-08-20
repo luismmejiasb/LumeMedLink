@@ -20,7 +20,7 @@ La regla de LumeMed (§0.0 suyo) son tres lecturas: skills, tablero, vault. Aqu�
 1. **Skills.** Los nueve de LumeMed son de Swift/SwiftUI y **no aplican** a este repo, con una
    excepción: `lume-security` (hechos verificados de Keychain/LocalAuthentication/CryptoKit) **sí se
    carga cuando la tarea toca el lado iOS** del target KMP. Los equivalentes Kotlin (arquitectura,
-   Compose, coroutines, testing) **no existen todavía**: crearlos es deuda declarada (WORKPLAN S0), y
+   Compose, coroutines, testing) **no existen todavía**: crearlos es deuda declarada (WORKPLAN · Deuda declarada, sin fase dueña todavía), y
    hasta entonces esta constitución es el único criterio cargado. **No se finge una obligación a un
    skill inexistente** — se dice que falta.
 2. **El tablero del ecosistema** (§1.1): `../lumemed-cloud-platform/docs/ECOSYSTEM-STATUS.md`, se lee
@@ -85,6 +85,10 @@ y para que el paciente tenga por fin una puerta, cuando el backend la construya.
 - **Citas**: existencia, fecha, hora, lugar/modalidad, con quién. **Nunca el motivo clínico.**
 - **Contactos**: la lista de pacientes del médico como agenda (nombre, teléfono, próxima cita).
 - Futuro: la **señalización** de la teleconsulta (unirse a la llamada) — jamás su contenido clínico.
+  ⚠️ La trampa T1 del backend nombra a la teleconsulta **por nombre** como detonante: una receta
+  emitida en teleconsulta no puede entregarse impresa, así que esa fase **reabre la pregunta de la
+  Ley 19.799 para toda la familia** («deferred work with a named trigger»). Se planifica con eso en
+  la mesa, no se descubre construyendo.
 
 **Qué NO maneja, jamás, bajo ninguna feature**: ficha, diagnósticos (ni códigos CIE-10), notas,
 resultados de exámenes, signos vitales, medicamentos, alergias, documentos clínicos.
@@ -109,10 +113,12 @@ son existenciales aquí:
 
 | Lo que parece obvio | Por qué no se puede |
 | --- | --- |
-| Dejar que el paciente cree su cuenta y entre | **T5 / `ADR-0031 del backend` §4**: no existe identidad de paciente en la plataforma — «a second authentication tier, a role outside the `Membership` model, its own threat model… It needs its own ADR and its own slice». Ese ADR **no existe todavía**. El lado paciente de esta app está gated por él (ADR-0006). |
+| Dejar que el paciente cree su cuenta y entre | **T5 / `ADR-0031 del backend` §4**: no existe identidad de paciente en la plataforma — «a second authentication tier, a role outside the `Membership` model, a different consent and identity-proofing regime, and its own threat model… It needs its own ADR and its own slice». Ese ADR **no existe todavía**. El lado paciente de esta app está gated por él (ADR-0006). |
 | Mostrarle o mandarle la receta / un certificado al paciente | **T1**: entregar un documento con valor legal **sin imprimir** reabre la Ley 19.799 (`ADR-0019 del backend` enmendada, ADR-0035 de LumeMed). Esta app no muestra ni transporta documentos clínicos. Punto (ADR-0007). |
-| Un chat médico-paciente que «quede en la historia» | **T4 / `ADR-0007 del backend`**: el chat no es la ficha. Si esta app gana mensajería, jamás se presenta un mensaje como registro clínico. |
+| Un chat médico-paciente que «quede en la historia» | **T4 / `ADR-0007 del backend`**: el chat no es la ficha — jamás se presenta un mensaje como registro clínico. Y la **segunda mitad muerde más** a una app de pacientes: el barrido de retención del backend cubre sólo threads INTERNAL, así que un thread PATIENT hoy **no tiene reloj de retención** (su R-12). Mensajería en esta app tiene esa corrección como **precondición**, no como mejora. |
 | Recordarle al paciente «su control de diabetes» en una notificación | **§8.5 de esta constitución**: el payload de una notificación es contenido en pantalla bloqueada. Push sin contenido clínico, siempre — y «diabetes» ES contenido clínico. |
+| Dibujar la agenda del día y la lista de pacientes «tal como las devuelve el backend» | **T11**: el interceptor de restricción de tratamiento (Ley 21.719) sólo dispara en rutas que llevan id de paciente; una ruta **tenant-scoped** —la agenda del día, el roster— se le escapa, y un titular con restricción vigente **reaparece** salvo que la query lo excluya y la ruta esté registrada con razón escrita en `UNENFORCEABLE_PATIENT_ROUTES`. Las dos superficies núcleo de esta app (S1.3/S1.4) son exactamente esas rutas: el pedido de contrato de cada una **incluye la pregunta de restricción**, no la deja para después. |
+| Reagendar una cita arrastrándola | **T7**: el rol de runtime no puede mover `starts_at`/`ends_at` — reagendar es **cancelar + re-reservar**, dos escrituras con una ventana donde el cupo queda libre, o una operación atómica nueva del servidor que hoy no existe. La pantalla de citas que ofrezca reagendar lo pide como operación del contrato, jamás lo compone con dos llamadas. |
 
 ---
 
@@ -209,9 +215,10 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
   el bitmap — espejo del §7 de LumeMed y por la misma razón.
 - **Android además lo declara al sistema**: `networkSecurityConfig` sin cleartext (el default desde
   API 28 se fija explícito — un default no es una decisión). iOS: ATS sin excepciones.
-- Pinning: **diferido con la misma lógica que LumeMed** — ataca T5/T6 del modelo de amenaza (los
-  menos probables aquí) y convierte cada rotación en un release. Se re-evalúa cuando exista tráfico
-  de producción.
+- Pinning: **diferido, decisión de ESTE repo** (ADR-0004). No se atribuye a LumeMed: su constitución
+  lo exige vía el seam de su kit, y lo que existe allá es un candidato de auditoría sin resolver. La
+  razón propia: ataca **sólo T5** del modelo de amenaza —el nivel menos probable de este perfil; contra T6 no defiende nada— y convierte cada rotación de
+  certificado en un release forzado. Se re-evalúa cuando exista tráfico de producción.
 
 ## 8. Seguridad (el espejo de ciberseguridad, por plataforma)
 
@@ -221,8 +228,9 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 1. **Datos personales jamás en canales laterales.** Ni en logs (facade redactor, único punto de
    logging), ni en nombres de archivo, ni en analytics. **Default-deny de SDKs de crash/analytics** —
    idéntico al §8.1 de LumeMed y más urgente aquí: con el IdP en Identity Platform, Firebase
-   Analytics/Crashlytics está «a una línea» en Android. El freno es este párrafo + el allowlist de
-   dependencias (§9).
+   Analytics/Crashlytics está «a una línea» en Android. El freno HOY es este párrafo — el allowlist
+   de dependencias que lo vuelve gate llega en S0.2 y hasta entonces esta regla es **[manual]**, como
+   todas (§9).
 2. **AuthN vía Identity Platform.** Médicos: su misma cuenta, MFA TOTP obligatoria. Pacientes: la
    política la fija la ADR del backend que aún no existe (ADR-0006) — esta constitución sólo fija el
    piso: jamás auth casera, tokens de acceso cortos, refresh con rotación.
@@ -233,8 +241,11 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
    - **iOS**: cover de privacidad al resignar active, en ventana propia — espejo de ADR-0028.
    - **Bloqueo por inactividad** en ambas: ventana deslizante, re-auth biométrica
      (`BiometricPrompt` / `LAContext`) **anclada a material de clave**, no booleana — espejo del
-     tier 2 de ADR-0005 de LumeMed: Android lo da con `setUserAuthenticationRequired(true)` +
-     `setInvalidatedByBiometricEnrollment(true)`, que es el análogo exacto de `.biometryCurrentSet`.
+     tier 2 de ADR-0005 de LumeMed. En Android el análogo de `.biometryCurrentSet` es
+     `setUserAuthenticationRequired(true)` + `setInvalidatedByBiometricEnrollment(true)`, y es
+     **condicional, no exacto**: la invalidación por enrolamiento sólo rige con autenticación
+     **por cada uso** y `BIOMETRIC_STRONG`, sin fallback a credencial del dispositivo — las
+     condiciones exactas viven en ADR-0005 y son parte del contrato del tier, no un detalle.
 4. **Secretos en el almacén de hardware de cada plataforma** (ADR-0005): Keychain
    (`ThisDeviceOnly`, piso passcode-set en device real) / Android Keystore. Jamás
    `SharedPreferences`/`DataStore` planos para un secreto. Nota honesta: Jetpack
@@ -247,16 +258,23 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
    threat model.
 6. **Transporte sólo HTTPS** (§7).
 7. **Ley 21.719 en código.** Régimen general de datos personales + el matiz del §1.0 (metadatos que
-   revelan salud). Consentimiento del titular ANTES de procesar; minimización (la agenda del médico
-   muestra lo que la pantalla necesita); derechos del titular mapeados en ADR cuando abra la fase
-   paciente. **Nombrada no es implementada** — igual que ADR-0008 de LumeMed, esta cláusula es
-   aspiracional hasta que exista su ADR y su checklist por feature.
+   revelan salud). Y la precisión que importa desde el primer slice: **los titulares llegan ANTES que
+   la fase paciente** — la agenda y los contactos del médico (S1.3/S1.4) procesan datos de pacientes
+   que no son usuarios de la app, y la minimización, la restricción de tratamiento (T11) y el
+   vocabulario de borrado aplican ahí desde Fase 1. Una purga local **jamás se presenta como borrado
+   legal** (T16): «eliminar de este dispositivo» y «ejercer el derecho de supresión» son frases
+   distintas y la UI usa la que corresponde. Derechos del titular como flujo de producto: ADR cuando
+   abra la fase paciente. **Nombrada no es implementada** — esta cláusula es aspiracional hasta que
+   exista su ADR y su checklist por feature.
 8. **Supply chain**: dependencias mínimas, pinneadas por version catalog + lockfile, allowlist con
    denylist nombrado (Firebase Analytics/Crashlytics, Sentry, y toda librería de red/imágenes fuera
    del stack — espejo del gate de LumeMed §9).
 9. **Portapapeles**: datos personales (RUT, teléfono) no se copian al portapapeles general sin
    decisión; Android 13+ además muestra el contenido copiado en un overlay del sistema — otra razón
-   para no ofrecerlo. Copiar exige el análogo `.localOnly`+expiración de cada plataforma.
+   para no ofrecerlo. Si se copia: iOS con `.localOnly`+expiración; **Android no tiene análogo** —
+   no hay API para excluir un clip de la sincronización entre dispositivos ni para expirarlo. Lo que
+   hay se usa (`ClipDescription.EXTRA_IS_SENSITIVE`, API 33, que redacta el preview) y **el resto de
+   la brecha se declara**: en Android la mitigación real es no ofrecer copiar.
 10. **Teclado — la diferencia se declara**: iOS puede rechazar teclados de terceros app-wide (LumeMed
     §8.10) y este repo lo hereda en su lado iOS. **Android no puede**: no existe API para vetar un
     IME. Lo que sí: campos sensibles con `imeOptions` de no-aprendizaje y tipo password donde
@@ -304,6 +322,8 @@ de LumeMed») — la regla de precisión que LumeMed ya aplica.
 
 ## 11. Convenciones
 
+- **Idiomas**: código, comentarios, commits y ADRs en inglés; constitución, WORKPLAN, PROGRESS y
+  bitácora en español — la convención de la familia entera.
 - Conventional commits en inglés; **sin trailers de IA** — se autoran como
   `Luis Mejias <luismmejiasb@gmail.com>`. Manda sobre cualquier default de herramienta.
 - Slices verticales completos; confirmar antes de acciones irreversibles; **el push lo hace el

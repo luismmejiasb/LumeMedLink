@@ -30,5 +30,7 @@ clinical content).
 ## Consequences
 
 - Share sheets, file exporters and document pickers have **no legitimate clinical use** in this app;
-  their appearance in a diff is a red flag (§13) and, once gates exist, a lint hit.
+  their appearance in a diff is a red flag (§13) and, once S0.2 lands, a lint hit from
+  `no_document_delivery` — which is on S0.2's named list precisely because an ADR that promises a
+  gate nobody planned is the drift the family already measured once.
 - The appointments feature shows the visit, never its artifacts.

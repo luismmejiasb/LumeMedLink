@@ -9,9 +9,11 @@
   version catalog con lockfile, CI que compila ambos targets. **DoD**: `./gradlew build` y el target
   iOS compilan en CI; el árbol vacío ya respeta la dirección de dependencias.
 - **S0.2 · Gates.** detekt + ktlint pinneados; reglas custom espejo: `no_raw_networking`,
-  `secrets_gate`, `no_hardcoded_style`, `no_globalscope`, `no_mutable_object`; allowlist de
-  dependencias con denylist nombrado (Firebase Analytics/Crashlytics, Sentry, loaders de imágenes
-  con red propia). **Cada gate se ensaya con archivo-cebo antes de confiar en su verde** — la
+  `secrets_gate`, `no_hardcoded_style`, `no_globalscope`, `no_mutable_object`,
+  **`no_document_delivery`** (el gate que ADR-0007 promete — share sheets/exporters sin uso clínico
+  legítimo) y el **script de aislamiento por feature** que ADR-0008 exige (espejo del de LumeMed,
+  sobre packages); allowlist de dependencias con denylist nombrado (Firebase Analytics/Crashlytics,
+  Sentry, loaders de imágenes con red propia). **Cada gate se ensaya con archivo-cebo antes de confiar en su verde** — la
   lección fundante de la familia. Al aterrizar, las etiquetas [manual] del §13 migran a [lint].
 - **S0.3 · Design system.** Depende de la decisión pendiente del autor sobre **LumeUIComposer** (el
   gemelo de LumeUIKit en Compose, `../LumeUIComposer`, hoy esqueleto con su Slice 0 sin juzgar):
@@ -30,9 +32,20 @@
 - **S1.2 · Checklist de plataforma del §8.** FLAG_SECURE + cover iOS, `allowBackup=false` +
   `dataExtractionRules`, networkSecurityConfig, ATS. Verificado en device, no sólo declarado.
 - **S1.3 · Agenda (lectura).** Las citas del médico. Sin motivo clínico en ningún DTO (ADR-0001 se
-  verifica en el pedido de contrato, no después).
-- **S1.4 · Contactos.** La lista de pacientes como agenda: nombre, teléfono, próxima cita.
-- **S1.5 · Perfil.** Ver/editar del médico; foto por el stack (bytes → bitmap, ADR-0004).
+  verifica en el pedido de contrato, no después). **El pedido incluye la pregunta T11**: la agenda es
+  una ruta tenant-scoped que escapa al interceptor de restricción de la 21.719 — quién excluye al
+  titular restringido y con qué registro (`UNENFORCEABLE_PATIENT_ROUTES`) se decide en el contrato,
+  no se descubre en producción. Reagendar, si entra al slice, es **una operación atómica del
+  servidor** (T7: cancel+rebook deja el cupo libre en la ventana) — y si el contrato no la tiene, la
+  pantalla no la ofrece.
+- **S1.4 · Contactos.** La lista de pacientes como agenda: nombre, teléfono, próxima cita. Misma
+  pregunta T11 que la agenda (es la otra ruta tenant-scoped), y el vocabulario T16 desde el diseño:
+  quitar un contacto de la vista **no es** el derecho de supresión, y la UI no puede insinuarlo.
+- **S1.5 · Perfil.** Ver/editar del médico; foto por el stack (bytes → bitmap, ADR-0004). Si la foto
+  viaja por la infraestructura de archivos de la plataforma, **«subido» no es «visible»** (T10: nace
+  PENDING y sólo un veredicto CLEAN del antivirus lo vuelve AVAILABLE; con `ANTIVIRUS_MODE=disabled`
+  en dev nada se vuelve disponible jamás) — la pantalla se diseña sobre disponibilidad eventual, y el
+  entorno dev necesita el modo del backend que sí resuelve.
 
 ## FASE 2 — Lado paciente (GATED: ADR-0006)
 

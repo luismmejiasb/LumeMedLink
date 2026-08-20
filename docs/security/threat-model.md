@@ -23,7 +23,8 @@ Atacante con posesión física, sin credenciales. Un teléfono se pierde más qu
 cacheados cifrados y purgables; sesión corta; sin backup que reviva la agenda en otro equipo.
 
 ### T2 · Dispositivo COMPARTIDO — aquí sube de rango
-En LumeMed era «observador presente en la consulta». Aquí es estructural: **el teléfono de un
+El nivel 2 del modelo de LumeMed es el observador con acceso visual y físico momentáneo al
+dispositivo desbloqueado (el paciente o un familiar en la consulta). Aquí es estructural: **el teléfono de un
 paciente lo usa su familia**, y una agenda de citas con un psiquiatra visible en una notificación es
 exactamente la filtración que la Ley 21.719 castiga. **Controles**: push sin contenido (§8.5),
 FLAG_SECURE / cover (§8.3), bloqueo por inactividad con biometría anclada a clave (§8.3), nada
@@ -45,7 +46,7 @@ puede vetar** y la mitigación parcial se declara (§8.10) en vez de fingir la p
 **Controles**: HTTPS-only fail-closed, TLS ≥ 1.2, cleartext negado también en el manifiesto Android,
 scope de token estrecho (ADR-0003: el token de esta app jamás concede lecturas clínicas — el daño de
 un token robado aquí queda acotado por diseño). Pinning diferido con su trade-off declarado
-(ADR-0004), misma decisión y razón que LumeMed.
+(ADR-0004) — **decisión propia de este repo**; LumeMed no tiene una decisión de diferirlo que heredar.
 
 ### T6 · App maliciosa co-residente
 **Controles**: App Links/universal links verificados con identificadores opacos (§8.12); Play
