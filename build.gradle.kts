@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.androidKmpLibrary) apply false
     alias(libs.plugins.androidApplication) apply false
+    alias(libs.plugins.kotlinSerialization) apply false
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
 }

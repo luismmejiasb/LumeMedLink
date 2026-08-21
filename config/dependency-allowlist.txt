@@ -16,6 +16,13 @@ org.jetbrains.skiko
 org.jetbrains
 androidx.
 
+# ── core/networking, ADR-0004: Ktor stack + its Android engine's runtime ────────────────────────
+# io.ktor is unreachable outside core/ (detekt ForbiddenImport); okhttp3/okio ride in as the
+# OkHttp engine's runtime and are equally banned as imports outside core/.
+io.ktor
+com.squareup.okhttp3
+com.squareup.okio
+
 # ── JUnit + Hamcrest: the host-test runner's floor ──────────────────────────────────────────────
 junit
 org.hamcrest

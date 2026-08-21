@@ -15,6 +15,10 @@
   sobre packages); allowlist de dependencias con denylist nombrado (Firebase Analytics/Crashlytics,
   Sentry, loaders de imágenes con red propia). **Cada gate se ensaya con archivo-cebo antes de confiar en su verde** — la
   lección fundante de la familia. Al aterrizar, las etiquetas [manual] del §13 migran a [lint].
+- **S0.2b · Espejo de red** *(insertado por el handoff del 2026-08-20, encargo del autor)*: la
+  doctrina de LumeNetworking sobre Ktor en `core/networking` (ADR-0004), con seams de sesión y de
+  log, engines por plataforma y tests de contrato en `commonTest` corriendo en ambos targets.
+  **Hecho** — bitácora 0004; el refresh single-flight y el facade real de logs llegan con S1.1.
 - **S0.3 · Design system.** Depende de la decisión pendiente del autor sobre **LumeUIComposer** (el
   gemelo de LumeUIKit en Compose, `../LumeUIComposer`, hoy esqueleto con su Slice 0 sin juzgar):
   - Si el gemelo sigue → este repo lo consume por path local (como LumeMed consume LumeUIKit) y
