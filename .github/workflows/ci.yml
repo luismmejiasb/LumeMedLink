@@ -42,6 +42,8 @@ jobs:
         run: Scripts/check-screen-security.sh
       - name: Gate — tier-2 biometric contract (F4, ADR-0005/0011)
         run: Scripts/check-biometric-contract.sh
+      - name: Gate — pre-auth surfaces (F2, ADR-0012)
+        run: Scripts/check-preauth-surfaces.sh
 
   build:
     needs: gates

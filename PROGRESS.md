@@ -17,6 +17,13 @@
 
 ## Decisiones abiertas (autor)
 
+- **¿Se estrecha el denylist de dependencias para permitir FCM?** *(nueva — 2026-08-21, hallazgo de
+  F2, verificado con evidencia)*. El push de Android **sólo** existe vía
+  `com.google.firebase:firebase-messaging`, y este repo lo rechaza por dos gates propios (denylist
+  de Firebase y de Play Services, §8.1) más `ForbiddenImport` en detekt. El §8.1 escribió esa regla
+  contra Analytics/Crashlytics; FCM es otro producto por la misma puerta. **Mientras no se decida,
+  el push en Android es estructuralmente imposible.** El de iOS (APNs) no tiene colisión, así que un
+  slice de push podría salir sólo en iOS. Ver ADR-0012 y bitácora 0011.
 - Nombre público de las tiendas (junto con el de LumeMed).
 - Cuándo pedir al backend el ADR del tier paciente (S2.0).
 
