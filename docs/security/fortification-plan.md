@@ -14,7 +14,7 @@
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F1 | Captura de pantalla y multitarea (FLAG_SECURE / cover iOS / tapjacking) | 🟡 2026-08-21 | Núcleo real hecho; cover iOS robusto (host window) diferido al shell. ADR-0010, bitácora 0008. |
+| F1 | Captura de pantalla y multitarea (FLAG_SECURE / cover iOS / tapjacking) | 🟡 2026-08-21 | Núcleo hecho y **verificado en device (Android)**: `screencap` da negro puro sobre la app, normal sobre el launcher (bitácora 0009). Cover iOS robusto (host window) diferido al host Xcode. ADR-0010, bitácora 0008. |
 | F2 | Superficies pre-auth (notificaciones sin contenido, widgets, pantalla bloqueada) | ⬜ | Gate + regla; el runtime llega con push/widgets. |
 | F3 | Portapapeles y teclado | ⬜ | Gate anti-copia de datos personales; veto de teclado iOS necesita host. |
 | F4 | Bloqueo por inactividad + gate biométrico anclado a clave (tier 2) | 🔒 shell | La lógica (`InactivityLock`) ya existe; el gate biométrico necesita Activity/UIViewController. |

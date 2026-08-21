@@ -1,28 +1,57 @@
 package com.luismejias.lumemedlink.app
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import com.luismejias.lumemedlink.core.session.SessionManager
+import com.luismejias.lumemedlink.core.session.TokenStore
+import com.luismejias.lumemedlink.core.session.rememberSecureStore
+import kotlinx.coroutines.launch
 
 /**
- * Root composable of the app — the single entry point both platform shells render.
+ * Root composable — the single entry point both platform shells render, and the composition root
+ * (ADR-0008): it is the ONE place that wires concrete dependencies together.
  *
- * `public` on purpose: this is the Gradle-module boundary (§3) that `:androidApp` and the iOS
- * framework consume. Everything else in this tree starts `internal`.
+ * `public` on purpose: this is the Gradle-module boundary consumed by `:androidApp` and the iOS
+ * framework. Everything else in this tree starts `internal`.
  *
- * Placeholder content only: the real shell arrives with S1.1, styled through the design system
- * once S0.3 is unblocked. No design tokens exist yet, so nothing here may claim a style.
+ * The whole app renders inside [PrivacyScreenScaffold] (ADR-0010), so no screen can exist without
+ * the privacy cover.
  */
 @Composable
 public fun App() {
-    // Every screen renders inside the privacy scaffold (ADR-0010): the cover is the app's, not
-    // each screen's, so no screen can be built without it.
+    val secureStore = rememberSecureStore()
+    val sessionManager = remember(secureStore) {
+        SessionManager(TokenStore(secureStore), UnwiredRefreshClient())
+    }
+    val scope = rememberCoroutineScope()
+
+    var hasSession by remember { mutableStateOf(false) }
+    // Locked stays false until F4 wires the inactivity lock to a biometric unlock path — engaging
+    // it now would trap the user in a Locked screen with no way out. The destination exists and is
+    // tested; it is simply not entered yet.
+    val locked = false
+
+    LaunchedEffect(sessionManager) {
+        hasSession = sessionManager.hasSession()
+    }
+
     PrivacyScreenScaffold {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            BasicText(text = "LumeMedLink")
+        when (resolveDestination(hasSession, locked)) {
+            AppDestination.Login -> LoginScreen()
+            AppDestination.Locked -> LockedScreen(onUnlockRequested = {})
+            AppDestination.Home -> HomeScreen(
+                onSignOut = {
+                    scope.launch {
+                        sessionManager.logout()
+                        hasSession = false
+                    }
+                },
+            )
         }
     }
 }
