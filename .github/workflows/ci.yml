@@ -38,6 +38,8 @@ jobs:
         run: Scripts/check-forbidden-patterns.sh
       - name: Gate — dependency allowlist (§8.8)
         run: Scripts/check-dependency-allowlist.sh
+      - name: Gate — screen-capture protection (F1, ADR-0010)
+        run: Scripts/check-screen-security.sh
 
   build:
     needs: gates

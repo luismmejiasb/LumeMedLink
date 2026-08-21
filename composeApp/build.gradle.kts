@@ -41,6 +41,7 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
+            implementation(libs.jetbrains.lifecycle.runtime.compose)
             // core/networking — the hardened stack (ADR-0004). Ktor never leaks past core/:
             // detekt's ForbiddenImport bans io.ktor.* outside it.
             implementation(libs.ktor.client.core)

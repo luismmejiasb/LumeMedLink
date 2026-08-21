@@ -12,6 +12,7 @@
 | S0.3 (design system) | ⏸️ | **No se toca**: espera el veredicto del autor sobre LumeUIComposer (WORKPLAN). |
 | S1.1 (shell + auth) | 🟡 2026-08-21 | **Mitad sin UI construida.** Pedido de contrato escrito (`backend-requests/0001`, esperando el ADR del backend). **`core/session` hecho**: `KeychainSecureStore` (accesibilidad por target compilado) + `KeystoreSecureStore` (ADR-0009: Keystore AES-GCM sobre archivos, cero deps) + `SessionManager` single-flight con logout-wipe pinneado + `InactivityLock` fail-closed — **21 tests × 2 targets verdes**; los roundtrips de los stores de hardware se verifican en device (asimetrías declaradas, bitácora 0007). Quedan: `RefreshClient` HTTP (contrato), tier 2 biométrico, sentinel iOS, UI login. |
 | Resto de Fase 1 (S1.2–S1.5) | ⬜ | Sin empezar. Cada slice de lectura (agenda S1.3, contactos S1.4) trae su propio pedido de contrato con sus preguntas T11/T16. |
+| **Programa de fortificación** | 🟡 2026-08-21 | Plan aprobado: `docs/security/fortification-plan.md` (23 slices, 8 fases, mapeados al threat model). **F1 ✅ núcleo** (captura de pantalla/multitarea: FLAG_SECURE app-wide + cover iOS Compose + tapjacking, gate `check-screen-security.sh`, ADR-0010, bitácora 0008; cover iOS de host y F4 biométrico diferidos al shell). |
 | Fase 2 (lado paciente) | 🔒 | **Gated por ADR-0006**: el backend debe aceptar el ADR del tier paciente primero. |
 
 ## Decisiones abiertas (autor)

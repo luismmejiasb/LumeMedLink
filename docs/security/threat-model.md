@@ -29,6 +29,10 @@ paciente lo usa su familia**, y una agenda de citas con un psiquiatra visible en
 exactamente la filtración que la Ley 21.719 castiga. **Controles**: push sin contenido (§8.5),
 FLAG_SECURE / cover (§8.3), bloqueo por inactividad con biometría anclada a clave (§8.3), nada
 personal en superficies pre-auth (widgets, recientes, pantalla bloqueada).
+**Estado de fortificación** (`fortification-plan.md`): **F1 ✅ núcleo** — FLAG_SECURE app-wide
+(Android) + cover Compose (iOS, primera capa) + tapjacking, con gate `check-screen-security.sh`
+(ADR-0010, bitácora 0008). Pendientes de T2: F2 (superficies pre-auth), F4 (bloqueo por inactividad
++ biometría; la lógica ya existe, el gate biométrico espera el shell), y el cover iOS de host.
 
 ### T3 · Persistencia posterior
 Datos que sobreviven al logout, al cambio de usuario o a la desinstalación. **Controles**: logout =

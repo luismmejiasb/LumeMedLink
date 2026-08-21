@@ -18,7 +18,11 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 public fun App() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        BasicText(text = "LumeMedLink")
+    // Every screen renders inside the privacy scaffold (ADR-0010): the cover is the app's, not
+    // each screen's, so no screen can be built without it.
+    PrivacyScreenScaffold {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            BasicText(text = "LumeMedLink")
+        }
     }
 }

@@ -27,6 +27,10 @@ jvmTarget = "17"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.11.0" }
+# The multiplatform (org.jetbrains.androidx) lifecycle, not the Android-only androidx one: it
+# provides LocalLifecycleOwner on every target, the signal the privacy cover reads (ADR-0010).
+# Version tracks what Compose Multiplatform 1.11.1 already resolves, so no skew is introduced.
+jetbrains-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version = "2.9.6" }
 # Compose Multiplatform artifacts by coordinate. The `compose.runtime` accessors are deprecated as
 # of 1.11 ("specify dependency directly"), and with allWarningsAsErrors that is a build failure.
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
