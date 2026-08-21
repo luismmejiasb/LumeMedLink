@@ -50,10 +50,15 @@ biometric match.** Never a boolean, on either platform.
   to `AbsentUnlockGate`, which reports `Unavailable`; a missing gate is never an open door.
 - **The doctor is logged out when they enroll a new fingerprint.** Accepted, and it is the point:
   the alternative is that whoever holds the phone enrolls their own finger and inherits the session.
-- **Verified where it matters.** The instrumented test `UnlockKeyContractTest` asks a real Android
-  runtime, through `KeyInfo`, whether the four properties actually took — the grep gate proves the
-  source says the right words, `KeyInfo` proves the OS agreed. iOS has no equivalent until the iOS
-  host exists (the hostless K/N runner reaches no keychain).
+- **Verified where it matters, in two layers.** `UnlockKeyContractTest` asks a real Android runtime,
+  through `KeyInfo`, whether the four properties actually took — the grep gate proves the source
+  says the right words, `KeyInfo` proves the OS agreed. And
+  `Scripts/verify-tier2-invalidation.sh` proves the *behaviour* the whole tier is paid for, on
+  device and with a control: create the key, confirm phase B FAILS while nothing has changed, enroll
+  a new fingerprint, confirm phase B then PASSES. The control is not ceremony — without it, "the key
+  is gone" is indistinguishable from a reinstall, which is exactly the false positive this repo
+  nearly recorded (bitácora 0014). iOS has no equivalent until the iOS host exists (the hostless
+  K/N runner reaches no keychain).
 - **Supply-chain cost, declared:** `androidx.biometric:biometric:1.1.0` drags eight transitive
   dependencies into the shell, including `appcompat:1.2.0` (2020). Accepted for now as the price of
   a correct compat matrix; re-evaluated in F20 together with the fact that the dependency allowlist

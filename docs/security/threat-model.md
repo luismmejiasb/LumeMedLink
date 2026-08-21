@@ -34,8 +34,8 @@ personal en superficies pre-auth (widgets, recientes, pantalla bloqueada).
 (ADR-0010, bitácora 0008). **F4 🟡 mecanismo completo** — bloqueo por inactividad + desbloqueo
 biométrico **anclado a material de clave, jamás un booleano** (ADR-0011): EC en Keystore firmando
 un reto (Android), Keychain `.biometryCurrentSet` (iOS), la clave destruida si cambia el
-enrolamiento; gate `check-biometric-contract.sh` con 8 cebos y 4 tests instrumentados verdes en
-Android real (bitácora 0010). **F2 ✅** — ninguna superficie pre-auth
+enrolamiento; gate `check-biometric-contract.sh` con 8 cebos, 4 tests instrumentados verdes en
+Android real (bitácora 0010) y la **invalidación por enrolamiento probada en device con control** (bitácora 0014). **F2 ✅** — ninguna superficie pre-auth
 existe (sin widgets, sin shortcuts, sin permiso de notificaciones, sin banderas de lock screen) y el
 futuro push sólo puede tomar la forma de `shared/PushSignal`, **que no tiene campo de texto**; gate
 `check-preauth-surfaces.sh` con 8 cebos (ADR-0012, bitácora 0011). Pendientes de T2: el end-to-end
