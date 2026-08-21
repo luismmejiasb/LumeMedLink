@@ -1,27 +1,43 @@
-# CI — compiles BOTH targets (S0.1 DoD). macOS runner because the iOS compilation needs Xcode's
-# toolchain; its arm64 matches the iosSimulatorArm64 target. Gate honesty: this file has never run
-# on GitHub until the author pushes — stated in PROGRESS, not hidden.
+# CI — compiles BOTH targets (S0.1 DoD). Gate honesty: this file has never run on GitHub until
+# the author pushes — stated in PROGRESS, not hidden.
+#
+# PAUSED (2026-08-21, author's call): workflow_dispatch ONLY. The personal account hit 90% of its
+# 2,000 Actions minutes and macOS runners bill at 10x — one real macOS minute costs ten. No
+# automatic trigger comes back until the author re-enables it; running this by hand from the
+# Actions tab is the deliberate act that spends the minutes.
+#
+# Cost layout for when it returns: the `gates` job runs on ubuntu (1x billing, seconds); only the
+# `build` job needs macOS (Xcode toolchain for the iOS target, arm64 matches iosSimulatorArm64),
+# and it only starts if the cheap gates already passed.
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: macos-15
+  gates:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       # Constitution gates first: no JVM needed, seconds to run, and a violation should fail the
-      # run before three minutes of compilation, not after.
+      # run before minutes of compilation, not after.
       - name: Gate — feature isolation (ADR-0008)
         run: Scripts/check-feature-isolation.sh
       - name: Gate — forbidden patterns (§6, §8, ADR-0007)
         run: Scripts/check-forbidden-patterns.sh
       - name: Gate — dependency allowlist (§8.8)
         run: Scripts/check-dependency-allowlist.sh
+
+  build:
+    needs: gates
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
 
       # Same JDK the build pins via jvmToolchain; setup-java just makes it present on the runner.
       - uses: actions/setup-java@v4
