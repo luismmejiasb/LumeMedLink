@@ -31,6 +31,28 @@ familia ya pagó.
    cada diferencia de plataforma se declara (FLAG_SECURE existe, el veto de teclados no, el Keystore
    muere con el uninstall).
 
+## La revisión adversarial, antes de darlo por bueno
+
+Tres verificadores independientes leyeron los documentos recién escritos contra sus fuentes (las 17
+trampas del backend, los hechos de plataforma Android/iOS, la coherencia interna): **24 hallazgos**,
+cada uno re-verificado contra la fuente citada antes de aplicarse. Los que valen contar:
+
+- **T11 era el agujero grande**: la agenda del día y el roster son rutas *tenant-scoped* que escapan
+  al interceptor de restricción de tratamiento del backend — un titular con restricción 21.719
+  vigente reaparecería en la app cuya bandera es esa ley. La pregunta ahora es parte del pedido de
+  contrato de S1.3/S1.4, no un descubrimiento de producción.
+- **`setUnlockedDeviceRequired` no es el piso de iOS**: un teléfono sin PIN nunca está «bloqueado»,
+  así que la clave sería usable siempre. El piso Android real es el rechazo explícito con
+  `isDeviceSecure` al establecer sesión — ADR-0005 corregido.
+- **El diferimiento del pinning se atribuía a LumeMed**, que no tiene tal decisión (tiene el mandato
+  y un candidato de auditoría sin resolver). Ahora es decisión propia de este repo, con su razón
+  propia.
+- **Y un hallazgo que era al revés**: dos lentes acusaron la escalera de botones del espejo
+  (`outlineNeutral` = secundaria) contra el §5.1 de LumeMed — pero el documento desactualizado era
+  **el de LumeMed**: su gate enforza la decisión del 2026-08-10 y su prosa decía la del 07. El espejo
+  quedó como estaba y LumeMed corrigió su §5.1 (commit `d0f9539` de aquel repo). Un verificador que
+  encuentra la deriva en la dirección opuesta a la que buscaba sigue encontrando la deriva.
+
 ## Lo que quedó dicho para el autor
 
 - El **push** de este repo (remote ya configurado) lo hace él, como siempre.
