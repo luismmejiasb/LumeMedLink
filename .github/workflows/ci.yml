@@ -65,6 +65,12 @@ jobs:
         run: Scripts/check-url-hygiene.sh
       - name: Gate — Gradle wrapper integrity (F20, ADR-0018)
         run: Scripts/check-wrapper.sh
+      - name: Gate — data boundary (F14, ADR-0019)
+        run: Scripts/check-data-boundary.sh
+      - name: Gate — one logging path (F22, ADR-0020)
+        run: Scripts/check-logging.sh
+      - name: Gate — release hardening (F21, ADR-0021)
+        run: Scripts/check-release-hardening.sh
 
   build:
     needs: gates

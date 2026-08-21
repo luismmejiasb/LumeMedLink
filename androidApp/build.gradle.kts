@@ -22,6 +22,26 @@ android {
         versionName = "0.1.0"
     }
 
+    // Declared, not inherited (F21, ADR-0021). There was no buildTypes block at all, so `debug`
+    // was debuggable by AGP default and NOTHING asserted that `release` is not — while the debug
+    // build is the one sideloaded onto a device for verification, and `run-as`/`adb pull` reach
+    // its private data directory.
+    buildTypes {
+        getByName("release") {
+            isDebuggable = false
+            // isMinifyEnabled stays OFF and that is a decision, not an omission: R8 on a KMP +
+            // Compose app needs keep rules this project has never exercised, and shipping an
+            // untested shrinker is a bigger risk than the reverse-engineering it would slow down.
+            // It is registered as owed work rather than switched on blind.
+            isMinifyEnabled = false
+        }
+        getByName("debug") {
+            // Explicit so nobody reads the absence as a claim. A debug build IS debuggable, IS
+            // reachable by run-as, and must never carry a real doctor's token.
+            isDebuggable = true
+        }
+    }
+
     buildFeatures { compose = true }
 
     compileOptions {

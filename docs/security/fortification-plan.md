@@ -50,7 +50,7 @@
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F14 | La frontera de datos como gate ejecutable | ⬜ **prioridad subida** | Poda de DTOs mixtos; nace con la primera lectura de contrato. **CONFIRMADO por el backend con evidencia de su código (advertencia nº3, 2026-08-21): `Patient` lleva `bloodType` cifrado y `careDirective` en la MISMA fila que correo y teléfono.** O sea: una lista de operaciones permitidas admite el **cuerpo entero** de la respuesta — lo no-clínico necesita **proyección propia** en el contrato, no un permiso sobre la entidad. Eso convierte a F14 en un **pedido de contrato**, no sólo en un gate de cliente. |
+| F14 | La frontera de datos como gate ejecutable | ✅ 2026-08-21 | Gate de **nombres** que dice que lo es (`check-data-boundary.sh`, ES+EN, 4 cebos rojos / 2 legítimos verdes) — mueve el §13 de [manual] a [lint parcial]. Y la otra mitad es **pedido de contrato**, no poda del cliente: `backend-requests/0002` pide la proyección no clínica **como recurso propio** — podar en el cliente igual habría hecho cruzar los bytes clínicos por la red. ADR-0019, bitácora 0021. |
 | F15 | Restricción de tratamiento en rutas tenant-scoped (T11) | 🔒 backend | Se resuelve en el pedido de contrato de agenda/contactos. |
 | F16 | IDOR (404-no-403), reagendar atómico (T7), idempotencia (T13) | 🔒 backend | Nace con S1.3/S1.4. |
 
@@ -60,20 +60,20 @@
 | --- | --- | --- | --- |
 | F17 | Deep links / universal links seguros | 🔒 shell | Sin custom scheme; link concede navegación, no acceso. |
 | F18 | Contenido no confiable no rompe la app | 🟡 | Decodificación tolerante empezada en el stack; falta bytes de imagen. |
-| F19 | Cero entrega de documentos | 🟡 | Gate `no_document_delivery` construido; elevar a prueba de ausencia de superficie. |
+| F19 | Cero entrega de documentos | ✅ 2026-08-21 | Ampliado de «sin share sheet» a **ninguna vía de entregar un archivo**: impresión (Android e iOS), creación de documentos, document pickers, MediaStore, chooser. 5 cebos rojos. |
 
 ## Fase G — Cadena de suministro e integridad del binario (T6)
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
 | F20 | Dependencias bajo control | ✅ 2026-08-21 | **Siete huecos, medidos**: el prefijo admitía `androidx.health.connect` (API de datos CLÍNICOS) — ahora coincidencia **exacta** y denylist por nombre; el **classpath de plugins** no estaba en ningún lockfile (24 grupos nunca revisados, incl. `org.tensorflow`) — ahora lockeado, 441→500 módulos; **el `gradle-wrapper.jar` era el de 9.4.1 con la distribución pinneada a 9.7.1** (la raíz de confianza) — regenerado y con gate; un comentario podía inyectar un grupo; borrar un lockfile dejaba verde; `org.apache.http` y `org.slf4j` importables contra §7/§8.1; actions por tag mutable. **Verificación por bytes NO adoptada**, con su costo y su disparador escritos. ADR-0018, bitácora 0020. |
-| F21 | Integridad del binario y del runtime (Play Integrity / App Attest, root/jailbreak, sin secretos, sin debug) | 🔒 shell/backend | Enforcement solo en Release. **Hallazgo de F6: no hay bloque `buildTypes` en ningún Gradle**, así que debug es debuggable por default de AGP y **ningún gate exige `isDebuggable=false` en release** — y el build debug es el que el autor sideloadea con token real para verificar en device (`run-as`/`adb pull` lo alcanzan). |
+| F21 | Integridad del binario y del runtime | 🟡 2026-08-21 | **Mitad construible hecha**: no había bloque `buildTypes` — ambos ahora declaran su postura, `release` con `isDebuggable=false`, y gate (ADR-0021). `isMinifyEnabled` off **como decisión** (R8 en KMP+Compose sin keep rules probadas es peor riesgo). **Bloqueado el resto**: Play Integrity y App Attest se verifican en servidor y no hay backend desplegado; App Attest además necesita el host iOS. **Hallazgo de F6: no hay bloque `buildTypes` en ningún Gradle**, así que debug es debuggable por default de AGP y **ningún gate exige `isDebuggable=false` en release** — y el build debug es el que el autor sideloadea con token real para verificar en device (`run-as`/`adb pull` lo alcanzan). |
 
 ## Fase H — Lo invisible (T4)
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F22 | Logging redactado + cero telemetría fugada | 🟡 | Facade en el stack; falta el punto único y el gate anti-analytics elevado. **Hallazgo de F6: `adb bugreport`** — un `Log.d` perdido en un slice futuro viaja dentro de un zip que el médico puede mandar a cualquiera, **en build de release**, y sobrevive al reboot. Hoy sin gate (detekt corre con `buildUponDefaultConfig=false` y no habilita `Println`). |
+| F22 | Logging redactado + cero telemetría fugada | ✅ 2026-08-21 | **Un solo punto de logging** en `core/logging`, con conjunto **cerrado** de eventos — no acepta `String`, así que un nombre de paciente no tiene dónde ir. **El default escribe NADA, como decisión**: lo que va a logcat sale del dispositivo dentro de un `adb bugreport`, en release, y sobrevive al reboot. Dos gates (detekt + `check-logging.sh`, 5 cebos rojos), porque un ban de imports no ve una llamada calificada ni `printStackTrace`. ADR-0020. |
 | F23 | Canal de eventos de seguridad + kill-switch (fail-open) | 🔒 backend | Consume endpoints existentes del backend. |
 
 ## Regla de cierre de cada slice

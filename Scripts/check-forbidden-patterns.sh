@@ -41,10 +41,14 @@ if [ -n "$hits" ]; then
 fi
 
 # ── P2 · no_document_delivery (ADR-0007 / backend trap T1) ──────────────────────────────────────
-hits=$(grep -rnE 'FileProvider|ACTION_SEND|UIActivityViewController|ShareCompat' $SRC 2>/dev/null || true)
+# F19 widened this from "no share sheet" to "no way to hand a file to anything". The original list
+# named the two obvious APIs; a document leaves an app through many more doors, and ADR-0007 is not
+# about share sheets — it is about this app never being the thing that delivers a document with
+# legal value, because doing so reopens Ley 19.799 for the whole family.
+hits=$(grep -rnE 'FileProvider|ACTION_SEND|ACTION_VIEW|ACTION_CREATE_DOCUMENT|UIActivityViewController|UIDocumentInteractionController|UIDocumentPickerViewController|ShareCompat|MediaStore|PrintManager|UIPrintInteractionController|createPrintDocumentAdapter|Intent\.createChooser|startActivityForResult' $SRC 2>/dev/null || true)
 if [ -n "$hits" ]; then
     fail "P2 document delivery surface" \
-         "This app never shows nor transports documents (ADR-0007). A share sheet here reopens Ley 19.799." \
+         "This app never shows, prints, exports nor transports a document (ADR-0007). Sending a prescription from here reopens Ley 19.799 for the whole family (backend trap T1)." \
          "$hits"
 fi
 
