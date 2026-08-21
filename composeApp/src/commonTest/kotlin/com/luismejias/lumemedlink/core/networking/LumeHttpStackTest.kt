@@ -257,7 +257,7 @@ class LumeHttpStackOriginTest {
         val sink = RecordingLogSink()
         val client = lumeHttpClient(BASE_URL, engine, sink, provider)
 
-        assertFailsWith<IllegalStateException> { client.get("//evil.test/steal") }
+        assertIs<AppError.Blocked>(stackError { client.get("//evil.test/steal") })
 
         assertTrue(engine.requestHistory.isEmpty(), "the request must never reach the engine")
     }
@@ -267,7 +267,7 @@ class LumeHttpStackOriginTest {
         val engine = MockEngine { respond("ok") }
         val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), FakeTokenProvider("tok-secret"))
 
-        assertFailsWith<IllegalStateException> { client.get("https://evil.test/x") }
+        assertIs<AppError.Blocked>(stackError { client.get("https://evil.test/x") })
         assertTrue(engine.requestHistory.isEmpty())
     }
 
@@ -276,7 +276,7 @@ class LumeHttpStackOriginTest {
         val engine = MockEngine { respond("ok") }
         val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
 
-        assertFailsWith<IllegalStateException> { client.get("https://api.test.lume:8443/x") }
+        assertIs<AppError.Blocked>(stackError { client.get("https://api.test.lume:8443/x") })
         assertTrue(engine.requestHistory.isEmpty())
     }
 
@@ -285,10 +285,11 @@ class LumeHttpStackOriginTest {
         val engine = MockEngine { respond("ok") }
         val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
 
-        val message = assertFailsWith<IllegalStateException> { client.get("https://evil.test/x") }.message.orEmpty()
+        val thrown = assertFailsWith<AppErrorException> { client.get("https://evil.test/x") }
 
         // An error string is a side channel too, and this one is read by whoever triggered it.
-        assertFalse(message.contains("evil.test"))
+        assertFalse(thrown.message.contains("evil.test"))
+        assertFalse(thrown.error.toString().contains("evil.test"))
     }
 
     @Test

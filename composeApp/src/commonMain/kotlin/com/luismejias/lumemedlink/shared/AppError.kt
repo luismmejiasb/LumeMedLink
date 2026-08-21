@@ -27,6 +27,17 @@ internal sealed interface AppError {
     /** Transient transport/server failure (408/425/429/5xx). A bounded retry may succeed. */
     data class Retryable(val status: Int?) : AppError
 
+    /**
+     * The stack itself refused to send the request — it was aimed at an origin other than the one
+     * the client was built for (ADR-0016). It never reached the network.
+     *
+     * It has its own case because a caller must be able to tell it apart from a server saying no:
+     * a refusal here means the app tried to talk to somewhere it must not, which is a defect or an
+     * attack, never a normal condition. It carries no host, for the same reason nothing else here
+     * carries server prose.
+     */
+    data object Blocked : AppError
+
     /** Everything else, carried with its status for diagnostics — never for display. */
     data class Unexpected(val status: Int?, val problemType: String?) : AppError
 }

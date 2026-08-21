@@ -1,7 +1,27 @@
 package com.luismejias.lumemedlink.core.networking
 
-/** A route word: lowercase letters and hyphens only. Anything else is treated as an identifier. */
-private val SAFE_SEGMENT = Regex("^[a-z][a-z-]*$")
+/**
+ * The route words this app is allowed to log, BY NAME.
+ *
+ * The first version of this file used a shape rule — lowercase letters and hyphens — which reads
+ * like a description of route words and is also a description of a tenant slug. `clinica-alemana`
+ * matched it exactly, so the clinic's identifier went into every log line. A shape cannot tell a
+ * noun from a name; only a list can.
+ *
+ * Adding a route means adding its words here, deliberately. That cost is the point: the default
+ * for an unknown segment is redaction.
+ */
+private val SAFE_SEGMENTS = setOf(
+    "me",
+    "orgs",
+    "patients",
+    "appointments",
+    "agenda",
+    "contacts",
+    "profile",
+    "security-events",
+    "app-availability",
+)
 
 /** A version segment (`v1`, `v2`) — the one digit-bearing segment that is not an identifier. */
 private val VERSION_SEGMENT = Regex("^v\\d+$")
@@ -26,7 +46,7 @@ private const val REDACTED_SEGMENT = "{id}"
 internal fun redactPath(rawPath: String): String = rawPath.split("/").joinToString("/") { segment ->
     when {
         segment.isEmpty() -> segment
-        SAFE_SEGMENT.matches(segment) -> segment
+        segment in SAFE_SEGMENTS -> segment
         VERSION_SEGMENT.matches(segment) -> segment
         else -> REDACTED_SEGMENT
     }

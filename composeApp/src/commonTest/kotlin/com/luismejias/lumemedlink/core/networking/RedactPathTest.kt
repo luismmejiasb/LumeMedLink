@@ -19,6 +19,13 @@ class RedactPathTest {
     }
 
     @Test
+    fun aTenantSlugIsNotARouteWord() {
+        // The shape rule this allowlist replaced matched `clinica-alemana` exactly, so the clinic's
+        // identifier went into every log line while looking correctly redacted.
+        assertEquals("/v1/orgs/{id}/appointments", redactPath("/v1/orgs/clinica-alemana/appointments"))
+    }
+
+    @Test
     fun plainRouteWordsSurviveSoTheLogStaysUseful() {
         assertEquals("/v1/me", redactPath("/v1/me"))
         assertEquals("/v1/security-events", redactPath("/v1/security-events"))
@@ -30,7 +37,9 @@ class RedactPathTest {
         assertEquals("/v1/patients/{id}", redactPath("/v1/patients/11111111-1"), "a RUT")
         assertEquals("/v1/patients/{id}", redactPath("/v1/patients/4821"), "a numeric id")
         assertEquals("/v1/{id}", redactPath("/v1/Perez"), "a capitalised surname")
-        assertEquals("/v1/files/{id}", redactPath("/v1/files/aGVsbG8gd29ybGQ="), "an opaque blob")
+        // `files` is not a route this app calls, so it is redacted too — the allowlist is the
+        // list of words we actually use, not a general vocabulary of plausible nouns.
+        assertEquals("/v1/{id}/{id}", redactPath("/v1/files/aGVsbG8gd29ybGQ="), "an opaque blob")
     }
 
     @Test

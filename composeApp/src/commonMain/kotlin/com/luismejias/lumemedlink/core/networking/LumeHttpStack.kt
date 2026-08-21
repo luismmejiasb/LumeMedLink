@@ -4,6 +4,7 @@ import com.luismejias.lumemedlink.shared.AppError
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.api.Send
@@ -11,10 +12,12 @@ import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.statement.request
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
 import kotlinx.io.IOException
@@ -92,7 +95,13 @@ internal fun lumeHttpClient(
                 request.method == HttpMethod.Get && response.status.value in 500..599
             }
             retryOnExceptionIf { request, cause ->
-                request.method == HttpMethod.Get && cause is IOException
+                // The guard maps transport failures to AppError.Retryable(status = null) INSIDE
+                // this retry loop, so matching only IOException silently killed bounded retry on
+                // transport failure — a feature broken while closing a leak. `status == null` is
+                // the discriminator: an HTTP 5xx maps to Retryable WITH a status.
+                val mappedTransport = cause is AppErrorException &&
+                    cause.error == AppError.Retryable(status = null)
+                request.method == HttpMethod.Get && (cause is IOException || mappedTransport)
             }
             exponentialDelay()
         }
@@ -106,15 +115,37 @@ internal fun lumeHttpClient(
                 if (response.status.value !in 200..299) {
                     throw AppErrorException(response.toAppError())
                 }
+                // A 2xx carrying HTML is not a success — it is an interstitial. Captive portals,
+                // hotel and clinic wifi, and proxy error pages all answer 200 with text/html, and
+                // this API never does. Rejecting it HERE matters beyond tidiness: left alone, the
+                // caller's `body<T>()` throws NoTransformationFoundException from the receive
+                // stage, whose message embeds the full URL with its query — outside every net this
+                // stack installs, because that exception is raised at the call site.
+                if (response.contentType()?.match(ContentType.Text.Html) == true) {
+                    throw AppErrorException(AppError.Unexpected(status = response.status.value, problemType = null))
+                }
+            }
+            // The SECOND net, and it exists because the first one was not enough. The guard's Send
+            // hook cannot see two real cases: a timeout (HttpTimeout cancels the coroutine, so the
+            // exception surfaces outside the send pipeline) and a body that will not transform —
+            // a captive portal or proxy error page answering 200 with text/html, which throws
+            // NoTransformationFoundException from the RECEIVE stage. Both messages embed the full
+            // URL with its query. Anything that is not already ours is replaced here, message and
+            // cause chain dropped.
+            @Suppress("TooGenericExceptionCaught", "SwallowedException")
+            handleResponseExceptionWithRequest { cause, _ ->
+                if (cause !is AppErrorException) {
+                    throw AppErrorException(AppError.Unexpected(status = null, problemType = null))
+                }
             }
         }
     }
 }
 
 /**
- * The stack's own guard plugin: per-request https check, correlation id, bearer attachment, and
- * the redacted log line — method/path/status/rid and NOTHING else (§8.1). Only the final response
- * of a retried call is logged; retries share the logical request's rid.
+ * The stack's own guard plugin: per-request origin check, correlation id, bearer attachment, and
+ * the redacted log line — method/path/status/rid and NOTHING else (§8.1). EVERY attempt of a
+ * retried call is logged, not only the final one; retries share the logical request's rid.
  */
 private fun lumeStackGuard(allowedOrigin: Origin, logSink: NetworkLogSink, tokenProvider: TokenProvider?) =
     createClientPlugin("LumeStackGuard") {
@@ -136,6 +167,14 @@ private fun lumeStackGuard(allowedOrigin: Origin, logSink: NetworkLogSink, token
         on(Send) { request ->
             try {
                 proceed(request)
+            } catch (timeout: HttpRequestTimeoutException) {
+                // BEFORE the CancellationException branch, and that order is the whole fix:
+                // HttpRequestTimeoutException IS a CancellationException, so rethrowing
+                // cancellation untouched let Ktor's message — which embeds the full URL with its
+                // query — reach the caller. This was ADR-0016's own headline case, still open
+                // after its fix, because the test that "covered" it threw from the engine instead
+                // of letting a real timeout fire.
+                throw AppErrorException(AppError.Retryable(status = null))
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (alreadyMapped: AppErrorException) {
@@ -151,8 +190,20 @@ private fun lumeStackGuard(allowedOrigin: Origin, logSink: NetworkLogSink, token
             }
             // The ORIGIN, not just the scheme. The message names no host: an error string is a
             // side channel like any other, and this one would be read by whoever triggered it.
-            check(Origin(request.url.protocol.name, request.url.host, request.url.port) == allowedOrigin) {
-                "LumeHttpStack refused a request to an origin other than its own (ADR-0016)."
+            if (Origin(request.url.protocol.name, request.url.host, request.url.port) != allowedOrigin) {
+                // Loud, and in the taxonomy. A silent refusal was worse than it looks: a caller
+                // could not tell "the stack blocked this" from a programming error, and nothing
+                // recorded that the app had tried to talk somewhere it must not — which is a
+                // defect or an attack, never a normal condition. The entry carries no host.
+                logSink.log(
+                    NetworkLogEntry.of(
+                        method = request.method.value,
+                        rawPath = request.url.encodedPathSegments.joinToString("/"),
+                        status = null,
+                        rid = request.headers[RID_HEADER] ?: "-",
+                    ),
+                )
+                throw AppErrorException(AppError.Blocked)
             }
             if (request.headers[RID_HEADER] == null) {
                 request.headers.append(RID_HEADER, newRid())

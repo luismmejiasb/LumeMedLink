@@ -102,6 +102,25 @@ It also refuses `network_security_config_debug.xml`, a sibling resource the plat
 `javax.net.ssl.*`, `android.webkit.*`, `DownloadManager`, `NSURLSession`, `NSURLConnection`,
 `platform.WebKit.*`. Every one opens a socket that never passes the stack.
 
+## Amendment, 2026-08-21 — this ADR's own fix did not cover its headline case
+
+An adversarial review of F13 re-examined this correction an hour after it shipped and found five
+defects **in it** (bitácora 0018). The one that matters most: the claim below that "no engine
+message escapes carrying a URL" **was false while it was being written**.
+`HttpRequestTimeoutException` IS a `CancellationException`, and the guard rethrew cancellation
+untouched — correctly, since swallowing it breaks structured concurrency — so the exact message
+quoted in defect 4 above still reached the caller. The test that "covered" it threw from the engine
+instead of letting a real timeout fire, and passed.
+
+Now: the timeout type is caught BEFORE the cancellation branch; bounded retry on transport failure
+is restored (it had gone dead, because the mapping happened inside the retry loop —
+`Retryable(status = null)` now discriminates transport from HTTP); an origin refusal is
+`AppError.Blocked` and leaves a host-free log line instead of vanishing; the log allowlist is an
+explicit list of route words, because the shape rule it replaced matched a tenant slug just as well
+as a noun; and a 2xx carrying `text/html` is rejected at validation, since a captive portal's
+interstitial otherwise reaches `body<T>()` and throws from the call site, outside every net this
+stack installs.
+
 ## Consequences and what is NOT claimed
 
 - **The stack has still never opened a real socket.** All 13 of its tests use MockEngine, and
