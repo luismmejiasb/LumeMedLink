@@ -1,0 +1,57 @@
+# Version catalog — LumeMedLink
+#
+# Every pin below was RESOLVED, not guessed. Provenance (docs/HANDOFF-S0.md):
+# - Kotlin / Compose / AGP / detekt / ktlint / SDK levels: LumeUIComposer's catalog, resolved
+#   against Maven Central and Google on 2026-08-20 on this machine.
+# - Ktor / coroutines / serialization: resolved against Maven Central's maven-metadata `<release>`
+#   on 2026-08-20 by the session that wrote the handoff.
+# Gradle itself is pinned by the wrapper's distributionSha256Sum — same discipline, stronger form.
+
+[versions]
+kotlin = "2.4.10"
+composeMultiplatform = "1.11.1"
+# Pinned to what ANDROID STUDIO supports, not to the newest published. The author's IDE refuses
+# 9.3.1 ("Latest supported version is AGP 9.2.1"), and an IDE that cannot open the project is a
+# harder blocker than a version one minor behind. Raise only alongside the IDE.
+androidGradlePlugin = "9.2.1"
+detekt = "1.23.8"
+ktlint = "14.2.0"
+ktor = "3.5.2"
+kotlinxCoroutines = "1.11.0"
+kotlinxSerialization = "1.11.0"
+
+androidMinSdk = "26"
+androidCompileSdk = "36"
+androidTargetSdk = "36"
+jvmTarget = "17"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.11.0" }
+# Compose Multiplatform artifacts by coordinate. The `compose.runtime` accessors are deprecated as
+# of 1.11 ("specify dependency directly"), and with allWarningsAsErrors that is a build failure.
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+
+[plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# Since AGP 9.0 the Android library plugin is NOT compatible with Kotlin Multiplatform; KMP modules
+# use this one, and its DSL lives inside `kotlin { android { … } }` rather than top-level.
+androidKmpLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidGradlePlugin" }
+# The Android APP plugin, for the runnable shell only — refuses to load alongside KMP.
+androidApplication = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }

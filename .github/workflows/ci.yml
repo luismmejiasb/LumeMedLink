@@ -1,0 +1,27 @@
+# CI — compiles BOTH targets (S0.1 DoD). macOS runner because the iOS compilation needs Xcode's
+# toolchain; its arm64 matches the iosSimulatorArm64 target. Gate honesty: this file has never run
+# on GitHub until the author pushes — stated in PROGRESS, not hidden.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same JDK the build pins via jvmToolchain; setup-java just makes it present on the runner.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Includes gradle-wrapper validation (checksum of the committed wrapper jar).
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build (Android + common) and compile iOS
+        run: ./gradlew build :composeApp:compileKotlinIosSimulatorArm64

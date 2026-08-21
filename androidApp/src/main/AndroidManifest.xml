@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- allowBackup=false from birth (§8.5): a Google One backup would re-materialize the agenda
+         on another device. dataExtractionRules and FLAG_SECURE land with S1.2, verified on
+         device; this line is the default that must never be left implicit. -->
+    <application
+        android:label="LumeMedLink"
+        android:allowBackup="false"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LumeMedLink">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

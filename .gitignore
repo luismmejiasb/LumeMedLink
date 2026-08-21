@@ -1,19 +1,19 @@
-# Gradle / Kotlin
+# Gradle
 .gradle/
 build/
-*/build/
-local.properties
+**/build/
+
+# Kotlin
 .kotlin/
 
-# IDEs
+# IDE
 .idea/
 *.iml
-.vscode/
+local.properties
 
-# Xcode (iOS target)
-xcuserdata/
-DerivedData/
-*.xcuserstate
-
-# OS
+# macOS
 .DS_Store
+
+# Xcode (the iOS host, when it exists)
+xcuserdata/
+*.xcworkspace/xcshareddata/swiftpm/
