@@ -28,16 +28,16 @@
 | --- | --- | --- | --- |
 | F5 | Logout = borrado total, verificado | ✅ 2026-08-21 | **Verificado contra el Keystore REAL** (`LogoutWipeOnDeviceTest`, 4/4 en device): ida y vuelta, **el texto en claro no está en disco**, el logout no deja nada legible, y el wipe borra archivos **y la clave** (lo que vuelve irrecuperable cualquier copia suelta). Cierra el hueco que declaró la bitácora 0007. Secretos ahora enumerables (`SecureStoreKey`), con el test del wipe iterando el enum → un secreto futuro queda cubierto al declararse. **Declarado: es un logout LOCAL, sin revocación server-side** — la UI no puede insinuar efecto remoto. ADR-0014, bitácora 0015. |
 | F6 | Sin backup / sin sincronización | ✅ 2026-08-21 | **Se encontró un agujero real y vivo**: a targetSdk≥31 Android **ignora `allowBackup`** para migración device-to-device (`IGNORE_ALLOW_BACKUP_IN_D2D`) — medido: nuestro paquete emitió `progress: …3072/1024` + `Success` bajo D2D. Cerrado con `dataExtractionRules` (9 dominios × 2 secciones), gate `check-backup-posture.sh` (4 cebos + el typo que delató su propio falso verde) y `verify-no-backup.sh` con **control en vivo** que exige que la fuga reaparezca. `<cross-platform-transfer>` prohibida (es opt-in). iOS: **no hay archivo que marcar** — doc corregida. ADR-0015, bitácora 0016. |
-| F7 | Sentinel de instalación iOS (secretos heredados) | 🔒 shell | Se cablea en el arranque del shell iOS. |
-| F8 | Caché en reposo cifrada y purgable | ⬜ **prioridad subida** | No hay caché todavía; nace con su primera lectura. **Hallazgo de F6 (reportado, sin verificar por mí): el engine Darwin de iOS usa la configuración de sesión por defecto → `NSURLCache` compartida en disco**, así que respuestas GET cacheables (la agenda) se escribirían sin cifrar y **sobreviven al logout**, que enumera `SecureStoreKey` y no la caché de URL. Es un defecto del stack de red, no sólo una feature faltante. También aquí: `isExcludedFromBackup` sobre el primer directorio de caché (ADR-0015). |
+| F7 | Sentinel de instalación iOS (secretos heredados) | 🔒 **host iOS** | No existe proyecto Xcode: sin punto de arranque no hay dónde correr el sentinel, y sin host no hay forma de verificarlo. La asimetría ya está declarada (ADR-0005): Android borra Keystore al desinstalar, iOS no. Es el slice que más gana el día que exista el host. |
+| F8 | Caché en reposo cifrada y purgable | ✅ 2026-08-21 | **Decidido antes de que exista la caché, que es cuando es barato**: cualquier byte en reposo pasa por el `SecureStore` de `core/session` — que ya cifra bajo clave no exportable, ya vive en un directorio excluido de backup y transferencia, y ya lo borra el logout **verificado en hardware**. Una segunda ruta tendría que re-ganar las tres y fallaría en silencio: ya lo vimos con la caché de NSURLSession. Gate P4 (3 cebos rojos). `isExcludedFromBackup` llega con el primer archivo, no antes. ADR-0022. |
 
 ## Fase C — Identidad y sesión (T5, escalada)
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F9 | El token que no puede abrir la ficha | 🟡 2026-08-21 | **Decidido: `ADR-0036` del backend, aceptada** (audiencia por app, aplicada en su `AuthGuard` + handshake WS, deny-by-default, fuera de alcance = 404 sin anunciar). **Falta que lo construyan**; verificar entonces. Su advertencia nº1: el token clasifica al CLIENTE, la base sigue decidiendo el PERMISO — el alcance sólo resta, nunca suma. |
-| F10 | Tokens cortos, refresh que rota, sin replay | 🟡 | Single-flight construido; falta el `RefreshClient` HTTP real. **Advertencia nº2 del backend (2026-08-21): el `≤15 min` es doctrina, NO configuración** — sin proyecto GCP no hay política de token en ninguna parte y hoy corre el token de dev. Este slice no puede *verificar* la expiración contra nada real hasta que exista esa política; se verifica el comportamiento del cliente y se declara el resto. |
-| F11 | Login y MFA endurecidos | 🔒 backend/shell | Depende del flujo de auth real. |
+| F9 | El token que no puede abrir la ficha | 🔒 backend | **Decidido, no construido.** `ADR-0036` del backend está aceptada (audiencia por app, deny-by-default, 404 sin anunciar). No hay nada que verificar hasta que exista el endpoint. Su advertencia nº1 aplicará: el token clasifica al CLIENTE, la base decide el PERMISO — el alcance sólo resta. |
+| F10 | Tokens cortos, refresh que rota, sin replay | 🟡 2026-08-21 | **Lo verificable del lado cliente, verificado**: single-flight pinneado, y dos tests nuevos de rotación — un refresh token gastado **nunca** se vuelve a presentar, y el par rotado reemplaza al anterior en disco (un token gastado no sobrevive a un reinicio). **No verificable aquí**: el `≤15 min` es doctrina del backend sin política desplegada (su advertencia nº2), y el `RefreshClient` HTTP espera que construyan `ADR-0036`. |
+| F11 | Login y MFA endurecidos | 🔒 backend | Espera que el backend construya `ADR-0036`. Falta además **verificación externa** de que una segunda audiencia emita el claim `sign_in_second_factor: totp` que su verificador exige — su propia pregunta abierta, no nuestra. |
 
 ## Fase D — Red y transporte (T5)
 
@@ -51,15 +51,15 @@
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
 | F14 | La frontera de datos como gate ejecutable | ✅ 2026-08-21 | Gate de **nombres** que dice que lo es (`check-data-boundary.sh`, ES+EN, 4 cebos rojos / 2 legítimos verdes) — mueve el §13 de [manual] a [lint parcial]. Y la otra mitad es **pedido de contrato**, no poda del cliente: `backend-requests/0002` pide la proyección no clínica **como recurso propio** — podar en el cliente igual habría hecho cruzar los bytes clínicos por la red. ADR-0019, bitácora 0021. |
-| F15 | Restricción de tratamiento en rutas tenant-scoped (T11) | 🔒 backend | Se resuelve en el pedido de contrato de agenda/contactos. |
-| F16 | IDOR (404-no-403), reagendar atómico (T7), idempotencia (T13) | 🔒 backend | Nace con S1.3/S1.4. |
+| F15 | Restricción de tratamiento en rutas tenant-scoped (T11) | 🔒 backend | **La pregunta ya está hecha por escrito**, dos veces: `backend-requests/0002` (roster) y `0003` (agenda). Es exactamente el escape que ellos describieron: rutas tenant-scoped sin `{patientId}` que el interceptor no evalúa. Se decide en el contrato. |
+| F16 | IDOR (404-no-403), reagendar atómico (T7), idempotencia (T13) | 🔒 backend | **Pedido escrito**: `backend-requests/0003`. Postura ya fijada de nuestro lado: la pantalla **no compondrá** cancelar+reservar (T7) — o hay operación atómica o no hay reagendar; y el stack **jamás reintenta un POST** hasta que exista llave de idempotencia (T13). El 404-no-403 ya está en la taxonomía (`AppError.NotFound`). |
 
 ## Fase F — Entrada, contenido y enlaces (T6)
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F17 | Deep links / universal links seguros | 🔒 shell | Sin custom scheme; link concede navegación, no acceso. |
-| F18 | Contenido no confiable no rompe la app | 🟡 | Decodificación tolerante empezada en el stack; falta bytes de imagen. |
+| F17 | Deep links / universal links seguros | 🔒 **host iOS + shell** | La postura ya está fijada y gateada por ausencia: **cero custom schemes** (nada los declara), y el gate de superficies pre-auth rechaza banderas de lock screen. Falta lo que necesita superficie: App Links verificados, y que un link conceda navegación **jamás** acceso con la sesión bloqueada. |
+| F18 | Contenido no confiable no rompe la app | ✅ 2026-08-21 | Decodificación tolerante (un campo desconocido cuesta una fila, no la página) + **el 2xx con HTML se rechaza en la validación** (portal cautivo, F12) + bytes remotos sólo por el stack, y **cualquier escritura en disco fuera de `core/` falla** (P4, ADR-0022). Los cargadores de imágenes con red propia siguen en el denylist (ADR-0018). |
 | F19 | Cero entrega de documentos | ✅ 2026-08-21 | Ampliado de «sin share sheet» a **ninguna vía de entregar un archivo**: impresión (Android e iOS), creación de documentos, document pickers, MediaStore, chooser. 5 cebos rojos. |
 
 ## Fase G — Cadena de suministro e integridad del binario (T6)
@@ -74,7 +74,7 @@
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
 | F22 | Logging redactado + cero telemetría fugada | ✅ 2026-08-21 | **Un solo punto de logging** en `core/logging`, con conjunto **cerrado** de eventos — no acepta `String`, así que un nombre de paciente no tiene dónde ir. **El default escribe NADA, como decisión**: lo que va a logcat sale del dispositivo dentro de un `adb bugreport`, en release, y sobrevive al reboot. Dos gates (detekt + `check-logging.sh`, 5 cebos rojos), porque un ban de imports no ve una llamada calificada ni `printStackTrace`. ADR-0020. |
-| F23 | Canal de eventos de seguridad + kill-switch (fail-open) | 🔒 backend | Consume endpoints existentes del backend. |
+| F23 | Canal de eventos de seguridad + kill-switch | 🟡 2026-08-21 | **Costura construida con la regla hecha tipo**: `SecurityEventKind` es un conjunto **cerrado y opaco**, sin campo para mensaje, usuario ni registro — un canal que acepta texto libre es el que acaba llevando «unlock failed for Dr. Pérez, paciente 11111111-1» a un log de servidor. Falla en silencio por doctrina. El stand-in se llama `NoOpSecurityEventReporter` **a propósito**: LumeMed embarcó ese canal cableado a un no-op y la plataforma nunca recibió un evento (tablero §3). ADR-0023. **Bloqueado**: la implementación HTTP espera el flujo de auth. |
 
 ## Regla de cierre de cada slice
 

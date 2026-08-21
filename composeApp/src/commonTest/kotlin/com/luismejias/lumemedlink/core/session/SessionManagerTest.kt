@@ -193,3 +193,55 @@ class SessionManagerTest {
         assertEquals(1, throwingClient.calls)
     }
 }
+
+/**
+ * Rotation, from the client side (F10, ADR-0003). The server rotates; what this app must never do
+ * is present a refresh token it has already spent. A replayed refresh is the difference between a
+ * stolen token being useful once and being useful forever.
+ */
+class RefreshRotationTest {
+
+    private class RecordingRefreshClient(private val results: MutableList<SessionTokens?>) : RefreshClient {
+        val presented = mutableListOf<String>()
+
+        override suspend fun refresh(refreshToken: String): SessionTokens? {
+            presented += refreshToken
+            return if (results.size > 1) results.removeAt(0) else results.first()
+        }
+    }
+
+    @Test
+    fun aSpentRefreshTokenIsNeverPresentedAgain() = runTest {
+        val rotated = SessionTokens("access-2", "refresh-2", NOW + 900_000)
+        val rotatedAgain = SessionTokens("access-3", "refresh-3", NOW + 900_000)
+        val client = RecordingRefreshClient(mutableListOf(rotated, rotatedAgain))
+        val clock = FixedClock()
+        val manager = SessionManager(TokenStore(FakeSecureStore()), client, clock)
+        manager.establish(SessionTokens("access-1", "refresh-1", NOW - 1))
+
+        manager.token()
+        // Age the freshly rotated pair so the next call must refresh again.
+        clock.now = NOW + 900_001
+        manager.token()
+
+        assertEquals(listOf("refresh-1", "refresh-2"), client.presented, "each refresh spends a NEW token")
+        assertEquals(
+            client.presented.size,
+            client.presented.toSet().size,
+            "a refresh token was presented twice — a replay the server may or may not catch",
+        )
+    }
+
+    @Test
+    fun theRotatedPairReplacesTheStoredOneOnDisk() = runTest {
+        val store = FakeSecureStore()
+        val rotated = SessionTokens("access-2", "refresh-2", NOW + 900_000)
+        val manager = SessionManager(TokenStore(store), RecordingRefreshClient(mutableListOf(rotated)), FixedClock())
+        manager.establish(SessionTokens("access-1", "refresh-1", NOW - 1))
+
+        manager.token()
+
+        val persisted = TokenStore(store).load()
+        assertEquals("refresh-2", persisted?.refreshToken, "the spent token must not survive a restart")
+    }
+}

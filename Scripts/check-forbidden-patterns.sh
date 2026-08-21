@@ -60,6 +60,23 @@ if [ -n "$hits" ]; then
          "$hits"
 fi
 
+# ── P4 · no at-rest write outside core/ (F8, ADR-0022) ──────────────────────────────────────────
+# The app has no cache yet, and that is exactly when this is cheap to decide. ADR-0022 says any
+# at-rest bytes go through core/session's SecureStore — which already encrypts under a
+# non-exportable Keystore/Keychain key, already lives in a directory excluded from backup and
+# device transfer (ADR-0015), and is already erased by the logout contract (ADR-0014). A second
+# storage path would have to re-earn all three, and would silently fail to.
+#
+# So: a feature that writes a file is a feature that skipped the encryption, the exclusion and the
+# wipe. core/ is exempt because that is where the seam itself lives.
+hits=$(grep -rnE '\bFile\(|FileOutputStream|writeBytes\(|writeText\(|\.outputStream\(|NSFileManager|NSDocumentDirectory|writeToFile|openFileOutput' $SRC 2>/dev/null \
+    | grep -v '/core/' | grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)
+if [ -n "$hits" ]; then
+    fail "P4 at-rest write outside core/" \
+         "Cached bytes go through core/session's SecureStore, which is encrypted, backup-excluded and wiped by logout (ADR-0022). A raw file write inherits none of that." \
+         "$hits"
+fi
+
 if [ $FAIL -eq 0 ]; then
     echo "forbidden-patterns: OK"
 else
