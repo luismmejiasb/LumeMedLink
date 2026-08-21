@@ -48,11 +48,17 @@ ADR-0005 declara la asimetría — Android no lo necesita); caché con política
 
 ### T4 · Exfiltración pasiva por plataforma
 Backup, sincronización, indexación, teclados, portapapeles, crash reporting. **Controles**:
-`allowBackup=false` + `dataExtractionRules` / `isExcludedFromBackup`; default-deny de SDKs de
+`allowBackup=false` **+ `dataExtractionRules`** (complementarios: el primero no cubre la migración
+entre dispositivos a targetSdk ≥ 31 — medido, ADR-0015); en iOS no hay archivo que marcar todavía y
+`isExcludedFromBackup` llega con la primera caché (F8); default-deny de SDKs de
 crash/analytics (§8.1 — con Identity Platform, Crashlytics está a una línea y el freno es
 constitucional); portapapeles sin datos personales (§8.9); en Android el teclado de terceros **no se
 puede vetar** y la mitigación parcial se declara (§8.10) en vez de fingir la paridad con iOS.
-**Estado de fortificación: F3 ✅** — la app no ofrece copiar (gate sobre clipboard y `SelectionContainer`) y toda entrada sensible pasa por `core/input/SensitiveTextField`, con endurecimiento por propósito; las dos asimetrías (clip sin expiración en Android, IME invetable en Android) quedan declaradas, no maquilladas (ADR-0013, bitácora 0013). Pendientes de T4: F6, F8, F22.
+**Estado de fortificación: F6 ✅ 2026-08-21** — se encontró y cerró un agujero real: a targetSdk ≥ 31 Android
+**ignora `allowBackup` para la migración device-to-device**, y nuestro paquete emitía datos por ahí (medido).
+Cerrado con `dataExtractionRules` (9 dominios × 2 secciones), gate + verificación en device con control en vivo
+(ADR-0015, bitácora 0016). **F3 ✅ (reabierto por un hallazgo de F6: Compose exporta la estructura de autofill
+de cada pantalla incondicionalmente, y FLAG_SECURE no la toca)** — la app no ofrece copiar (gate sobre clipboard y `SelectionContainer`) y toda entrada sensible pasa por `core/input/SensitiveTextField`, con endurecimiento por propósito; las dos asimetrías (clip sin expiración en Android, IME invetable en Android) quedan declaradas, no maquilladas (ADR-0013, bitácora 0013). Pendientes de T4: F6, F8, F22.
 
 ### T5 · Atacante en red / backend comprometido
 **Controles**: HTTPS-only fail-closed, TLS ≥ 1.2, cleartext negado también en el manifiesto Android,

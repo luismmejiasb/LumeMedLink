@@ -254,8 +254,14 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
    `EncryptedSharedPreferences` está **deprecado** — la implementación Android se decide en el ADR de
    cableado, no se asume esa librería.
 5. **Persistencia mínima y sin backup.** Lo poco que se cachea va cifrado y **excluido del backup**:
-   Android `allowBackup=false` + `dataExtractionRules` (un backup de Google One re-viviría la agenda
-   en otro dispositivo); iOS `isExcludedFromBackup`. **Notificaciones push sin contenido**: el payload
+   Android **`allowBackup=false` Y `dataExtractionRules`, que no son alternativas sino
+   complementarios**: el primero corta el backup de nube (un Google One re-viviría la agenda en otro
+   equipo), pero a targetSdk ≥ 31 la plataforma **lo ignora deliberadamente para la migración
+   device-to-device** (compat change `IGNORE_ALLOW_BACKUP_IN_D2D`) — medido en emulador, no supuesto
+   (ADR-0015). En iOS **no hay hoy ningún archivo que marcar**: la app sólo persiste en Keychain, y
+   `WhenPasscodeSetThisDeviceOnly` es la única clase que Apple documenta como fuera de todo backup.
+   `isExcludedFromBackup` llega cuando exista el primer archivo (F8), no antes — nombrarlo como
+   control vigente sería afirmar lo que no está. **Notificaciones push sin contenido**: el payload
    despierta, el contenido se busca autenticado — una cita en pantalla bloqueada es la amenaza 2 del
    threat model.
 6. **Transporte sólo HTTPS** (§7).

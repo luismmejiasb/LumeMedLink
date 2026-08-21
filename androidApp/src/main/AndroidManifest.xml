@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- allowBackup=false from birth (§8.5): a Google One backup would re-materialize the agenda
-         on another device. FLAG_SECURE landed in F1 (ADR-0010, set in MainActivity);
-         dataExtractionRules lands with F6, verified on device. This line is the default that
-         must never be left implicit. -->
+    <!-- Backup posture (F6, ADR-0015). The two attributes are COMPLEMENTARY, not alternatives, and
+         the reason is measured, not assumed: allowBackup="false" stops cloud backup, but on
+         targetSdk >= 31 the platform deliberately ignores it for device-to-device migration
+         (compat change IGNORE_ALLOW_BACKUP_IN_D2D). Verified on a live emulator: the D2D transport
+         extracted this package's data while the cloud transport refused it. dataExtractionRules is
+         what closes that path. Neither line may be removed without reopening ADR-0015.
+         FLAG_SECURE landed in F1 (ADR-0010, set in MainActivity). -->
     <application
         android:label="LumeMedLink"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:supportsRtl="true"
         android:theme="@style/Theme.LumeMedLink">
         <activity

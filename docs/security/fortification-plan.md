@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | F1 | Captura de pantalla y multitarea (FLAG_SECURE / cover iOS / tapjacking) | 🟡 2026-08-21 | Núcleo hecho y **verificado en device (Android)**: `screencap` da negro puro sobre la app, normal sobre el launcher (bitácora 0009). Cover iOS robusto (host window) diferido al host Xcode. ADR-0010, bitácora 0008. |
 | F2 | Superficies pre-auth (notificaciones sin contenido, widgets, pantalla bloqueada) | ✅ 2026-08-21 | Ninguna superficie existe (decisión, ADR-0012) + `shared/PushSignal` **sin campo de texto** (la fuga es imposible de escribir) + gate `check-preauth-surfaces.sh` con 8 cebos + 6 tests. **Hallazgo: el push de Android choca con el denylist propio (FCM = Firebase) — decisión abierta del autor.** Bitácora 0011. |
-| F3 | Portapapeles y teclado | ✅ 2026-08-21 | La app **no ofrece copiar** (gate rechaza clipboard y `SelectionContainer`) + **una sola pieza de entrada** `core/input/SensitiveTextField`, con endurecimiento **por propósito** (credencial ≠ dato personal: apagar autofill en una contraseña bajaría la seguridad). Gate `check-input-surfaces.sh` con 7 cebos + 5 tests. Asimetrías declaradas: Android no puede vetar un IME ni expirar un clip; el veto iOS espera el host. ADR-0013, bitácora 0013. |
+| F3 | Portapapeles y teclado | 🟡 2026-08-21 **reabierto por hallazgo** | La app **no ofrece copiar** (gate rechaza clipboard y `SelectionContainer`) + **una sola pieza de entrada** `core/input/SensitiveTextField`, con endurecimiento **por propósito** (credencial ≠ dato personal: apagar autofill en una contraseña bajaría la seguridad). Gate `check-input-surfaces.sh` con 7 cebos + 5 tests. Asimetrías declaradas: Android no puede vetar un IME ni expirar un clip; el veto iOS espera el host. ADR-0013, bitácora 0013. **REABIERTO por F6 (reportado, sin verificar por mí): `AndroidComposeView` fija `getImportantForAutofill()` a YES, así que el framework de autofill recibe la estructura virtual de CADA pantalla Compose sin que la app lo pida — y FLAG_SECURE no la toca. Muerde en cuanto S1.4 dibuje nombre/RUT/teléfono de un paciente.** |
 | F4 | Bloqueo por inactividad + gate biométrico anclado a clave (tier 2) | 🟡 2026-08-21 | **Mecanismo completo**: EC en Keystore firmando un reto (Android) / Keychain `.biometryCurrentSet` (iOS), política en `SessionLock` con 13 tests × 2 targets, gate `check-biometric-contract.sh` **ensayado con 8 cebos**, y **4 tests instrumentados verdes en Android real** confirmando vía `KeyInfo` que las propiedades quedaron aplicadas. ADR-0011, bitácora 0010. **Y la propiedad del tier PROBADA en device con control** (`Scripts/verify-tier2-invalidation.sh`): enrolar una huella nueva destruye la clave — el control exige que la fase B falle antes de creerle (bitácora 0014). **Falta sólo** que la app *navegue* hasta `Locked` (necesita login) y el equivalente iOS (sin host). |
 
 **Fase A cerrada el 2026-08-21** (F1, F2, F3 y el mecanismo de F4). Colas atadas al host iOS: el cover de ventana
@@ -27,9 +27,9 @@
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
 | F5 | Logout = borrado total, verificado | ✅ 2026-08-21 | **Verificado contra el Keystore REAL** (`LogoutWipeOnDeviceTest`, 4/4 en device): ida y vuelta, **el texto en claro no está en disco**, el logout no deja nada legible, y el wipe borra archivos **y la clave** (lo que vuelve irrecuperable cualquier copia suelta). Cierra el hueco que declaró la bitácora 0007. Secretos ahora enumerables (`SecureStoreKey`), con el test del wipe iterando el enum → un secreto futuro queda cubierto al declararse. **Declarado: es un logout LOCAL, sin revocación server-side** — la UI no puede insinuar efecto remoto. ADR-0014, bitácora 0015. |
-| F6 | Sin backup / sin sincronización | 🟡 | `allowBackup=false` ya puesto; falta `dataExtractionRules` + verificación en device. |
+| F6 | Sin backup / sin sincronización | ✅ 2026-08-21 | **Se encontró un agujero real y vivo**: a targetSdk≥31 Android **ignora `allowBackup`** para migración device-to-device (`IGNORE_ALLOW_BACKUP_IN_D2D`) — medido: nuestro paquete emitió `progress: …3072/1024` + `Success` bajo D2D. Cerrado con `dataExtractionRules` (9 dominios × 2 secciones), gate `check-backup-posture.sh` (4 cebos + el typo que delató su propio falso verde) y `verify-no-backup.sh` con **control en vivo** que exige que la fuga reaparezca. `<cross-platform-transfer>` prohibida (es opt-in). iOS: **no hay archivo que marcar** — doc corregida. ADR-0015, bitácora 0016. |
 | F7 | Sentinel de instalación iOS (secretos heredados) | 🔒 shell | Se cablea en el arranque del shell iOS. |
-| F8 | Caché en reposo cifrada y purgable | ⬜ | No hay caché todavía; nace con su primera lectura. |
+| F8 | Caché en reposo cifrada y purgable | ⬜ **prioridad subida** | No hay caché todavía; nace con su primera lectura. **Hallazgo de F6 (reportado, sin verificar por mí): el engine Darwin de iOS usa la configuración de sesión por defecto → `NSURLCache` compartida en disco**, así que respuestas GET cacheables (la agenda) se escribirían sin cifrar y **sobreviven al logout**, que enumera `SecureStoreKey` y no la caché de URL. Es un defecto del stack de red, no sólo una feature faltante. También aquí: `isExcludedFromBackup` sobre el primer directorio de caché (ADR-0015). |
 
 ## Fase C — Identidad y sesión (T5, escalada)
 
@@ -67,13 +67,13 @@
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
 | F20 | Dependencias bajo control | 🟡 | Allowlist/denylist + lockfile construidos; falta confusión de deps y secretos en git. **Hallazgo de F4 (2026-08-21): el prefijo `androidx.` del allowlist admite cualquier grupo androidx en silencio** — `androidx.biometric` y sus 8 transitivas (incl. `appcompat:1.2.0`, de 2020) entraron sin que el gate preguntara. Estrechar el prefijo es trabajo de este slice. |
-| F21 | Integridad del binario y del runtime (Play Integrity / App Attest, root/jailbreak, sin secretos, sin debug) | 🔒 shell/backend | Enforcement solo en Release. |
+| F21 | Integridad del binario y del runtime (Play Integrity / App Attest, root/jailbreak, sin secretos, sin debug) | 🔒 shell/backend | Enforcement solo en Release. **Hallazgo de F6: no hay bloque `buildTypes` en ningún Gradle**, así que debug es debuggable por default de AGP y **ningún gate exige `isDebuggable=false` en release** — y el build debug es el que el autor sideloadea con token real para verificar en device (`run-as`/`adb pull` lo alcanzan). |
 
 ## Fase H — Lo invisible (T4)
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F22 | Logging redactado + cero telemetría fugada | 🟡 | Facade en el stack; falta el punto único y el gate anti-analytics elevado. |
+| F22 | Logging redactado + cero telemetría fugada | 🟡 | Facade en el stack; falta el punto único y el gate anti-analytics elevado. **Hallazgo de F6: `adb bugreport`** — un `Log.d` perdido en un slice futuro viaja dentro de un zip que el médico puede mandar a cualquiera, **en build de release**, y sobrevive al reboot. Hoy sin gate (detekt corre con `buildUponDefaultConfig=false` y no habilita `Println`). |
 | F23 | Canal de eventos de seguridad + kill-switch (fail-open) | 🔒 backend | Consume endpoints existentes del backend. |
 
 ## Regla de cierre de cada slice

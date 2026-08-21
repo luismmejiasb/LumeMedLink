@@ -11,8 +11,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
+import java.security.GeneralSecurityException
 import java.security.KeyStore
-import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -41,7 +42,8 @@ private const val GCM_TAG_BITS = 128
  *
  * A value that fails GCM authentication loads as `null` (fail closed: corrupt or key-invalidated
  * means no session, never a crash loop). Files live under [STORE_DIR]; backup is already off
- * app-wide (`allowBackup=false`) and S1.2 adds `dataExtractionRules`.
+ * app-wide: `allowBackup=false` plus `dataExtractionRules`, which is what actually closes the
+ * device-to-device path (F6/ADR-0015 — allowBackup alone does NOT, at targetSdk >= 31).
  */
 internal class KeystoreSecureStore(context: Context, private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) :
     SecureStore {
@@ -73,11 +75,21 @@ internal class KeystoreSecureStore(context: Context, private val ioDispatcher: C
             if (ivSize <= 0 || blob.size < 1 + ivSize) return@withLock null
             val iv = blob.copyOfRange(1, 1 + ivSize)
             val ciphertext = blob.copyOfRange(1 + ivSize, blob.size)
+            // Every failure to recover the plaintext reads as "no session", never as a crash.
+            // AEADBadTagException alone was NOT enough, and the gap was real: `obtainKey()` and
+            // `cipher.init()` sit inside this same block and throw a DIFFERENT family —
+            // KeyPermanentlyInvalidatedException (the key died with a credential change),
+            // UserNotAuthenticatedException, UnrecoverableKeyException, KeyStoreException. Those
+            // are exactly the states a lost or reset device produces, and letting them escape
+            // would turn a fail-closed read into a crash loop on launch. GeneralSecurityException
+            // is their common ancestor; IOException covers a truncated or unreadable blob.
             try {
                 val cipher = Cipher.getInstance("AES/GCM/NoPadding")
                 cipher.init(Cipher.DECRYPT_MODE, obtainKey(), GCMParameterSpec(GCM_TAG_BITS, iv))
                 cipher.doFinal(ciphertext).decodeToString()
-            } catch (_: AEADBadTagException) {
+            } catch (_: GeneralSecurityException) {
+                null
+            } catch (_: IOException) {
                 null
             }
         }
