@@ -36,6 +36,8 @@ android {
 dependencies {
     implementation(project(":composeApp"))
     implementation(libs.androidx.activity.compose)
+    // The shell hosts BiometricPrompt, which requires a FragmentActivity (F4, ADR-0011).
+    implementation(libs.androidx.fragment)
     implementation(libs.compose.runtime)
     implementation(libs.compose.ui)
 }

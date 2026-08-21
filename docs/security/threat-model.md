@@ -31,8 +31,12 @@ FLAG_SECURE / cover (§8.3), bloqueo por inactividad con biometría anclada a cl
 personal en superficies pre-auth (widgets, recientes, pantalla bloqueada).
 **Estado de fortificación** (`fortification-plan.md`): **F1 ✅ núcleo** — FLAG_SECURE app-wide
 (Android) + cover Compose (iOS, primera capa) + tapjacking, con gate `check-screen-security.sh`
-(ADR-0010, bitácora 0008). Pendientes de T2: F2 (superficies pre-auth), F4 (bloqueo por inactividad
-+ biometría; la lógica ya existe, el gate biométrico espera el shell), y el cover iOS de host.
+(ADR-0010, bitácora 0008). **F4 🟡 mecanismo completo** — bloqueo por inactividad + desbloqueo
+biométrico **anclado a material de clave, jamás un booleano** (ADR-0011): EC en Keystore firmando
+un reto (Android), Keychain `.biometryCurrentSet` (iOS), la clave destruida si cambia el
+enrolamiento; gate `check-biometric-contract.sh` con 8 cebos y 4 tests instrumentados verdes en
+Android real (bitácora 0010). Pendientes de T2: F2 (superficies pre-auth), el end-to-end de F4
+(espera el login) y el cover iOS de host.
 
 ### T3 · Persistencia posterior
 Datos que sobreviven al logout, al cambio de usuario o a la desinstalación. **Controles**: logout =

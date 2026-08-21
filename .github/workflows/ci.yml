@@ -40,6 +40,8 @@ jobs:
         run: Scripts/check-dependency-allowlist.sh
       - name: Gate — screen-capture protection (F1, ADR-0010)
         run: Scripts/check-screen-security.sh
+      - name: Gate — tier-2 biometric contract (F4, ADR-0005/0011)
+        run: Scripts/check-biometric-contract.sh
 
   build:
     needs: gates
