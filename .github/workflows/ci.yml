@@ -44,6 +44,8 @@ jobs:
         run: Scripts/check-biometric-contract.sh
       - name: Gate — pre-auth surfaces (F2, ADR-0012)
         run: Scripts/check-preauth-surfaces.sh
+      - name: Gate — clipboard and keyboard (F3, ADR-0013)
+        run: Scripts/check-input-surfaces.sh
 
   build:
     needs: gates

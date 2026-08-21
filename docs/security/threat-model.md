@@ -52,6 +52,7 @@ Backup, sincronización, indexación, teclados, portapapeles, crash reporting. *
 crash/analytics (§8.1 — con Identity Platform, Crashlytics está a una línea y el freno es
 constitucional); portapapeles sin datos personales (§8.9); en Android el teclado de terceros **no se
 puede vetar** y la mitigación parcial se declara (§8.10) en vez de fingir la paridad con iOS.
+**Estado de fortificación: F3 ✅** — la app no ofrece copiar (gate sobre clipboard y `SelectionContainer`) y toda entrada sensible pasa por `core/input/SensitiveTextField`, con endurecimiento por propósito; las dos asimetrías (clip sin expiración en Android, IME invetable en Android) quedan declaradas, no maquilladas (ADR-0013, bitácora 0013). Pendientes de T4: F6, F8, F22.
 
 ### T5 · Atacante en red / backend comprometido
 **Controles**: HTTPS-only fail-closed, TLS ≥ 1.2, cleartext negado también en el manifiesto Android,
