@@ -13,6 +13,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -237,5 +238,100 @@ class LumeHttpStackTest {
         assertEquals(2, rids.size)
         assertTrue(rids.none { it.isNullOrBlank() })
         assertTrue(rids[0] != rids[1], "rids are per logical request")
+    }
+}
+
+// ── Origin pinning, transport mapping and log volume (ADR-0016) ──────────────────────────────────
+// These three properties were absent until an adversarial review of the stack found them missing,
+// each with a working exploit or a false document. All data below is synthetic (§9).
+
+class LumeHttpStackOriginTest {
+
+    @Test
+    fun aProtocolRelativePathIsNotARelativePath() = runTest {
+        // The exploit, exactly as it was demonstrated: "//evil.test/steal" reads like a path,
+        // defaultRequest supplies https, and before the origin check the request left for another
+        // host WITH the bearer token attached — while the log recorded only "GET /steal".
+        val engine = MockEngine { respond("ok") }
+        val provider = FakeTokenProvider("tok-secret-abc123")
+        val sink = RecordingLogSink()
+        val client = lumeHttpClient(BASE_URL, engine, sink, provider)
+
+        assertFailsWith<IllegalStateException> { client.get("//evil.test/steal") }
+
+        assertTrue(engine.requestHistory.isEmpty(), "the request must never reach the engine")
+    }
+
+    @Test
+    fun anAbsoluteUrlToAnotherHostIsRefused() = runTest {
+        val engine = MockEngine { respond("ok") }
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), FakeTokenProvider("tok-secret"))
+
+        assertFailsWith<IllegalStateException> { client.get("https://evil.test/x") }
+        assertTrue(engine.requestHistory.isEmpty())
+    }
+
+    @Test
+    fun theSameHostOnAnotherPortIsAnotherOrigin() = runTest {
+        val engine = MockEngine { respond("ok") }
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+
+        assertFailsWith<IllegalStateException> { client.get("https://api.test.lume:8443/x") }
+        assertTrue(engine.requestHistory.isEmpty())
+    }
+
+    @Test
+    fun theRefusalMessageNamesNoHost() = runTest {
+        val engine = MockEngine { respond("ok") }
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+
+        val message = assertFailsWith<IllegalStateException> { client.get("https://evil.test/x") }.message.orEmpty()
+
+        // An error string is a side channel too, and this one is read by whoever triggered it.
+        assertFalse(message.contains("evil.test"))
+    }
+
+    @Test
+    fun ordinaryRelativePathsStillWork() = runTest {
+        val engine = MockEngine { respond("ok") }
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+
+        client.get("/v1/me")
+
+        assertEquals(1, engine.requestHistory.size, "hardening must not break the normal path")
+    }
+
+    @Test
+    fun aTransportFailureCarriesNoUrlAndNoQuery() = runTest {
+        // Ktor's own message for a timeout is "…[url=https://…/patients/11111111-1?rut=…]" — the
+        // full URL with its query, which a generic catch or a crash reporter would receive.
+        val leaky = "https://api.test.lume/v1/patients/11111111-1?rut=11111111-1&name=Sintetica"
+        val engine = MockEngine { throw IOException("connect failed for $leaky") }
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+
+        val thrown = assertFailsWith<AppErrorException> {
+            client.get("/v1/patients/11111111-1?rut=11111111-1&name=Sintetica")
+        }
+
+        assertIs<AppError.Retryable>(thrown.error)
+        assertFalse(thrown.message.contains("11111111"), "no identifier in the message")
+        assertFalse(thrown.message.contains("rut"), "no query key in the message")
+        assertFalse(thrown.message.contains("api.test.lume"), "no host in the message")
+        assertNull(thrown.cause, "the cause chain carries the same URL and is dropped too")
+    }
+
+    @Test
+    fun everyRetryAttemptIsLogged() = runTest {
+        // Pins the REAL behaviour. Two documents claimed only the final response was logged; the
+        // stack logged all three. The number is what a reader budgets log volume against, so it is
+        // now asserted rather than described.
+        val engine = MockEngine { respond("", HttpStatusCode.InternalServerError) }
+        val sink = RecordingLogSink()
+        val client = lumeHttpClient(BASE_URL, engine, sink)
+
+        assertFailsWith<AppErrorException> { client.get("/v1/agenda") }
+
+        assertEquals(3, sink.entries.size, "1 call + 2 bounded retries, each logged")
+        assertEquals(1, sink.entries.map { it.rid }.toSet().size, "retries share the logical rid")
     }
 }

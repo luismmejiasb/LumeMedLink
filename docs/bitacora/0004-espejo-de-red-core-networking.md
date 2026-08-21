@@ -49,7 +49,7 @@ iOS del target).
 
 - Las **excepciones de transporte** (timeout, IO) salen crudas del stack — sólo los status HTTP
   mapean a `AppError`. Se envuelven cuando el primer use case las necesite tipadas (YAGNI hoy).
-- El log registra **la respuesta final** de una llamada reintentada, no cada intento.
+- ~~El log registra **la respuesta final** de una llamada reintentada, no cada intento.~~ **FALSO, corregido el 2026-08-21 (F12/ADR-0016): registra CADA intento** — medido, tres entradas para un GET reintentado dos veces. Se conserva ese comportamiento (es el más útil) y ahora un test fija el número, que es contra lo que un lector presupuesta volumen de log y superficie de datos.
 - `networkSecurityConfig` (Android) y la verificación ATS en device son de **S1.2**, como el
   WORKPLAN ya decía.
 - El nombre del header de correlación (`X-Lume-Request-Id`) es decisión local: si el contrato

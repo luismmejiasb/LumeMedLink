@@ -62,7 +62,13 @@ style:
   # inside core/ the constitution + ADR review are the gate. Everywhere else these are defects.
   ForbiddenImport:
     active: true
-    excludes: ['**/core/**']
+    # ANCHORED to the real tree, not to any directory called `core`. The glob used to be
+    # `**/core/**`, which matches at ANY depth — so creating `features/<area>/core/` silently
+    # disabled this whole gate for those files. Verified with a bait pair: the same detekt run
+    # flagged `features/agenda/PlainFeature.kt` and said nothing about
+    # `features/agenda/core/SneakyCore.kt`, which imported both Ktor and OkHttp.
+    # Scripts/check-feature-isolation.sh now also refuses a stray `core` directory.
+    excludes: ['**/lumemedlink/core/**']
     imports:
       # no_raw_networking (§7, ADR-0004): no HTTP client outside the stack.
       - value: 'okhttp3.*'
@@ -71,6 +77,25 @@ style:
         reason: 'Raw HTTP client. All traffic goes through the hardened stack (ADR-0004).'
       - value: 'io.ktor.*'
         reason: 'Ktor is an implementation detail of core/networking. Features talk to its interfaces (ADR-0004).'
+      # The named holes an adversarial review found in this list (F12, ADR-0016): every one of
+      # these opens a socket that never passes the hardened stack — no https-only check, no
+      # redacted log, no bounded retry, and on Android not even the app's TLS trust decisions.
+      - value: 'java.net.URL'
+        reason: 'openConnection() is a raw HTTP client in disguise. All traffic goes through the stack (ADR-0004).'
+      - value: 'java.net.Socket'
+        reason: 'A raw socket bypasses TLS policy entirely (ADR-0004).'
+      - value: 'javax.net.ssl.*'
+        reason: 'TLS is configured once, inside core/networking. A second trust decision is how a bypass is built.'
+      - value: 'android.webkit.*'
+        reason: 'A WebView has its own network stack, its own cookie jar and its own cache (ADR-0004, §8.5).'
+      - value: 'android.app.DownloadManager'
+        reason: 'It fetches outside the stack and writes to shared storage (ADR-0004, §8.5).'
+      - value: 'platform.Foundation.NSURLSession'
+        reason: 'The iOS raw networking surface. Traffic goes through core/networking (ADR-0004).'
+      - value: 'platform.Foundation.NSURLConnection'
+        reason: 'The iOS raw networking surface, deprecated at that (ADR-0004).'
+      - value: 'platform.WebKit.*'
+        reason: 'WKWebView carries its own network stack and cache (ADR-0004, §8.5).'
       # secrets_gate (§8.4, ADR-0005): plain-file storage APIs stay out of reach of features.
       - value: 'android.content.SharedPreferences'
         reason: 'Plain-file storage. Secrets live in Keystore/Keychain; anything else needs a core/ seam (ADR-0005).'

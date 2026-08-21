@@ -215,8 +215,14 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 - **Cero salida de red fuera del stack**: ni `HttpURLConnection`, ni OkHttp suelto, ni `URLSession`
   en el lado iOS. Imágenes remotas (la foto de perfil): los bytes pasan por el stack, la vista recibe
   el bitmap — espejo del §7 de LumeMed y por la misma razón.
-- **Android además lo declara al sistema**: `networkSecurityConfig` sin cleartext (el default desde
-  API 28 se fija explícito — un default no es una decisión). iOS: ATS sin excepciones.
+- **Android además lo declara al sistema** (aterrizado en F12/ADR-0016, y hasta entonces esta línea
+  afirmaba un control que **no existía**): `networkSecurityConfig` con cleartext negado **y anclas de
+  confianza sólo del sistema** — sin CAs del usuario, así que una CA de MDM o de malware no
+  intercepta este tráfico. Se declara explícito porque en API 26/27 el default se **invierte** a
+  permitido, y porque un default no es una decisión. Más `usesCleartextTraffic="false"` y la
+  allowlist de permisos sobre el manifiesto **fusionado** (las dependencias inyectan permisos: hoy
+  `INTERNET` lo trae okhttp-android y `USE_FINGERPRINT` androidx.biometric). iOS: ATS sin
+  excepciones — **sin verificar, no hay host**.
 - Pinning: **diferido, decisión de ESTE repo** (ADR-0004). No se atribuye a LumeMed: su constitución
   lo exige vía el seam de su kit, y lo que existe allá es un candidato de auditoría sin resolver. La
   razón propia: ataca **sólo T5** del modelo de amenaza —el nivel menos probable de este perfil; contra T6 no defiende nada— y convierte cada rotación de

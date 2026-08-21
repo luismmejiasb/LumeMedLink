@@ -1,14 +1,59 @@
 package com.luismejias.lumemedlink.core.networking
 
+/** A route word: lowercase letters and hyphens only. Anything else is treated as an identifier. */
+private val SAFE_SEGMENT = Regex("^[a-z][a-z-]*$")
+
+/** A version segment (`v1`, `v2`) — the one digit-bearing segment that is not an identifier. */
+private val VERSION_SEGMENT = Regex("^v\\d+$")
+
+/** Stand-in written in place of anything that could identify a person or a record. */
+private const val REDACTED_SEGMENT = "{id}"
+
 /**
- * One network log line, redacted BY TYPE: these four fields are everything the stack is able to
- * log — no headers, no body, no query (§8.1). [path] is the encoded path only; the stack strips
- * the query before constructing the entry, and the test asserts it on captured output.
+ * Replaces every path segment that is not a plain route word with [REDACTED_SEGMENT].
  *
- * Format mirror of LumeMed's log line: `GET /v1/agenda status=200 rid=…`.
+ * This exists because the first version of this file redacted the QUERY and kept the whole PATH,
+ * which reads as careful and is not: this app's own routes put the identifier IN the path —
+ * `/v1/orgs/{tenantId}/patients/{patientId}/appointments` is the shape the backend already
+ * publishes. Logging that raw would write a patient identifier to every log line, which is exactly
+ * the §8.1 leak the redacting sink was built to prevent.
+ *
+ * It is an ALLOWLIST, not a denylist, and that direction is deliberate: an unrecognised segment is
+ * redacted rather than kept. A future route word that happens to contain a digit will show up as
+ * `{id}` — mildly annoying and safe — instead of a new identifier shape slipping through because
+ * nobody added it to a list of things to hide.
  */
-internal data class NetworkLogEntry(val method: String, val path: String, val status: Int?, val rid: String) {
+internal fun redactPath(rawPath: String): String = rawPath.split("/").joinToString("/") { segment ->
+    when {
+        segment.isEmpty() -> segment
+        SAFE_SEGMENT.matches(segment) -> segment
+        VERSION_SEGMENT.matches(segment) -> segment
+        else -> REDACTED_SEGMENT
+    }
+}
+
+/**
+ * One network log line, redacted BY CONSTRUCTION: these four fields are everything the stack is
+ * able to log — no headers, no body, no query (§8.1) — and the path is passed through [redactPath]
+ * on the way in.
+ *
+ * The constructor is private and [of] is the only way to build one, so a caller cannot hand this
+ * type a raw path even by accident. Format mirror of LumeMed's log line:
+ * `GET /v1/orgs/{id}/patients/{id}/appointments status=200 rid=…`.
+ */
+internal class NetworkLogEntry private constructor(
+    val method: String,
+    val path: String,
+    val status: Int?,
+    val rid: String,
+) {
     override fun toString(): String = "$method $path status=${status ?: "-"} rid=$rid"
+
+    companion object {
+        /** [rawPath] must be the encoded path WITHOUT the query; the stack strips that separately. */
+        fun of(method: String, rawPath: String, status: Int?, rid: String): NetworkLogEntry =
+            NetworkLogEntry(method, redactPath(rawPath), status, rid)
+    }
 }
 
 /**

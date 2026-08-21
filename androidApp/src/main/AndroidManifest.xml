@@ -7,10 +7,19 @@
          extracted this package's data while the cloud transport refused it. dataExtractionRules is
          what closes that path. Neither line may be removed without reopening ADR-0015.
          FLAG_SECURE landed in F1 (ADR-0010, set in MainActivity). -->
+    <!-- INTERNET is declared HERE on purpose, even though it already arrives by manifest merge
+         from okhttp-android (verified in the merge blame report). A permission that reaches the
+         shipped app because a transitive dependency asked for it is a permission nobody decided;
+         writing it down turns it into one. See Scripts/check-network-posture.sh, which fails on any
+         permission in the MERGED manifest that is not on the allowlist (F12, ADR-0016). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="LumeMedLink"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.LumeMedLink">
         <activity

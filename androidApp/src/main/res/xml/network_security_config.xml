@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network security posture (F12, ADR-0016).
+
+  Two things this declares that the platform would otherwise decide for us — and "a default is not
+  a decision" is the whole reason the file exists:
+
+  1. cleartextTrafficPermitted="false". targetSdk 36 already denies cleartext, but the platform
+     default is computed from the OS version's own rules, and on API 26/27 devices — which minSdk
+     26 puts in our install base — the default inverts to PERMITTED. Declaring it makes the posture
+     the same sentence on every device the app can run on.
+
+  2. trust-anchors: system certificates ONLY. No <certificates src="user" />. A CA installed by an
+     employer's MDM, by malware, or by a curious user cannot intercept this app's TLS.
+
+  NO <debug-overrides> ON PURPOSE, and the cost is real: nobody can inspect this app's traffic with
+  Charles, mitmproxy or Burp on ANY build, because a proxy's CA lands in the user store and the
+  user store is not trusted here. That is the correct trade for an app whose traffic is a patient
+  agenda. If the author ever wants proxy debugging, adding <debug-overrides> is a deliberate change
+  to this file with its own note — not something a slice does in passing.
+
+  Careful: a file named network_security_config_debug.xml next to this one would be auto-discovered
+  and applied in debuggable builds. Scripts/check-network-posture.sh refuses its existence.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

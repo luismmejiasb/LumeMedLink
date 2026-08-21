@@ -76,6 +76,16 @@ if [ -n "$hits" ]; then
          "Platform seams live in core/ only (ADR-0008)." "$hits"
 fi
 
+# ── I5 · no stray `core` directory ──────────────────────────────────────────────────────────────
+# detekt's ForbiddenImport exempts core/ — the infrastructure edge. A directory named `core`
+# anywhere else inherits that exemption and turns off the raw-networking and secrets gates for
+# whatever is inside it. Only the canonical path may carry the name.
+stray=$(find "$KOTLIN_ROOT" -type d -name core 2>/dev/null | grep -v "kotlin/com/luismejias/lumemedlink/core$" || true)
+if [ -n "$stray" ]; then
+    fail "I5 a directory named 'core' outside the canonical tree" \
+         "It inherits detekt's core/ exemption, silently disabling no_raw_networking and secrets_gate there." "$stray"
+fi
+
 # ── I4 · nobody imports app/ ────────────────────────────────────────────────────────────────────
 hits=$(grep -rnE "^import ${PKG}\.app\." "$KOTLIN_ROOT" 2>/dev/null | grep -vE '/(app)/' || true)
 if [ -n "$hits" ]; then

@@ -61,7 +61,8 @@ Cerrado con `dataExtractionRules` (9 dominios × 2 secciones), gate + verificaci
 de cada pantalla incondicionalmente, y FLAG_SECURE no la toca)** — la app no ofrece copiar (gate sobre clipboard y `SelectionContainer`) y toda entrada sensible pasa por `core/input/SensitiveTextField`, con endurecimiento por propósito; las dos asimetrías (clip sin expiración en Android, IME invetable en Android) quedan declaradas, no maquilladas (ADR-0013, bitácora 0013). Pendientes de T4: F6, F8, F22.
 
 ### T5 · Atacante en red / backend comprometido
-**Controles**: HTTPS-only fail-closed, TLS ≥ 1.2, cleartext negado también en el manifiesto Android,
+**Controles**: HTTPS-only fail-closed, TLS ≥ 1.2, cleartext negado en el manifiesto Android **y anclas de
+confianza sólo del sistema** (F12/ADR-0016 — hasta entonces esta línea afirmaba un control inexistente),
 scope de token estrecho (ADR-0003: el token de esta app jamás concede lecturas clínicas — el daño de
 un token robado aquí queda acotado por diseño). Pinning diferido con su trade-off declarado
 (ADR-0004) — **decisión propia de este repo**; LumeMed no tiene una decisión de diferirlo que heredar.
@@ -70,7 +71,7 @@ un token robado aquí queda acotado por diseño). Pinning diferido con su trade-
 **Controles**: App Links/universal links verificados con identificadores opacos (§8.12); Play
 Integrity / App Attest server-side (§8.11); sin custom schemes; sin IPC expuesto sin permiso.
 
-## Las tres asimetrías de plataforma que un auditor debe saber
+## Las CUATRO asimetrías de plataforma que un auditor debe saber
 
 1. **Android bloquea screenshots; iOS no.** `FLAG_SECURE` es regla dura en Android. En iOS aplica la
    doctrina de LumeMed ADR-0023/0028: cover de privacidad, jamás un blackout fingido.
@@ -78,3 +79,9 @@ Integrity / App Attest server-side (§8.11); sin custom schemes; sin IPC expuest
    instalación es un control de un solo lado (ADR-0005).
 3. **iOS veta teclados de terceros app-wide; Android no puede.** La mitigación Android es por campo y
    parcial, y se declara como tal.
+4. **iOS confía en las CAs raíz que instala el usuario; Android no.** *(Añadida 2026-08-21 por F12.)*
+   Es la asimetría que más duele en T5: en Android el `networkSecurityConfig` ancla la confianza al
+   almacén del sistema, así que una CA de un MDM, de un proxy corporativo o de malware **no**
+   intercepta este tráfico. En iOS un perfil de configuración con una CA sí puede, y **lo único que
+   lo cerraría es el pinning**, que ADR-0004 difirió. Mientras el pinning siga diferido, el lado iOS
+   de esta app es interceptable por quien controle el dispositivo.

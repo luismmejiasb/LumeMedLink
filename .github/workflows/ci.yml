@@ -48,6 +48,8 @@ jobs:
         run: Scripts/check-input-surfaces.sh
       - name: Gate — backup and transfer posture (F6, ADR-0015)
         run: Scripts/check-backup-posture.sh
+      - name: Gate — network transport posture (F12, ADR-0016)
+        run: Scripts/check-network-posture.sh
 
   build:
     needs: gates

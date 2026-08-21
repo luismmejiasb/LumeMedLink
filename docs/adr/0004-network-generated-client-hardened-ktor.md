@@ -22,8 +22,11 @@ Kotlin; the doctrine can.
   beat.
 - **Zero egress outside the stack**: no raw OkHttp/HttpURLConnection/NSURLSession, no third-party
   image loaders fetching on their own — profile photo bytes ride the stack, views receive bitmaps.
-- Declared to the OS as well: Android `networkSecurityConfig` with cleartext off explicitly; iOS ATS
-  with no exceptions.
+- Declared to the OS as well: Android `networkSecurityConfig` with cleartext off explicitly and
+  system-only trust anchors; iOS ATS with no exceptions. **Corrected 2026-08-21 (ADR-0016): this
+  bullet described a control that did not exist — no `networkSecurityConfig` and no
+  `usesCleartextTraffic` were declared anywhere until F12 landed them.** The iOS half is still
+  unverified: there is no iOS host to carry an Info.plist.
 - **Pinning deferred — this repo's own decision, not an inherited one.** LumeMed's constitution
   mandates pinning through its kit's seam; what exists there besides the mandate is an unresolved
   audit candidate, not a deferral decision. The reasoning here stands on its own: pinning defends

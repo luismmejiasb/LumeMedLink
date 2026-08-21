@@ -43,8 +43,8 @@
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F12 | Stack de red endurecido, verificado + cleartext negado en el sistema | 🟡 | Stack construido; falta `networkSecurityConfig`/ATS y su verificación. |
-| F13 | Nada sensible en URLs; pinning re-evaluado | ⬜ | Gate anti-datos-en-URL; decisión de pinning documentada. |
+| F12 | Stack de red endurecido + cleartext negado en el sistema | ✅ 2026-08-21 | **Dos defectos vivos cerrados**: (1) la caché de NSURLSession escribía **el bearer token y el cuerpo** a disco en claro, sobreviviendo al logout; (2) el log «redactado» conservaba el path, donde van los ids de paciente — ahora redacción **por construcción** (constructor privado + allowlist de segmentos). Android declara al sistema: cleartext negado **y anclas de confianza sólo del sistema** (cierra el MITM por CA de MDM/malware). Gate `check-network-posture.sh` sobre el manifiesto **FUSIONADO** (7 cebos) — el único que ve lo que inyectan las dependencias. `ForbiddenImport` ampliado con los agujeros nombrados. **Tres afirmaciones falsas corregidas** y cuarta asimetría añadida al threat model. **El stack sigue sin abrir un socket real.** ADR-0016, bitácora 0017. |
+| F13 | Nada sensible en URLs; pinning re-evaluado | ⬜ **prioridad subida** | **F12 le dio urgencia al pinning**: iOS confía en CAs del usuario (4ª asimetría), así que mientras el pinning siga diferido el lado iOS es interceptable por quien controle el dispositivo. Además: ambos engines honran el proxy del sistema en silencio. | Gate anti-datos-en-URL; decisión de pinning documentada. |
 
 ## Fase E — Contrato y autorización (T5, frontera)
 
