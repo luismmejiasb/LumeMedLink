@@ -71,7 +71,7 @@ un token robado aquí queda acotado por diseño). Pinning diferido con su trade-
 **Controles**: App Links/universal links verificados con identificadores opacos (§8.12); Play
 Integrity / App Attest server-side (§8.11); sin custom schemes; sin IPC expuesto sin permiso.
 
-## Las CUATRO asimetrías de plataforma que un auditor debe saber
+## Las CINCO asimetrías de plataforma que un auditor debe saber
 
 1. **Android bloquea screenshots; iOS no.** `FLAG_SECURE` es regla dura en Android. En iOS aplica la
    doctrina de LumeMed ADR-0023/0028: cover de privacidad, jamás un blackout fingido.
@@ -85,3 +85,8 @@ Integrity / App Attest server-side (§8.11); sin custom schemes; sin IPC expuest
    intercepta este tráfico. En iOS un perfil de configuración con una CA sí puede, y **lo único que
    lo cerraría es el pinning**, que ADR-0004 difirió. Mientras el pinning siga diferido, el lado iOS
    de esta app es interceptable por quien controle el dispositivo.
+5. **Apple exige Certificate Transparency a nivel de plataforma; Android no.** *(Añadida
+   2026-08-21 por F13. **REPORTADO por la investigación, NO verificado por esta sesión** — se
+   registra con esa marca, no como hecho.)* Corre al revés que las otras cuatro: contra un atacante
+   que consigue un certificado mal emitido por una CA pública **y escala**, Android sería el lado
+   débil. Ninguna de las dos asimetrías de TLS se cierra sin pinning (ADR-0017).

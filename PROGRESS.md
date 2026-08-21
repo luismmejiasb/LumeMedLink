@@ -25,6 +25,7 @@
   el push en Android es estructuralmente imposible.** El de iOS (APNs) no tiene colisión, así que un
   slice de push podría salir sólo en iOS. Ver ADR-0012 y bitácora 0011.
 - **¿La dirección entra en la frontera de datos?** *(nueva — 2026-08-21, choque detectado al leer `ADR-0035` del backend)*. Nuestra lista cerrada del §1.0 es «nombre, foto, teléfono (E.164), correo, previsión» — **la dirección NO está**. El tier de paciente que el backend aceptó deja al paciente editar «foto, correo, teléfono y dirección». Si esta app es esa superficie, o no ofrece dirección, o **ADR-0001 se enmienda con su propio ADR** (§0: extender la lista lo exige). No se resuelve de pasada dentro de un slice de perfil.
+- **¿Se reabre la decisión de pinning?** *(nueva — 2026-08-21, F13/ADR-0017)*. ADR-0004 lo difirió porque «ataca sólo T5, el nivel menos probable». **Esa premisa ya no calza**: F12 estableció que iOS confía en las CAs que instala el usuario, así que en iOS es un problema de T1/T2 — los niveles que esta app pone primero. Pero **pinning hoy es imposible**: no hay certificado de producción ni host iOS donde ponerlo. Hay una opción intermedia (iOS puede distinguir ancla de sistema de CA de usuario) que cerraría la asimetría sin costo de rotación, con evidencia **de simulador y sin verificar**. Yo no lo decido: ver ADR-0017 Parte 2 con las cuatro recomendaciones.
 - Nombre público de las tiendas (junto con el de LumeMed).
 
 Resueltas: la fila en `ECOSYSTEM-STATUS.md` — autorizada por el autor y agregada el 2026-08-20

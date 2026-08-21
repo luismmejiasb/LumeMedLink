@@ -50,6 +50,8 @@ jobs:
         run: Scripts/check-backup-posture.sh
       - name: Gate — network transport posture (F12, ADR-0016)
         run: Scripts/check-network-posture.sh
+      - name: Gate — URL hygiene (F13, ADR-0017)
+        run: Scripts/check-url-hygiene.sh
 
   build:
     needs: gates
