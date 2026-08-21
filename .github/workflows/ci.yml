@@ -9,6 +9,12 @@
 # Cost layout for when it returns: the `gates` job runs on ubuntu (1x billing, seconds); only the
 # `build` job needs macOS (Xcode toolchain for the iOS target, arm64 matches iosSimulatorArm64),
 # and it only starts if the cheap gates already passed.
+#
+# Xcode requirement, learned from run #2 (17m36s of macOS burned to a link error): Compose
+# Multiplatform 1.11.1 references iOS 26 SDK symbols (UIViewLayoutRegion, framework UIUtilities),
+# so linking the simulator TEST binary dies on Xcode 16.x. The author's machine links green on
+# Xcode 26.6 — the runner must match the SDK major, hence macos-26 plus an explicit selection
+# step that fails loudly instead of linking 15 minutes toward an undefined symbol.
 name: CI
 
 on:
@@ -35,9 +41,21 @@ jobs:
 
   build:
     needs: gates
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
+
+      # Fail in seconds, not after 15 minutes of compilation: CMP 1.11.1 needs the iOS 26 SDK.
+      - name: Select Xcode 26
+        run: |
+          XCODE_26=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE_26" ]; then
+            echo "::error::No Xcode 26.x on this runner image — CMP 1.11.1 links against iOS 26 SDK symbols (see run #2)."
+            ls -d /Applications/Xcode*.app || true
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE_26"
+          xcodebuild -version
 
       # Same JDK the build pins via jvmToolchain; setup-java just makes it present on the runner.
       - uses: actions/setup-java@v4
