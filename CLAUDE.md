@@ -156,8 +156,8 @@ Espejo del §3 de LumeMed, en Kotlin:
   por constructor. Un ViewModel conoce el protocolo del repositorio, no el concreto.
 - **`object` es un namespace, no un contenedor de estado.** Un `object` con `var`, un
   `companion object` mutable o un top-level `var` son el singleton que el §0 prohíbe. Kotlin hace
-  este error idiomático — por eso la regla se escribe, y por eso lleva gate (§9, cuando exista
-  detekt: hasta entonces **[manual]**).
+  este error idiomático — por eso la regla se escribe, y por eso lleva gate (§9; detekt ya corre,
+  pero esta regla exige una custom compilada que no existe: sigue **[manual]**, deuda declarada).
 - **Feature-scoping**: los tipos de una feature son `internal` a lo sumo y no se importan desde otra
   área; la comunicación entre áreas pasa por `Core/`.
 
@@ -230,9 +230,9 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 1. **Datos personales jamás en canales laterales.** Ni en logs (facade redactor, único punto de
    logging), ni en nombres de archivo, ni en analytics. **Default-deny de SDKs de crash/analytics** —
    idéntico al §8.1 de LumeMed y más urgente aquí: con el IdP en Identity Platform, Firebase
-   Analytics/Crashlytics está «a una línea» en Android. El freno HOY es este párrafo — el allowlist
-   de dependencias que lo vuelve gate llega en S0.2 y hasta entonces esta regla es **[manual]**, como
-   todas (§9).
+   Analytics/Crashlytics está «a una línea» en Android. Desde S0.2 el freno es doble y con gate:
+   `check-dependency-allowlist.sh` (denylist nombrado: Firebase, GMS, Sentry, Bugsnag, ACRA) +
+   `ForbiddenImport` — ambos vistos rojos con cebo (§9).
 2. **AuthN vía Identity Platform.** Médicos: su misma cuenta, MFA TOTP obligatoria. Pacientes: la
    política la fija la ADR del backend que aún no existe (ADR-0006) — esta constitución sólo fija el
    piso: jamás auth casera, tokens de acceso cortos, refresh con rotación.
@@ -308,11 +308,17 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 - **Datos sintéticos siempre**; un dato real en un test es un incidente.
 - Obligatorios por feature que toque datos personales: no-se-loggea test, no-sobrevive-al-logout
   test, authz por rol.
-- **Gates**: detekt + ktlint + reglas custom espejo (`no_raw_networking`, `secrets_gate`,
-  `no_hardcoded_style`, `no_globalscope`, `no_mutable_object`) + allowlist de dependencias + CI que
-  compila ambos targets. **Nada de esto existe todavía** — se construye en S0, y hasta entonces cada
-  regla de esta constitución es **[manual]** y así se marca. «Una regla sin gate se cae sola» (LumeMed
-  §9) es la lección fundante de la familia; fingir gates sería peor que no tenerlos.
+- **Gates** (aterrizados en S0.2, **cada uno visto rojo con archivo-cebo antes de confiar en su
+  verde** — bitácora 0003): detekt + ktlint pinneados, daemon JVM 17 pinneado
+  (`gradle/gradle-daemon-jvm.properties`); `no_raw_networking` y `secrets_gate` (mitad import) en
+  detekt `ForbiddenImport` con `core/` como única excepción; `no_globalscope` doble
+  (`GlobalCoroutineUsage` + grep total); en `Scripts/`: `check-feature-isolation.sh` (ADR-0008),
+  `check-forbidden-patterns.sh` (`no_document_delivery`, storage plano fuera de `core/`) y
+  `check-dependency-allowlist.sh` (lockfiles contra allowlist, denylist nombrado primero). **Siguen
+  [manual]**: `no_mutable_object` y `no_hardcoded_style` — exigen regla detekt compilada / design
+  system (S0.3); deuda declarada en el yml, no fingida. CI corre gates y compila ambos targets —
+  **escrito y jamás corrido: no hay push**. «Una regla sin gate se cae sola» (LumeMed §9) es la
+  lección fundante de la familia; fingir gates sería peor que no tenerlos.
 
 ## 10. Documentación
 
@@ -343,19 +349,26 @@ stack + tests (incluidos los de datos del §9) + **checklist de datos personales
 cifrada y sin backup · pantalla (FLAG_SECURE / cover) · portapapeles · notificaciones sin contenido ·
 logout wipe · bloqueo de sesión. Un slice no pasa si alguno aplica y falta.
 
-## 13. Anti-patrones (rechazo inmediato — todo [manual] hasta que existan los gates)
+## 13. Anti-patrones (rechazo inmediato — [lint] donde el gate de S0.2 aterrizó, [manual] el resto)
 
 - Contenido clínico en cualquier superficie de esta app — **la violación de frontera; no es un bug,
-  es otro producto**.
-- Un documento clínico mostrado o transportado (ADR-0007 / T1).
-- Payload de push con datos personales o clínicos.
+  es otro producto**. **[manual]** — ningún lint entiende semántica.
+- Un documento clínico mostrado o transportado (ADR-0007 / T1). **[lint:
+  `check-forbidden-patterns` P2]** — share sheets/exporters; la semántica sigue siendo manual.
+- Payload de push con datos personales o clínicos. **[manual]** — no existe push todavía.
 - Secreto fuera de Keychain/Keystore; dato personal en disco sin cifrar o dentro del backup.
-- `object`/`companion` con estado mutable; `GlobalScope`; dispatcher hardcodeado.
-- Cliente HTTP fuera del stack; DTO tejido a mano contra el contrato.
-- Estilo hardcodeado; componente duplicado en vez de promovido al designkit.
-- Pantalla con datos personales sin `FLAG_SECURE` (Android) / fuera del cover (iOS).
-- Un dato real de persona en un test.
-- Dependencia nueva sin ADR; warning tolerado.
+  **[lint parcial: `ForbiddenImport` + P3 cazan storage plano fuera de `core/`; el resto manual.]**
+- `object`/`companion` con estado mutable **[manual]**; `GlobalScope` **[lint: detekt + P1]**;
+  dispatcher hardcodeado **[manual]**.
+- Cliente HTTP fuera del stack **[lint: `ForbiddenImport` + allowlist]**; DTO tejido a mano contra
+  el contrato **[manual]**.
+- Estilo hardcodeado; componente duplicado en vez de promovido al designkit. **[manual — espera
+  S0.3.]**
+- Pantalla con datos personales sin `FLAG_SECURE` (Android) / fuera del cover (iOS). **[manual —
+  S1.2.]**
+- Un dato real de persona en un test. **[manual]**
+- Dependencia nueva sin ADR **[lint: `check-dependency-allowlist`]**; warning tolerado **[lint:
+  `allWarningsAsErrors`]**.
 
 ## 14. LumeBrain
 

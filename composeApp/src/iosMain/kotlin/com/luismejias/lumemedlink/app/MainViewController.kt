@@ -9,4 +9,7 @@ import platform.UIKit.UIViewController
  * not a platform capability (ADR-0008 keeps expect/actual seams in `core/`; this is neither —
  * it is the platform's entry point).
  */
+// PascalCase kept on purpose: this is the name Xcode consumes (`MainViewControllerKt`), and the
+// Compose Multiplatform convention for the iOS entry point.
+@Suppress("ktlint:standard:function-naming")
 public fun MainViewController(): UIViewController = ComposeUIViewController { App() }

@@ -1,0 +1,92 @@
+# detekt — LumeMedLink
+#
+# `buildUponDefaultConfig = false` on purpose: this is NOT a general style linter. Formatting is
+# ktlint's job (.editorconfig); the ADR-0008 tree contract is Scripts/check-feature-isolation.sh's;
+# the content gates that need to see CALL SITES are Scripts/check-forbidden-patterns.sh's. What
+# lives here is the small subset of detekt's own built-in rules that carry constitution weight and
+# work SYNTACTICALLY.
+#
+# Deliberately absent, stated so nobody assumes coverage (§9 — a gate is never faked):
+# - ForbiddenMethodCall: requires type resolution, and the plain `detekt` task this repo runs
+#   never resolves types — the rule would stay green forever, a dead gate. Call-shaped bans
+#   (getSharedPreferences, share sheets) live in Scripts/check-forbidden-patterns.sh instead.
+# - no_mutable_object / no_hardcoded_style: need a compiled custom rule set (detekt takes custom
+#   rules as Kotlin classes, not YAML). Still [manual] in CLAUDE.md §13 — declared debt, not faked.
+
+build:
+  maxIssues: 0
+
+coroutines:
+  active: true
+  # no_globalscope, first line of defense. Verified against a bait file before being trusted;
+  # Scripts/check-forbidden-patterns.sh hunts the identifier repo-wide as the second line.
+  GlobalCoroutineUsage:
+    active: true
+
+complexity:
+  active: true
+  LongParameterList:
+    active: true
+    functionThreshold: 12
+    constructorThreshold: 12
+    ignoreDefaultParameters: true
+
+potential-bugs:
+  active: true
+  IgnoredReturnValue:
+    active: true
+  UnsafeCallOnNullableType:
+    active: true
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: true
+  SwallowedException:
+    active: true
+
+style:
+  active: true
+  ForbiddenComment:
+    active: true
+    comments:
+      - reason: "A TODO with no owner and no date is debt nobody will pay."
+        value: "TODO:"
+      - reason: "A FIXME on main means the slice did not close (§13)."
+        value: "FIXME:"
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  # The import-shaped constitution gates. `excludes` carves out `core/` — the infrastructure edge
+  # where the network stack and the secret store legitimately live (ADR-0004, ADR-0005, ADR-0008);
+  # inside core/ the constitution + ADR review are the gate. Everywhere else these are defects.
+  ForbiddenImport:
+    active: true
+    excludes: ['**/core/**']
+    imports:
+      # no_raw_networking (§7, ADR-0004): no HTTP client outside the stack.
+      - value: 'okhttp3.*'
+        reason: 'Raw OkHttp outside core/networking. All traffic goes through the hardened stack (ADR-0004).'
+      - value: 'java.net.HttpURLConnection'
+        reason: 'Raw HTTP client. All traffic goes through the hardened stack (ADR-0004).'
+      - value: 'io.ktor.*'
+        reason: 'Ktor is an implementation detail of core/networking. Features talk to its interfaces (ADR-0004).'
+      # secrets_gate (§8.4, ADR-0005): plain-file storage APIs stay out of reach of features.
+      - value: 'android.content.SharedPreferences'
+        reason: 'Plain-file storage. Secrets live in Keystore/Keychain; anything else needs a core/ seam (ADR-0005).'
+      - value: 'androidx.datastore.*'
+        reason: 'Plain-file storage. Secrets live in Keystore/Keychain; anything else needs a core/ seam (ADR-0005).'
+      # Dependency denylist, import-shaped second line (§8.1, §8.8; the first line is
+      # Scripts/check-dependency-allowlist.sh at the Gradle edge).
+      - value: 'com.google.firebase.*'
+        reason: 'Default-deny of crash/analytics SDKs (§8.1).'
+      - value: 'io.sentry.*'
+        reason: 'Default-deny of crash/analytics SDKs (§8.1).'
+      - value: 'coil.*'
+        reason: 'Image loader with its own network path. Remote bytes go through the stack (§7).'
+      - value: 'coil3.*'
+        reason: 'Image loader with its own network path. Remote bytes go through the stack (§7).'
+      - value: 'com.bumptech.glide.*'
+        reason: 'Image loader with its own network path. Remote bytes go through the stack (§7).'
+      - value: 'com.squareup.picasso.*'
+        reason: 'Image loader with its own network path. Remote bytes go through the stack (§7).'

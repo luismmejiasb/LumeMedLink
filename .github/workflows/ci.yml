@@ -14,6 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Constitution gates first: no JVM needed, seconds to run, and a violation should fail the
+      # run before three minutes of compilation, not after.
+      - name: Gate — feature isolation (ADR-0008)
+        run: Scripts/check-feature-isolation.sh
+      - name: Gate — forbidden patterns (§6, §8, ADR-0007)
+        run: Scripts/check-forbidden-patterns.sh
+      - name: Gate — dependency allowlist (§8.8)
+        run: Scripts/check-dependency-allowlist.sh
+
       # Same JDK the build pins via jvmToolchain; setup-java just makes it present on the runner.
       - uses: actions/setup-java@v4
         with:
@@ -22,6 +31,9 @@ jobs:
 
       # Includes gradle-wrapper validation (checksum of the committed wrapper jar).
       - uses: gradle/actions/setup-gradle@v4
+
+      - name: Lint (detekt + ktlint)
+        run: ./gradlew detekt ktlintCheck
 
       - name: Build (Android + common) and compile iOS
         run: ./gradlew build :composeApp:compileKotlinIosSimulatorArm64

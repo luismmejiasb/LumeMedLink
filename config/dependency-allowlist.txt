@@ -1,0 +1,64 @@
+# Dependency allowlist — LumeMedLink (§8.8)
+#
+# Every GROUP that may appear in a gradle.lockfile. Scripts/check-dependency-allowlist.sh fails on
+# any group not prefix-matched here, and fails on the denylist (hardcoded in the script, with
+# reasons) even if a prefix below would admit it. Adding a line here is adding a dependency: it
+# needs the ADR the constitution demands (§13), or at least a comment naming who pulled it in.
+#
+# Lines are prefixes: `androidx.` admits every androidx group. Blank lines and # comments ignored.
+
+# ── The product's own stack ─────────────────────────────────────────────────────────────────────
+org.jetbrains.kotlin
+org.jetbrains.kotlinx
+org.jetbrains.compose
+org.jetbrains.androidx.
+org.jetbrains.skiko
+org.jetbrains
+androidx.
+
+# ── JUnit + Hamcrest: the host-test runner's floor ──────────────────────────────────────────────
+junit
+org.hamcrest
+
+# ── detekt + ktlint toolchains (S0.2 gates): lint-time only, never shipped ──────────────────────
+io.gitlab.arturbosch.detekt
+io.github.detekt.sarif4k
+com.pinterest.ktlint
+ch.qos.logback
+com.github.ajalt.clikt
+dev.drewhamilton.poko
+io.github.davidburstrom.contester
+io.github.oshai
+org.ec4j.core
+org.jcommander
+org.slf4j
+org.snakeyaml
+
+# ── AGP + its toolchain: build-time only, dragged by com.android.tools, never shipped ───────────
+com.android.tools
+com.google.code.findbugs
+com.google.code.gson
+com.google.errorprone
+com.google.guava
+com.google.j2objc
+com.google.jimfs
+com.google.protobuf
+com.sun.istack
+com.sun.xml.fastinfoset
+commons-codec
+commons-io
+commons-logging
+jakarta.activation
+jakarta.xml.bind
+javax.inject
+net.java.dev.jna
+net.sf.kxml
+org.apache.commons
+org.apache.httpcomponents
+org.bouncycastle
+org.checkerframework
+org.codehaus.groovy
+org.glassfish.jaxb
+org.jspecify
+org.jvnet.staxex
+org.ow2.asm
