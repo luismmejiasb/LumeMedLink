@@ -12,7 +12,7 @@ internal class TokenStore(private val secureStore: SecureStore) {
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun load(): SessionTokens? {
-        val raw = secureStore.get(SecureStoreKeys.SESSION_TOKENS) ?: return null
+        val raw = secureStore.get(SecureStoreKey.SESSION_TOKENS.storageKey) ?: return null
         return try {
             json.decodeFromString<SessionTokens>(raw)
         } catch (_: SerializationException) {
@@ -23,11 +23,14 @@ internal class TokenStore(private val secureStore: SecureStore) {
     }
 
     suspend fun save(tokens: SessionTokens) {
-        secureStore.put(SecureStoreKeys.SESSION_TOKENS, json.encodeToString(SessionTokens.serializer(), tokens))
+        secureStore.put(
+            SecureStoreKey.SESSION_TOKENS.storageKey,
+            json.encodeToString(SessionTokens.serializer(), tokens),
+        )
     }
 
     /** Part of the logout contract (§8.13): the disk half. */
     suspend fun clear() {
-        secureStore.remove(SecureStoreKeys.SESSION_TOKENS)
+        secureStore.remove(SecureStoreKey.SESSION_TOKENS.storageKey)
     }
 }

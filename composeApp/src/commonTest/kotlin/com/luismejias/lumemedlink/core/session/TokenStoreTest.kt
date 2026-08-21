@@ -43,7 +43,7 @@ class TokenStoreTest {
     @Test
     fun corruptEntryLoadsNull() = runTest {
         val backing = MapStore()
-        backing.entries[SecureStoreKeys.SESSION_TOKENS] = "{not tokens at all"
+        backing.entries[SecureStoreKey.SESSION_TOKENS.storageKey] = "{not tokens at all"
         assertNull(TokenStore(backing).load(), "fail closed: unreadable means no session")
     }
 

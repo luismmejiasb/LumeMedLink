@@ -21,7 +21,6 @@ import java.util.Base64
 import kotlin.coroutines.resume
 
 private const val UNLOCK_KEY_ALIAS = "lume_session_tier2_unlock"
-private const val UNLOCK_CHALLENGE_KEY = "unlock_challenge_v1"
 private const val CHALLENGE_BYTES = 32
 private const val SIGNATURE_ALGORITHM = "SHA256withECDSA"
 
@@ -60,13 +59,13 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
             return@withContext false
         }
         val challenge = ByteArray(CHALLENGE_BYTES).also { java.security.SecureRandom().nextBytes(it) }
-        secureStore.put(UNLOCK_CHALLENGE_KEY, Base64.getEncoder().encodeToString(challenge))
+        secureStore.put(SecureStoreKey.UNLOCK_CHALLENGE.storageKey, Base64.getEncoder().encodeToString(challenge))
         true
     }
 
     override suspend fun unlock(): UnlockOutcome {
         if (!biometricsUsable()) return UnlockOutcome.Unavailable
-        val challenge = secureStore.get(UNLOCK_CHALLENGE_KEY)
+        val challenge = secureStore.get(SecureStoreKey.UNLOCK_CHALLENGE.storageKey)
             ?.let { runCatching { Base64.getDecoder().decode(it) }.getOrNull() }
             ?: return UnlockOutcome.Unavailable
 
@@ -94,7 +93,7 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
 
     override suspend fun clear(): Unit = withContext(Dispatchers.Default) {
         deleteKey()
-        secureStore.remove(UNLOCK_CHALLENGE_KEY)
+        secureStore.remove(SecureStoreKey.UNLOCK_CHALLENGE.storageKey)
     }
 
     private fun verifySignature(

@@ -26,7 +26,7 @@
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F5 | Logout = borrado total, verificado | 🟡 | Contrato construido en `core/session`; falta elevarlo a prueba de integración. |
+| F5 | Logout = borrado total, verificado | ✅ 2026-08-21 | **Verificado contra el Keystore REAL** (`LogoutWipeOnDeviceTest`, 4/4 en device): ida y vuelta, **el texto en claro no está en disco**, el logout no deja nada legible, y el wipe borra archivos **y la clave** (lo que vuelve irrecuperable cualquier copia suelta). Cierra el hueco que declaró la bitácora 0007. Secretos ahora enumerables (`SecureStoreKey`), con el test del wipe iterando el enum → un secreto futuro queda cubierto al declararse. **Declarado: es un logout LOCAL, sin revocación server-side** — la UI no puede insinuar efecto remoto. ADR-0014, bitácora 0015. |
 | F6 | Sin backup / sin sincronización | 🟡 | `allowBackup=false` ya puesto; falta `dataExtractionRules` + verificación en device. |
 | F7 | Sentinel de instalación iOS (secretos heredados) | 🔒 shell | Se cablea en el arranque del shell iOS. |
 | F8 | Caché en reposo cifrada y purgable | ⬜ | No hay caché todavía; nace con su primera lectura. |

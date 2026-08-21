@@ -73,6 +73,8 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.androidx.test.runner)
             implementation(libs.androidx.test.ext.junit)
+            // ApplicationProvider: the device tests need a real Context to reach the real store.
+            implementation(libs.androidx.test.core)
         }
 
         iosMain.dependencies {

@@ -21,7 +21,18 @@ internal interface SecureStore {
     suspend fun wipe()
 }
 
-/** Keys are constants so a typo cannot silently create a second secret. */
-internal object SecureStoreKeys {
-    const val SESSION_TOKENS: String = "session_tokens_v1"
+/**
+ * Every secret this app can persist, as an ENUM rather than loose constants (F5, ADR-0014).
+ *
+ * The reason is the logout contract: `SecureStoreWipeTest` writes a value under **every entry
+ * here** and asserts the wipe removes all of them. Because the set is enumerable, a secret added
+ * in some future slice is covered by that test the moment it is declared — nobody has to remember
+ * to extend the test, which is precisely the kind of remembering that fails.
+ */
+internal enum class SecureStoreKey(val storageKey: String) {
+    /** The clinician's access + refresh pair (ADR-0003). */
+    SESSION_TOKENS("session_tokens_v1"),
+
+    /** The challenge the tier-2 unlock key signs (ADR-0011). */
+    UNLOCK_CHALLENGE("unlock_challenge_v1"),
 }

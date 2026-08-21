@@ -43,7 +43,7 @@ de F4 (espera el login) y el cover iOS de host.
 
 ### T3 · Persistencia posterior
 Datos que sobreviven al logout, al cambio de usuario o a la desinstalación. **Controles**: logout =
-wipe duro con test (§8.13); sentinel de instalación en iOS (el Keychain sobrevive al uninstall;
+wipe duro con test (§8.13) — **F5 ✅ 2026-08-21: verificado contra el Keystore real en device** (el claro no llega al disco; el wipe borra archivos y clave), con la salvedad declarada de que es un logout LOCAL sin revocación server-side (ADR-0014, bitácora 0015); sentinel de instalación en iOS (el Keychain sobrevive al uninstall;
 ADR-0005 declara la asimetría — Android no lo necesita); caché con política de purga.
 
 ### T4 · Exfiltración pasiva por plataforma
