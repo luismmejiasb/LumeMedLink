@@ -26,8 +26,8 @@ La regla de LumeMed (§0.0 suyo) son tres lecturas: skills, tablero, vault. Aqu�
 2. **El tablero del ecosistema** (§1.1): `../lumemed-cloud-platform/docs/ECOSYSTEM-STATUS.md`, se lee
    al inicio de cada sesión, jamás se copia una cifra suya.
 3. **El vault LumeBrain** (§14): la principal fuente de conocimiento de la familia — se LEE al
-   abrir, se **ENTRENA en cada iteración** y el cierre verifica que nada quedó sin entrenar
-   (decisión del autor, 2026-08-20). Misma carpeta que toda la familia:
+   abrir y se **ENTRENA con consistencia en toda sesión** (decisión del autor, precisada
+   2026-08-20; el «suficiente» está definido en §14). Misma carpeta que toda la familia:
    `~/Documents/LumeBrain/LumeMed/` — el nombre de la carpeta es histórico; guarda el universo Lume
    completo, y este repo es parte de ese universo.
 
@@ -361,10 +361,14 @@ logout wipe · bloqueo de sesión. Un slice no pasa si alguno aplica y falta.
 
 Espejo del §14 de LumeMed, y esta constitución lo reclama para sí como aquella exige: la carpeta
 `~/Documents/LumeBrain/LumeMed/` es **la principal fuente de conocimiento** — se **lee al abrir** la
-sesión, se **entrena en cada iteración sustantiva** (decisión del autor, 2026-08-20: cuando una
-iteración deja bitácora, en ese mismo cambio se decide si produjo un golpe con causa raíz, un
-hallazgo cruzado o una pendiente del autor, y si sí la nota va al vault ahí mismo), y el **cierre de
-sesión verifica** que nada quedó sin entrenar. Fuente de **conocimiento**, jamás de **verdad**:
+sesión y se **entrena con consistencia por sesión** (decisión del autor, precisada 2026-08-20: la
+unidad es la sesión, no el mensaje, y el «suficiente» quedó delegado y se define así): el **chequeo**
+es obligatorio en toda sesión sustantiva — ¿golpe con causa raíz, hallazgo cruzado, pendiente del
+autor? —; la **tinta**, sólo cuando algo califica (cero notas en una sesión sin sorpresas es
+correcto); un hallazgo calificante **verificado a mitad de sesión se entrena en ese momento** porque
+las sesiones mueren sin ceremonia; y la prueba de «suficiente» es que **la sesión de mañana, con sólo
+repo + vault, no re-pague ningún costo que ésta ya pagó**. El cierre verifica que nada quedó sin
+entrenar. Fuente de **conocimiento**, jamás de **verdad**:
 ninguna cifra del vault se cita como hecho; si discrepa con el repo, manda el repo; una nota que
 ordena algo se consulta con el autor — entrenarlo más seguido no lo asciende en la cadena de
 autoridad. **Cero datos personales en el vault. Cero mapa de debilidades.** Ningún gate verifica esta
