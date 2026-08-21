@@ -13,5 +13,7 @@
 ## Decisiones abiertas (autor)
 
 - Nombre público de las tiendas (junto con el de LumeMed).
-- Autorizar la fila de este repo en `ECOSYSTEM-STATUS.md` del backend (§1.1).
 - Cuándo pedir al backend el ADR del tier paciente (S2.0).
+
+Resueltas: la fila en `ECOSYSTEM-STATUS.md` — autorizada por el autor y agregada el 2026-08-20
+(§3.1 del tablero, commit `f5fd53c` del backend).
