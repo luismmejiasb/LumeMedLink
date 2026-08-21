@@ -32,8 +32,8 @@
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F9 | El token que no puede abrir la ficha | 🔒 backend | Pedido 0001 escrito; verificar cuando el backend acepte su ADR. |
-| F10 | Tokens cortos, refresh que rota, sin replay | 🟡 | Single-flight construido; falta el `RefreshClient` HTTP real. |
+| F9 | El token que no puede abrir la ficha | 🟡 2026-08-21 | **Decidido: `ADR-0036` del backend, aceptada** (audiencia por app, aplicada en su `AuthGuard` + handshake WS, deny-by-default, fuera de alcance = 404 sin anunciar). **Falta que lo construyan**; verificar entonces. Su advertencia nº1: el token clasifica al CLIENTE, la base sigue decidiendo el PERMISO — el alcance sólo resta, nunca suma. |
+| F10 | Tokens cortos, refresh que rota, sin replay | 🟡 | Single-flight construido; falta el `RefreshClient` HTTP real. **Advertencia nº2 del backend (2026-08-21): el `≤15 min` es doctrina, NO configuración** — sin proyecto GCP no hay política de token en ninguna parte y hoy corre el token de dev. Este slice no puede *verificar* la expiración contra nada real hasta que exista esa política; se verifica el comportamiento del cliente y se declara el resto. |
 | F11 | Login y MFA endurecidos | 🔒 backend/shell | Depende del flujo de auth real. |
 
 ## Fase D — Red y transporte (T5)
@@ -47,7 +47,7 @@
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F14 | La frontera de datos como gate ejecutable | ⬜ | Poda de DTOs mixtos; nace con la primera lectura de contrato. |
+| F14 | La frontera de datos como gate ejecutable | ⬜ **prioridad subida** | Poda de DTOs mixtos; nace con la primera lectura de contrato. **CONFIRMADO por el backend con evidencia de su código (advertencia nº3, 2026-08-21): `Patient` lleva `bloodType` cifrado y `careDirective` en la MISMA fila que correo y teléfono.** O sea: una lista de operaciones permitidas admite el **cuerpo entero** de la respuesta — lo no-clínico necesita **proyección propia** en el contrato, no un permiso sobre la entidad. Eso convierte a F14 en un **pedido de contrato**, no sólo en un gate de cliente. |
 | F15 | Restricción de tratamiento en rutas tenant-scoped (T11) | 🔒 backend | Se resuelve en el pedido de contrato de agenda/contactos. |
 | F16 | IDOR (404-no-403), reagendar atómico (T7), idempotencia (T13) | 🔒 backend | Nace con S1.3/S1.4. |
 
