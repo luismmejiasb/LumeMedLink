@@ -118,7 +118,10 @@ push** — el autor pushea (los 12 commits actuales están locales). Español ve
 tuteo. El tablero ya tiene nuestra fila (§3.1) — si este trabajo cambia el estado declarado en
 `PROGRESS.md`, el tablero cita línea: avisar al autor, no editarlo sin su autorización.
 
-## Al cerrar
+## En cada iteración, y al cerrar
 
-Bitácora del slice + `PROGRESS.md` (S0 deja de estar ⬜) + WORKPLAN si se desvió + nota al vault si
-hubo golpe nuevo con causa raíz. Y decir en voz alta lo que quedó sin verificar.
+**El vault se entrena por iteración** (decisión del autor, 2026-08-20 — §14 de la constitución):
+cada slice que deja bitácora decide en ese mismo cambio si produjo golpe/hallazgo/pendiente, y si
+sí, la nota va al vault ahí mismo. Al cerrar: bitácora del slice + `PROGRESS.md` (S0 deja de estar
+⬜) + WORKPLAN si se desvió + la verificación de que nada quedó sin entrenar. Y decir en voz alta lo
+que quedó sin verificar.
