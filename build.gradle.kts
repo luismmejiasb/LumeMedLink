@@ -1,5 +1,13 @@
 // Critical manifest: not to be rewritten as a side effect of another task.
 
+// Same reason as settings.gradle.kts: the plugin classpath runs with full build privileges and
+// was the one dependency set no lockfile and no gate could see (F20, ADR-0018).
+buildscript {
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
+    }
+}
+
 // Every plugin both modules use is loaded HERE, `apply false`, so they share one classloader.
 // Without this, `:composeApp` and `:androidApp` each load the Kotlin plugin in a sibling
 // classloader and the shared KotlinNativeBundleBuildService fails task creation outright.
@@ -58,7 +66,15 @@ subprojects {
 }
 
 // §0 "version catalog + lockfile": the catalog pins what we CHOSE; the lockfile pins what actually
-// RESOLVED, transitives included, so a hijacked minor of a transitive cannot ride in unnoticed.
+// RESOLVED, transitives included, so a NEW transitive or a version change cannot ride in unnoticed.
+//
+// CORRECTED 2026-08-21 (F20): this comment used to say a "hijacked" transitive could not ride in.
+// That was false and worth saying plainly — locking pins COORDINATES, not BYTES. An artifact
+// re-published under the same version, or served with different content, passes an enforced
+// lockfile green. Pinning bytes is Gradle dependency verification
+// (gradle/verification-metadata.xml), which this repo does NOT have; ADR-0018 records that
+// decision and its cost.
+//
 // Regenerate deliberately with `./gradlew build --write-locks` when a pin changes.
 allprojects {
     dependencyLocking { lockAllConfigurations() }

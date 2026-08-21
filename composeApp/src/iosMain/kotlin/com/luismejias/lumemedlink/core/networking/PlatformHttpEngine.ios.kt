@@ -23,7 +23,10 @@ import platform.Foundation.NSURLSessionConfiguration
  * TLS floor is ATS's: the host app ships with NO ATS exceptions (§7), verified on device when the
  * iOS host exists. Declared asymmetry (threat model): **iOS trusts user-installed root CAs and
  * Android does not**, so a device with an attacker's or an employer's CA profile can intercept
- * this app's TLS on iOS. Pinning — deferred by ADR-0004 — is the only thing that would close it.
+ * this app's TLS on iOS. Pinning is ONE of two ways to close it; the other is classifying the
+ * trust anchor in this engine's own `handleChallenge`, which is cheaper and needs no
+ * certificate — evidence simulator-only, unconfirmed on device (ADR-0017 Part 2). Neither is
+ * implemented today.
  */
 internal actual fun platformHttpEngine(): HttpClientEngine = Darwin.create {
     configureSession { applyLumeCachePosture() }

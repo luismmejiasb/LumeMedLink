@@ -1,48 +1,112 @@
 # Dependency allowlist — LumeMedLink (§8.8)
 #
-# Every GROUP that may appear in a gradle.lockfile. Scripts/check-dependency-allowlist.sh fails on
-# any group not prefix-matched here, and fails on the denylist (hardcoded in the script, with
-# reasons) even if a prefix below would admit it. Adding a line here is adding a dependency: it
-# needs the ADR the constitution demands (§13), or at least a comment naming who pulled it in.
+# EXACT GROUP NAMES, one per line. Never prefixes.
 #
-# Lines are prefixes: `androidx.` admits every androidx group. Blank lines and # comments ignored.
+# This file used to hold prefixes, and the matcher used to accept any group that merely BEGAN with
+# one. That is a hole in a class, not an instance, and it was measured rather than argued:
+# `androidx.health.connect` — a CLINICAL DATA API, in the app whose whole identity is that it holds
+# no clinical content — passed the gate green, together with `io.ktorexploit` and
+# `org.jetbrainsevil`. The earlier bait rehearsal missed it because the bait names were unrelated
+# (`net.evil.tracker`); a hostile name that shares a namespace with a real one is the one a human
+# reviewer waves through, and it was exactly the one the gate could not see.
+#
+# So: adding a dependency now costs one exact line, and a namespace-adjacent name is a hard failure.
+# A new group failing here is the gate WORKING — decide it, then add it (§13 wants its ADR).
+#
+# Regenerated 2026-08-21 from the real lockfiles (F20, ADR-0018).
+
 
 # ── The product's own stack ─────────────────────────────────────────────────────────────────────
+androidx.activity
+androidx.annotation
+androidx.arch.core
+androidx.autofill
+androidx.collection
+androidx.compose.animation
+androidx.compose.foundation
+androidx.compose.runtime
+androidx.compose.ui
+androidx.concurrent
+androidx.core
+androidx.emoji2
+androidx.graphics
+androidx.lifecycle
+androidx.navigationevent
+androidx.profileinstaller
+androidx.savedstate
+androidx.startup
+androidx.tracing
+androidx.versionedparcelable
+androidx.window
+org.jetbrains
+org.jetbrains.androidx.lifecycle
+org.jetbrains.androidx.savedstate
+org.jetbrains.compose.animation
+org.jetbrains.compose.annotation-internal
+org.jetbrains.compose.collection-internal
+org.jetbrains.compose.foundation
+org.jetbrains.compose.runtime
+org.jetbrains.compose.ui
+org.jetbrains.intellij.deps
 org.jetbrains.kotlin
 org.jetbrains.kotlinx
-org.jetbrains.compose
-org.jetbrains.androidx.
 org.jetbrains.skiko
-org.jetbrains
-androidx.
 
-# ── core/networking, ADR-0004: Ktor stack + its Android engine's runtime ────────────────────────
-# io.ktor is unreachable outside core/ (detekt ForbiddenImport); okhttp3/okio ride in as the
-# OkHttp engine's runtime and are equally banned as imports outside core/.
-io.ktor
+# ── Tier-2 biometric gate (ADR-0011) and the view stack androidx.biometric drags in ─────────────
+androidx.appcompat
+androidx.biometric
+androidx.cursoradapter
+androidx.customview
+androidx.documentfile
+androidx.drawerlayout
+androidx.dynamicanimation
+androidx.fragment
+androidx.interpolator
+androidx.legacy
+androidx.loader
+androidx.localbroadcastmanager
+androidx.print
+androidx.transition
+androidx.vectordrawable
+androidx.viewpager
+
+# ── core/networking, ADR-0004 ───────────────────────────────────────────────────────────────────
 com.squareup.okhttp3
 com.squareup.okio
+io.ktor
 
-# ── JUnit + Hamcrest: the host-test runner's floor ──────────────────────────────────────────────
+# ── Instrumented tests (F4/F5). Test-only; never in a shipped configuration ─────────────────────
+androidx.test
+androidx.test.ext
+androidx.test.services
 junit
 org.hamcrest
 
-# ── detekt + ktlint toolchains (S0.2 gates): lint-time only, never shipped ──────────────────────
-io.gitlab.arturbosch.detekt
-io.github.detekt.sarif4k
-com.pinterest.ktlint
+# ── detekt + ktlint toolchains (S0.2 gates): lint-time only ─────────────────────────────────────
 ch.qos.logback
 com.github.ajalt.clikt
+com.pinterest.ktlint
 dev.drewhamilton.poko
 io.github.davidburstrom.contester
+io.github.detekt.sarif4k
 io.github.oshai
+io.gitlab.arturbosch.detekt
 org.ec4j.core
 org.jcommander
-org.slf4j
 org.snakeyaml
 
-# ── AGP + its toolchain: build-time only, dragged by com.android.tools, never shipped ───────────
+# ── AGP toolchain and its transitives: build-time only, never shipped as app code ───────────────
+# NOTE, corrected 2026-08-21: `org.slf4j` DOES reach the release APK (dragged by
+# kotlinx-coroutines-slf4j). It is filed here for provenance, not as a claim that it is absent
+# from the app — the previous heading said 'never shipped' and that was false for it.
 com.android.tools
+com.android.tools.analytics-library
+com.android.tools.build
+com.android.tools.ddms
+com.android.tools.external.com-intellij
+com.android.tools.external.org-jetbrains
+com.android.tools.layoutlib
+com.android.tools.lint
 com.google.code.findbugs
 com.google.code.gson
 com.google.errorprone
@@ -69,3 +133,40 @@ org.glassfish.jaxb
 org.jspecify
 org.jvnet.staxex
 org.ow2.asm
+org.slf4j
+
+# ── The Gradle PLUGIN classpath (F20, ADR-0018) ─────────────────────────────────────────────────
+# These 24 groups execute at BUILD time with the developer's full privileges and can rewrite the
+# output APK. Until F20 locked `buildscript.configurations.classpath` they appeared in NO lockfile,
+# so this gate was structurally unable to see a single one of them — the highest-privilege surface
+# in the project was the only one with no control at all.
+#
+# Reviewed rather than pasted, and three are worth naming because nobody would have guessed them:
+#   · org.tensorflow — TensorFlow, dragged in by AGP's ML model binding support.
+#   · com.google.crypto.tink — a crypto library on the BUILD classpath.
+#   · com.android.tools.utp — the Unified Test Platform runner.
+# None of them ships in the app; all of them run on the machine that signs it.
+androidx.databinding
+com.android
+com.android.application
+com.android.databinding
+com.android.kotlin.multiplatform.library
+com.android.tools.build.jetifier
+com.android.tools.utp
+com.google.auto.value
+com.google.crypto.tink
+com.google.dagger
+com.google.flatbuffers
+com.googlecode.juniversalchardet
+com.squareup
+net.sf.jopt-simple
+org.bitbucket.b_c
+org.jdom
+org.jetbrains.compose
+org.jetbrains.compose.hot-reload
+org.jetbrains.kotlin.multiplatform
+org.jetbrains.kotlin.plugin.compose
+org.jetbrains.kotlin.plugin.serialization
+org.jlleitschuh.gradle
+org.jlleitschuh.gradle.ktlint
+org.tensorflow

@@ -37,3 +37,21 @@ Kotlin; the doctrine can.
 
 - The detekt gate `no_raw_networking` (S0) is the enforcement; until it exists this is [manual].
 - `Idempotency-Key` remains app+backend business; nothing here retries a POST.
+
+## Amendment, 2026-08-21 (ADR-0017) — this decision stands, its stated reason does not
+
+ADR-0017 re-evaluated the deferral and left this ADR standing, but two of the premises written here
+no longer match the threat model, and a reader of this file alone would take away the wrong reason:
+
+- **"Only T5, the least likely level."** On Android that branch is now closed by
+  `networkSecurityConfig` (ADR-0016), and on iOS it is not a T5 branch at all: iOS trusts
+  user-installed root CAs, so someone with access to the device installs a profile — that is T1/T2,
+  the levels this app ranks first.
+- **"Every certificate rotation is a forced release."** True of leaf/SPKI pinning; a pin on a
+  public root does not have that property. The cost depends on what is pinned, and that depends on
+  a backend certificate strategy nobody has decided yet.
+- **"Re-evaluated at production traffic"** is replaced by the named trigger ADR-0017 chose: an iOS
+  host exists AND the backend's certificate strategy is known.
+
+Pinning is also not the only way to close the iOS gap — see ADR-0017 Part 2 for the trust-anchor
+alternative and its unverified status.

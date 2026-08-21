@@ -96,6 +96,19 @@ style:
         reason: 'The iOS raw networking surface, deprecated at that (ADR-0004).'
       - value: 'platform.WebKit.*'
         reason: 'WKWebView carries its own network stack and cache (ADR-0004, §8.5).'
+      - value: 'org.apache.http.*'
+        reason: 'A second HTTP client, allowlisted at build time and importable until F20 (ADR-0004).'
+      - value: 'org.apache.hc.*'
+        reason: 'A second HTTP client (ADR-0004).'
+      # §8.1 says the redacting facade is the SINGLE point of logging. Until F20 nothing enforced
+      # it: slf4j-api ships in the release APK (dragged by kotlinx-coroutines-slf4j), so a second
+      # logging path that bypasses NetworkLogSink compiled green.
+      - value: 'org.slf4j.*'
+        reason: 'A second logging path. §8.1: one redacting facade, and it is NetworkLogSink.'
+      - value: 'kotlinx.coroutines.slf4j.*'
+        reason: 'Same second logging path, via coroutines (§8.1).'
+      - value: 'android.util.Log'
+        reason: 'Writes to logcat, which leaves the device inside a bug report (§8.1, F22).'
       # secrets_gate (§8.4, ADR-0005): plain-file storage APIs stay out of reach of features.
       - value: 'android.content.SharedPreferences'
         reason: 'Plain-file storage. Secrets live in Keystore/Keychain; anything else needs a core/ seam (ADR-0005).'

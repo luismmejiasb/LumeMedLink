@@ -82,11 +82,10 @@ Integrity / App Attest server-side (§8.11); sin custom schemes; sin IPC expuest
 4. **iOS confía en las CAs raíz que instala el usuario; Android no.** *(Añadida 2026-08-21 por F12.)*
    Es la asimetría que más duele en T5: en Android el `networkSecurityConfig` ancla la confianza al
    almacén del sistema, así que una CA de un MDM, de un proxy corporativo o de malware **no**
-   intercepta este tráfico. En iOS un perfil de configuración con una CA sí puede, y **lo único que
-   lo cerraría es el pinning**, que ADR-0004 difirió. Mientras el pinning siga diferido, el lado iOS
+   intercepta este tráfico. En iOS un perfil de configuración con una CA sí puede, y ****Pinning es UNA de dos vías**, no la única: la otra es clasificar el ancla en el `handleChallenge` de Darwin — más barata y sin acoplarse a la rotación de certificados —, y su evidencia es de simulador, sin confirmar en device (ADR-0017 Parte 2).** Ambas siguen sin implementar; ADR-0004 difirió el pinning. Mientras el pinning siga diferido, el lado iOS
    de esta app es interceptable por quien controle el dispositivo.
 5. **Apple exige Certificate Transparency a nivel de plataforma; Android no.** *(Añadida
    2026-08-21 por F13. **REPORTADO por la investigación, NO verificado por esta sesión** — se
    registra con esa marca, no como hecho.)* Corre al revés que las otras cuatro: contra un atacante
    que consigue un certificado mal emitido por una CA pública **y escala**, Android sería el lado
-   débil. Ninguna de las dos asimetrías de TLS se cierra sin pinning (ADR-0017).
+   débil. Ninguna de las dos asimetrías de TLS está cerrada hoy — y **Pinning es UNA de dos vías**, no la única: la otra es clasificar el ancla en el `handleChallenge` de Darwin — más barata y sin acoplarse a la rotación de certificados —, y su evidencia es de simulador, sin confirmar en device (ADR-0017 Parte 2).

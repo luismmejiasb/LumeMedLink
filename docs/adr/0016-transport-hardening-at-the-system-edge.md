@@ -134,8 +134,10 @@ stack installs.
   the URL cache behaviour on a device. The fix is verified to compile and is verified in principle
   by the probes; it is not verified in this app.
 - **Fourth platform asymmetry, now in the threat model:** iOS trusts user-installed root CAs and
-  Android does not. Pinning is the only thing that would close it, and ADR-0004 deferred pinning —
-  so the iOS side remains interceptable by whoever controls the device.
+  Android does not. Pinning is ONE of two ways to close it; the other — classifying the trust
+  anchor in Darwin's `handleChallenge` — is cheaper and does not couple to certificate
+  rotation, and its evidence is simulator-only and unconfirmed on device (ADR-0017 Part 2).
+  Neither is implemented, so the iOS side remains interceptable by whoever controls the device.
 - **Not closed, registered:** both engines silently honour a system-configured proxy;
   `androidx.emoji2` fetches a font through Play Services outside the stack; TLS metadata (SNI,
   timing) still reveals which host is contacted.

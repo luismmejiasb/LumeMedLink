@@ -17,3 +17,22 @@ local.properties
 # Xcode (the iOS host, when it exists)
 xcuserdata/
 *.xcworkspace/xcshareddata/swiftpm/
+
+# Credentials and signing material (F20, ADR-0018).
+# This section is not hypothetical hygiene: every commit in this repo is made with `git add -A`,
+# so a keystore or a google-services.json dropped in the tree would be committed on the next one.
+# The audit found ZERO coverage here and a clean history — this keeps the second half true.
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+google-services.json
+GoogleService-Info.plist
+keystore.properties
+secrets.properties
+*.mobileprovision
+service-account*.json

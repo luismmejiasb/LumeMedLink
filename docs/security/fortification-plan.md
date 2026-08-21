@@ -66,7 +66,7 @@
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F20 | Dependencias bajo control | 🟡 | Allowlist/denylist + lockfile construidos; falta confusión de deps y secretos en git. **Hallazgo de F4 (2026-08-21): el prefijo `androidx.` del allowlist admite cualquier grupo androidx en silencio** — `androidx.biometric` y sus 8 transitivas (incl. `appcompat:1.2.0`, de 2020) entraron sin que el gate preguntara. Estrechar el prefijo es trabajo de este slice. |
+| F20 | Dependencias bajo control | ✅ 2026-08-21 | **Siete huecos, medidos**: el prefijo admitía `androidx.health.connect` (API de datos CLÍNICOS) — ahora coincidencia **exacta** y denylist por nombre; el **classpath de plugins** no estaba en ningún lockfile (24 grupos nunca revisados, incl. `org.tensorflow`) — ahora lockeado, 441→500 módulos; **el `gradle-wrapper.jar` era el de 9.4.1 con la distribución pinneada a 9.7.1** (la raíz de confianza) — regenerado y con gate; un comentario podía inyectar un grupo; borrar un lockfile dejaba verde; `org.apache.http` y `org.slf4j` importables contra §7/§8.1; actions por tag mutable. **Verificación por bytes NO adoptada**, con su costo y su disparador escritos. ADR-0018, bitácora 0020. |
 | F21 | Integridad del binario y del runtime (Play Integrity / App Attest, root/jailbreak, sin secretos, sin debug) | 🔒 shell/backend | Enforcement solo en Release. **Hallazgo de F6: no hay bloque `buildTypes` en ningún Gradle**, así que debug es debuggable por default de AGP y **ningún gate exige `isDebuggable=false` en release** — y el build debug es el que el autor sideloadea con token real para verificar en device (`run-as`/`adb pull` lo alcanzan). |
 
 ## Fase H — Lo invisible (T4)

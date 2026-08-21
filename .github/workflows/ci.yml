@@ -6,6 +6,12 @@
 # automatic trigger comes back until the author re-enables it; running this by hand from the
 # Actions tab is the deliberate act that spends the minutes.
 #
+# Third-party actions are pinned by COMMIT SHA, not by tag. A tag is mutable: whoever controls the
+# action's repository can repoint v4 at new code, and that code runs here with this repo's token
+# and its build outputs. The `# v4` comment records what the SHA was at the time (F20, ADR-0018).
+# Note the trap this avoided: `gradle/actions` v4 is an ANNOTATED tag, so the tag object's SHA is
+# NOT the commit SHA — pinning the former would fail to resolve. It was dereferenced.
+#
 # Cost layout for when it returns: the `gates` job runs on ubuntu (1x billing, seconds); only the
 # `build` job needs macOS (Xcode toolchain for the iOS target, arm64 matches iosSimulatorArm64),
 # and it only starts if the cheap gates already passed.
@@ -20,6 +26,11 @@ name: CI
 on:
   workflow_dispatch:
 
+# Least privilege, declared. Without this block GITHUB_TOKEN inherits the repository default, which
+# can be write. Nothing in this workflow needs to write anything (F20, ADR-0018).
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -28,7 +39,7 @@ jobs:
   gates:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # Constitution gates first: no JVM needed, seconds to run, and a violation should fail the
       # run before minutes of compilation, not after.
@@ -52,12 +63,14 @@ jobs:
         run: Scripts/check-network-posture.sh
       - name: Gate — URL hygiene (F13, ADR-0017)
         run: Scripts/check-url-hygiene.sh
+      - name: Gate — Gradle wrapper integrity (F20, ADR-0018)
+        run: Scripts/check-wrapper.sh
 
   build:
     needs: gates
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # Fail in seconds, not after 15 minutes of compilation: CMP 1.11.1 needs the iOS 26 SDK.
       - name: Select Xcode 26
@@ -72,13 +85,13 @@ jobs:
           xcodebuild -version
 
       # Same JDK the build pins via jvmToolchain; setup-java just makes it present on the runner.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: 17
 
       # Includes gradle-wrapper validation (checksum of the committed wrapper jar).
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
       - name: Lint (detekt + ktlint)
         run: ./gradlew detekt ktlintCheck

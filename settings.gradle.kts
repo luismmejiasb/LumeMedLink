@@ -11,6 +11,19 @@ pluginManagement {
     }
 }
 
+// The PLUGIN classpath, locked. It was the highest-privilege surface in the build and had no
+// control at all: a Gradle plugin runs arbitrary code with the developer's privileges and can
+// rewrite the output APK, yet `allprojects { dependencyLocking { … } }` covers project
+// configurations only — the plugin classpath appeared in no lockfile, so
+// Scripts/check-dependency-allowlist.sh was structurally unable to see any of it (F20, ADR-0018).
+//
+// It must sit AFTER pluginManagement: Gradle rejects a `buildscript` block before it.
+buildscript {
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
+    }
+}
+
 dependencyResolutionManagement {
     repositories {
         google()

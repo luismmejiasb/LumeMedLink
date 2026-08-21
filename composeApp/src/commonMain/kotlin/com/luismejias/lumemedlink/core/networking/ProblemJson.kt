@@ -25,9 +25,17 @@ internal data class ProblemJson(
 
 /** Thrown by the stack for any non-2xx response, already mapped to the taxonomy. */
 internal class AppErrorException(val error: AppError) : Exception() {
-    // The message is derived from the taxonomy only — AppError carries no server prose, so this
-    // cannot leak `detail` into logs or crash reports.
-    override val message: String = "HTTP call failed: $error"
+    // CORRECTED 2026-08-21 (F20). This comment used to say the taxonomy "carries no server prose",
+    // which was true of `detail` and `title` and FALSE of `type`: `problemType` copies a
+    // server-chosen string into the error, and interpolating the whole data class put it in the
+    // message — i.e. in any crash report and any generic catch. A backend that ever templates
+    // `/problems/validation/rut/11111111-1` would have put a RUT there, and no gate here would
+    // have seen it.
+    //
+    // Now the message names only the CASE, never its data, so the property holds by construction
+    // instead of by trusting the shape of someone else's URIs. `problemType` still lives on the
+    // error for a caller that wants to branch on it — that is a deliberate, narrow trust.
+    override val message: String = "HTTP call failed: ${error::class.simpleName}"
 }
 
 private val problemJsonFormat = Json { ignoreUnknownKeys = true }
