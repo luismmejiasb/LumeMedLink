@@ -33,6 +33,10 @@
 - **S1.1 · Shell + auth.** Login con la cuenta de médico existente (Identity Platform vía backend;
   scope estrecho — el pedido de contrato es parte del slice, ADR-0003). Sesión: tokens en su tier,
   bloqueo por inactividad, biometría anclada a clave (ADR-0005), logout wipe con test.
+  **En curso (2026-08-21):** el pedido de contrato está escrito
+  (`docs/backend-requests/0001-token-de-alcance-estrecho.md`) y espera el ADR del backend; mientras
+  tanto avanza la mitad sin UI (`core/session`). La UI del login es lo último — espera S0.3 o nace
+  con placeholder sin estilo.
 - **S1.2 · Checklist de plataforma del §8.** FLAG_SECURE + cover iOS, `allowBackup=false` +
   `dataExtractionRules`, networkSecurityConfig, ATS. Verificado en device, no sólo declarado.
 - **S1.3 · Agenda (lectura).** Las citas del médico. Sin motivo clínico en ningún DTO (ADR-0001 se

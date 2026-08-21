@@ -10,7 +10,8 @@
 | S0.2 (gates) | ✅ 2026-08-20 | detekt + ktlint + 3 scripts (`Scripts/`) + allowlist de dependencias, **cada gate visto rojo con cebo** (el ensayo atrapó un gate ciego de nacimiento). `no_mutable_object`/`no_hardcoded_style` siguen [manual], declarado. Daemon JVM pinneado a 17. Bitácora 0003. |
 | Espejo de red (`core/networking`) | ✅ 2026-08-20 | ADR-0004 sobre Ktor: https-only fail-closed ×2, sin redirects, retry sólo-GET acotado, RFC 9457 → `AppError` sin prosa del servidor, seams `TokenProvider`/`NetworkLogSink`, engines OkHttp (TLS≥1.2 explícito)/Darwin. **13 tests × 2 targets verdes** (Android host + simulador iOS). Bitácora 0004. |
 | S0.3 (design system) | ⏸️ | **No se toca**: espera el veredicto del autor sobre LumeUIComposer (WORKPLAN). |
-| Fase 1 (lado médico) | ⬜ | Sin empezar. Bloqueada por S0. |
+| S1.1 (shell + auth) | 🟡 2026-08-21 | **Arrancado por su mitad sin UI.** Pedido de contrato escrito: `docs/backend-requests/0001-token-de-alcance-estrecho.md` (el token que no puede abrir la ficha — la ADR-0003 lo exige antes de la primera lectura autenticada). **Esperando el ADR del backend.** Siguen: `core/session` (Keychain/Keystore, refresh single-flight, bloqueo por inactividad, logout-wipe con test); la UI del login espera S0.3 o nace sin estilo. |
+| Resto de Fase 1 (S1.2–S1.5) | ⬜ | Sin empezar. Cada slice de lectura (agenda S1.3, contactos S1.4) trae su propio pedido de contrato con sus preguntas T11/T16. |
 | Fase 2 (lado paciente) | 🔒 | **Gated por ADR-0006**: el backend debe aceptar el ADR del tier paciente primero. |
 
 ## Decisiones abiertas (autor)
