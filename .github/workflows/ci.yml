@@ -73,6 +73,8 @@ jobs:
         run: Scripts/check-release-hardening.sh
       - name: Gate — iOS host (ADR-0025)
         run: Scripts/check-ios-host.sh
+      - name: Gate — cancellation guard (§6, ADR-0026)
+        run: Scripts/check-cancellation-guard.sh
 
   build:
     needs: gates

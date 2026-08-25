@@ -5,6 +5,8 @@ import com.luismejias.lumemedlink.core.logging.LumeLogSink
 import com.luismejias.lumemedlink.core.security.SecurityEventKind
 import com.luismejias.lumemedlink.core.security.SecurityEventReporter
 import com.luismejias.lumemedlink.core.session.SessionManager
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -48,6 +50,12 @@ internal suspend fun probeSession(
     // from a platform API, and §8.1 allows one logging path with a CLOSED vocabulary. "Which enum"
     // is the whole record; "what the OS said" is not ours to write down.
 } catch (@Suppress("TooGenericExceptionCaught", "SwallowedException") unreadable: Throwable) {
+    // Cancellation does not always ARRIVE wearing its own type — a store that wraps a platform
+    // call can convert it on the way out, and the catch above would miss it. Asking the job is the
+    // version that does not depend on types. This has now been the shape of two real defects in
+    // this repo (F12's timeout, and the stack mapping a cancelled caller to `Retryable`), so it is
+    // a gate, not a habit: `check-cancellation-guard.sh`.
+    currentCoroutineContext().ensureActive()
     logSink.log(LogEvent.SECURE_STORE_UNREADABLE)
     securityEvents.report(SecurityEventKind.SECURE_STORE_UNREADABLE)
     false

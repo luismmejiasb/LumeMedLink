@@ -12,7 +12,11 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlinx.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -238,6 +242,52 @@ class LumeHttpStackTest {
         assertEquals(2, rids.size)
         assertTrue(rids.none { it.isNullOrBlank() })
         assertTrue(rids[0] != rids[1], "rids are per logical request")
+    }
+
+    /**
+     * Pins what the stack ACTUALLY does to a caller whose scope dies mid-request, which is not what
+     * a reader would assume: the cancellation arrives wrapped, the `CancellationException` branch
+     * never sees it, and the caller gets `AppError.Unexpected` — the "something went wrong and we
+     * do not know what" bucket — for an event that is not a failure at all.
+     *
+     * This test does not describe a fix. It describes a sharp edge, so that it is a decision rather
+     * than a surprise: an `ensureActive()` inside the stack's own hook does not help, because that
+     * hook does not run in the caller's job (measured, ADR-0026). The guard belongs to the caller,
+     * and `Scripts/check-cancellation-guard.sh` requires it of every broad catch in this codebase.
+     *
+     * If this test ever starts failing because the caller stops carrying on, that is an
+     * IMPROVEMENT — read ADR-0026 and update it deliberately instead of restoring the old
+     * behaviour.
+     */
+    @Test
+    fun aCancelledCallerSeesRetryableNotCancellation() = runTest {
+        val engine = MockEngine { awaitCancellation() }
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        var sawError: AppError? = null
+        var carriedOn = false
+
+        val job = launch {
+            try {
+                client.get("v1/thing")
+            } catch (@Suppress("SwallowedException") mapped: AppErrorException) {
+                sawError = mapped.error
+            }
+            carriedOn = true
+        }
+        yield()
+        job.cancelAndJoin()
+
+        assertTrue(
+            carriedOn,
+            "Documented sharp edge (ADR-0026): the caller carries on. If this now fails, the " +
+                "behaviour improved — update the ADR, do not restore the old one.",
+        )
+        assertIs<AppError.Unexpected>(
+            sawError,
+            "And it carries on with the `Unexpected` bucket — 'something went wrong and we do not " +
+                "know what' — for an event that is not an error at all. Measured, not assumed: the " +
+                "first draft of this assertion said Retryable and was wrong.",
+        )
     }
 }
 

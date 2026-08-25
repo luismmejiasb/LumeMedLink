@@ -180,6 +180,25 @@ private fun lumeStackGuard(allowedOrigin: Origin, logSink: NetworkLogSink, token
             } catch (alreadyMapped: AppErrorException) {
                 throw alreadyMapped
             } catch (transport: Exception) {
+                // CHARACTERISED, NOT FIXED — and the difference is written here because a confident
+                // comment about a fix that does not fire is worse than no comment at all.
+                //
+                // When the CALLER's scope dies mid-request, Ktor surfaces the engine's failure
+                // wrapped, the CancellationException branch above never sees it, and the caller
+                // receives an `AppError` for an event that is not a failure at all — measured as
+                // `Unexpected`, and the first draft of this comment said `Retryable`, which is
+                // exactly why the behaviour is pinned by a test instead of described here. An
+                // `ensureActive()` here does NOT help: this hook does not run in the caller's job,
+                // so it has nothing cancelled to observe. That was tried, and it was measured not
+                // to fire (ADR-0026); the measurement is the only reason this comment is honest,
+                // because the first two runs of that experiment were green and red for the wrong
+                // reason — a `--tests` filter that matched no test at all.
+                //
+                // The guard therefore belongs to the CALLER, where the job actually is, and it is
+                // not left to memory: `Scripts/check-cancellation-guard.sh` requires every broad
+                // catch in this codebase to call `currentCoroutineContext().ensureActive()`.
+                // `LumeHttpStackTest.aCancelledCallerSeesRetryable` pins this behaviour so that a
+                // future change to it is a decision rather than a surprise.
                 throw AppErrorException(AppError.Retryable(status = null))
             }
         }

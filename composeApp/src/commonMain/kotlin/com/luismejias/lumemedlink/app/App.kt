@@ -65,6 +65,10 @@ public fun App() {
     // write nothing on purpose — F22 and F23 decided that the default is silence, not that
     // nothing ever calls them.
     val logSink = remember { DiscardingLogSink }
+    // Still the no-op, and that is now a WIRING gap rather than a missing implementation:
+    // `HttpSecurityEventReporter` exists and is tested, but nothing here builds an HttpClient yet
+    // (no base URL is configured and no auth flow exists to give it a token). Named so the next
+    // reader sees a wire to connect, not a channel to write.
     val securityEvents = remember { NoOpSecurityEventReporter }
 
     var hasSession by remember { mutableStateOf(false) }
