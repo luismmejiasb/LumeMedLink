@@ -42,6 +42,7 @@ Cambiar una exige ADR nuevo que derogue al anterior (§10):
 | Nombre interno | **LumeMedLink** | Decisión del autor (2026-08-17), tomada con las alternativas registradas en la bitácora 0001. Repo/target/carpeta. `git@github.com:luismmejiasb/LumeMedLink.git`. |
 | Nombre público (App Store / Play Store) | **PENDIENTE** | Misma pendiente que LumeMed (§0 suyo): el autor evalúa marca pública sin «Lume». Los strings visibles se localizan, así que renombrar público es barato. |
 | Plataforma | **Kotlin Multiplatform** — Android + iOS, UI en **Compose Multiplatform**, phone-first | ADR-0002. Portrait primero; iPad/tablet no es objetivo del v1. |
+| Dirección del titular | **Dentro de la frontera, geolocalizada por Google vía el backend** | ADR-0027 (2026-08-25, decisión del autor), que enmienda ADR-0001. La llave jamás en el binario: en LumeMed ese fue el motivo de diferir Google (`ADR-0030 de LumeMed`), y acá pesa más porque el teléfono es del paciente y §8.17 lo da por compartido. Pedido `backend-requests/0005`. |
 | Frontera de datos | **Cero contenido clínico en esta app.** Ficha, diagnósticos, notas, resultados, recetas: JAMÁS | ADR-0001. Es la decisión que define el producto. La lista de lo que SÍ maneja también es cerrada: perfil, citas (existencia/fecha/lugar), contactos, y las llaves de la teleconsulta futura. |
 | Audiencias | **Dos roles**: médico (gestión no clínica) y paciente | El lado paciente está **gated** por una ADR nueva del backend (ADR-0006 de este repo): hoy no existe identidad de paciente en la plataforma. Se construye primero el lado médico. |
 | Backend | El mismo **lumemed-cloud-platform**, por su contrato OpenAPI versionado | El contrato de hoy no publica rol paciente ni tier de auth de paciente. Todo endpoint nuevo se pide por `docs/backend-requests/`, como hace LumeMed. |
@@ -84,6 +85,11 @@ y para que el paciente tenga por fin una puerta, cuando el backend la construya.
 **Qué maneja esta app** (lista cerrada; extenderla exige ADR):
 
 - **Perfil**: nombre, foto, teléfono (E.164), correo, previsión — del médico y, en su fase, del paciente.
+- **Dirección** del titular, **geolocalizada** (ADR-0027, que enmienda ADR-0001): entra porque el producto la
+  necesita, no porque sea inocua — una dirección **más** una cita revela más que cualquiera de las dos. El motor
+  es **Google**, y la app **no habla con Google**: pregunta al backend, que guarda la llave y contrata la
+  transferencia. Falla a *tecleado*, nunca a *resuelto* — la capacidad es obligatoria, el resultado no.
+  Una coordenada NO es excusa para un mapa de pacientes, una ruta de visita ni un «cerca de ti».
 - **Citas**: existencia, fecha, hora, lugar/modalidad, con quién. **Nunca el motivo clínico.**
 - **Contactos**: la lista de pacientes del médico como agenda (nombre, teléfono, próxima cita).
 - Futuro: la **señalización** de la teleconsulta (unirse a la llamada) — jamás su contenido clínico.
