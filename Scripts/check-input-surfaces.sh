@@ -78,6 +78,52 @@ if [ -n "$hits" ]; then
          "$hits"
 fi
 
+# ── The OS structure-export channels (F3 reopened, ADR-0024) ────────────────────────────────────
+# A different mechanism from the keyboard and the clipboard, and from FLAG_SECURE: autofill and
+# content capture hand another process a STRUCTURED copy of the screen, text included. Compose opts
+# into both on the app's behalf — every text field publishes ContentDataType.Text semantics with no
+# condition and no opt-out — so this is a present-and-absent pair, not a style rule.
+
+# PRESENCE, and on the RIGHT view. `AndroidComposeView` overrides getImportantForAutofill() to a
+# hardcoded YES, so the exclusion only works from an ancestor: applied anywhere but the decor view
+# it is silently discarded, which is precisely a change that would look correct in review.
+present_in_shell() {
+    grep -rh --include='*.kt' "$1" androidApp/src 2>/dev/null | grep -vqE '^[[:space:]]*(//|\*|/\*)'
+}
+if ! present_in_shell 'window\.decorView\.denyAutofillExport()'; then
+    fail "input: autofill structure export not excluded at the window root" \
+         "The Android shell must call window.decorView.denyAutofillExport() (ADR-0024). On any other view the assignment is discarded without error."
+fi
+if ! present_in_shell 'denyContentCapture()'; then
+    fail "input: content capture not disabled by the app" \
+         "The shell must call denyContentCapture() (ADR-0024) so the channel survives a screen that loses FLAG_SECURE."
+fi
+
+# ABSENCE, written as an ALLOWLIST rather than a denylist, because the first draft of this gate was
+# a denylist and its own bait walked straight through it: the pattern accepted the qualifier `View.`
+# and the bait wrote `android.view.View.IMPORTANT_FOR_AUTOFILL_YES`. Same shape as the `androidx.`
+# prefix hole in F20 — naming the bad values can only ever catch the spellings someone thought of.
+#
+# So: EVERY assignment to importantForAutofill must be NO_EXCLUDE_DESCENDANTS, and every
+# setContentCaptureEnabled call must pass false. Anything else, however spelled or qualified, and
+# including values that do not exist yet, is a failure. Assignment-shaped so the instrumented test
+# may still NAME the YES constant to reproduce Compose's override.
+hits=$(scan 'importantForAutofill[[:space:]]*=' | grep -vE 'IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS' || true)
+if [ -n "$hits" ]; then
+    fail "input: autofill importance set to something other than NO_EXCLUDE_DESCENDANTS" \
+         "The only permitted value is IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS (ADR-0024). Anything else puts this app's fields back into the structure handed to the user's autofill service." "$hits"
+fi
+hits=$(scan 'setContentCaptureEnabled[[:space:]]*\(' | grep -vE 'setContentCaptureEnabled[[:space:]]*\([[:space:]]*false[[:space:]]*\)' || true)
+if [ -n "$hits" ]; then
+    fail "input: content capture enabled, or enabled conditionally" \
+         "The only permitted call is setContentCaptureEnabled(false) (ADR-0024) — a variable argument is a decision made somewhere this gate cannot read." "$hits"
+fi
+hits=$(scan 'IMPORTANT_FOR_CONTENT_CAPTURE_YES')
+if [ -n "$hits" ]; then
+    fail "input: content capture opt-in in app code" \
+         "Compose already opts in on our behalf; app code must never add another (ADR-0024)." "$hits"
+fi
+
 if [ $FAIL -eq 0 ]; then
     echo "input-surfaces: OK"
 else

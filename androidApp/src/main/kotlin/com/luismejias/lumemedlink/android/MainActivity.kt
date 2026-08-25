@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
 import com.luismejias.lumemedlink.app.App
+import com.luismejias.lumemedlink.core.input.denyAutofillExport
+import com.luismejias.lumemedlink.core.input.denyContentCapture
 
 /**
  * The Android half of the shell. Everything it shows comes from `commonMain`.
@@ -28,6 +30,15 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         // Tapjacking: drop touches delivered while another window overlays ours.
         window.decorView.filterTouchesWhenObscured = true
+        // The OS structure-export channels (F3 reopened, ADR-0024) — a different mechanism from
+        // FLAG_SECURE and NOT covered by it. Compose publishes an autofill node for every text
+        // field on its own initiative, so the structure went to whichever autofill service the
+        // user installed. Two calls rather than one wrapper because the two channels are two
+        // mechanisms: the first closes a hole, the second keeps an already-closed one shut.
+        // It must be the DECOR view — on the Compose view the assignment is silently discarded
+        // (core/input/StructureExport.kt says why).
+        window.decorView.denyAutofillExport()
+        denyContentCapture()
         setContent { App() }
     }
 }

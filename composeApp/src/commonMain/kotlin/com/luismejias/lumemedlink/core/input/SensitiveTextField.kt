@@ -41,9 +41,19 @@ internal enum class SensitiveFieldPurpose {
  * password field.
  *
  * What it does NOT do yet, declared rather than implied (ADR-0013 lists these): Android's
- * `IME_FLAG_NO_PERSONALIZED_LEARNING` and explicit autofill exclusion are not reachable from
- * common Compose in the pinned version, and iOS's app-wide third-party keyboard veto needs the iOS
- * host that does not exist. Those land in this file when they become reachable.
+ * `IME_FLAG_NO_PERSONALIZED_LEARNING` is not reachable from common Compose in the pinned version,
+ * and iOS's app-wide third-party keyboard veto needs the iOS host that does not exist. Those land
+ * in this file when they become reachable.
+ *
+ * Autofill used to be on that list and no longer is — the line above claimed it was unreachable,
+ * and that was wrong in a way worth recording. It is not reachable *per field*: every Compose text
+ * field publishes `ContentDataType.Text` semantics unconditionally, with no opt-out, so nothing
+ * written here can keep a field out of the autofill structure. It IS reachable per *window*, from
+ * an ancestor of the Compose view, which is why the control lives in
+ * `core/input/StructureExport.kt` and the Android shell rather than in this file (F3 reopened,
+ * ADR-0024). The purpose distinction this file exists for still holds and still matters: the
+ * exclusion is window-wide, so the day a credential screen exists it has to ask for autofill back
+ * explicitly — a password manager is a security *gain* and must not be collateral damage.
  *
  * Deliberately unstyled: the design system (S0.3) is deferred, and a styled primitive here would
  * be the first hardcoded-style violation. S0.3 dresses it; the security attributes stay.
