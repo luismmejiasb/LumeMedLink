@@ -36,3 +36,7 @@ keystore.properties
 secrets.properties
 *.mobileprovision
 service-account*.json
+
+# Xcode local state — the project and the scheme are committed; user state and build output are not.
+iosApp/**/xcuserdata/
+iosApp/**/*.xcworkspace/xcuserdata/

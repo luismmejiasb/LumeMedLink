@@ -71,6 +71,8 @@ jobs:
         run: Scripts/check-logging.sh
       - name: Gate — release hardening (F21, ADR-0021)
         run: Scripts/check-release-hardening.sh
+      - name: Gate — iOS host (ADR-0025)
+        run: Scripts/check-ios-host.sh
 
   build:
     needs: gates
@@ -104,3 +106,15 @@ jobs:
 
       - name: Build (Android + common) and compile iOS
         run: ./gradlew build :composeApp:compileKotlinIosSimulatorArm64
+
+      # The iOS HOST, not just the shared framework. Compiling `:composeApp` for iOS proves the
+      # Kotlin half; it says nothing about the Swift, the Info.plist or the entitlements — and the
+      # host is where the keyboard veto, the privacy cover and the keychain group live. Simulator
+      # only, and arm64 only: `iosX64` is deliberately not a target, so a generic simulator
+      # destination would ask for an x86_64 slice that does not exist (learned the hard way).
+      - name: Build the iOS host
+        run: |
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build

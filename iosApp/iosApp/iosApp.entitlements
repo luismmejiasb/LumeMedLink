@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  The Keychain access group, and the reason it is here at all: without an entitlements file the
+	  app is not a member of ANY keychain group, and every SecItem call answers OSStatus -34018
+	  (errSecMissingEntitlement). The first launch of this host proved that by crashing — the store
+	  threw, correctly, and the app died at startup (ADR-0025).
+
+	  ONE group, the app's own, and no shared suffix: a shared access group would let any other app
+	  signed by the same team read this app's session tokens. LumeMed is signed by the same team and
+	  holds the clinical record; the whole point of this repo is that the two do not share (ADR-0001).
+	  So the group is the app identifier itself and nothing else.
+	-->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)$(CFBundleIdentifier)</string>
+	</array>
+</dict>
+</plist>

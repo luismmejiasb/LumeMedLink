@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Deliberately short. Three things are ABSENT on purpose, and their absence is the control —
+	  Scripts/check-ios-host.sh fails the build if any of them appears:
+
+	  · NSAppTransportSecurity — no key at all. ATS is secure by default and every exception is a
+	    weakening; the constitution (§7) says "ATS without exceptions", and the way to assert that
+	    is to have nothing to read rather than a key that says "no exceptions" today.
+	  · UIFileSharingEnabled / LSSupportsOpeningDocumentsInPlace — this app never hands a document
+	    to anyone (ADR-0007/F19). Either key turns the app's container into a Files.app share point.
+	  · CFBundleURLTypes — custom URL schemes are prohibited (§8.12): any app can claim one. Deep
+	    links arrive as verified universal links or not at all.
+	-->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<!-- Phone-first and portrait-first (ADR-0002). iPad is not a v1 target. -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<!--
+	  Required by Compose Multiplatform, which refuses to start without it: iOS otherwise caps the
+	  frame duration on high-refresh iPhones and Compose renders at half rate. Not a security key;
+	  present because the framework aborts at launch if it is missing, verified by that crash.
+	-->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+</dict>
+</plist>

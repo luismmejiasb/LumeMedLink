@@ -26,9 +26,16 @@ private val privacyCoverColor = Color(0xFF0E1116)
  * FLAG_SECURE, so covering the view before the OS snapshots it for the app switcher is the
  * control. On Android FLAG_SECURE already blanks the thumbnail; here the cover is defense in depth.
  *
- * First layer, stated honestly: the robust iOS cover is a host UIWindow shown on the scene's
- * willResignActive, which needs the iOS shell that does not exist yet. This Compose overlay,
- * driven by the lifecycle, is the layer available without that host.
+ * First layer of two, and the division of labour is exact. The host UIWindow cover now exists
+ * (`iosApp/AppDelegate.swift`, ADR-0025) and fires on `willResignActive`, which is *earlier* than
+ * any lifecycle event Compose can observe and sits *above* anything presented on top of the
+ * Compose view. This overlay covers the Compose content; that window covers everything else.
+ *
+ * Neither is verified on iOS, and the reason is worth carrying forward rather than re-discovering:
+ * on the Simulator the app-switcher snapshot of this app is blank **with both covers disabled**,
+ * because Compose renders through Metal and the system snapshot does not capture that layer. The
+ * positive control cannot be made to fail, so the Simulator cannot verify this control at all —
+ * it needs a real device (bitácora 0023).
  */
 @Composable
 internal fun PrivacyScreenScaffold(content: @Composable () -> Unit) {

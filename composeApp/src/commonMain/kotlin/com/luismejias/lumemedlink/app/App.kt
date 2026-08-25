@@ -12,6 +12,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
+import com.luismejias.lumemedlink.core.security.NoOpSecurityEventReporter
 import com.luismejias.lumemedlink.core.session.InactivityLock
 import com.luismejias.lumemedlink.core.session.LockOutcome
 import com.luismejias.lumemedlink.core.session.SessionLock
@@ -59,12 +61,20 @@ public fun App() {
         SessionLock(InactivityLock(INACTIVITY_WINDOW_MILLIS), unlockGate)
     }
     val scope = rememberCoroutineScope()
+    // The declared defaults, wired here because this is the composition root (ADR-0008). Both
+    // write nothing on purpose — F22 and F23 decided that the default is silence, not that
+    // nothing ever calls them.
+    val logSink = remember { DiscardingLogSink }
+    val securityEvents = remember { NoOpSecurityEventReporter }
 
     var hasSession by remember { mutableStateOf(false) }
     var locked by remember { mutableStateOf(sessionLock.isLocked()) }
 
     LaunchedEffect(sessionManager) {
-        hasSession = sessionManager.hasSession()
+        // The store is a CAPABILITY and a capability can be unavailable at launch. The decision
+        // about what to do then lives in probeSession, outside this composable, so a test can
+        // assert it (ADR-0025).
+        hasSession = probeSession(sessionManager, logSink, securityEvents)
     }
 
     suspend fun endSession() {
