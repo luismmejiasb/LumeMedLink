@@ -4,7 +4,11 @@ import com.luismejias.lumemedlink.core.logging.LogEvent
 import com.luismejias.lumemedlink.core.logging.LumeLogSink
 import com.luismejias.lumemedlink.core.security.SecurityEventKind
 import com.luismejias.lumemedlink.core.security.SecurityEventReporter
+import com.luismejias.lumemedlink.core.session.InstallBoundary
+import com.luismejias.lumemedlink.core.session.InstallSentinel
+import com.luismejias.lumemedlink.core.session.SecureStore
 import com.luismejias.lumemedlink.core.session.SessionManager
+import com.luismejias.lumemedlink.core.session.enforceInstallBoundary
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.cancellation.CancellationException
@@ -38,10 +42,27 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 internal suspend fun probeSession(
     sessionManager: SessionManager,
+    sentinel: InstallSentinel,
+    secureStore: SecureStore,
     logSink: LumeLogSink,
     securityEvents: SecurityEventReporter,
 ): Boolean = try {
-    sessionManager.hasSession()
+    // The install boundary runs BEFORE the session is even looked for, and the order matters: on
+    // iOS the Keychain outlives the app being deleted, so asking "is there a session?" first would
+    // find the PREVIOUS installation's one and answer yes (F7, ADR-0028). Reading before purging is
+    // how the guarded thing gets used.
+    when (enforceInstallBoundary(sentinel, secureStore)) {
+        // The ordinary launch. This container has run before, so nothing was inherited.
+        InstallBoundary.ALREADY_ESTABLISHED -> sessionManager.hasSession()
+
+        // A fresh container next to surviving secrets: they are gone now, and there is by
+        // definition no session to find. Asking anyway would only read back what was just wiped.
+        InstallBoundary.PURGED_INHERITED_SECRETS -> false
+
+        // The purge or the mark failed and the container was deliberately left unmarked. Logged out
+        // is the honest state while secrets may have been inherited, and the next launch retries.
+        InstallBoundary.FAILED -> false
+    }
 } catch (cancellation: CancellationException) {
     // Re-thrown before anything else. Swallowing a cancellation breaks structured concurrency
     // (§6), and `runCatching` here would do exactly that — the trap F12 was caught by.

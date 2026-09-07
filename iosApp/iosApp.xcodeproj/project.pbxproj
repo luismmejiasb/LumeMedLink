@@ -135,7 +135,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "# KOTLIN_FRAMEWORK_BUILD_TYPE is NOT optional here, and its absence fails SILENTLY.\n# Without it KGP prints 'Unable to detect Kotlin framework build type' as a WARNING, does not\n# refresh build/xcode-frameworks, and the link then uses whatever framework was left there.\n# The build stays green while the app runs OLD Kotlin — which is exactly what happened between\n# 2026-08-25 and 2026-09-07 and invalidated every iOS device observation in that window.\ncd \"$SRCROOT/..\"\nif [ \"$CONFIGURATION\" = \"Release\" ]; then KFBT=release; else KFBT=debug; fi\nKOTLIN_FRAMEWORK_BUILD_TYPE=$KFBT ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -65,6 +65,20 @@ if ! swift_has 'windowLevel'; then
     fail "ios-host: privacy cover is not in its own window" \
          "A cover inside the app's window can be covered, reordered or removed by whatever is presented on top. Its whole point is to sit above all of that (ADR-0025)."
 fi
+# The build phase must pin the Kotlin framework build type, and this is the highest-value
+# assertion in this file because its absence FAILS SILENTLY. Without KOTLIN_FRAMEWORK_BUILD_TYPE
+# the Kotlin Gradle plugin prints "Unable to detect Kotlin framework build type" as a WARNING,
+# does not refresh build/xcode-frameworks, and the linker then uses whatever framework was left
+# there. The build stays green while the app runs OLD Kotlin. That is not hypothetical: it is what
+# this host did between 2026-08-25 and 2026-09-07, and it invalidated every iOS device observation
+# made in that window — including a live control that "proved" something by patching Kotlin that
+# never reached the binary (ADR-0028, bitácora 0026).
+# The ASSIGNMENT, not the name: this gate's own explanation of the setting lives inside the build
+# phase, and a plain token scan was satisfied by that comment (caught by bait).
+if ! grep -q 'KOTLIN_FRAMEWORK_BUILD_TYPE=' "$PROJECT"; then
+    fail "ios-host: the build phase does not pin KOTLIN_FRAMEWORK_BUILD_TYPE" \
+         "Without it the Kotlin framework is not refreshed and the app links STALE code while the build stays green (ADR-0028). Every iOS measurement becomes worthless without announcing itself."
+fi
 if ! grep -q 'CODE_SIGN_ENTITLEMENTS' "$PROJECT"; then
     fail "ios-host: the project does not reference the entitlements file" \
          "Without entitlements the app belongs to no keychain group and every SecItem call answers -34018. The file existing is not the control; the project pointing at it is."

@@ -21,6 +21,7 @@ import com.luismejias.lumemedlink.core.session.SessionManager
 import com.luismejias.lumemedlink.core.session.TokenStore
 import com.luismejias.lumemedlink.core.session.UnlockGate
 import com.luismejias.lumemedlink.core.session.UnlockOutcome
+import com.luismejias.lumemedlink.core.session.platformInstallSentinel
 import com.luismejias.lumemedlink.core.session.rememberSecureStore
 import com.luismejias.lumemedlink.core.session.rememberUnlockGate
 import kotlinx.coroutines.launch
@@ -64,6 +65,7 @@ public fun App() {
     // The declared defaults, wired here because this is the composition root (ADR-0008). Both
     // write nothing on purpose — F22 and F23 decided that the default is silence, not that
     // nothing ever calls them.
+    val installSentinel = remember { platformInstallSentinel() }
     val logSink = remember { DiscardingLogSink }
     // Still the no-op, and that is now a WIRING gap rather than a missing implementation:
     // `HttpSecurityEventReporter` exists and is tested, but nothing here builds an HttpClient yet
@@ -78,7 +80,7 @@ public fun App() {
         // The store is a CAPABILITY and a capability can be unavailable at launch. The decision
         // about what to do then lives in probeSession, outside this composable, so a test can
         // assert it (ADR-0025).
-        hasSession = probeSession(sessionManager, logSink, securityEvents)
+        hasSession = probeSession(sessionManager, installSentinel, secureStore, logSink, securityEvents)
     }
 
     suspend fun endSession() {

@@ -66,7 +66,14 @@ direction — it costs a sign-in, never grants one) and is **recorded** through 
 `SECURE_STORE_UNREADABLE` vocabulary that F22/F23 defined and nothing had ever called; a
 cancellation is re-thrown rather than swallowed; and an ordinary empty store reports nothing.
 
-**The iOS privacy cover is still NOT verified, and the Simulator cannot verify it.** Three methods
+**CORRECTION (2026-09-07, ADR-0028): the paragraph below was measured with a broken build and is
+withdrawn.** The control disabled the cover by patching Kotlin, and this host was linking a stale
+framework because its build phase never set `KOTLIN_FRAMEWORK_BUILD_TYPE` — so the patch never
+reached the binary and "nothing changed" because nothing was changed. Re-measuring with the fixed
+build was inconclusive, so the claim is retired rather than reversed. What stands: the cover is
+still unverified.
+
+~~**The iOS privacy cover is still NOT verified, and the Simulator cannot verify it.**~~ Three methods
 were tried: the on-disk `SplashBoard` snapshots, their compressibility, and a screenshot of the app
 switcher. All three returned the same result **with both covers disabled** as with both enabled —
 the positive control could not be made to fail. The likely cause is that Compose renders through
