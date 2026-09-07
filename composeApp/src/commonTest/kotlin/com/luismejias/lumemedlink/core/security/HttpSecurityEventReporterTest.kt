@@ -89,7 +89,7 @@ class HttpSecurityEventReporterTest {
         // No assertion needed beyond "this line returns". Every caller of this channel is in the
         // middle of applying a protection (locking a session, refusing an origin, wiping a store);
         // an exception here lands in code written assuming the FIRST failure was the emergency.
-        HttpSecurityEventReporter(client).report(SecurityEventKind.NETWORK_ORIGIN_REFUSED)
+        HttpSecurityEventReporter(client).report(SecurityEventKind.SECURE_STORE_UNREADABLE)
     }
 
     @Test
@@ -101,7 +101,64 @@ class HttpSecurityEventReporterTest {
         // the same trick SecureStoreKey uses to keep the wipe test honest.
         SecurityEventKind.entries.forEach { reporter.report(it) }
 
-        assertEquals(SecurityEventKind.entries.size, double.received.size)
+        // Only the kinds the platform has a NAME for are sent. The rest are dropped on purpose —
+        // see `toPlatformKind`. The assertion is written against the mapping rather than a literal
+        // count so it stays true when the platform's vocabulary grows.
+        val translatable = SecurityEventKind.entries.count { it.toPlatformKind() != null }
+        assertEquals(translatable, double.received.size)
+    }
+
+    // ── The vocabulary is the platform's, and this app does not get to invent values ────────────
+
+    @Test
+    fun theWireCarriesThePlatformsSpellingNotOurs() = runTest {
+        val double = ContractDouble { HttpStatusCode.NoContent to "" }
+
+        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SESSION_UNLOCK_FAILED)
+
+        val body = double.bodies.single()
+        assertTrue(
+            body.contains("reauthFailure"),
+            "Contract 0.32.0 accepts only its own eight values. This test exists because the " +
+                "first version of this reporter sent SESSION_UNLOCK_FAILED and every event would " +
+                "have been rejected 400 in silence. Body was: $body",
+        )
+        assertFalse(
+            body.contains("SESSION_UNLOCK_FAILED"),
+            "Our internal name must not reach the wire at all. Body was: $body",
+        )
+    }
+
+    @Test
+    fun aKindThePlatformCannotNameIsNotSentAtAll() = runTest {
+        val double = ContractDouble { HttpStatusCode.NoContent to "" }
+        val reporter = HttpSecurityEventReporter(double.client())
+
+        SecurityEventKind.entries.filter { it.toPlatformKind() == null }.forEach { reporter.report(it) }
+
+        assertEquals(
+            0,
+            double.received.size,
+            "Silence beats an approximately-true kind: the kind IS the message (ADR-0023), and " +
+                "the platform cannot tell an approximation from a fact — it will act on it.",
+        )
+    }
+
+    @Test
+    fun exactlyThreeKindsHaveNoHomeAndThatIsDeliberate() {
+        val unmapped = SecurityEventKind.entries.filter { it.toPlatformKind() == null }.toSet()
+
+        assertEquals(
+            setOf(
+                SecurityEventKind.SESSION_UNLOCK_INVALIDATED,
+                SecurityEventKind.NETWORK_ORIGIN_REFUSED,
+                SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED,
+            ),
+            unmapped,
+            "These three are the client-side detections the platform's vocabulary never " +
+                "anticipated, and backend-requests/0006 asks for them by name. If this set " +
+                "changes, it is because somebody decided something — make sure they did.",
+        )
     }
 
     // ── But a cancellation is NOT swallowed ─────────────────────────────────────────────────────
@@ -160,12 +217,12 @@ class HttpSecurityEventReporterTest {
     fun onlyTheOpaqueKindCrosses() = runTest {
         val double = ContractDouble { HttpStatusCode.Accepted to "" }
 
-        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SESSION_UNLOCK_INVALIDATED)
+        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SECURE_STORE_UNREADABLE)
 
         val body = double.bodies.single()
         assertTrue(
-            body.contains("SESSION_UNLOCK_INVALIDATED"),
-            "The kind is the message. Body was: $body",
+            body.contains("securityStorageFailure"),
+            "The kind is the message — in the platform's spelling. Body was: $body",
         )
         // The body is one field. This asserts the *shape*, not the field name — the name is the
         // platform's and is still unknown (backend-requests/0004). A body with two fields means
@@ -182,7 +239,9 @@ class HttpSecurityEventReporterTest {
     fun itIsAPostAndItDoesNotRetry() = runTest {
         val double = ContractDouble { HttpStatusCode.ServiceUnavailable to "" }
 
-        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED)
+        // A TRANSLATABLE kind on purpose: an untranslatable one sends nothing, and this test is about
+        // what happens on the wire once something is actually sent.
+        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SESSION_UNLOCK_FAILED)
 
         assertEquals(HttpMethod.Post, double.received.single().method)
         assertEquals(

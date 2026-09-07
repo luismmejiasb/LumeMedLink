@@ -22,13 +22,14 @@ private const val SECURITY_EVENTS_PATH = "v1/security-events"
  * text is the channel that eventually carries "unlock failed for Dr. Pérez, patient 11111111-1"
  * into a server log (ADR-0023). Adding a field here is a visible decision, which is the point.
  *
- * The field NAME is provisional and deliberately isolated in this one declaration: the platform
- * owns the schema and this app has not been given it (see `docs/backend-requests/0004`). A
- * mismatch costs a 400 and nothing else — the reporter never throws, so a wrong name degrades the
- * channel and never the app. Renaming it is one line, in one place, on the day the schema lands.
+ * The field name `kind` is no longer a guess: it was read from contract 0.32.0 on 2026-09-07. The
+ * VALUE was a guess, and it was wrong — this used to serialize [SecurityEventKind] straight onto the
+ * wire, and not one of this app's six names exists in the platform's set. Since the reporter never
+ * throws by doctrine, every event would have been rejected with 400 **in silence**. The wire type is
+ * now [PlatformSecurityEventKind], which is the platform's vocabulary and not ours to extend.
  */
 @Serializable
-private data class SecurityEventBody(@SerialName("kind") val kind: SecurityEventKind)
+private data class SecurityEventBody(@SerialName("kind") val kind: PlatformSecurityEventKind)
 
 /**
  * Posts a security event to the platform over the hardened stack (§8.16, ADR-0023).
@@ -60,9 +61,14 @@ internal class HttpSecurityEventReporter(private val client: HttpClient) : Secur
 
     override suspend fun report(kind: SecurityEventKind) {
         try {
+            // Translate FIRST, and say nothing rather than say something false. `null` means the
+            // platform has no name for what this app detected (see `toPlatformKind`), and a
+            // near-miss on this channel is worse than silence: the kind IS the message, and the
+            // platform cannot tell an approximation from a fact — it will act on it.
+            val platformKind = kind.toPlatformKind() ?: return
             client.post(SECURITY_EVENTS_PATH) {
                 contentType(ContentType.Application.Json)
-                setBody(SecurityEventBody(kind))
+                setBody(SecurityEventBody(platformKind))
             }
             // Cancellation is re-thrown BEFORE the catch-all. Swallowing it would break structured
             // concurrency (§6): the caller's scope is being torn down and this would pretend
