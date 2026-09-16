@@ -55,14 +55,18 @@
   en dev nada se vuelve disponible jamás) — la pantalla se diseña sobre disponibilidad eventual, y el
   entorno dev necesita el modo del backend que sí resuelve.
 
-## FASE 2 — Lado paciente (GATED: ADR-0006)
+## FASE 2 — Lado paciente (gate ABIERTO desde 2026-08-27)
 
-- **S2.0 · El pedido al backend.** `docs/backend-requests/0001`: el ADR del tier paciente que
-  `ADR-0031 del backend` exige — identidad + proofing, consentimiento, authz fuera de `Membership`,
-  threat model propio. **Nada de esta fase se construye —ni contra mocks— antes de que ese ADR
-  exista y esté aceptado.**
-- S2.1+ · Se planifican cuando el gate abra: perfil del paciente, sus citas, y la política de sesión
-  del tier (sucesora de ADR-0003).
+- **S2.0 · El pedido al backend. HECHO.** `docs/backend-requests/0001` pedía el ADR del tier paciente
+  que `ADR-0031 del backend` exige. El backend lo aceptó (`ADR-0035 del backend`) y después publicó
+  la superficie, en su encargo saliente `docs/backend-responses/0003-patient-tier-ready.md`, que
+  trae una sección dirigida al agente de este repo. ADR-0006 quedó **superada**; lee su enmienda
+  antes de planificar esta fase.
+- **S2.1 · La política de sesión del tier, primero.** Sucesora de ADR-0003, escrita **antes** de que
+  exista código de sesión de paciente: MFA (el backend decidió TOTP obligatoria también para
+  pacientes), recuperación y enrolamiento mediado por la clínica. Es el punto 3 de ADR-0006, lo
+  único que sigue vigente de ella, y no se descubre dentro de una slice de feature.
+- S2.2+ · Perfil del paciente y sus citas, contra el contrato ya publicado.
 
 ## FASE 3 — Horizonte
 

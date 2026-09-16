@@ -9,7 +9,7 @@ A futuro, el extremo paciente de la teleconsulta.
 | Repo | Qué es | Qué toma este repo de él |
 | --- | --- | --- |
 | [`LumeMed`](../LumeMed) | La herramienta clínica del médico (iPad-first, PHI) | La **constitución espejo**: doctrina de seguridad y arquitectura, adaptada por plataforma |
-| [`lumemed-cloud-platform`](../lumemed-cloud-platform) | El backend y el contrato OpenAPI | El contrato (el rol paciente **no existe todavía** — ver ADR-0006) |
+| [`lumemed-cloud-platform`](../lumemed-cloud-platform) | El backend y el contrato OpenAPI | El contrato, ya **con el rol paciente** (`ADR-0035 del backend`; el gate de ADR-0006 se abrió, ver su enmienda) |
 | [`LumeUIKit`](../LumeUIKit) | El design system Swift | Los **tokens y el lenguaje visual**, portados a Compose — jamás el código |
 
 ## La frontera, en una línea
