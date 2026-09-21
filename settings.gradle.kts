@@ -25,6 +25,12 @@ buildscript {
 }
 
 dependencyResolutionManagement {
+    // FAIL_ON_PROJECT_REPOS, and it is a supply-chain control, not tidiness (§8.8, ADR-0018): the
+    // default (PREFER_PROJECT) lets ANY module declare its own `repositories { }` and have it win
+    // over this list. A module adding one line would then resolve dependencies from somewhere this
+    // file never named, and the lockfile would faithfully record the result. The allowlist is only
+    // an allowlist if it is the only list. Declared rather than inherited, per §0.
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()

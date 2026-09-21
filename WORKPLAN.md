@@ -76,5 +76,5 @@
 ## Deuda declarada
 
 - Skills Kotlin equivalentes a los nueve de la familia Swift: no existen (§0.0).
-- Fila de LumeMedLink en el tablero del ecosistema: pendiente de autorización del autor (§1.1).
+- ~~Fila de LumeMedLink en el tablero del ecosistema~~ — **entregada el 2026-08-20** (§1.1). Se deja tachada, no borrada: siguió pidiéndose un mes porque nada recomputa la prosa.
 - Nombre público (App Store / Play Store): pendiente, junto al de LumeMed (§0).

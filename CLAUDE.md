@@ -59,7 +59,7 @@ Cambiar una exige ADR nuevo que derogue al anterior (§10):
 | Idiomas | Código/comentarios/commits/ADRs en **inglés**; constitución/WORKPLAN/PROGRESS/bitácora en **español** | §11, convención de la familia. |
 | Cómo se mide una ventana de tiempo | **Dos relojes, y cierra el que llegue primero** — el de pared nombra un instante (expiración de token), el de tiempo transcurrido mide una duración (inactividad), y la ventana usa el mayor de los dos transcurridos | ADR-0032 (2026-09-21). El reloj de pared es un *ajuste*: medida sólo con él, la ventana de inactividad se apagaba atrasando la hora del teléfono. |
 | Cómo afirma un gate | **El mecanismo, en el lugar donde corre** — la llamada y su dirección, en `src/main`, con comentarios y literales despojados por tokenizador y el XML parseado; y el ensayo con cebo es un artefacto que corre en CI | ADR-0029 (2026-09-21). Nace de dos gates que estuvieron verdes con su control borrado desde que nacieron: F1/F3 satisfechos por un test que no corre, F6/F12 por un comentario XML de cuatro líneas. |
-| Estado del ecosistema | **Un solo tablero**, en `../lumemed-cloud-platform/docs/ECOSYSTEM-STATUS.md`. Este repo debe ganar su fila ahí — **pendiente de autorización del autor** | §1.1. |
+| Estado del ecosistema | **Un solo tablero**, en `../lumemed-cloud-platform/docs/ECOSYSTEM-STATUS.md`. La fila de este repo **ya está ahí** (autorizada por el autor, agregada el 2026-08-20) | §1.1. |
 
 ---
 
@@ -113,8 +113,10 @@ no expone una ficha — expone una agenda, y eso también se protege.
 
 Igual que LumeMed §1.1, con las mismas tres reglas: se **lee** al inicio de cada sesión, se **enlaza**
 y jamás se copia una cifra, y si el hermano no está en disco se **degrada sin adivinar**. Este repo
-además le debe una fila al tablero (lo posee la plataforma): proponerla es tarea de la primera sesión
-que el autor autorice a tocar el repo hermano.
+además le debía una fila al tablero (lo posee la plataforma): **entregada el 2026-08-20** con
+autorización del autor, §3.1 del tablero. *(Corregido 2026-09-21: esta línea seguía pidiéndola un mes
+después de entregada, y `PROGRESS` ya la daba por resuelta — el defecto de que nada recomputa la
+prosa.)*
 
 ### 1.2 Las trampas del backend que muerden A ESTA app
 
@@ -149,8 +151,11 @@ son existenciales aquí:
    Consentimiento, minimización y derechos se reflejan en código, no en prosa.
 8. **Tipado de punta a punta**: modelos del contrato generados; nada de `Map<String, Any>` cruzando
    fronteras.
-9. **Sin warnings, CI verde o no se mergea** — cuando exista CI (S0); hasta entonces la regla es
-   deuda declarada, no cumplida.
+9. **Sin warnings, CI verde o no se mergea** — `allWarningsAsErrors` en `:composeApp` **y en
+   `:androidApp`** (este último desde 2026-09-21: compilaba con warnings tolerados mientras esta
+   línea afirmaba lo contrario). La única exención son las compilaciones de **metadata** de Kotlin,
+   con su razón escrita en el `build.gradle.kts` raíz. La mitad de «CI verde» sigue siendo **deuda
+   declarada**: el workflow está escrito y sólo corrió dos veces, y hoy es `workflow_dispatch`.
 
 ---
 
@@ -272,7 +277,10 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
    complementarios**: el primero corta el backup de nube (un Google One re-viviría la agenda en otro
    equipo), pero a targetSdk ≥ 31 la plataforma **lo ignora deliberadamente para la migración
    device-to-device** (compat change `IGNORE_ALLOW_BACKUP_IN_D2D`) — medido en emulador, no supuesto
-   (ADR-0015). En iOS **no hay hoy ningún archivo que marcar**: la app sólo persiste en Keychain, y
+   (ADR-0015). En iOS **ya hay un archivo que marcar y está marcado**: el marcador del sentinel de instalación
+   (F7, ADR-0028) vive en Application Support **excluido del backup**, que es parte de su diseño — un
+   restore tiene que aterrizar sin marcador. *(Corregido 2026-09-21: esta frase decía que no había
+   ninguno, escrita antes de F7 y nunca recomputada.)* Fuera de él la app sólo persiste en Keychain, y
    `WhenPasscodeSetThisDeviceOnly` es la única clase que Apple documenta como fuera de todo backup.
    `isExcludedFromBackup` llega cuando exista el primer archivo (F8), no antes — nombrarlo como
    control vigente sería afirmar lo que no está. **Notificaciones push sin contenido**: el payload
@@ -316,7 +324,11 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 15. **Kill-switch / versión mínima**: mismo mecanismo del backend (`GET /v1/app-availability`), misma
     dirección — **falla ABIERTO**; el control autoritativo es el backend rehusando auth.
 16. **Canal de eventos de seguridad**: `POST /v1/security-events`, kinds opacos, jamás contenido
-    personal — el endpoint ya existe y esta app lo consume igual que LumeMed §8.16.
+    personal. El endpoint existe y **la mitad cliente está construida y probada**
+    (`HttpSecurityEventReporter`, F23) — pero **lo cableado en `app/` es el no-op**: no hay base URL
+    ni flujo de auth todavía. *(Corregido 2026-09-21: esta línea decía «esta app lo consume», en
+    presente, sobre un canal que no escribe nada. Un canal que se cree activo es peor que uno
+    ausente, que es lo que ADR-0023 se escribió para evitar.)*
 17. **Dispositivo compartido — la amenaza que aquí es MÁS probable que en LumeMed**: el teléfono de
     un paciente lo usa la familia. Sesiones cortas, biometría para reentrar, y ningún dato personal
     en superficies pre-auth (widget, notificación, recientes). El threat model (docs/security/) la
@@ -382,7 +394,10 @@ logout wipe · bloqueo de sesión. Un slice no pasa si alguno aplica y falta.
 ## 13. Anti-patrones (rechazo inmediato — [lint] donde el gate de S0.2 aterrizó, [manual] el resto)
 
 - Contenido clínico en cualquier superficie de esta app — **la violación de frontera; no es un bug,
-  es otro producto**. **[manual]** — ningún lint entiende semántica.
+  es otro producto**. **[lint parcial: `check-data-boundary.sh`]** — un lint sigue sin entender
+  semántica, pero sí ve un NOMBRE, en cualquier posición (propiedad, parámetro, enum, tipo, alias,
+  `@SerialName`) desde 2026-09-21. Lo que queda **[manual]** es el valor clínico dentro de un campo
+  que no se llama como lo que lleva. ADR-0019, ampliado por ADR-0029.
 - Un documento clínico mostrado o transportado (ADR-0007 / T1). **[lint:
   `check-forbidden-patterns` P2]** — share sheets/exporters; la semántica sigue siendo manual.
 - Payload de push con datos personales o clínicos. **[manual]** — no existe push todavía.

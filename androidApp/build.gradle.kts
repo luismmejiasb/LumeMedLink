@@ -61,3 +61,15 @@ dependencies {
     implementation(libs.compose.runtime)
     implementation(libs.compose.ui)
 }
+
+// §2.9 says "sin warnings, CI verde o no se mergea", and until 2026-09-21 that was true of
+// :composeApp and false here — this module compiled with warnings tolerated while two documents
+// claimed otherwise (audit). The shell is small, but it is where FLAG_SECURE, the tapjacking guard
+// and the structure-export calls live: a deprecation warning on any of those is exactly the notice
+// that must not scroll past.
+//
+// Scoped to this module's own compilations; the root build already exempts Kotlin METADATA tasks
+// for a Compose Multiplatform 1.11 classpath duplication that is not ours to fix.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+    compilerOptions.allWarningsAsErrors.set(true)
+}

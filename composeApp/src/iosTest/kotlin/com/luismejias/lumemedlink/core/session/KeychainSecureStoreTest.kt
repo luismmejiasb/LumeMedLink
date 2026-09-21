@@ -15,6 +15,15 @@ import kotlin.test.assertNull
  * there is no keychain to talk to. The day the iOS shell exists these tests run hosted, and the
  * passcode-floor semantics are verified on hardware in S1.2. Skipped shows in the report as
  * skipped — a gate's silence is never a verdict, so the silence is labeled.
+ *
+ * **2026-09-21 — the condition this comment names HAS BEEN MET, and nothing re-ran.** "The day the
+ * iOS shell exists these tests run hosted": the shell has existed since 2026-08-25 (ADR-0025).
+ * Whether a hosted test runner actually reaches the keychain here is UNVERIFIED — it needs the
+ * Kotlin/Native test binary to run inside an app host, which this project does not configure today,
+ * so it is a slice and not an edit. Written here rather than left implied, because a condition that
+ * quietly comes true is how six tests stay skipped forever while a count says 130.
+ *
+ * And the count: these six are INCLUDED in the reported iOS total. 130 run, 6 of them do not.
  */
 @Ignore
 class KeychainSecureStoreTest {
