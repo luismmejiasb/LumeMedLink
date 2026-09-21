@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
+import com.luismejias.lumemedlink.core.logging.LogDetail
+import com.luismejias.lumemedlink.core.logging.LogEvent
 import com.luismejias.lumemedlink.core.security.NoOpSecurityEventReporter
 import com.luismejias.lumemedlink.core.session.InactivityLock
 import com.luismejias.lumemedlink.core.session.LockOutcome
@@ -21,6 +23,7 @@ import com.luismejias.lumemedlink.core.session.SessionManager
 import com.luismejias.lumemedlink.core.session.TokenStore
 import com.luismejias.lumemedlink.core.session.UnlockGate
 import com.luismejias.lumemedlink.core.session.UnlockOutcome
+import com.luismejias.lumemedlink.core.session.performLogout
 import com.luismejias.lumemedlink.core.session.platformInstallSentinel
 import com.luismejias.lumemedlink.core.session.rememberSecureStore
 import com.luismejias.lumemedlink.core.session.rememberUnlockGate
@@ -84,9 +87,18 @@ public fun App() {
     }
 
     suspend fun endSession() {
-        sessionManager.logout()
-        unlockGate.clear()
-        sessionLock.sessionEnded()
+        // The contract itself lives in core/session so a test can reach every branch of it; what
+        // stays here is the shell's reaction (ADR-0014, amended 2026-09-21). The four steps used to
+        // be this inline sequence, which meant the first throw skipped the rest and the shell's
+        // dying scope could truncate the erase.
+        val outcome = performLogout(sessionManager, secureStore, unlockGate, sessionLock)
+        if (!outcome.complete) {
+            // Ends the session anyway — fail closed — but the shell now KNOWS the erase was partial.
+            // Telling the person is the login slice's job: this screen is a placeholder and a
+            // reassuring "sesión cerrada" over a surviving token is exactly the §8.7 vocabulary
+            // failure, with the stakes reversed.
+            logSink.log(LogEvent.LOGOUT_INCOMPLETE, LogDetail.ofEnumName(outcome.failed.first().name))
+        }
         hasSession = false
         locked = true
     }

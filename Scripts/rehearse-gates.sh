@@ -168,6 +168,30 @@ p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/kotlin/com/luismejias/lumem
 p.write_text(p.read_text().replace("window.decorView.denyAutofillExport()", "window.decorView.rootView.denyAutofillExport()"))
 '
 
+# ── The logout contract (ADR-0014) ──────────────────────────────────────────────────────────────
+bait "logout erases one key instead of the namespace" check-logout-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session/LogoutContract.kt"
+p.write_text(p.read_text().replace("secureStore.wipe()", "secureStore.remove(SecureStoreKey.SESSION_TOKENS.storageKey)"))
+'
+bait "the erase becomes cancellable again" check-logout-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session/LogoutContract.kt"
+p.write_text(p.read_text().replace("withContext(NonCancellable)", "run"))
+'
+bait "a declared step is never attempted" check-logout-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session/LogoutContract.kt"
+p.write_text(p.read_text().replace("step(LogoutStep.TIER2_MATERIAL) { unlockGate.clear() }", ""))
+'
+bait "the shell re-inlines the erase instead of calling the contract" check-logout-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+s = p.read_text().replace("val outcome = performLogout(sessionManager, secureStore, unlockGate, sessionLock)",
+                          "sessionManager.logout()\n        unlockGate.clear()\n        sessionLock.sessionEnded()\n        val outcome = LogoutOutcome(emptySet())")
+p.write_text(s)
+'
+
 # ── The iOS host ────────────────────────────────────────────────────────────────────────────────
 bait "keyboard veto survives only inside a /* */ block" check-ios-host.sh '
 import sys, pathlib, re

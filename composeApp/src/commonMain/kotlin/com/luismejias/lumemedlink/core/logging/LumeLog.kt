@@ -15,6 +15,12 @@ package com.luismejias.lumemedlink.core.logging
 internal enum class LogEvent {
     SESSION_ESTABLISHED,
     SESSION_ENDED,
+
+    /**
+     * A logout that did not erase everything (ADR-0014). The step that failed is the detail; the
+     * session is ended either way, because a lock that cannot tell whether it should close, closes.
+     */
+    LOGOUT_INCOMPLETE,
     SESSION_LOCKED,
     SESSION_UNLOCK_FAILED,
     SESSION_UNLOCK_UNAVAILABLE,

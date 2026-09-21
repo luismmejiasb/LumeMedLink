@@ -28,6 +28,8 @@ construction), encrypting each value into its own file under `filesDir/lume_secu
 - **Fail closed on decrypt**: a GCM authentication failure loads as `null` (no session), never a
   crash loop — mirroring the iOS store, where removing the passcode deletes the item.
 - **Wipe** removes the files AND the Keystore key — the logout contract's disk half.
+  *(Corrección 2026-09-21: cierto de `wipe()` desde siempre, y falso del LOGOUT hasta esa fecha —
+  ningún camino de logout llamaba a `wipe()`. Ver la enmienda de ADR-0014.)*
 
 ## Consequences
 

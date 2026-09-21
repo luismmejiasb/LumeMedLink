@@ -25,6 +25,8 @@ The reason is that the store already carries, and a new path would not:
 2. **Exclusion from backup and device transfer** — its directory is inside the app's private data,
    which ADR-0015's rules exclude in both destinations.
 3. **Erasure by logout**, verified against real hardware (ADR-0014), including deletion of the key
+   *(Corrección 2026-09-21: entre 2026-08-21 y esa fecha esta línea era falsa — el logout borraba
+   una entrada y dejaba la clave viva. Verdadera desde la enmienda de ADR-0014.)*
    itself so a stray copy is permanently undecryptable.
 
 A cache that reuses it inherits all three for free. A cache that writes its own file inherits none,

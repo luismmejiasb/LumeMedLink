@@ -51,18 +51,55 @@ class LogoutWipeOnDeviceTest {
         )
     }
 
+    /**
+     * THE PRODUCTION PATH, and the two assertions this test was missing for three weeks.
+     *
+     * Its name promised "nothing on disk" and it asserted neither the files nor the Keystore alias;
+     * those two assertions lived in the `wipe()` test below, and `wipe()` was a method no logout
+     * ever called. Two green tests, a contract described as implemented in three ADRs, and a
+     * logout that unlinked one file and left the AES key alive (ADR-0014, amended 2026-09-21).
+     *
+     * So this one now exercises `performLogout` — what the shell calls — and asserts the same
+     * things the wipe test does. If the two ever diverge again, this is the one that must be
+     * believed, because it is the one on the path a person's logout actually takes.
+     */
     @Test
-    fun logoutLeavesNothingReadableAndNothingOnDisk() = runBlocking {
+    fun theProductionLogoutPathLeavesNoFileAndNoKey() = runBlocking {
         val manager = SessionManager(TokenStore(store), FailingRefreshClient())
+        val lock = SessionLock(InactivityLock(windowMillis = 300_000L), AlwaysAvailableGate())
+        SecureStoreKey.entries.forEach { store.put(it.storageKey, "synthetic-${it.name}") }
         manager.establish(SessionTokens("acc-synthetic", "ref-synthetic", Long.MAX_VALUE))
         assertTrue(manager.hasSession(), "precondition: a session exists on real storage")
         assertTrue(storeDir.listFiles().orEmpty().isNotEmpty(), "precondition: something was written")
 
-        manager.logout()
+        val outcome = performLogout(manager, store, AlwaysAvailableGate(), lock)
 
+        assertTrue(outcome.complete, "steps that failed on real hardware: ${outcome.failed}")
         assertNull(manager.token(), "memory half of the contract")
-        assertNull(store.get(SecureStoreKey.SESSION_TOKENS.storageKey), "disk half of the contract")
         assertFalse(manager.hasSession())
+        SecureStoreKey.entries.forEach {
+            assertNull(store.get(it.storageKey), "${it.name} survived the production logout")
+        }
+        // Not merely unreadable — gone. A surviving ciphertext file is a forensic artifact.
+        assertTrue(
+            storeDir.listFiles().orEmpty().isEmpty(),
+            "ciphertext files survived the logout: ${storeDir.listFiles()?.map { it.name }}",
+        )
+        // ADR-0014 point 3, the one that was never implemented: deleting the key is what turns
+        // "erased" into "unrecoverable" for any stray copy of the ciphertext.
+        assertFalse(
+            java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+                .containsAlias("lume_session_tier1"),
+            "the tier-1 key survived the logout, so old ciphertext would still be decryptable",
+        )
+    }
+
+    private class AlwaysAvailableGate : UnlockGate {
+        override suspend fun enroll(): Boolean = true
+
+        override suspend fun unlock(): UnlockOutcome = UnlockOutcome.Unlocked
+
+        override suspend fun clear() = Unit
     }
 
     @Test

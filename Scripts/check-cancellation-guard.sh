@@ -46,10 +46,23 @@ FILES=$(find composeApp/src/commonMain composeApp/src/androidMain composeApp/src
 #   assumed (ADR-0026): the guard was added there first and did not fire. The behaviour it leaves
 #   behind is pinned by LumeHttpStackTest.aCancelledCallerSeesRetryableNotCancellation, and the
 #   guard it needs lives in every CALLER — which is what the rest of this gate enforces.
-EXEMPT="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/networking/LumeHttpStack.kt"
+#
+#   core/session/LogoutContract.kt — its broad catches run inside `withContext(NonCancellable)`,
+#   which is the whole point of the file: a caller whose scope dies must not truncate the erase.
+#   Inside NonCancellable there is nothing cancelled to observe, so ensureActive() there would be a
+#   guard that CANNOT FIRE — the exact shape this repo keeps mistaking for a control. The behaviour
+#   it replaces is pinned by LogoutContractTest.aCancelledCallerStillGetsTheWholeErase.
+EXEMPT="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/networking/LumeHttpStack.kt
+composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session/LogoutContract.kt"
+
+# Newline-separated above for readability; normalised here because the membership test below is a
+# substring match on a SPACE-delimited string, and a newline is not a space. Adding the second entry
+# as a new line silently un-exempted the first — a list that stops working when it grows is a list
+# that will be wrong exactly when it matters.
+EXEMPT_ONE_LINE=$(printf '%s' "$EXEMPT" | tr '\n' ' ')
 
 for f in $FILES; do
-    case " $EXEMPT " in *" $f "*) continue ;; esac
+    case " $EXEMPT_ONE_LINE " in *" $f "*) continue ;; esac
     # Comment lines stripped first — a KDoc explaining this very rule must not trip it. (This gate
     # would otherwise fail on its own ADR quotations inside the files it guards.)
     code=$(grep -vE '^[[:space:]]*(//|\*|/\*)' "$f")
