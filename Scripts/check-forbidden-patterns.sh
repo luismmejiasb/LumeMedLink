@@ -52,8 +52,15 @@ if [ -n "$hits" ]; then
          "$hits"
 fi
 
+# The ONE directory that is exempt, anchored. `grep -v '/core/'` exempted ANY path containing a
+# directory called core — including one created under androidApp, where a SharedPreferences write of
+# a session token passed both this gate and detekt (audit, ADR-0029). Scripts/check-feature-isolation.sh
+# refuses a stray `core` directory; this anchor means that even if one appeared, it would not be
+# exempt here.
+CANONICAL_CORE="^composeApp/src/[^/]*/kotlin/com/luismejias/lumemedlink/core/"
+
 # ── P3 · plain-storage calls outside core/ (§8.4, ADR-0005) ─────────────────────────────────────
-hits=$(grep -rnE 'getSharedPreferences|NSUserDefaults|UserDefaults\.' $SRC 2>/dev/null | grep -v '/core/' || true)
+hits=$(grep -rnE 'getSharedPreferences|NSUserDefaults|UserDefaults\.' $SRC 2>/dev/null | grep -vE "$CANONICAL_CORE" || true)
 if [ -n "$hits" ]; then
     fail "P3 plain storage call outside core/" \
          "Secrets live in Keystore/Keychain; any other persistence is a core/ seam with its ADR (§8.4, ADR-0005)." \
@@ -70,7 +77,7 @@ fi
 # So: a feature that writes a file is a feature that skipped the encryption, the exclusion and the
 # wipe. core/ is exempt because that is where the seam itself lives.
 hits=$(grep -rnE '\bFile\(|FileOutputStream|writeBytes\(|writeText\(|\.outputStream\(|NSFileManager|NSDocumentDirectory|writeToFile|openFileOutput' $SRC 2>/dev/null \
-    | grep -v '/core/' | grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)
+    | grep -vE "$CANONICAL_CORE" | grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)
 if [ -n "$hits" ]; then
     fail "P4 at-rest write outside core/" \
          "Cached bytes go through core/session's SecureStore, which is encrypted, backup-excluded and wiped by logout (ADR-0022). A raw file write inherits none of that." \

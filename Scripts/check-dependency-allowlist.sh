@@ -146,12 +146,22 @@ done
 # put distributionSha256Sum on the Gradle wrapper.
 WORKFLOWS=$(find .github/workflows -name '*.yml' 2>/dev/null || true)
 if [ -n "$WORKFLOWS" ]; then
-    hits=$(grep -nE '^\s*-?\s*uses:\s*[^@]+@(v?[0-9][^ ]*|main|master)\s*$' $WORKFLOWS || true)
+    # An ALLOWLIST, and the reason is the same one F20 already paid for once: the first draft of
+    # this check named the bad shapes — `v?[0-9]...`, `main`, `master` — so `@latest`, `@develop`,
+    # `@release`, `@HEAD` and any non-numeric tag walked straight through it (audit, ADR-0029).
+    # Naming bad values only ever catches the spellings someone thought of. So: a `uses:` is pinned
+    # by a 40-character commit SHA, optionally with the tag kept as a trailing comment, or it fails
+    # — including shapes that do not exist yet. A local action (`./…`) is this repo's own code.
+    hits=$(grep -nE '^[[:space:]]*-?[[:space:]]*uses:' $WORKFLOWS 2>/dev/null |
+        grep -vE 'uses:[[:space:]]*\./' |
+        grep -vE 'uses:[[:space:]]*[^@]+@[0-9a-f]{40}[[:space:]]*(#.*)?$' || true)
     if [ -n "$hits" ]; then
         FAIL=1
         echo ""
-        echo "FAIL a CI action is pinned by a mutable tag or branch"
-        echo "  Pin it by commit SHA (keep the tag as a trailing comment). ADR-0018."
+        echo "FAIL a CI action is not pinned by commit SHA"
+        echo "  A third-party action runs here with this repo's token and its build outputs, and a"
+        echo "  TAG IS MUTABLE. Pin by 40-char commit SHA, keeping the tag as a trailing comment."
+        echo "  Note the trap ADR-0018 records: an ANNOTATED tag's object SHA is not the commit SHA."
         echo "$hits" | sed 's/^/    /'
     fi
 fi

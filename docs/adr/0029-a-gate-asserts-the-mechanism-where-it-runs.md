@@ -80,11 +80,63 @@ eleven undetected baits against gates that were already repaired. It now measure
   next year.
 - CI gains a step. It is cheap (seconds, ubuntu) and it is the only step that can fail because
   *another step cannot fail*.
-- **What this does NOT fix.** The audit found the same family in gates outside this change:
+- **What this does NOT fix.** ~~The audit found the same family in gates outside this change:
   `check-data-boundary.sh` sees only `val`/`var` declarations and does not know the word «motivo»;
   `check-wrapper.sh` asserts `distributionSha256Sum` by presence, not by value; the CI action pin
   check accepts `@latest`; a package named `core` under `androidApp` disables `ForbiddenImport`.
-  Each needs its own bait and its own fix. They are named here so that closing this ADR does not
-  read as closing the class.
+  Each needs its own bait and its own fix.~~ **CLOSED 2026-09-21, second pass — see below.** They
+  are kept struck through rather than deleted because the list is the evidence that naming what you
+  did not fix is what gets it fixed.
 - The rehearsal is not proof of completeness. It catches the baits someone thought of — which is
   the same limit as before, with one difference that is the whole point: **it keeps catching them.**
+
+---
+
+## Segunda pasada — 2026-09-21: los gates que esta ADR dejó nombrados
+
+Cada uno reproducido con cebo ANTES de tocarlo, y cada arreglo vuelto a cebar después. Seis gates.
+
+**`check-data-boundary.sh` — veía una propiedad y nada más.** Sólo hacía match después de `val`,
+`var` o `const val`. Pasaron cuatro cebos, los cuatro Kotlin corriente: un **parámetro de función**
+(`fun render(motivoClinico: String)`), una **entrada de enum**, un **nombre de tipo**
+(`class AllergyBanner`) y un **typealias**. Enumerar posiciones sintácticas es el mismo juego perdido
+que nombrar grafías malas (F20, ADR-0024). Ahora la regla es total: una palabra clínica no aparece
+como identificador **en ninguna posición, en ningún archivo** — verificada verde contra el árbol de
+hoy antes de adoptarla, que es lo que hace segura una regla así de estricta. Y **`motivo` faltaba del
+vocabulario**, que es el campo que §1.0 nombra a mano: «Nunca el motivo clínico».
+
+**`check-wrapper.sh` — afirmaba por presencia lo que debía afirmar por valor.**
+`grep -q '^distributionSha256Sum='` pasaba con la línea vacía y con un hash de ceros. Ahora el
+checksum está **fijado por valor** en el script (obtenido de
+`services.gradle.org/distributions/gradle-9.7.1-bin.zip.sha256` y comparado hoy) y debe coincidir con
+el del archivo: dos lugares que tienen que concordar. Y se cerró un hueco que nadie había nombrado:
+**el HOST de la distribución no se verificaba**. La comprobación de versión sólo mira el nombre del
+archivo, así que `https://evil.test/distributions/gradle-9.7.1-bin.zip` la satisfacía — este build
+descargaría y **ejecutaría** un Gradle de otro sitio. Más `http://` en claro y
+`validateDistributionUrl`. Cinco cebos.
+
+**El pineo de acciones de CI — una denylist de formas de tag.** `v?[0-9]…|main|master`, así que
+`@latest`, `@develop`, `@release`, `@HEAD` y cualquier tag no numérico entraban. Invertido a
+**allowlist**: SHA de 40 caracteres, con el tag opcional como comentario al final, o falla — incluidas
+las formas que todavía no existen.
+
+**Un paquete `core` bajo `androidApp` — exento de todo sin ser core.** La regla I5 de
+`check-feature-isolation.sh` sólo recorría `composeApp/src`, y P3/P4 de
+`check-forbidden-patterns.sh` excluían **cualquier** ruta con `/core/`. Medido: un
+`getSharedPreferences(...).putString("t", token)` en
+`androidApp/src/main/kotlin/com/luismejias/lumemedlink/core/` pasaba los dos. I5 ahora recorre los dos
+módulos y la exención está **anclada** al core canónico, que es un directorio en un módulo.
+
+**`check-logging.sh` — las dos mitades apagadas justo donde viven los tokens.** detekt exime `core/`
+del `ForbiddenImport` —tiene que hacerlo, ahí viven Ktor y OkHttp legítimamente— así que
+`import android.util.Log` estaba permitido, y entonces la llamada se escribe `Log.d(...)`, que el
+patrón **cualificado** de este gate no veía. Medido con cebo: un token de sesión a logcat desde
+`core/session`, con CI en verde. Ahora se afirma la **forma corta** (sin disparar con `LumeLog.`) y el
+**import**, sin exención: este gate es el total, y el carve-out de detekt es sobre red, no sobre logs.
+
+**`check-preauth-surfaces.sh` — la mitad iOS no estaba escrita.** Todo el gate recorría
+`composeApp/src androidApp/src`, así que una `UNUserNotificationCenter`, un widget, un `NSUserActivity`
+o un `UserDefaults` **en Swift** pasaban sin tocar nada — y el `UserDefaults` de Swift tampoco lo veía
+P3, que es Kotlin. Escrita, con el tokenizador para que un comentario siga siendo prosa.
+
+El ensayo pasa de 15 cebos a **35**.

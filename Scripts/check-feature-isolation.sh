@@ -80,7 +80,12 @@ fi
 # detekt's ForbiddenImport exempts core/ — the infrastructure edge. A directory named `core`
 # anywhere else inherits that exemption and turns off the raw-networking and secrets gates for
 # whatever is inside it. Only the canonical path may carry the name.
-stray=$(find "$KOTLIN_ROOT" -type d -name core 2>/dev/null | grep -v "kotlin/com/luismejias/lumemedlink/core$" || true)
+# Every tree that ships Kotlin, not just composeApp. The rule scanned only composeApp/src, so a
+# package `core` under androidApp inherited detekt's exemption AND check-forbidden-patterns' own
+# `/core/` skip, and a SharedPreferences write of a session token there passed both (audit,
+# ADR-0029). The canonical core is exactly one directory, in exactly one module.
+stray=$(find composeApp/src androidApp/src -type d -name core 2>/dev/null |
+    grep -v "^composeApp/src/[^/]*/kotlin/com/luismejias/lumemedlink/core$" || true)
 if [ -n "$stray" ]; then
     fail "I5 a directory named 'core' outside the canonical tree" \
          "It inherits detekt's core/ exemption, silently disabling no_raw_networking and secrets_gate there." "$stray"

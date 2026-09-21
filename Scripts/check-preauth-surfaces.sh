@@ -20,6 +20,11 @@ REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$REPO_ROOT" || exit 1
 
 SRC="composeApp/src androidApp/src"
+# The iOS host was outside every scan here, so the whole iOS half of this rule was unwritten: a
+# notification request, a widget, a Handoff activity or a UserDefaults write in Swift passed
+# untouched (audit, ADR-0029). `scan` below covers .kt; SWIFT_SRC is checked separately because the
+# APIs have different names, not because the rule is different.
+SWIFT_SRC="iosApp"
 MANIFEST="androidApp/src/main/AndroidManifest.xml"
 FAIL=0
 
@@ -97,6 +102,40 @@ if [ -f "$MANIFEST" ]; then
     if [ -n "$hits" ]; then
         fail "pre-auth: the manifest asks to show the app over the lock screen" \
              "Threat model T2: nothing of this app renders before authentication." "$hits"
+    fi
+fi
+
+# ── The iOS host: the same rule, the other platform's names (ADR-0012) ─────────────────────────
+# Comments and string literals stripped by the shared tokenizer, so a KDoc naming an API is prose
+# (ADR-0029). Presence of ANY of these is the failure: none of these surfaces exists by decision,
+# and the day one does it arrives with its slice and its ADR, not as a line in a delegate.
+if [ -d "$SWIFT_SRC" ]; then
+    SWIFT_FILES=$(find "$SWIFT_SRC" -name '*.swift' 2>/dev/null)
+    swift_scan() {
+        [ -n "$SWIFT_FILES" ] || return 0
+        # shellcheck disable=SC2086
+        python3 Scripts/lib/uncomment.py --lang c --strip-strings $SWIFT_FILES 2>/dev/null | grep -nE "$1" || true
+    }
+
+    hits=$(swift_scan 'UNUserNotificationCenter|UNMutableNotificationContent|UNNotificationRequest|registerForRemoteNotifications')
+    if [ -n "$hits" ]; then
+        fail "pre-auth: the iOS host builds or registers for notifications" \
+             "No pre-auth surface exists until its slice does, and a payload is content on a locked screen (ADR-0012, §8.5)." "$hits"
+    fi
+    hits=$(swift_scan 'WidgetKit|WidgetConfiguration|IntentConfiguration|StaticConfiguration')
+    if [ -n "$hits" ]; then
+        fail "pre-auth: a widget surface in the iOS host" \
+             "A widget renders before anyone authenticates (threat model T2, ADR-0012)." "$hits"
+    fi
+    hits=$(swift_scan 'NSUserActivity|CSSearchableItem|CSSearchableIndex|isEligibleForHandoff|isEligibleForSearch')
+    if [ -n "$hits" ]; then
+        fail "pre-auth: Handoff or Spotlight indexing in the iOS host" \
+             "Both publish app content outside the app — Spotlight to the lock screen, Handoff to another device (ADR-0012)." "$hits"
+    fi
+    hits=$(swift_scan 'UserDefaults|NSUbiquitousKeyValueStore')
+    if [ -n "$hits" ]; then
+        fail "pre-auth: plain or cloud key-value storage in the iOS host" \
+             "The Kotlin half of this rule is P3 in check-forbidden-patterns; Swift had no half at all (§8.4, ADR-0005)." "$hits"
     fi
 fi
 

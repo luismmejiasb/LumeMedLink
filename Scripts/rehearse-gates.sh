@@ -168,6 +168,76 @@ p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/kotlin/com/luismejias/lumem
 p.write_text(p.read_text().replace("window.decorView.denyAutofillExport()", "window.decorView.rootView.denyAutofillExport()"))
 '
 
+# ── The gates the audit found blind, one bait each (ADR-0029, second pass) ──────────────────────
+bait "a clinical name as a function parameter, not a property" check-data-boundary.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session"
+(d / "BaitBoundary.kt").write_text(
+    "package com.luismejias.lumemedlink.core.session\n\n"
+    "internal fun render(motivoClinico: String) = motivoClinico\n")
+'
+bait "a clinical name as a type, not a property" check-data-boundary.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session"
+(d / "BaitBoundary.kt").write_text(
+    "package com.luismejias.lumemedlink.core.session\n\ninternal class AllergyBanner\n")
+'
+bait "the distribution checksum emptied but the line kept" check-wrapper.sh '
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / "gradle/wrapper/gradle-wrapper.properties"
+p.write_text(re.sub(r"^distributionSha256Sum=.*$", "distributionSha256Sum=", p.read_text(), flags=re.M))
+'
+bait "the distribution served from another host" check-wrapper.sh '
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / "gradle/wrapper/gradle-wrapper.properties"
+p.write_text(re.sub(r"^distributionUrl=.*$", r"distributionUrl=https\\://evil.test/distributions/gradle-9.7.1-bin.zip", p.read_text(), flags=re.M))
+'
+bait "a CI action pinned to a tag the denylist never named" check-dependency-allowlist.sh '
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / ".github/workflows/ci.yml"
+s = p.read_text()
+before = s
+s = re.sub(r"uses: actions/checkout@[0-9a-f]{40}", "uses: actions/checkout@latest", s, count=1)
+if s == before: raise SystemExit("bait did not apply")
+p.write_text(s)
+'
+bait "a package named core under androidApp, stashing a token" check-feature-isolation.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "androidApp/src/main/kotlin/com/luismejias/lumemedlink/core"
+d.mkdir(parents=True, exist_ok=True)
+(d / "Sneaky.kt").write_text(
+    "package com.luismejias.lumemedlink.core\n\nimport android.content.Context\n\n"
+    "fun stash(c: Context, t: String) {\n"
+    "    c.getSharedPreferences(\"s\", Context.MODE_PRIVATE).edit().putString(\"t\", t).apply()\n}\n")
+'
+bait "a package named core under androidApp, stashing a token" check-forbidden-patterns.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "androidApp/src/main/kotlin/com/luismejias/lumemedlink/core"
+d.mkdir(parents=True, exist_ok=True)
+(d / "Sneaky.kt").write_text(
+    "package com.luismejias.lumemedlink.core\n\nimport android.content.Context\n\n"
+    "fun stash(c: Context, t: String) {\n"
+    "    c.getSharedPreferences(\"s\", Context.MODE_PRIVATE).edit().putString(\"t\", t).apply()\n}\n")
+'
+bait "a session token to logcat from inside core/, via an import" check-logging.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/session"
+(d / "BaitLog.kt").write_text(
+    "package com.luismejias.lumemedlink.core.session\n\nimport android.util.Log\n\n"
+    "internal fun leak(token: String) {\n    Log.d(\"lume\", token)\n}\n")
+'
+
+bait "a notification surface in the iOS host, which had no half of this rule" check-preauth-surfaces.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+p.write_text(p.read_text() + "\n\nfunc baitPreauth() {\n    let c = UNUserNotificationCenter.current()\n    _ = c\n}\n")
+'
+bait "UserDefaults in the iOS host, where P3 never reached" check-preauth-surfaces.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+p.write_text(p.read_text() + "\n\nfunc baitDefaults() {\n    UserDefaults.standard.set(1, forKey: \"k\")\n}\n")
+'
+
 # ── The logout contract (ADR-0014) ──────────────────────────────────────────────────────────────
 bait "logout erases one key instead of the namespace" check-logout-contract.sh '
 import sys, pathlib

@@ -24,6 +24,12 @@ PROPS="gradle/wrapper/gradle-wrapper.properties"
 # fetched and compared 2026-08-21. Bump BOTH lines together, never one.
 EXPECTED_VERSION="9.7.1"
 EXPECTED_JAR_SHA256="7a9ce74cff467ca1bf60a4fcd9f05185acceda4d0f382434d393e17864262c5d"
+# Published at services.gradle.org/distributions/gradle-9.7.1-bin.zip.sha256, fetched and compared
+# 2026-09-21. Pinned HERE as well as in the properties file on purpose: the gate used to assert only
+# that the line EXISTED, so `distributionSha256Sum=` with nothing after it, or a hash of zeroes,
+# passed (audit, ADR-0029). Two places that must agree is what makes editing one of them fail.
+EXPECTED_DIST_SHA256="acd53f1edaf02f1a8ff99879f8a34b302661a057d9b063ae9e35b552f804d20a"
+EXPECTED_DIST_HOST="services.gradle.org"
 FAIL=0
 
 fail() { FAIL=1; echo ""; echo "FAIL $1"; echo "  $2"; }
@@ -42,8 +48,37 @@ grep -q "gradle-${EXPECTED_VERSION}-bin.zip" "$PROPS" ||
     fail "the pinned distribution is not $EXPECTED_VERSION" \
          "The jar and the distribution must be the same version — they drifted apart once already."
 
-grep -q '^distributionSha256Sum=' "$PROPS" ||
-    fail "distributionSha256Sum is absent" "Without it the distribution download is unverified."
+prop() { sed -n "s/^$1=//p" "$PROPS" | tr -d '\r' | head -1; }
+
+# BY VALUE, not by presence.
+dist_sha=$(prop distributionSha256Sum)
+if [ -z "$dist_sha" ]; then
+    fail "distributionSha256Sum is absent or empty" "Without it the distribution download is unverified."
+elif [ "$dist_sha" != "$EXPECTED_DIST_SHA256" ]; then
+    fail "distributionSha256Sum is not the published checksum for $EXPECTED_VERSION" \
+         "expected $EXPECTED_DIST_SHA256, got $dist_sha. If the version moved, bump BOTH pins here and the properties file."
+fi
+
+# WHERE the distribution comes from, which nothing checked. The version assertion above only looks
+# for the filename, so `https://evil.test/gradle-9.7.1-bin.zip` satisfied it: this build would then
+# download and RUN a Gradle distribution from somewhere else. The checksum pin would refuse a
+# tampered zip — but only while the checksum itself is right, which is the line directly above, and
+# the two failures travel together in exactly the change that matters.
+dist_url=$(prop distributionUrl | sed 's/\\:/:/g')
+case "$dist_url" in
+    https://"$EXPECTED_DIST_HOST"/*) ;;
+    "") fail "distributionUrl is absent" "There is nothing pinned to verify." ;;
+    http://*) fail "the distribution is downloaded over cleartext" "$dist_url" ;;
+    *) fail "the distribution does not come from $EXPECTED_DIST_HOST" \
+            "Got: $dist_url. The version check only ever looked at the filename, so any host with the right file name passed." ;;
+esac
+
+# Gradle's own guard against a distributionUrl that is not a Gradle distribution. It defaults to
+# true; declaring it is the family rule that a default is not a decision, and it means turning it
+# off is a visible edit.
+[ "$(prop validateDistributionUrl)" = "true" ] ||
+    fail "validateDistributionUrl is not declared true" \
+         "It is the wrapper's own check on where the distribution comes from (ADR-0018)."
 
 if [ $FAIL -eq 0 ]; then
     echo "wrapper: OK (jar matches the published checksum for $EXPECTED_VERSION)"

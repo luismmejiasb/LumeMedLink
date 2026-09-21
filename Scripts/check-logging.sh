@@ -53,6 +53,20 @@ report() {
 
 report 'android\.util\.Log\.[a-z]' "a logcat write" \
     "It leaves the device in a bug report, on release builds (§8.1). Use core/logging's sink."
+# THE SHORT FORM, and the hole it left. detekt's ForbiddenImport exempts core/ — it has to, that is
+# where Ktor and OkHttp legitimately live — so `import android.util.Log` is allowed there, and the
+# call is then written `Log.d(...)`, which the fully-qualified pattern above does not match. Both
+# halves of the ban were therefore off inside core/, which is exactly where the session tokens are.
+# Measured with bait (audit, ADR-0029).
+#
+# `[^A-Za-z0-9_.]` before it on purpose: it must not fire on `LumeLog.log(` — this repo's own sink —
+# nor double-report the qualified spelling the line above already catches.
+report '(^|[^A-Za-z0-9_.])Log\.[a-z]+\(' "a logcat write through an imported Log" \
+    "Same destination as the qualified spelling, and the one detekt cannot see inside core/ (§8.1)."
+# And the import itself, with NO exemption. This gate is the total one; detekt's carve-out for core/
+# is about networking, and logging has no business inheriting it.
+report 'import android\.util\.Log' "a logcat import" \
+    "There is one logging path in this app and it is core/logging (§8.1, ADR-0020). No file needs this import, core/ included."
 report '\bprintln\(|\bprint\(' "a println" \
     "On Android it becomes a logcat line; on iOS it reaches the device console (§8.1)."
 report 'System\.(out|err)\.print' "a stdout/stderr write" "Same destination, different spelling (§8.1)."
