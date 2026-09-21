@@ -88,7 +88,17 @@ private object KeychainInstallSentinel : InstallSentinel {
             forKey = NSURLIsExcludedFromBackupKey,
             error = null,
         )
-        check(excluded) { "Could not exclude the install marker from backup." }
+        if (!excluded) {
+            // THE MARKER COMES BACK OFF. ADR-0028 says a failure leaves the container UNMARKED, and
+            // until 2026-09-21 this path broke that promise in the worst possible way: the file was
+            // already written, so `markHasRun` threw, `enforceInstallBoundary` answered FAILED — and
+            // the next launch read a marker that said "this container has run before" and skipped
+            // the purge. Worse still, the marker it found was the one WITHOUT the backup exclusion,
+            // which is exactly the residue a restore was supposed to purge. A half-written guard
+            // that reports failure and leaves its own evidence behind is not a guard.
+            fileManager.removeItemAtPath(path, error = null)
+            error("Could not exclude the install marker from backup; the marker was removed.")
+        }
     }
 }
 

@@ -73,6 +73,29 @@ conditions, because with two covers one can hide the other's failure:
 Measured on two different simulators and two iOS versions. A KTX of a flat colour compresses to a
 fraction of one carrying content, so the size IS the measurement; the file does not need decoding.
 
+## Amendment — 2026-09-21: the cover does not pick a scene
+
+The first version of this fix took the scene from the notification and fell back to
+`UIApplication.shared.connectedScenes.first`. The LumeMed session named the rule its own code
+carries for the same problem — *"a window on the wrong scene covers the wrong screen silently"* —
+and the fallback is gone. It traded a **visible** absence for an **invisible** wrong screen, which
+is the worse of the two, and phone-first means `first` would be right today and silently wrong the
+day it is not.
+
+The cover is now one window per scene, keyed by `session.persistentIdentifier`, created for every
+connected window scene and released on `UIScene.didDisconnectNotification`. **There is no scene to
+pick, so there is no pick to get wrong** — the same reasoning as their capture check, which asks
+"is any screen captured" with `.contains` rather than asking which one.
+
+Re-measured after the change, because changing a control invalidates the last verification of it:
+`verify-ios-privacy-cover.sh` returns the same three numbers (1020 / 1020 / 7339).
+
+And the reassuring row checked rather than assumed, since LumeMed found exactly this false on their
+side — a single-scene decision their built `Info.plist` did not honour: **ours does.** The built
+`.app` carries `UIDeviceFamily = {1}`, `LSRequiresIPhoneOS = true`, no `UIApplicationSceneManifest`,
+and `TARGETED_DEVICE_FAMILY = 1` in both configurations. Multi-window is not reachable here, and the
+cover above is correct regardless of that, which is the point of not depending on it.
+
 ## Consequences
 
 - **Bitácora 0023's conclusion is now replaced, not just withdrawn.** It said the Simulator cannot
@@ -85,6 +108,23 @@ fraction of one carrying content, so the size IS the measurement; the file does 
 - **A rule for this family, wider than this bug:** a security control that depends on a system
   callback needs a measurement proving the callback ARRIVES. Compiling is not evidence. An `NSLog`
   with a positive control costs one build.
-- **LumeMed is not affected** — verified by grep on 2026-09-21: it implements none of the four
-  methods and observes `scenePhase`. The lesson runs the other way: the newer host reintroduced a
-  pattern the mature app had already avoided.
+- **LumeMed is not affected, and the reason is NOT the one this ADR first gave.** Corrected
+  2026-09-21 by the LumeMed session, which measured its own tree instead of taking my grep: it
+  implements none of the four methods (confirmed), but it does **not** observe `scenePhase` — its
+  `ScreenSecurityMonitor` observes `UIApplication.willResignActiveNotification` through
+  `NotificationCenter`. It is clean because it happens to sit on the good side of the same trap this
+  ADR describes: the notification is still posted, only the delegate method stops being called.
+
+  The correction matters more than the fact. **There are THREE states, not two**, and this ADR
+  originally collapsed two of them:
+
+  | mechanism | in a scene-based app |
+  | --- | --- |
+  | the four `UIApplicationDelegate` methods | **never called** |
+  | the equivalent `NSNotification`s | **still posted** — what both apps now use |
+  | `scenePhase` | alive, but LumeMed's ADR-0028 **forbids** deciding a cover from it: measured there to stop updating once the app settles, so the cover did not rise. "Un control de seguridad no espera un re-render." |
+
+  So "use `scenePhase`, it is the SwiftUI-native way" — which is what this ADR implied by describing
+  LumeMed that way — is advice the sibling app measured to be wrong for exactly this control. Left
+  uncorrected it would have pushed the next reader toward the one option of the three that fails
+  silently and late.

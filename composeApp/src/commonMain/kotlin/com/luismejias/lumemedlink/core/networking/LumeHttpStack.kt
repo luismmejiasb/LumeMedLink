@@ -65,6 +65,14 @@ private val contractJson = Json { ignoreUnknownKeys = true }
  * retried call is logged, not just the final one. That is the more useful behaviour and it is what
  * a test now pins.
  *
+ * **A REFRESH CLIENT MUST NOT BE BUILT WITH A [tokenProvider].** Written here rather than left to
+ * be discovered, because the failure is a deadlock and not an error: `onRequest` calls
+ * `tokenProvider.token()`, `SessionManager.token()` takes its Mutex, and a refresh made through a
+ * client that also has a provider re-enters `onRequest` and asks for that same Mutex — which is not
+ * reentrant. The session freezes with no exception and no log line. Nothing triggers it today
+ * (`UnwiredRefreshClient` makes no call), and the slice that wires F10 is exactly where it would.
+ * The refresh call authenticates with the refresh token in its own body; it needs no bearer.
+ *
  * @param engine injected so production wires [platformHttpEngine] and tests wire MockEngine.
  */
 internal fun lumeHttpClient(
@@ -233,7 +241,13 @@ private fun lumeStackGuard(allowedOrigin: Origin, logSink: NetworkLogSink, token
         }
         onResponse { response ->
             val request = response.request
-            if (response.status.value == 401) {
+            // A 401 only means THIS token was rejected if the request carried one. Before
+            // 2026-09-21 any 401 flipped the flag — including on a call made while logged out, or
+            // one the provider declined to sign — and the next `token()` then spent a refresh on a
+            // token nothing had rejected. Harmless today because nothing is wired; not harmless in
+            // a shell where a 401 on an unauthenticated probe would burn the refresh token's
+            // rotation for free (audit).
+            if (response.status.value == 401 && request.headers.contains(HttpHeaders.Authorization)) {
                 tokenProvider?.tokenWasRejected()
             }
             logSink.log(

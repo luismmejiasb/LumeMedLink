@@ -57,9 +57,17 @@ require "$ANDROID_GATE" 'AUTH_BIOMETRIC_STRONG' \
     "the tier-2 key does not demand STRONG biometrics" \
     "Weak (class 2) biometrics do not carry the invalidation guarantee this tier is paid for."
 
-require "$ANDROID_GATE" 'BIOMETRIC_STRONG' \
-    "the prompt does not restrict itself to strong biometrics" \
-    "setAllowedAuthenticators must be BIOMETRIC_STRONG (ADR-0005)."
+# THE CALL, not the token — and this one was crossed by its OWN vocabulary. `BIOMETRIC_STRONG` as a
+# bare substring is satisfied by `AUTH_BIOMETRIC_STRONG`, which the assertion four lines above
+# already requires: the prompt's authenticators could have been switched to DEVICE_CREDENTIAL and
+# this line would still have been green, because another line elsewhere in the file spells a longer
+# word that contains it (audit, ADR-0029).
+if [ -f "$ANDROID_GATE" ] &&
+    ! grep -hE 'setAllowedAuthenticators\([^)]*BIOMETRIC_STRONG' "$ANDROID_GATE" 2>/dev/null |
+        grep -qvE '^[[:space:]]*(//|\*|/\*)'; then
+    fail "biometric-contract: the prompt does not restrict itself to strong biometrics" \
+         "setAllowedAuthenticators must be called with BIOMETRIC_STRONG (ADR-0005). A PIN fallback would be re-entry without the key material this tier is built on."
+fi
 
 # ── ANDROID · what must never appear ────────────────────────────────────────────────────────────
 # A POSITIVE validity duration turns per-use authentication into a time window and, with it,

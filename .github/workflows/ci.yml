@@ -125,6 +125,15 @@ jobs:
       # host is where the keyboard veto, the privacy cover and the keychain group live. Simulator
       # only, and arm64 only: `iosX64` is deliberately not a target, so a generic simulator
       # destination would ask for an x86_64 slice that does not exist (learned the hard way).
+      # The half of the network gate that the cheap `gates` job cannot run: it needs a MERGED
+      # manifest, which only exists after an Android build. Until 2026-09-21 it existed nowhere in
+      # CI and printed OK on every run (ADR-0029). LUME_REQUIRE_MERGED_MANIFEST turns a missing
+      # artifact from a silent skip into a failure, so this step cannot quietly become a no-op again.
+      - name: Gate — network posture, MERGED manifest (F12, ADR-0016)
+        env:
+          LUME_REQUIRE_MERGED_MANIFEST: '1'
+        run: Scripts/check-network-posture.sh
+
       - name: Build the iOS host
         run: |
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \

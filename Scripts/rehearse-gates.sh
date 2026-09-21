@@ -262,6 +262,17 @@ s = p.read_text().replace("val outcome = performLogout(sessionManager, secureSto
 p.write_text(s)
 '
 
+bait "the prompt drops to DEVICE_CREDENTIAL while another line still spells the long word" check-biometric-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/session/BiometricUnlockGate.kt"
+s = p.read_text()
+before = s
+s = s.replace("setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)",
+              "setAllowedAuthenticators(BiometricManager.Authenticators.DEVICE_CREDENTIAL)")
+if s == before: raise SystemExit("bait did not apply")
+p.write_text(s)
+'
+
 # ── The inactivity window (ADR-0032) ────────────────────────────────────────────────────────────
 bait "the window is measured by the wall clock alone again" check-biometric-contract.sh '
 import sys, pathlib

@@ -96,7 +96,20 @@ fi
 # ── 3. The MERGED manifest: what dependencies put in the shipped app ────────────────────────────
 MERGED=$(find androidApp/build -path '*merged_manifest*' -name 'AndroidManifest.xml' 2>/dev/null | head -1)
 if [ -z "$MERGED" ]; then
-    echo "network-posture: source checks OK — MERGED manifest not built yet, run a build to check the dependency vector."
+    # THE HALF THAT NEVER RAN. This skip is fine on a developer machine before a build — and in CI
+    # it made the assertion that gives this gate its whole point a no-op that printed OK. The gates
+    # job runs on ubuntu with no build, so the merged manifest was never there; the build job never
+    # ran the gates. From 2026-08-21 to 2026-09-21 nothing anywhere checked what dependencies merge
+    # into the shipped manifest, and the line above said "OK" every time (audit, ADR-0029).
+    #
+    # So CI sets LUME_REQUIRE_MERGED_MANIFEST=1 and the skip becomes a failure there. A gate is
+    # allowed to be unable to check something; it is not allowed to report OK while doing so.
+    if [ "${LUME_REQUIRE_MERGED_MANIFEST:-0}" = "1" ]; then
+        fail "network: the MERGED manifest does not exist, and this run requires it" \
+             "Run an Android build before this gate. The merged half is the only one that sees what dependencies inject (okhttp brings INTERNET, androidx.biometric brings USE_FINGERPRINT)."
+        exit 1
+    fi
+    echo "network-posture: source checks OK — MERGED manifest NOT CHECKED (no build yet). This half is the one that sees dependency-injected permissions; run a build, or set LUME_REQUIRE_MERGED_MANIFEST=1 to make this a failure."
     [ $FAIL -eq 0 ] && exit 0 || exit 1
 fi
 

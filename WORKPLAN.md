@@ -67,6 +67,42 @@
   pacientes), recuperación y enrolamiento mediado por la clínica. Es el punto 3 de ADR-0006, lo
   único que sigue vigente de ella, y no se descubre dentro de una slice de feature.
 - S2.2+ · Perfil del paciente y sus citas, contra el contrato ya publicado.
+  - **Reservar trae un 409 que sólo este cliente puede explicar** *(recibido del backend el
+    2026-09-21, contrato 0.50.0, su ADR-0051)*. Una paciente puede reservar con varios médicos pero
+    **nunca dos a la misma hora**, y el servidor lo rechaza **sin poder decir dónde está el choque**:
+    el aislamiento por tenant impide que la transacción lea filas de otra clínica. `listMyAppointments`
+    sí devuelve su agenda cruzada, así que **el teléfono puede nombrar lo que el servidor no** — es
+    su propio dato, mostrado a ella.
+    - `patient_unavailable` ≠ `conflict`. El primero es «ella está ocupada, sólo otra hora sirve»;
+      el segundo es «ese cupo está tomado, prueba otro cupo o profesional».
+    - Se distinguen por el **`type`** (`/problems/patient_unavailable`), que es el único campo que
+      nuestro stack conserva — `title` y `detail` se descartan (ADR-0004). El cuerpo no trae la otra
+      cita **a propósito**, y está bien así.
+    - **Jamás reintentar automáticamente**: este 409 no es transitorio. El mismo par
+      paciente+hora no puede tener éxito por esperar. Encaja con T13 y con que el stack no reintente POST.
+    - Una solicitud **pendiente** (`REQUESTED`) reserva su hora igual que una confirmada. Los bordes
+      que se tocan (10–11 y 11–12) **no** son choque.
+    - **El predicado del choque es una COPIA de una regla que la base de datos posee**: fila cuyo
+      `status` no sea `CANCELLED` y cuyo rango se solape. `listMyAppointments` devuelve también las
+      canceladas (visibilidad más ancha que el enforcement, que es la dirección segura) — así que
+      filtrar por estado es nuestro, y si no lo hacemos vamos a nombrar con total confianza una cita
+      cancelada como la razón. **Queda escrito que es una copia**: quien toque cualquiera de las dos
+      tiene que saber que la otra existe. Es el defecto más repetido de este ecosistema y no avisa.
+    - **`bookMyAppointment` NO TIENE llave de idempotencia — y el tier de al lado sí**
+      *(recibido 2026-09-21)*. `book` y `transition` del tier clínica llevan `clientId` con único
+      parcial detrás; el cuerpo del de paciente es `professionalId`, `locationId`, `startsAt`,
+      `endsAt` y nada más. Consecuencia concreta y fea: si una reserva **tiene éxito y se pierde la
+      respuesta**, un reintento manual del mismo cupo no duplica —la restricción del profesional lo
+      impide— pero vuelve como **409 `conflict`**: se le dice que falló justo cuando sí tiene la
+      hora. Seguro, y equivocado en pantalla. **Mitigación nuestra: releer `listMyAppointments`
+      antes de mostrar CUALQUIER fallo de reserva.** La regla de no reintentar solo evita la versión
+      automática; ésta es la manual.
+    - **El caso sin salida, que el backend fijó con test en vez de arreglar** (y explica por qué en su
+      ADR-0051): con un vínculo **REVOCADO**, la hora sigue comprometida pero la cita **desaparece de
+      su agenda**. Recibe `patient_unavailable` y el teléfono no encuentra nada que nombrar. **El texto
+      de respaldo no es un adorno: es el que sostiene ese caso** — «ya tienes otra hora a esa misma
+      hora» sin prometer decir cuál. Las dos alternativas eran peores: liberar la hora que sigue
+      comprometida, o mostrarle la agenda de una clínica que le revocó el acceso.
 
 ## FASE 3 — Horizonte
 

@@ -18,7 +18,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// system prompt). A separate window at a higher level is above all of that, including anything
     /// Compose presents. That is its whole job — the Compose overlay in `PrivacyScreenScaffold`
     /// covers the Compose content, and this covers everything above it.
-    private var privacyWindow: UIWindow?
+    /// One cover per scene, keyed by the scene's persistent identifier.
+    ///
+    /// NOT a single window plus `UIApplication.shared.connectedScenes.first`, which is what this
+    /// file did until the LumeMed session pointed at their own rule for the same problem: *"a window
+    /// on the wrong scene covers the wrong screen silently"*. Their phrasing is the argument — the
+    /// fallback traded a VISIBLE absence for an INVISIBLE wrong-screen, and this app is phone-first
+    /// so `first` would be right today and silently wrong the day it is not.
+    ///
+    /// Covering every window scene removes the choice instead of making it well. The question is not
+    /// "which scene" but "is every screen covered", which is also why their capture check uses
+    /// `.contains` over all scenes rather than picking one.
+    private var privacyWindows: [String: UIWindow] = [:]
 
     private var lifecycleObservers: [NSObjectProtocol] = []
 
@@ -57,6 +68,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 self?.showPrivacyCover(on: notification.object as? UIWindowScene)
             },
             center.addObserver(
+                forName: UIScene.didDisconnectNotification, object: nil, queue: .main
+            ) { [weak self] notification in
+                guard let scene = notification.object as? UIWindowScene else { return }
+                self?.privacyWindows.removeValue(forKey: scene.session.persistentIdentifier)
+            },
+            center.addObserver(
                 forName: UIScene.didActivateNotification, object: nil, queue: .main
             ) { [weak self] _ in
                 self?.hidePrivacyCover()
@@ -85,12 +102,24 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return extensionPointIdentifier != .keyboard
     }
 
+    /// Covers the scene that is deactivating, and every other window scene as well.
+    ///
+    /// The notification names one scene; the others are covered too because a screen this app is
+    /// not being told about is still a screen showing this app. There is no case where covering
+    /// fewer of them is correct, so there is no decision to get wrong.
     private func showPrivacyCover(on scene: UIWindowScene?) {
-        guard privacyWindow == nil else { return }
-        // Fall back to the connected scene only if the notification carried none. A cover that
-        // silently does not appear is the failure this whole file is about, so the fallback exists
-        // rather than a `return`.
-        guard let scene = scene ?? UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
+        var scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        if let scene, !scenes.contains(where: { $0 === scene }) {
+            scenes.append(scene)
+        }
+        for target in scenes {
+            cover(target)
+        }
+    }
+
+    private func cover(_ scene: UIWindowScene) {
+        let key = scene.session.persistentIdentifier
+        guard privacyWindows[key] == nil else { return }
 
         let window = UIWindow(windowScene: scene)
         // Above every window this app or the system puts up, alerts included.
@@ -102,11 +131,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         controller.view.backgroundColor = .systemBackground
         window.rootViewController = controller
         window.isHidden = false
-        privacyWindow = window
+        privacyWindows[key] = window
     }
 
     private func hidePrivacyCover() {
-        privacyWindow?.isHidden = true
-        privacyWindow = nil
+        for window in privacyWindows.values {
+            window.isHidden = true
+        }
+        privacyWindows.removeAll()
     }
 }
