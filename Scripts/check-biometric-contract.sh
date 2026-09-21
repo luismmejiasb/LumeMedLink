@@ -114,6 +114,46 @@ if [ -n "$hits" ]; then
          "$hits"
 fi
 
+# ── The inactivity window: what MEASURES it, and what WAKES UP for it (F4, ADR-0032) ────────────
+# Two defects, one slice, both found by audit and both invisible to every gate that existed:
+#
+#  1. The window was measured with the WALL CLOCK alone, and the wall clock is a setting. Move the
+#     phone's time backwards and `now - last` goes negative: the window never elapses and the
+#     session never locks. A lock anyone holding the device can switch off in Settings, on the
+#     shared-device threat this app ranks FIRST (§8.17).
+#  2. NOTHING re-read the lock except the pointer handler, so the window could elapse with the
+#     agenda on screen and the app would only notice when somebody touched it — the one moment the
+#     person is already looking at the screen. A phone left on a table has no touches in it.
+#
+# Asserted as calls with comments and string literals stripped (ADR-0029).
+LOCK_SRC="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session/InactivityLock.kt"
+SHELL_SRC="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+lock_code() { python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten "$1" 2>/dev/null; }
+
+if [ ! -f "$LOCK_SRC" ] || [ ! -f "$SHELL_SRC" ]; then
+    fail "biometric: the inactivity lock or the shell is missing" "Nothing below proved anything."
+else
+    LOCK_CODE=$(lock_code "$LOCK_SRC")
+    SHELL_CODE=$(lock_code "$SHELL_SRC")
+
+    printf '%s\n' "$LOCK_CODE" | grep -qE 'clock\.nowEpochMillis\(\)' ||
+        fail "biometric: the inactivity window does not read the wall clock" \
+             "It is one of the two sources, and it is the one that covers an elapsed clock paused by device sleep (ADR-0032)."
+    printf '%s\n' "$LOCK_CODE" | grep -qE 'elapsedClock\.elapsedMillis\(\)' ||
+        fail "biometric: the inactivity window does not read an unmovable elapsed clock" \
+             "Measured by the wall clock alone, the window is switched off by moving the phone's time backwards (ADR-0032)."
+    printf '%s\n' "$LOCK_CODE" | grep -qE 'maxOf\([[:space:]]*byWallClock[[:space:]]*,[[:space:]]*byElapsedClock[[:space:]]*\)' ||
+        fail "biometric: the window does not close when EITHER clock says it elapsed" \
+             "Taking the larger of the two elapsed values is what is fail-closed against both failures: a wall clock the user moves, and an elapsed clock that pauses in sleep (ADR-0032)."
+
+    printf '%s\n' "$SHELL_CODE" | grep -qE 'sessionLock\.millisUntilLock\(\)' ||
+        fail "biometric: the shell never asks how long is left on the window" \
+             "Without it the lock only fires on the next touch, and a phone left on a table has no touches in it (ADR-0032)."
+    printf '%s\n' "$SHELL_CODE" | grep -qE 'delay\([[:space:]]*remaining[[:space:]]*\)' ||
+        fail "biometric: the shell does not sleep until the window closes" \
+             "The window must close on its own, not when someone happens to touch the screen (ADR-0032)."
+fi
+
 if [ $FAIL -eq 0 ]; then
     echo "biometric-contract: OK"
 else

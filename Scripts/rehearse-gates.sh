@@ -192,6 +192,26 @@ s = p.read_text().replace("val outcome = performLogout(sessionManager, secureSto
 p.write_text(s)
 '
 
+# ── The inactivity window (ADR-0032) ────────────────────────────────────────────────────────────
+bait "the window is measured by the wall clock alone again" check-biometric-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session/InactivityLock.kt"
+s = p.read_text()
+before = s
+s = s.replace("maxOf(byWallClock, byElapsedClock)", "byWallClock")
+if s == before: raise SystemExit("bait did not apply")
+p.write_text(s)
+'
+bait "the shell stops waiting for the window and only reacts to touches" check-biometric-contract.sh '
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+s = p.read_text()
+before = s
+s = s.replace("val remaining = sessionLock.millisUntilLock()", "val remaining = 60_000L")
+if s == before: raise SystemExit("bait did not apply")
+p.write_text(s)
+'
+
 # ── The iOS host ────────────────────────────────────────────────────────────────────────────────
 bait "the relink guard is deleted from the build phase" check-ios-host.sh '
 import sys, pathlib

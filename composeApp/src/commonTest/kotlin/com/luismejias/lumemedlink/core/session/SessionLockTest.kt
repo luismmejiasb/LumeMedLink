@@ -13,6 +13,11 @@ private class LockTestClock(var now: Long = T0) : Clock {
     override fun nowEpochMillis(): Long = now
 }
 
+/** Moves with the wall clock so these tests keep describing the ordinary world (ADR-0032). */
+private class LockTestElapsedClock(private val wall: LockTestClock) : ElapsedClock {
+    override fun elapsedMillis(): Long = wall.now - T0
+}
+
 private class ScriptedUnlockGate(private var outcomes: MutableList<UnlockOutcome>) : UnlockGate {
     var enrolled = false
     var cleared = false
@@ -36,7 +41,7 @@ private class ScriptedUnlockGate(private var outcomes: MutableList<UnlockOutcome
 }
 
 private fun lockWith(gate: UnlockGate, clock: LockTestClock = LockTestClock(), maxAttempts: Int = 5) =
-    SessionLock(InactivityLock(WINDOW, clock), gate, maxAttempts)
+    SessionLock(InactivityLock(WINDOW, clock, LockTestElapsedClock(clock)), gate, maxAttempts)
 
 class SessionLockTest {
 

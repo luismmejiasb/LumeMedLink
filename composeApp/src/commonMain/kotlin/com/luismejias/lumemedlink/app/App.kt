@@ -27,6 +27,7 @@ import com.luismejias.lumemedlink.core.session.performLogout
 import com.luismejias.lumemedlink.core.session.platformInstallSentinel
 import com.luismejias.lumemedlink.core.session.rememberSecureStore
 import com.luismejias.lumemedlink.core.session.rememberUnlockGate
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Inactivity window before re-authentication is demanded (§8.3). */
@@ -78,6 +79,27 @@ public fun App() {
 
     var hasSession by remember { mutableStateOf(false) }
     var locked by remember { mutableStateOf(sessionLock.isLocked()) }
+
+    // THE WINDOW CLOSES ON ITS OWN. Until 2026-09-21 nothing re-read the lock except the pointer
+    // handler below, so five minutes could elapse with the agenda on screen and the app would only
+    // notice when somebody touched it — the one moment the person is already looking at it. The
+    // threat this app ranks FIRST is the phone left on a table (§8.17), and that is exactly the
+    // case with no touches in it.
+    //
+    // It sleeps for the remaining time rather than polling, and re-asks after waking: if activity
+    // slid the window while this was suspended, `millisUntilLock` simply returns a new positive
+    // number and it sleeps again. No restart needed, no tick to tune.
+    LaunchedEffect(sessionLock, hasSession, locked) {
+        if (!hasSession || locked) return@LaunchedEffect
+        while (true) {
+            val remaining = sessionLock.millisUntilLock()
+            if (remaining <= 0L) {
+                locked = true
+                return@LaunchedEffect
+            }
+            delay(remaining)
+        }
+    }
 
     LaunchedEffect(sessionManager) {
         // The store is a CAPABILITY and a capability can be unavailable at launch. The decision

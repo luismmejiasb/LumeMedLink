@@ -49,6 +49,12 @@ internal class SessionLock(
 
     fun isLocked(): Boolean = inactivityLock.isLocked()
 
+    /**
+     * How long until the window closes on its own. The shell sleeps on this instead of only
+     * re-reading the lock when a finger touches the screen (ADR-0032).
+     */
+    fun millisUntilLock(): Long = inactivityLock.millisUntilLock()
+
     /** Slides the inactivity window. Cannot unlock — only a real re-auth can (see [InactivityLock]). */
     fun recordActivity() {
         inactivityLock.recordActivity()
