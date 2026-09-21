@@ -75,6 +75,11 @@ Integrity / App Attest server-side (§8.11); sin custom schemes; sin IPC expuest
 
 1. **Android bloquea screenshots; iOS no.** `FLAG_SECURE` es regla dura en Android. En iOS aplica la
    doctrina de LumeMed ADR-0023/0028: cover de privacidad, jamás un blackout fingido.
+   **Verificado en las dos plataformas desde 2026-09-21** (ADR-0031): en Android, `screencap` da
+   negro puro sobre la app y normal sobre el launcher; en iOS, el snapshot que el sistema escribe en
+   el contenedor queda plano con cada capa por separado y **vuelve a traer contenido sin ninguna** —
+   control en vivo, `Scripts/verify-ios-privacy-cover.sh`. Residual de iOS, declarado: el cover tapa
+   el snapshot del sistema, **no** impide que la persona frente al teléfono haga una captura.
 2. **El Keychain de iOS sobrevive al uninstall; el Keystore de Android no.** El sentinel de
    instalación es un control de un solo lado (ADR-0005).
 3. **iOS veta teclados de terceros app-wide; Android no puede.** La mitigación Android es por campo y

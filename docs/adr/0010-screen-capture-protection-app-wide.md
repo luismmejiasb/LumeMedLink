@@ -45,3 +45,15 @@ pretended one.
   screen-capture API appears in app code — so this decision cannot silently rot.
 - The privacy cover's color is a functional security primitive, not a design token; it carries a
   minimal neutral fill until the design system (S0.3) provides a theme surface.
+
+---
+
+## Cierre de la cola iOS — 2026-09-21 (ADR-0031)
+
+«La prueba en runtime es un chequeo de dispositivo» era correcto, y quedó pendiente un mes por
+medir el artefacto equivocado. **F1 en iOS está cerrado**: las dos capas —el overlay de Compose
+y la `UIWindow` del host— aplanan el snapshot **cada una por su cuenta**, y el control en vivo
+sin ninguna de las dos lo devuelve con contenido. `Scripts/verify-ios-privacy-cover.sh`.
+
+Y el hallazgo que lo destrabó: el cover del host se armaba en un callback que en esta app
+**nunca se llama**. Estaba tapado por el overlay de Compose, que cubre los mismos píxeles hoy.

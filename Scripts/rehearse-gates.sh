@@ -208,6 +208,19 @@ p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
 s = p.read_text().replace("kotlin-framework.stamp", "unused.tmp")
 p.write_text(s)
 '
+bait "the cover goes back to the app-delegate method that scenes never call" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+s = p.read_text()
+s = s.replace("UIScene.willDeactivateNotification", "UIApplication.willResignActiveNotification")
+s += "\n\nextension AppDelegate {\n    func applicationWillResignActive(_ application: UIApplication) {}\n}\n"
+p.write_text(s)
+'
+bait "the cover is armed but never taken down" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+p.write_text(p.read_text().replace("UIScene.didActivateNotification", "UIScene.didEnterBackgroundNotification"))
+'
 bait "keyboard veto survives only inside a /* */ block" check-ios-host.sh '
 import sys, pathlib, re
 p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"

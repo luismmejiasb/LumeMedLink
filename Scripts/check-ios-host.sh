@@ -75,10 +75,30 @@ elif ! swift_has 'extensionPointIdentifier[[:space:]]*!=[[:space:]]*\.keyboard';
     fail "ios-host: the keyboard veto hook exists but does not refuse .keyboard" \
          "The delegate method must return false for .keyboard (§8.10). A hook that answers true for everything is the default with extra steps."
 fi
-if ! swift_has 'applicationWillResignActive'; then
-    fail "ios-host: privacy cover not armed on willResignActive" \
-         "iOS snapshots the screen when the app leaves the foreground and willResignActive is the last moment BEFORE that (ADR-0010). didEnterBackground is already too late."
+# THIS ASSERTION USED TO ENFORCE DEAD CODE. It required `applicationWillResignActive`, and in a
+# SwiftUI app — which adopts the UIScene lifecycle — UIKit NEVER CALLS that method. The gate was
+# green over a cover that had not armed once since the host was written (ADR-0031, measured with a
+# positive control in the same delegate).
+#
+# So the assertion is inverted AND moved to the mechanism that actually fires: the scene
+# notification. The four methods scenes replace are named here so that re-introducing any of them
+# is a decision, not a habit.
+if ! swift_has 'UIScene\.willDeactivateNotification'; then
+    fail "ios-host: privacy cover not armed on the scene's willDeactivate" \
+         "iOS snapshots the screen when the app leaves the foreground and willDeactivate is the last moment BEFORE that (ADR-0010/0031). didEnterBackground is already too late, and the app-delegate methods are never called in a scene-based app."
 fi
+if ! swift_has 'UIScene\.didActivateNotification'; then
+    fail "ios-host: the privacy cover is never taken down" \
+         "A cover that never hides is not a control, it is a blank app (ADR-0031)."
+fi
+for dead in applicationWillResignActive applicationDidBecomeActive applicationDidEnterBackground applicationWillEnterForeground; do
+    hits=$(swift_code "$dead")
+    if [ -n "$hits" ]; then
+        fail "ios-host: $dead is implemented and will never be called" \
+             "This app adopts the UIScene lifecycle (SwiftUI App + WindowGroup), and UIKit does not call those four methods. Code there is dead and reads as a control (ADR-0031). Use the UIScene notifications." \
+             "$hits"
+    fi
+done
 if ! swift_has 'windowLevel'; then
     fail "ios-host: privacy cover is not in its own window" \
          "A cover inside the app's window can be covered, reordered or removed by whatever is presented on top. Its whole point is to sit above all of that (ADR-0025)."

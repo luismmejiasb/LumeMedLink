@@ -26,16 +26,20 @@ private val privacyCoverColor = Color(0xFF0E1116)
  * FLAG_SECURE, so covering the view before the OS snapshots it for the app switcher is the
  * control. On Android FLAG_SECURE already blanks the thumbnail; here the cover is defense in depth.
  *
- * First layer of two, and the division of labour is exact. The host UIWindow cover now exists
- * (`iosApp/AppDelegate.swift`, ADR-0025) and fires on `willResignActive`, which is *earlier* than
- * any lifecycle event Compose can observe and sits *above* anything presented on top of the
- * Compose view. This overlay covers the Compose content; that window covers everything else.
+ * First layer of two, and the division of labour is exact. The host UIWindow cover
+ * (`iosApp/AppDelegate.swift`) fires on the scene's `willDeactivate` and sits *above* anything
+ * presented on top of the Compose view. This overlay covers the Compose content; that window covers
+ * everything else — an alert, a share sheet, a system prompt.
  *
- * Neither is verified on iOS, and the reason is worth carrying forward rather than re-discovering:
- * on the Simulator the app-switcher snapshot of this app is blank **with both covers disabled**,
- * because Compose renders through Metal and the system snapshot does not capture that layer. The
- * positive control cannot be made to fail, so the Simulator cannot verify this control at all —
- * it needs a real device (bitácora 0023).
+ * **Both layers are verified on iOS since 2026-09-21** (ADR-0031), each on its own, by
+ * `Scripts/verify-ios-privacy-cover.sh`. What the earlier comment here said — that the Simulator
+ * cannot verify this, because the switcher card looks blank with both covers disabled — was looking
+ * at the wrong artifact. iOS writes the snapshot into this app's own container, under
+ * `Library/SplashBoard/Snapshots`, and a KTX of a flat colour is a fraction of the size of one
+ * carrying content: ~1-2 KB against 7-10 KB, with a live control that reproduces the hole.
+ *
+ * The host layer had never armed once, and this overlay is the reason nobody noticed: it covers the
+ * same pixels today, so the other one's silence looked like success (ADR-0031).
  */
 @Composable
 internal fun PrivacyScreenScaffold(content: @Composable () -> Unit) {

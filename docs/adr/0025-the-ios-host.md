@@ -86,3 +86,18 @@ reports an empty entitlement dictionary because no development team is set, so
 because a file that exists is not a control that runs.
 
 **Unblocked, not done:** F7 and F17 can now be built. They are their own slices.
+
+---
+
+## Cierre — 2026-09-21 (ADR-0031)
+
+Lo que esta ADR dejó abierto queda cerrado, y en la dirección incómoda.
+
+- **El cover que esta ADR describe, armado en `applicationWillResignActive`, NUNCA ARMÓ.** En una
+  app de escenas —y una app SwiftUI lo es— UIKit no llama ese método. Medido con control
+  positivo. Era código muerto desde el día que se escribió este host, y el gate lo EXIGÍA.
+- **La afirmación retirada sobre el simulador queda reemplazada, no sólo retirada.** El
+  simulador sí puede verificarlo: el artefacto no es la tarjeta del conmutador sino el archivo
+  que iOS escribe en el contenedor. Con control en vivo, y en dos simuladores distintos.
+- **Lo que esta ADR acertó y conviene subrayar**: que el cover viva en su propia `UIWindow` es
+  correcto y sigue siendo la razón de que exista. Lo que estaba mal era el evento que lo armaba.
