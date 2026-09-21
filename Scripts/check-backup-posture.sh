@@ -32,23 +32,26 @@ fail() {
     [ -n "${3:-}" ] && echo "$3" | sed 's/^/    /'
 }
 
-# Attribute lines only — a mention inside an XML comment is prose, not configuration.
-manifest_attr() {
-    grep -E "$1" "$MANIFEST" 2>/dev/null | grep -v '<!--' | grep -vE '^\s+[a-z].*-->' | grep -q 'android:'
-}
+# PARSED off the <application> element, not grepped. The line-based comment filter this replaces
+# was walked through by a four-line XML comment holding the very attributes it asserts (ADR-0029);
+# a parser cannot see a comment, and it reads the attribute off the element that owns the posture
+# rather than off any line that happens to spell it.
+app_attr() { python3 Scripts/lib/xmlattr.py "$MANIFEST" application "$1" 2>/dev/null; }
 
 [ -f "$MANIFEST" ] || { echo "FAIL manifest missing: $MANIFEST"; exit 1; }
 
 # ── The two attributes, both required ───────────────────────────────────────────────────────────
-if ! manifest_attr 'android:allowBackup="false"'; then
-    fail "backup: allowBackup is not false" \
-         "Cloud backup would re-materialize this app's data on another device (§8.5)."
+ALLOW_BACKUP=$(app_attr 'android:allowBackup')
+if [ "$ALLOW_BACKUP" != "false" ]; then
+    if [ -z "$ALLOW_BACKUP" ]; then
+        fail "backup: allowBackup is not declared on <application>" \
+             "Cloud backup would re-materialize this app's data on another device (§8.5)."
+    else
+        fail "backup: allowBackup is \"$ALLOW_BACKUP\", not false" "That is the opposite of ADR-0015."
+    fi
 fi
-if grep -qE 'android:allowBackup="true"' "$MANIFEST"; then
-    fail "backup: allowBackup is explicitly true" "That is the opposite of ADR-0015."
-fi
-if ! manifest_attr 'android:dataExtractionRules='; then
-    fail "backup: dataExtractionRules is not declared" \
+if [ -z "$(app_attr 'android:dataExtractionRules')" ]; then
+    fail "backup: dataExtractionRules is not declared on <application>" \
          "allowBackup=false does NOT cover device-to-device transfer at targetSdk>=31; this attribute is what does (ADR-0015)."
 fi
 

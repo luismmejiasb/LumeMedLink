@@ -36,12 +36,24 @@ fail() {
 }
 
 # Swift comments never count as the mechanism — the same hole that FLAG_SECURE's gate was caught by
-# three times (a KDoc naming the API passed a plain grep).
+# three times (a KDoc naming the API passed a plain grep). The line-based filter this replaces only
+# recognised a comment whose LINE STARTS with a marker, so the inner lines of a `/* … */` block
+# walked straight through it (ADR-0029). A tokenizer blanks them, nested blocks included.
+#
+# Two helpers on purpose. PRESENCE also drops string literals, because a token inside a string is
+# never the call. ABSENCE keeps them: a forbidden API named in a string is still worth a look, and
+# hiding it would be the gate helping the bait.
+SWIFT_FILES=$(find $SWIFT -name '*.swift' 2>/dev/null)
 swift_code() {
-    grep -rhn "$1" $SWIFT --include='*.swift' 2>/dev/null | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)'
+    [ -n "$SWIFT_FILES" ] || return 0
+    # shellcheck disable=SC2086
+    python3 Scripts/lib/uncomment.py --lang c $SWIFT_FILES 2>/dev/null | grep -nE "$1"
 }
 swift_has() {
-    [ -n "$(swift_code "$1")" ]
+    [ -n "$SWIFT_FILES" ] || return 1
+    # shellcheck disable=SC2086
+    python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten $SWIFT_FILES 2>/dev/null |
+        grep -qE "$1"
 }
 
 # ── The files must exist. A gate that silently passes on a missing host is worse than none ───────
@@ -53,9 +65,15 @@ done
 if [ $FAIL -ne 0 ]; then exit 1; fi
 
 # ── PRESENCE ────────────────────────────────────────────────────────────────────────────────────
+# The REFUSAL, not the method's name. Bait caught this one: leaving the delegate method in place
+# and changing its body to `return true` allows every third-party keyboard, and a scan for the
+# identifier stayed green — the gate asserted that the hook EXISTS, not that it refuses (ADR-0029).
 if ! swift_has 'shouldAllowExtensionPointIdentifier'; then
     fail "ios-host: third-party keyboard veto missing" \
          "iOS CAN refuse custom keyboards app-wide and Android cannot (§8.10). Dropping it here silently gives up the one place this app is better protected than its Android half."
+elif ! swift_has 'extensionPointIdentifier[[:space:]]*!=[[:space:]]*\.keyboard'; then
+    fail "ios-host: the keyboard veto hook exists but does not refuse .keyboard" \
+         "The delegate method must return false for .keyboard (§8.10). A hook that answers true for everything is the default with extra steps."
 fi
 if ! swift_has 'applicationWillResignActive'; then
     fail "ios-host: privacy cover not armed on willResignActive" \
@@ -123,15 +141,15 @@ hits=$(swift_code 'UIPasteboard')
 [ -n "$hits" ] && fail "ios-host: clipboard API in the host" \
     "Datos personales do not go to the shared pasteboard (§8.9)." "$hits"
 
-hits=$(swift_code 'URLSession\|NSURLConnection\|CFNetwork')
+hits=$(swift_code 'URLSession|NSURLConnection|CFNetwork')
 [ -n "$hits" ] && fail "ios-host: networking in the host" \
     "Every byte leaves through core/networking's hardened stack (§7). The host hosts; it does not call." "$hits"
 
-hits=$(swift_code 'UIActivityViewController\|UIDocumentInteractionController\|UIPrintInteractionController\|UIDocumentPickerViewController')
+hits=$(swift_code 'UIActivityViewController|UIDocumentInteractionController|UIPrintInteractionController|UIDocumentPickerViewController')
 [ -n "$hits" ] && fail "ios-host: a document delivery surface in the host" \
     "This app shows, sends and prints no clinical document, by any route (ADR-0007, F19)." "$hits"
 
-hits=$(swift_code 'print(\|NSLog(\|os_log(\|Logger(')
+hits=$(swift_code 'print\(|NSLog\(|os_log\(|Logger\(')
 [ -n "$hits" ] && fail "ios-host: free-text logging in the host" \
     "There is ONE logging path with a closed vocabulary (§8.1, ADR-0020). Swift's print writes whatever it is handed." "$hits"
 

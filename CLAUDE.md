@@ -57,6 +57,7 @@ Cambiar una exige ADR nuevo que derogue al anterior (§10):
 | Postura offline | **Online-only** al arrancar (a lo sumo caché cifrada de lectura) | Espejo del §0 de LumeMed y por la misma razón: la trampa T13 del backend (sin idempotencia, una cola offline fabrica duplicados). |
 | Multi-país | El país es dato del tenant; lo chileno en costuras nombradas; teléfonos E.164 | Espejo de ADR-0034 de LumeMed. Aplica igual: esta app pide teléfonos en el perfil. |
 | Idiomas | Código/comentarios/commits/ADRs en **inglés**; constitución/WORKPLAN/PROGRESS/bitácora en **español** | §11, convención de la familia. |
+| Cómo afirma un gate | **El mecanismo, en el lugar donde corre** — la llamada y su dirección, en `src/main`, con comentarios y literales despojados por tokenizador y el XML parseado; y el ensayo con cebo es un artefacto que corre en CI | ADR-0029 (2026-09-21). Nace de dos gates que estuvieron verdes con su control borrado desde que nacieron: F1/F3 satisfechos por un test que no corre, F6/F12 por un comentario XML de cuatro líneas. |
 | Estado del ecosistema | **Un solo tablero**, en `../lumemed-cloud-platform/docs/ECOSYSTEM-STATUS.md`. Este repo debe ganar su fila ahí — **pendiente de autorización del autor** | §1.1. |
 
 ---
@@ -336,7 +337,17 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
   [manual]**: `no_mutable_object` y `no_hardcoded_style` — exigen regla detekt compilada / design
   system (S0.3); deuda declarada en el yml, no fingida. CI corre gates y compila ambos targets —
   **escrito y jamás corrido: no hay push**. «Una regla sin gate se cae sola» (LumeMed §9) es la
-  lección fundante de la familia; fingir gates sería peor que no tenerlos.
+  lección fundante de la familia; fingir gates sería peor que no tenerlos. La lista completa de
+  gates vive en `.github/workflows/ci.yml`, que es quien los invoca — esta sección nombra los
+  fundacionales y **no se mantiene como censo**.
+- **Y un gate sin cebo también se cae solo** (ADR-0029, 2026-09-21). Dos gates estuvieron ciegos
+  **desde que nacieron** y el ensayo con cebo *sí se había hecho* — lo hizo quien acababa de
+  escribir el gate, que es la misma cabeza que no ve el hueco. Tres reglas ahora: un gate afirma el
+  **mecanismo** (la llamada, y su dirección), **en el lugar donde corre** (`src/main`, jamás
+  `src/test`), y los comentarios y literales se despojan con un **tokenizador** o el XML se
+  **parsea** — nunca con un filtro por línea. Y el ensayo es un **artefacto que corre**:
+  `Scripts/rehearse-gates.sh` borra cada control y exige el rojo, en CI, después de los gates que
+  ensaya.
 
 ## 10. Documentación
 

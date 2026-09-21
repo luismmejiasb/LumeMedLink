@@ -87,14 +87,24 @@ fi
 # PRESENCE, and on the RIGHT view. `AndroidComposeView` overrides getImportantForAutofill() to a
 # hardcoded YES, so the exclusion only works from an ancestor: applied anywhere but the decor view
 # it is silently discarded, which is precisely a change that would look correct in review.
-present_in_shell() {
-    grep -rh --include='*.kt' "$1" androidApp/src 2>/dev/null | grep -vqE '^[[:space:]]*(//|\*|/\*)'
-}
-if ! present_in_shell 'window\.decorView\.denyAutofillExport()'; then
+# PRESENCE, and the three things that can carry a token without being the mechanism are all
+# removed before the match (ADR-0029):
+#   · the PATH is androidApp/src/main — a token in src/test or src/androidTest ships nothing, and a
+#     dead `listOf("FLAG_SECURE", …)` in a test file passed the tree-wide grep this replaces;
+#   · COMMENTS and STRING LITERALS are blanked by a tokenizer, so neither a KDoc naming the API nor
+#     `val doc = "window.decorView.denyAutofillExport()"` counts;
+#   · the pattern is the CALL, not the token, so an `import` of the same name cannot satisfy it.
+# Flattened because the formatter wraps `window.setFlags(` across three lines.
+SHELL_MAIN="androidApp/src/main"
+SHELL_CODE=$(find "$SHELL_MAIN" -name '*.kt' -print0 2>/dev/null |
+    xargs -0 python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten 2>/dev/null)
+calls() { printf '%s\n' "$SHELL_CODE" | grep -qE "$1"; }
+
+if ! calls 'window\.decorView\.denyAutofillExport\(\)'; then
     fail "input: autofill structure export not excluded at the window root" \
          "The Android shell must call window.decorView.denyAutofillExport() (ADR-0024). On any other view the assignment is discarded without error."
 fi
-if ! present_in_shell 'denyContentCapture()'; then
+if ! calls 'denyContentCapture\(\)'; then
     fail "input: content capture not disabled by the app" \
          "The shell must call denyContentCapture() (ADR-0024) so the channel survives a screen that loses FLAG_SECURE."
 fi

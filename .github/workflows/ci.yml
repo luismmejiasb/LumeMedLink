@@ -78,6 +78,13 @@ jobs:
       - name: Gate — install sentinel (F7, ADR-0028)
         run: Scripts/check-install-sentinel.sh
 
+      # LAST, and it is the gate on the gates: it deletes each control, disguises the token where
+      # a blind check would still find it, and requires the gate above to turn RED. Two of those
+      # gates had been blind since birth and nothing noticed, because "rehearsed with bait" was a
+      # one-time act by the same person who wrote the gate. Now it runs every time (ADR-0029).
+      - name: Gate — bait rehearsal (ADR-0029)
+        run: Scripts/rehearse-gates.sh
+
   build:
     needs: gates
     runs-on: macos-26

@@ -38,14 +38,20 @@ android.permission.USE_BIOMETRIC
 android.permission.USE_FINGERPRINT"
 
 # ── 1. Source manifest: our own declarations ────────────────────────────────────────────────────
-attr_present() { grep -E "$1" "$SRC_MANIFEST" 2>/dev/null | grep -v '<!--' | grep -q 'android:'; }
+# PARSED, not grepped, and read off the <application> ELEMENT. The line-based filter this replaces
+# (`grep -v '<!--'`) was walked through by its own class of bait: an XML comment spanning four lines
+# carries `<!--` only on its first line, so the four posture attributes were moved inside one, the
+# file stayed well-formed, the element lost all four, and this gate stayed green. A parser cannot
+# see a comment, and it cannot mistake `android:usesCleartextTraffic` on an <activity> for the
+# application's posture either (ADR-0029).
+app_attr() { python3 Scripts/lib/xmlattr.py "$SRC_MANIFEST" application "$1" 2>/dev/null; }
 
 [ -f "$SRC_MANIFEST" ] || { echo "FAIL manifest missing"; exit 1; }
-attr_present 'android:usesCleartextTraffic="false"' ||
-    fail "network: usesCleartextTraffic is not declared false" \
+[ "$(app_attr 'android:usesCleartextTraffic')" = "false" ] ||
+    fail "network: usesCleartextTraffic is not declared false on <application>" \
          "On API 26/27 devices the platform default permits cleartext; declaring it makes the posture the same everywhere (ADR-0016)."
-attr_present 'android:networkSecurityConfig=' ||
-    fail "network: no networkSecurityConfig resource is declared" \
+[ -n "$(app_attr 'android:networkSecurityConfig')" ] ||
+    fail "network: no networkSecurityConfig resource is declared on <application>" \
          "It is the only place trust anchors can be pinned to system-only (ADR-0016)."
 
 # ── 2. The config resource itself ───────────────────────────────────────────────────────────────

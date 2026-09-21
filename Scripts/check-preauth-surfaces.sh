@@ -80,14 +80,20 @@ if [ -n "$hits" ]; then
 fi
 
 # ── The manifest: declared surfaces and permissions the app has no use for yet ─────────────────
+# Comments are blanked by a tokenizer, not filtered by line: `grep -v '<!--'` DROPS any line that
+# mentions the marker, so a real declaration with a trailing comment escaped the check entirely,
+# and the inner lines of a multi-line comment were never recognised at all (ADR-0029). Blanking
+# preserves line numbers, so the hits below still point at the real line.
+manifest_code() { python3 Scripts/lib/uncomment.py --lang xml "$MANIFEST" 2>/dev/null; }
 if [ -f "$MANIFEST" ]; then
-    hits=$(grep -nE 'POST_NOTIFICATIONS|APPWIDGET_UPDATE|appwidget-provider|android\.permission\.SYSTEM_ALERT_WINDOW' "$MANIFEST" | grep -v '<!--' || true)
+    MANIFEST_CODE=$(manifest_code)
+    hits=$(printf '%s\n' "$MANIFEST_CODE" | grep -nE 'POST_NOTIFICATIONS|APPWIDGET_UPDATE|appwidget-provider|android\.permission\.SYSTEM_ALERT_WINDOW' || true)
     if [ -n "$hits" ]; then
         fail "pre-auth: a pre-auth surface is declared in the manifest" \
              "No notification permission, widget provider or overlay window until its slice exists (ADR-0012)." \
              "$hits"
     fi
-    hits=$(grep -nE 'android:showWhenLocked|android:turnScreenOn' "$MANIFEST" | grep -v '<!--' || true)
+    hits=$(printf '%s\n' "$MANIFEST_CODE" | grep -nE 'android:showWhenLocked|android:turnScreenOn' || true)
     if [ -n "$hits" ]; then
         fail "pre-auth: the manifest asks to show the app over the lock screen" \
              "Threat model T2: nothing of this app renders before authentication." "$hits"

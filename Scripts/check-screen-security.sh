@@ -27,22 +27,26 @@ fail() {
 }
 
 # ── PRESENCE ────────────────────────────────────────────────────────────────────────────────────
-# Comment mentions do NOT count: the token must survive in a non-comment line, or deleting the
-# real call while leaving the doc comment would pass green. (This exact hole was caught by the
-# bait rehearsal — the comment says "FLAG_SECURE app-wide" and fooled a plain grep.)
-# .kt only: a mention in the XML manifest comment (`<!-- … -->`) is prose, not the mechanism — and
-# the bait rehearsal caught exactly that (the manifest's "FLAG_SECURE lands with…" note passed a
-# grep that scanned all files). Kotlin `//` comment lines are stripped too.
-present_in_code() {
-    grep -rh --include='*.kt' "$1" androidApp/src 2>/dev/null | grep -vqE '^[[:space:]]*(//|\*|/\*)'
-}
-if ! present_in_code 'FLAG_SECURE'; then
-    fail "screen-security: FLAG_SECURE missing from the Android shell" \
-         "ADR-0010 makes screenshot protection app-wide; the Activity must set FLAG_SECURE."
+# PRESENCE, and the three things that can carry a token without being the mechanism are all
+# removed before the match (ADR-0029):
+#   · the PATH is androidApp/src/main — a token in src/test or src/androidTest ships nothing, and a
+#     dead `listOf("FLAG_SECURE", …)` in a test file passed the tree-wide grep this replaces;
+#   · COMMENTS and STRING LITERALS are blanked by a tokenizer, so neither a KDoc naming the API nor
+#     `val doc = "window.decorView.denyAutofillExport()"` counts;
+#   · the pattern is the CALL, not the token, so an `import` of the same name cannot satisfy it.
+# Flattened because the formatter wraps `window.setFlags(` across three lines.
+SHELL_MAIN="androidApp/src/main"
+SHELL_CODE=$(find "$SHELL_MAIN" -name '*.kt' -print0 2>/dev/null |
+    xargs -0 python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten 2>/dev/null)
+calls() { printf '%s\n' "$SHELL_CODE" | grep -qE "$1"; }
+
+if ! calls 'window\.setFlags\([^)]*FLAG_SECURE'; then
+    fail "screen-security: the shell does not CALL window.setFlags(..FLAG_SECURE..)" \
+         "ADR-0010 makes screenshot protection app-wide; the Activity must set FLAG_SECURE in androidApp/src/main."
 fi
-if ! present_in_code 'filterTouchesWhenObscured'; then
-    fail "screen-security: tapjacking guard missing" \
-         "ADR-0010: the Android shell must set filterTouchesWhenObscured on its window."
+if ! calls 'window\.decorView\.filterTouchesWhenObscured[[:space:]]*=[[:space:]]*true'; then
+    fail "screen-security: tapjacking guard is not ASSIGNED true on the decor view" \
+         "ADR-0010: the Android shell must set window.decorView.filterTouchesWhenObscured = true."
 fi
 
 # ── ABSENCE ─────────────────────────────────────────────────────────────────────────────────────
