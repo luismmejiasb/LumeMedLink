@@ -97,6 +97,29 @@ if ! grep -q 'KOTLIN_FRAMEWORK_BUILD_TYPE=' "$PROJECT"; then
     fail "ios-host: the build phase does not pin KOTLIN_FRAMEWORK_BUILD_TYPE" \
          "Without it the Kotlin framework is not refreshed and the app links STALE code while the build stays green (ADR-0028). Every iOS measurement becomes worthless without announcing itself."
 fi
+
+# And the SECOND half of the same staleness, which the first fix did not touch (ADR-0030).
+# KOTLIN_FRAMEWORK_BUILD_TYPE makes GRADLE's output fresh. It does nothing about the LINK: the
+# Kotlin framework is static and arrives through `OTHER_LDFLAGS -framework`, so no input Xcode
+# tracks changes when Kotlin changes, and a Kotlin-only edit leaves the app binary byte-identical.
+# Measured, with a control: same sha256, same mtime, old code, build green.
+#
+# The ASSIGNMENT and the CALL, not the words: the build phase must compare the framework against a
+# stamp AND delete the linked product when it moved. Declaring the framework in the Frameworks
+# build phase was tried first and measured NOT to work — the entry in BUILT_PRODUCTS_DIR is a
+# symlink whose own mtime never moves — so asserting a file reference here would assert a control
+# that does nothing.
+#
+# This gate only proves the mechanism is WRITTEN. That it WORKS is
+# Scripts/verify-ios-link-freshness.sh, which runs the two-build experiment with a live control.
+if ! grep -q 'kotlin-framework.stamp' "$PROJECT"; then
+    fail "ios-host: the build phase does not stamp the Kotlin framework" \
+         "Without a stamp there is nothing to compare, so nothing can notice the framework moved (ADR-0030)."
+fi
+if ! grep -q 'rm -f .*TARGET_BUILD_DIR/\$EXECUTABLE_PATH' "$PROJECT"; then
+    fail "ios-host: the build phase does not force a relink when the framework changed" \
+         "Deleting the linked product is what makes Xcode link again; nothing else in this project points at the framework (ADR-0030)."
+fi
 if ! grep -q 'CODE_SIGN_ENTITLEMENTS' "$PROJECT"; then
     fail "ios-host: the project does not reference the entitlements file" \
          "Without entitlements the app belongs to no keychain group and every SecItem call answers -34018. The file existing is not the control; the project pointing at it is."

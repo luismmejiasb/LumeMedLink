@@ -101,3 +101,13 @@ espejo.
 
 `Scripts/check-ios-host.sh` ahora exige la variable. Es la aserción de más valor de ese gate, porque
 su ausencia **falla en silencio**.
+
+---
+
+## Nota — 2026-09-21
+
+Lo que esta ADR cuenta del framework rancio es cierto y era **la mitad de la cadena**. Fijar
+`KOTLIN_FRAMEWORK_BUILD_TYPE` volvió fresca la salida de Gradle; el **enlace** siguió sin
+refrescarse, así que un cambio sólo-Kotlin seguía sin llegar al binario. Medido el 2026-09-21 y
+cerrado en **ADR-0030**, que amplía la ventana de observaciones iOS invalidadas: la de aquí se
+cerró el 2026-09-07, la otra nunca se había cerrado.

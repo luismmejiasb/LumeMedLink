@@ -193,6 +193,21 @@ p.write_text(s)
 '
 
 # ── The iOS host ────────────────────────────────────────────────────────────────────────────────
+bait "the relink guard is deleted from the build phase" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = p.read_text()
+before = s
+s = s.replace("rm -f \\\"$TARGET_BUILD_DIR/$EXECUTABLE_PATH\\\"", "true")
+if s == before: raise SystemExit("bait did not apply")
+p.write_text(s)
+'
+bait "the framework stamp is dropped, so nothing notices it moved" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = p.read_text().replace("kotlin-framework.stamp", "unused.tmp")
+p.write_text(s)
+'
 bait "keyboard veto survives only inside a /* */ block" check-ios-host.sh '
 import sys, pathlib, re
 p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
