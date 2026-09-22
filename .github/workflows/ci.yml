@@ -80,6 +80,17 @@ jobs:
       - name: Gate — logout contract (F5, ADR-0014)
         run: Scripts/check-logout-contract.sh
 
+      # The number IS the address: the constitution and the author say "ADR-0029" and expect one
+      # file to answer. Nothing in this repo READS docs/adr, docs/backend-requests or docs/bitacora,
+      # so two files claiming one number is invisible to the compiler, to detekt and to every test.
+      # Measured in LumeMed on 2026-09-21: a cherry-pick from a parallel session landed eight docs
+      # on numbers that branch had already used and the pipeline stayed green. Both sessions had
+      # numbered correctly against the tree in front of them — the collision is born when the
+      # branches join. The bitacora index is deliberately NOT checked here; its README declares
+      # itself abandoned at entry 0001 and rebuilding it is the author's call.
+      - name: Gate — numbered documents have no collisions
+        run: python3 Scripts/numbered-docs-have-no-collisions.py
+
       # LAST, and it is the gate on the gates: it deletes each control, disguises the token where
       # a blind check would still find it, and requires the gate above to turn RED. Two of those
       # gates had been blind since birth and nothing noticed, because "rehearsed with bait" was a

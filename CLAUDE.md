@@ -414,6 +414,17 @@ logout wipe · bloqueo de sesión. Un slice no pasa si alguno aplica y falta.
 - Un dato real de persona en un test. **[manual]**
 - Dependencia nueva sin ADR **[lint: `check-dependency-allowlist`]**; warning tolerado **[lint:
   `allWarningsAsErrors`]**.
+- **Un número de documento reclamado por dos archivos** —dos ADR `0029`, dos peticiones `0006`, dos
+  bitácoras `0033`. El número **es la dirección**: esta constitución y el autor dicen «ADR-0029» y
+  esperan que responda un archivo. **Ningún código de este repo lee `docs/adr`, `docs/backend-requests`
+  ni `docs/bitacora`**, así que la colisión es invisible para el compilador, para detekt y para todos
+  los tests. **[lint: `numbered-docs-have-no-collisions.py`, con sus tres cebos en
+  `rehearse-gates.sh`]** — barre además **hacia arriba**, porque el piso de «no escaneó cero» sólo
+  guarda hacia abajo. **El índice de la bitácora NO se comprueba** a propósito: su README se declara
+  abandonado en la entrada 0001 y reconstruirlo lo decide el autor (§10); comprobarlo sería reportar
+  una decisión como defecto. Viene de LumeMed, donde un `cherry-pick` de una sesión paralela aterrizó
+  ocho documentos sobre números ya usados con el pipeline en verde: **las dos sesiones numeraron
+  bien**, y la colisión nace al **unir**.
 
 ## 14. LumeBrain
 

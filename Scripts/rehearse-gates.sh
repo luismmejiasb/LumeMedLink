@@ -61,7 +61,13 @@ bait() {
         FAIL=$((FAIL + 1))
         return
     fi
-    if (cd "$TREE" && sh "Scripts/$gate" >/dev/null 2>&1); then
+    # The interpreter comes from the extension: the gates here are shell, the numbered-docs one is
+    # Python. Running a .py under `sh` would fail for the wrong reason and read as a caught bait.
+    case "$gate" in
+        *.py) runner=python3 ;;
+        *) runner=sh ;;
+    esac
+    if (cd "$TREE" && "$runner" "Scripts/$gate" >/dev/null 2>&1); then
         echo "  GREEN  $name  -> $gate DID NOT CATCH IT"
         FAIL=$((FAIL + 1))
     else
@@ -329,6 +335,27 @@ s = p.read_text()
 s = s.replace("return extensionPointIdentifier != .keyboard", "return true")
 s = s.replace("import UIKit", "import UIKit\n/*\n shouldAllowExtensionPointIdentifier .keyboard is refused app-wide\n*/", 1)
 p.write_text(s)
+'
+
+# ── Numbered documents: the number IS the address, and nothing in this repo reads those trees ───
+bait "two ADRs claim one number" numbered-docs-have-no-collisions.py '
+import sys, pathlib, shutil
+d = pathlib.Path(sys.argv[1]) / "docs/adr"
+src = sorted(d.glob("0*.md"))[0]
+shutil.copy(src, d / (src.name[:4] + "-bait-duplicate.md"))
+'
+
+bait "a numbered doc opens a namespace nobody walks" numbered-docs-have-no-collisions.py '
+import sys, pathlib, shutil
+root = pathlib.Path(sys.argv[1])
+d = root / "docs/backend-answers"
+d.mkdir(parents=True, exist_ok=True)
+shutil.copy(sorted((root / "docs/adr").glob("0*.md"))[0], d / "0001-bait.md")
+'
+
+bait "a number that cannot be addressed" numbered-docs-have-no-collisions.py '
+import sys, pathlib
+(pathlib.Path(sys.argv[1]) / "docs/bitacora/0099b-bait.md").write_text("# bait\n")
 '
 
 restore
