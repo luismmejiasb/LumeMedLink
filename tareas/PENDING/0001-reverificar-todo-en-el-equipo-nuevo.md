@@ -15,7 +15,7 @@ Android, en la fecha de su tajada** (`verify-tier2-invalidation` y `verify-no-ba
 
 ## Lo que el equipo nuevo necesita
 
-El detalle por herramienta vive en el vault (`LumeBrain/Personal/Stack Lume y KMP en equipo nuevo.md`),
+El detalle por herramienta vive en el vault (`LumeBrain/LumeMed/Stack Lume y KMP en equipo nuevo.md`),
 no aquí. Lo mínimo para que lo de abajo corra: JDK 17 (el daemon está pineado:
 `gradle/gradle-daemon-jvm.properties`), Android SDK con un AVD **con PIN de pantalla y una huella
 enrolada** (`verify-tier2-invalidation.sh` la exige), **la app instalada** en ese emulador
@@ -82,7 +82,7 @@ Para comparar, **no para copiar como hechos**: 18 `check-*.sh` verdes · 39 cebo
   18.6**, no sobre 27: re-medirlos con `verify-ios-privacy-cover.sh` es parte de esta tarea.
 - La memoria de Claude Code de este repo es un symlink
   (`~/.claude/projects/-Users-luis-mejias1-Documents-iOS-Projects-LumeMedLink/memory` →
-  `LumeBrain/Memorias/LumeMedLink`). **El nombre de esa carpeta sale de la ruta absoluta del repo**: si
+  `LumeBrain/LumeMed/LumeMedLink/Memorias`). **El nombre de esa carpeta sale de la ruta absoluta del repo**: si
   el usuario o la ruta cambian en el equipo nuevo, el symlink hay que recrearlo con el nombre nuevo.
 
 ## Cierre
