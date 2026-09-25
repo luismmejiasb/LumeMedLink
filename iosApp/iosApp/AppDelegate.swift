@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// system prompt). A separate window at a higher level is above all of that, including anything
     /// Compose presents. That is its whole job — the Compose overlay in `PrivacyScreenScaffold`
     /// covers the Compose content, and this covers everything above it.
+    ///
     /// One cover per scene, keyed by the scene's persistent identifier.
     ///
     /// NOT a single window plus `UIApplication.shared.connectedScenes.first`, which is what this

@@ -53,6 +53,9 @@ NAMESPACES = [
     ("docs/adr", ["docs/adr"], 25),
     ("docs/backend-requests", ["docs/backend-requests"], 5),
     ("docs/bitacora", ["docs/bitacora"], 25),
+    # ONE namespace over two folders: a task MOVES from PENDING to DONE when it closes, so a number
+    # must be unique across both or the move itself creates the collision (added 2026-09-24).
+    ("tareas", ["tareas/PENDING", "tareas/DONE"], 10),
 ]
 
 # Canonical shape. `NNNN-slug.md`.

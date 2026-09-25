@@ -23,7 +23,8 @@ Cada uno verificado acá antes de tocarlo, no tomado de la palabra de la auditor
 - **El plan bloqueaba el tier 2 de iOS en «(sin host)»**, y el host existe desde el 2026-08-25.
 - **El KDoc de `KeychainSecureStoreTest`**: «el día que exista el shell de iOS estos tests corren
   hosted». Ese día fue el 2026-08-25 y nadie re-corrió nada. **Y los seis siguen contados en el
-  total**: 130 corren, 6 no.
+  total**: 130 corren, 6 no. *(Mal leído — corregido el 2026-09-24: el reporte dice 130 **incluyendo**
+  los 6 saltados, así que corren 124.)*
 
 ## Y dos configuraciones eran la razón de que dos de esas afirmaciones fueran falsas
 

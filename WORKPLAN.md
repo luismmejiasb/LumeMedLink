@@ -111,6 +111,8 @@
 
 ## Deuda declarada
 
+- **El detalle de lo pendiente vive en `tareas/PENDING/`** desde el traspaso de equipo del 2026-09-24 — once tareas, empezando por re-verificar todo en la máquina nueva (0001).
+
 - Skills Kotlin equivalentes a los nueve de la familia Swift: no existen (§0.0).
 - ~~Fila de LumeMedLink en el tablero del ecosistema~~ — **entregada el 2026-08-20** (§1.1). Se deja tachada, no borrada: siguió pidiéndose un mes porque nada recomputa la prosa.
 - Nombre público (App Store / Play Store): pendiente, junto al de LumeMed (§0).
