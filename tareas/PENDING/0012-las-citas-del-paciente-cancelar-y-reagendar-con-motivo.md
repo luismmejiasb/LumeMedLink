@@ -38,6 +38,10 @@
 4. Push en iOS: registrar el token después del login, y mostrar el texto genérico que elige la app.
    Antes hay que enmendar ADR-0012 y `Scripts/check-preauth-surfaces.sh`, que hoy prohíben las APIs de
    notificaciones: una notificación en la pantalla bloqueada es una superficie pre-login.
+5. **Oponerse a los avisos, por canal** (decisión del autor del 2026-09-26, tarea `0024` del backend):
+   el paciente puede pedir que no le escriban por correo, por SMS o, cuando exista, por push. Lo que ve
+   dentro de la app sigue visible. La pantalla tiene que dejar claro que oponerse a un canal no apaga la
+   información dentro de la app, ni borra su contacto.
 
 ## Qué NO hacer
 
