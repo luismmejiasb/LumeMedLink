@@ -49,11 +49,12 @@ what this ADR exists to pin down before the first styled screen.
 
 - S0.3 is no longer parked. It is the wiring: the composite build, the allowlist line, the resources
   copy task, `LumeTheme` at the root, and `SensitiveTextField` re-dressed over the kit.
-- **The kit has to grow one thing before the first personal-data field**: a keyboard kind for verbatim
+- **The kit has to grow one thing before the first personal-data field**: a way to ask for verbatim
   free text — no autocorrect, no capitalization — because the kit's `Default` asks for both, and a
-  name or an address typed into it reaches the keyboard's learned vocabulary (the kit's
-  `tareas/PENDING/0005`). Until it exists, `SensitiveTextField` keeps its own `BasicTextField` for
-  `PERSONAL_DATA` free text.
+  name or an address typed into it reaches the keyboard's learned vocabulary. Half of it already exists
+  in LumeUIKit and was never ported (`LumeTextCase.none`, capitalization only); the autocorrect half
+  exists in neither kit (the twin's `tareas/PENDING/0005`, LumeUIKit's `tareas/PENDING/0094`). Until
+  both land, `SensitiveTextField` keeps its own `BasicTextField` for `PERSONAL_DATA` free text.
 - `no_hardcoded_style` (§9, still [manual]) can become a gate once screens are written against kit
   tokens; the kit's `Scripts/lint-layout.sh` is the model.
 - **Not verified, and named so it is not mistaken for safe**: the kit's popups (`LumeAlert`,

@@ -86,5 +86,5 @@ its pattern has no word boundary between `Lume` and `TextField`, measured with a
 green. It now refuses `LumeTextField`, `LumeSearchField`, `LumeOTPField` and `LumeRichTextEditor`
 outside `core/input/`, and `SensitiveTextField` will wrap them when S0.3 lands (ADR-0033). The kit's
 free-text keyboard asks for sentence capitalization and the platform's autocorrect, which point 3
-closes for `PERSONAL_DATA`; until the kit has a verbatim keyboard kind, personal free text stays on
-the primitive's own field.
+closes for `PERSONAL_DATA`; until the kit can be asked for verbatim free text (no capitalization, no
+autocorrect), personal free text stays on the primitive's own field.

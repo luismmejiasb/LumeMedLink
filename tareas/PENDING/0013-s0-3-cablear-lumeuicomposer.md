@@ -34,15 +34,17 @@
 6. **`SensitiveTextField` sobre los campos del kit.** `CREDENTIAL` → el campo de contraseña del kit (ya trae el
    autocompletado de credenciales); correo y teléfono → los teclados `Email` y `Phone` del kit, que ya van sin
    autocorrector ni mayúsculas. **El texto libre personal (nombre, dirección) se queda en el `BasicTextField` propio**
-   hasta que el kit tenga su teclado *verbatim* (`../LumeUIComposer/tareas/PENDING/0005`): el `Default` del kit pide
-   mayúscula de oración y el autocorrector del sistema, que es justo lo que ADR-0013 cierra.
+   hasta que el kit pueda pedir texto libre *verbatim*, sin mayúscula ni autocorrector
+   (`../LumeUIComposer/tareas/PENDING/0005`): el `Default` del kit pide las dos cosas, que es justo lo que ADR-0013
+   cierra. La mitad de la mayúscula ya existe en LumeUIKit (`LumeTextCase.none`) y el gemelo no la portó; la del
+   autocorrector no existe en ninguno de los dos.
 7. **Las pantallas placeholder de S1.1** (login, bloqueo, home) vestidas con el kit, dentro de `LumeContainer`.
 
 ## Lo que espera del kit, y en qué tarea suya
 
 | Necesidad de esta app | Tarea del kit |
 | --- | --- |
-| Teclado verbatim para nombre y dirección | `0005` |
+| Texto libre verbatim (sin mayúscula ni autocorrector) para nombre y dirección | `0005` |
 | Barra de pestañas del shell (Agenda / Contactos / Perfil) | `0006` |
 | Fila con estado **y** ••• (una cita), y el callout que llena su región | `0007` |
 | Columna de fecha que cabe una fecha chilena; el sello sube sobre el título en letra grande | `0002` (P7) |
