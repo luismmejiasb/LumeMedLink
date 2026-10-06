@@ -47,7 +47,7 @@ Cambiar una exige ADR nuevo que derogue al anterior (§10):
 | Audiencias | **Dos roles**: médico (gestión no clínica) y paciente | El gate de ADR-0006 **se abrió** (ver su enmienda del 2026-09-15): `ADR-0035 del backend` existe y su superficie está construida. Se sigue construyendo primero el lado médico, y la política de sesión del tier de paciente debe aterrizar en un sucesor de ADR-0003 **antes** de que exista código de sesión de paciente. |
 | Backend | El mismo **lumemed-cloud-platform**, por su contrato OpenAPI versionado | El contrato de hoy no publica rol paciente ni tier de auth de paciente. Todo endpoint nuevo se pide por `docs/backend-requests/`, como hace LumeMed. |
 | Identidad / IdP | **Google Identity Platform** — el mismo IdP de la familia. Médicos: MFA TOTP obligatoria (heredan su cuenta). Pacientes: **política pendiente de ADR** (ADR-0003 la deja abierta a propósito) | Jamás auth casera (espejo del §8.2 de LumeMed). |
-| UI | **Compose Multiplatform.** El design system es **`LumeUIComposer`** (`../LumeUIComposer`), el gemelo de LumeUIKit en Compose — **si su Slice 0 sobrevive** (su viabilidad está pendiente del autor, en device). Fallback declarado: un módulo `designkit` interno con los tokens portados, promovible al gemelo después | ADR-0002 §UI. Un componente reutilizable vive en el kit, jamás inline en una pantalla. Cero estilos hardcodeados. |
+| UI | **Compose Multiplatform.** El design system es **`LumeUIComposer`** (`../LumeUIComposer`), el gemelo de LumeUIKit en Compose, consumido por path (build compuesto) hasta su primer tag. **Decidido por el autor el 2026-10-06**: la verificación en device con lector de pantalla dejó de condicionarlo, y el fallback `designkit` ya no se construye | ADR-0002 §UI, ADR-0033. Un componente reutilizable vive en el kit, jamás inline en una pantalla. Cero estilos hardcodeados. |
 | Red | **Cliente generado del contrato sobre un stack Ktor endurecido** — espejo de la constitución de LumeNetworking, no de su código | ADR-0004. Ninguna `HttpURLConnection`/OkHttp suelta fuera del stack. |
 | Secretos | **Keychain (iOS) / Android Keystore (Android)**, siempre. Jamás `SharedPreferences`/`NSUserDefaults`/código | ADR-0005, espejo de ADR-0005 de LumeMed con las clases por plataforma. |
 | Documentos clínicos | **Esta app no muestra, entrega ni transporta documentos con valor legal.** Ni receta, ni certificado, ni licencia — ni en pantalla ni como adjunto | ADR-0007. Es la trampa T1 del backend aplicada a la superficie más tentadora: «mandarle la receta al paciente por la app» reabre la Ley 19.799 entera (ADR-0035 de LumeMed + `ADR-0019 del backend`). |
@@ -197,10 +197,13 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 ## 5. UI
 
 - **Tokens, jamás literales** (§5.1 de LumeMed, mismo espíritu): color, tipografía, espaciado y radio
-  salen del theme del módulo `designkit`, que **porta los tokens de LumeUIKit a Compose** — misma
+  salen de `LumeTheme`, el tema de **LumeUIComposer** (ADR-0033), gemelo de LumeUIKit — misma
   paleta, misma escala tipográfica, mismos roles de botón (filled = primaria, outlineNeutral =
   secundaria, plain = terciaria). El *lenguaje* se comparte; el código no cruza.
-- Un componente que usan ≥2 pantallas vive en `designkit`, no copiado.
+- Un componente que usan ≥2 pantallas vive **en el kit** (su repo, su tarea), no copiado ni inline.
+- **Un campo de texto del kit nunca se llama desde una pantalla**: lo envuelve
+  `core/input/SensitiveTextField`, que decide su teclado (ADR-0013 enmendado, gate
+  `check-input-surfaces.sh`).
 - **MVVM**: pantalla tonta (renderiza estado, emite intents), ViewModel expone `StateFlow`, los use
   cases hacen el trabajo. Navegación decidida por coordinator, renderizada por el host — espejo de
   ADR-0014 de LumeMed.
@@ -299,12 +302,15 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 8. **Supply chain**: dependencias mínimas, pinneadas por version catalog + lockfile, allowlist con
    denylist nombrado (Firebase Analytics/Crashlytics, Sentry, y toda librería de red/imágenes fuera
    del stack — espejo del gate de LumeMed §9).
-9. **Portapapeles**: datos personales (RUT, teléfono) no se copian al portapapeles general sin
-   decisión; Android 13+ además muestra el contenido copiado en un overlay del sistema — otra razón
-   para no ofrecerlo. Si se copia: iOS con `.localOnly`+expiración; **Android no tiene análogo** —
-   no hay API para excluir un clip de la sincronización entre dispositivos ni para expirarlo. Lo que
-   hay se usa (`ClipDescription.EXTRA_IS_SENSITIVE`, API 33, que redacta el preview) y **el resto de
-   la brecha se declara**: en Android la mitigación real es no ofrecer copiar.
+9. **Portapapeles**: datos personales (RUT, teléfono) **mostrados en pantalla** no se copian al
+   portapapeles general; **dentro de un campo editable sí** — lo que la persona escribió se puede
+   copiar y pegar (decisión del autor del 2026-10-06, enmienda de ADR-0013, porque a un paciente le
+   sirve más de lo que arriesga). El costo se declara: iOS puede marcar un clip `.localOnly` con
+   expiración; **Android no tiene análogo** — no hay API para excluir un clip de la sincronización
+   entre dispositivos ni para expirarlo, y Android 13+ muestra lo copiado en un overlay del sistema
+   que el menú de copiar de un campo no puede marcar sensible (`ClipDescription.EXTRA_IS_SENSITIVE`,
+   API 33, sólo lo aplica quien llama al portapapeles). Por eso, fuera de los campos, la mitigación
+   real en Android sigue siendo no ofrecer copiar.
 10. **Teclado — la diferencia se declara**: iOS puede rechazar teclados de terceros app-wide (LumeMed
     §8.10) y este repo lo hereda en su lado iOS. **Android no puede**: no existe API para vetar un
     IME. Lo que sí: campos sensibles con `imeOptions` de no-aprendizaje y tipo password donde

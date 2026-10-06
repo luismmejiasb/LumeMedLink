@@ -34,3 +34,8 @@ Multiplatform with Compose Multiplatform for the UI (stable on iOS since 2025).
   rules, S0) — until then every constitutional rule is [manual].
 - The iOS side of this app follows Apple-platform facts (Keychain semantics, ATS) exactly as
   documented in the family's `lume-security` skill, which remains loadable for that half.
+
+## Amendment — 2026-10-06: the UI branch is decided
+
+Of the two roads §UI left open, the kit is taken and the `designkit` fallback is not built:
+LumeUIComposer, consumed by path until its first tag. The decision and its conditions are ADR-0033.

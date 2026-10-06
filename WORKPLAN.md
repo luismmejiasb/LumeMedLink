@@ -19,14 +19,14 @@
   doctrina de LumeNetworking sobre Ktor en `core/networking` (ADR-0004), con seams de sesión y de
   log, engines por plataforma y tests de contrato en `commonTest` corriendo en ambos targets.
   **Hecho** — bitácora 0004; el refresh single-flight y el facade real de logs llegan con S1.1.
-- **S0.3 · Design system.** Depende de la decisión pendiente del autor sobre **LumeUIComposer** (el
-  gemelo de LumeUIKit en Compose, `../LumeUIComposer`, hoy esqueleto con su Slice 0 sin juzgar):
-  - Si el gemelo sigue → este repo lo consume por path local (como LumeMed consume LumeUIKit) y
-    este slice se reduce a cablear el theme.
-  - Si se archiva → módulo `designkit` interno con los tokens portados de LumeUIKit, verificados
-    contra el catálogo `LumeUIExample` a ojo (ADR-0002).
-  **Este slice no se empieza antes de esa decisión** — construir el fallback con el gemelo vivo es
-  duplicar; construir contra el gemelo antes de su veredicto es apostar el shell a un spike.
+- **S0.3 · Design system.** **Destrabado el 2026-10-06**: el autor sacó la verificación en device
+  del gemelo de las prioridades y decidió consumirlo (ADR-0033). Es el cableado, no un diseño:
+  build compuesto con `../LumeUIComposer`, una línea en el allowlist
+  (`org.jetbrains.compose.components`), la tarea de copia de recursos en `androidApp` (sin ella el
+  primer ícono revienta en Android), `LumeTheme` en la raíz y `SensitiveTextField` vestido sobre los
+  campos del kit. El gate que impide llamar un campo del kit desde una pantalla **ya está**, con su
+  cebo. El cómo, paso a paso y con lo que espera del kit: `tareas/PENDING/0013`. La verificación de
+  los popups del kit contra el endurecimiento de ventana: `tareas/PENDING/0014`.
 
 ## FASE 1 — Lado médico (no gated)
 

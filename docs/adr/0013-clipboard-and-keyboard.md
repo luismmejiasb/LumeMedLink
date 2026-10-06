@@ -61,3 +61,30 @@ Hardening that makes fields unusable gets routed around, so usability here is a 
 - The primitive is deliberately unstyled — S0.3 dresses it, the security attributes stay.
 - Verification is by test on the pure decision functions plus the gate, both rehearsed. A real
   keyboard's behaviour on a device is not asserted by anything here and is not claimed.
+
+## Amendment — 2026-10-06: copy inside fields, and the design kit's fields
+
+Decided by the author on 2026-10-06, with the design system (ADR-0033).
+
+**1. Copy and paste are allowed inside editable fields.** What a patient typed — an address, a phone,
+a booking code — can be copied out of the field and pasted elsewhere, because for the person using
+this app that helps more than it risks. The kit that dresses this app keeps the platform's copy and
+cut in every field and does not port its twin's protection switch: a deliberate divergence, recorded
+in `../LumeUIComposer/docs/Porting.md`.
+
+What does **not** change: **displayed data stays uncopyable.** No clipboard API gets a caller, and
+`SelectionContainer` stays refused — a RUT or a phone number shown on a screen is still the case this
+ADR was written for. The first consequence above ("users cannot copy a phone number out of this
+app") now reads: out of a *screen*.
+
+The Android asymmetry gets worse, and is declared: a field's built-in copy menu cannot set
+`ClipDescription.EXTRA_IS_SENSITIVE`, so on Android 13+ the system's copy overlay shows what was
+copied. Accepted with the decision.
+
+**2. The choke point covers the design kit's fields.** `check-input-surfaces.sh` could not see them —
+its pattern has no word boundary between `Lume` and `TextField`, measured with a bait that passed
+green. It now refuses `LumeTextField`, `LumeSearchField`, `LumeOTPField` and `LumeRichTextEditor`
+outside `core/input/`, and `SensitiveTextField` will wrap them when S0.3 lands (ADR-0033). The kit's
+free-text keyboard asks for sentence capitalization and the platform's autocorrect, which point 3
+closes for `PERSONAL_DATA`; until the kit has a verbatim keyboard kind, personal free text stays on
+the primitive's own field.

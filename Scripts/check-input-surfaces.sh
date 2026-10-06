@@ -64,6 +64,21 @@ if [ -n "$hits" ]; then
          "$hits"
 fi
 
+# The design kit's text inputs are text fields too, and the pattern above cannot see them: there is
+# no word boundary between `Lume` and `TextField`. Measured with a bait before this rule existed —
+# a screen calling LumeTextField passed this gate green, with none of the hardening the primitive
+# decides. They are legal only inside core/input/, where SensitiveTextField wraps them (ADR-0013,
+# amendment of 2026-10-06; ADR-0033).
+INPUT_DIR="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/input/"
+hits=$(grep -rnE '\bLume(TextField|SearchField|OTPField|RichTextEditor)\s*\(' $SRC 2>/dev/null \
+    | grep -v "^$INPUT_DIR" \
+    | grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)
+if [ -n "$hits" ]; then
+    fail "input: design-kit text field outside core/input" \
+         "A LumeUIComposer text input is wrapped by core/input/SensitiveTextField, which decides its keyboard (ADR-0013, ADR-0033). A screen never calls one directly." \
+         "$hits"
+fi
+
 # ── Weakenings of the primitive itself ──────────────────────────────────────────────────────────
 hits=$(scan 'autoCorrectEnabled[[:space:]]*=[[:space:]]*true|autoCorrect[[:space:]]*=[[:space:]]*true')
 if [ -n "$hits" ]; then

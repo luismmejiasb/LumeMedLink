@@ -175,6 +175,17 @@ p.write_text(p.read_text().replace("window.decorView.denyAutofillExport()", "win
 '
 
 # ── The gates the audit found blind, one bait each (ADR-0029, second pass) ──────────────────────
+# A design-kit field is a text field the hardened primitive never sees. The raw-field pattern
+# cannot match it: there is no word boundary between `Lume` and `TextField` (ADR-0013 amendment
+# of 2026-10-06; LumeUIComposer is the kit).
+bait "a design-kit text field in a screen, outside the hardened primitive" check-input-surfaces.sh '
+import sys, pathlib
+root = pathlib.Path(sys.argv[1])
+f = root / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/bait/BaitScreen.kt"
+f.parent.mkdir(parents=True, exist_ok=True)
+f.write_text("package com.luismejias.lumemedlink.features.bait\n\nfun bait() { LumeTextField(value = \"\", onValueChange = {}) }\n")
+'
+
 bait "a clinical name as a function parameter, not a property" check-data-boundary.sh '
 import sys, pathlib
 d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session"
