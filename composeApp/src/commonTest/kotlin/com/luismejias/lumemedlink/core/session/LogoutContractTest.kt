@@ -74,7 +74,11 @@ class LogoutContractTest {
         gate: UnlockGate = LogoutTestGate(),
     ): Triple<SessionManager, UnlockGate, SessionLock> {
         val manager = SessionManager(TokenStore(store), LogoutTestRefreshClient(), LogoutTestClock())
-        val lock = SessionLock(InactivityLock(windowMillis = 300_000L, clock = LogoutTestClock()), gate)
+        val lock = SessionLock(
+            InactivityLock(windowMillis = 300_000L, clock = LogoutTestClock()),
+            gate,
+            FailedAttemptLedger(store),
+        )
         return Triple(manager, gate, lock)
     }
 

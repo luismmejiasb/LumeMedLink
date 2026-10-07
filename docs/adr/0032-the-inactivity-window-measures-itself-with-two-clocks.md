@@ -90,3 +90,8 @@ with comments and string literals stripped (ADR-0029). Two baits in `rehearse-ga
   in memory, so killing the process resets it. The OS biometric subsystem has its own lockout, which
   bounds the damage, but the ceiling this app believes it enforces is not the one enforced. It needs
   its own slice.
+
+## Closed elsewhere — 2026-10-07
+
+The failed-attempt ceiling named above as living in memory now lives in the tier-1 store and outlives
+the process: ADR-0034.

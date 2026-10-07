@@ -66,7 +66,11 @@ class LogoutWipeOnDeviceTest {
     @Test
     fun theProductionLogoutPathLeavesNoFileAndNoKey() = runBlocking {
         val manager = SessionManager(TokenStore(store), FailingRefreshClient())
-        val lock = SessionLock(InactivityLock(windowMillis = 300_000L), AlwaysAvailableGate())
+        val lock = SessionLock(
+            InactivityLock(windowMillis = 300_000L),
+            AlwaysAvailableGate(),
+            FailedAttemptLedger(store),
+        )
         SecureStoreKey.entries.forEach { store.put(it.storageKey, "synthetic-${it.name}") }
         manager.establish(SessionTokens("acc-synthetic", "ref-synthetic", Long.MAX_VALUE))
         assertTrue(manager.hasSession(), "precondition: a session exists on real storage")

@@ -35,4 +35,11 @@ internal enum class SecureStoreKey(val storageKey: String) {
 
     /** The challenge the tier-2 unlock key signs (ADR-0011). */
     UNLOCK_CHALLENGE("unlock_challenge_v1"),
+
+    /**
+     * How many unlock attempts have failed since the last success (ADR-0034). Not a credential, and
+     * in this enum anyway: a count kept anywhere the logout does not erase would be inherited by the
+     * next session, and a count kept in memory is reset by killing the process.
+     */
+    FAILED_UNLOCK_ATTEMPTS("failed_unlock_attempts_v1"),
 }

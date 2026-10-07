@@ -12,7 +12,9 @@ Activity.
 Rotar, cambiar el tema o el tamaño de fuente recrea la Activity, y con ella la composición: la sesión
 se vuelve a sondear y el lock vuelve a nacer **bloqueado** — fail-closed, así que no es un agujero,
 pero es una re-autenticación biométrica por girar el teléfono. Y como el contador de intentos también
-vive ahí (tarea 0007), **rotar también lo resetea**.
+vivía ahí (tarea 0007), **rotar también lo reseteaba**. *(Actualizado 2026-10-07: ya no — el contador vive en el
+almacén tier 1 desde ADR-0034. Lo que queda de esta tarea es el lock que nace bloqueado y la sesión que se vuelve a
+sondear.)*
 
 ## Qué se hace
 

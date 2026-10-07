@@ -4,6 +4,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private const val WINDOW = 300_000L
@@ -40,8 +41,43 @@ private class ScriptedUnlockGate(private var outcomes: MutableList<UnlockOutcome
     }
 }
 
-private fun lockWith(gate: UnlockGate, clock: LockTestClock = LockTestClock(), maxAttempts: Int = 5) =
-    SessionLock(InactivityLock(WINDOW, clock, LockTestElapsedClock(clock)), gate, maxAttempts)
+/** The tier-1 store, in memory, with failures a test can switch on. */
+private class LedgerStore(private val failOnGet: Boolean = false, private val failOnPut: Boolean = false) :
+    SecureStore {
+    val entries = mutableMapOf<String, String>()
+
+    override suspend fun put(key: String, value: String) {
+        if (failOnPut) error("synthetic store failure")
+        entries[key] = value
+    }
+
+    override suspend fun get(key: String): String? {
+        if (failOnGet) error("synthetic store failure")
+        return entries[key]
+    }
+
+    override suspend fun remove(key: String) {
+        entries.remove(key)
+    }
+
+    override suspend fun wipe() {
+        entries.clear()
+    }
+}
+
+private val countKey = SecureStoreKey.FAILED_UNLOCK_ATTEMPTS.storageKey
+
+private fun lockWith(
+    gate: UnlockGate,
+    clock: LockTestClock = LockTestClock(),
+    maxAttempts: Int = 5,
+    store: SecureStore = LedgerStore(),
+) = SessionLock(
+    InactivityLock(WINDOW, clock, LockTestElapsedClock(clock)),
+    gate,
+    FailedAttemptLedger(store),
+    maxAttempts,
+)
 
 class SessionLockTest {
 
@@ -206,5 +242,104 @@ class SessionLockTest {
 
         assertFalse(lock.isLocked())
         assertEquals(LockOutcome.StillLocked(remainingAttempts = 2), lock.attemptUnlock())
+    }
+
+    // ── ADR-0034: the ceiling lives in the store, so it outlives the process ──────────────────────
+
+    @Test
+    fun theCeilingSurvivesTheProcess() = runTest {
+        // The defect itself. The count used to live in this object, and this object lives in a
+        // composition. Four misses, then the process dies — modelled as a NEW lock over the SAME
+        // store, which is everything a restarted app has in common with the one that was killed.
+        val store = LedgerStore()
+        val beforeTheKill = lockWith(ScriptedUnlockGate(UnlockOutcome.Failed), maxAttempts = 5, store = store)
+        repeat(4) { beforeTheKill.attemptUnlock() }
+
+        val afterTheKill = lockWith(ScriptedUnlockGate(UnlockOutcome.Failed), maxAttempts = 5, store = store)
+
+        assertEquals(
+            LockOutcome.SessionEnded(SessionEndReason.TOO_MANY_ATTEMPTS),
+            afterTheKill.attemptUnlock(),
+            "the fifth miss must end the session even when the first four happened in another process",
+        )
+    }
+
+    @Test
+    fun aSpentBudgetEndsTheSessionWithoutAnotherPrompt() = runTest {
+        val store = LedgerStore()
+        store.put(countKey, "5")
+        val gate = ScriptedUnlockGate(UnlockOutcome.Unlocked)
+
+        assertEquals(
+            LockOutcome.SessionEnded(SessionEndReason.TOO_MANY_ATTEMPTS),
+            lockWith(gate, maxAttempts = 5, store = store).attemptUnlock(),
+        )
+        assertEquals(0, gate.unlockCalls, "a spent budget must not buy one more try")
+    }
+
+    @Test
+    fun cancellingWritesNothing() = runTest {
+        val store = LedgerStore()
+        val lock = lockWith(ScriptedUnlockGate(UnlockOutcome.Cancelled), store = store)
+
+        repeat(3) { lock.attemptUnlock() }
+
+        assertNull(store.entries[countKey], "a dismissal is not an attempt, not even a recorded zero")
+    }
+
+    @Test
+    fun aCountTheStoreCannotReadEndsTheSessionWithoutPrompting() = runTest {
+        val gate = ScriptedUnlockGate(UnlockOutcome.Unlocked)
+
+        val outcome = lockWith(gate, store = LedgerStore(failOnGet = true)).attemptUnlock()
+
+        assertEquals(LockOutcome.SessionEnded(SessionEndReason.ATTEMPTS_UNRECORDABLE), outcome)
+        assertEquals(0, gate.unlockCalls, "no prompt is offered by a lock that cannot count it")
+    }
+
+    @Test
+    fun aMissTheStoreCannotRecordEndsTheSession() = runTest {
+        val lock = lockWith(ScriptedUnlockGate(UnlockOutcome.Failed), store = LedgerStore(failOnPut = true))
+
+        assertEquals(
+            LockOutcome.SessionEnded(SessionEndReason.ATTEMPTS_UNRECORDABLE),
+            lock.attemptUnlock(),
+            "a miss that cannot be counted would be a free one",
+        )
+    }
+
+    @Test
+    fun aCorruptCountIsNotAFreshBudget() = runTest {
+        val store = LedgerStore()
+        store.put(countKey, "not-a-number")
+
+        assertEquals(
+            LockOutcome.SessionEnded(SessionEndReason.ATTEMPTS_UNRECORDABLE),
+            lockWith(ScriptedUnlockGate(UnlockOutcome.Unlocked), store = store).attemptUnlock(),
+        )
+    }
+
+    @Test
+    fun aSuccessfulUnlockForgetsThePersistedMisses() = runTest {
+        val store = LedgerStore()
+        val gate = ScriptedUnlockGate(
+            mutableListOf(UnlockOutcome.Failed, UnlockOutcome.Failed, UnlockOutcome.Unlocked),
+        )
+        val lock = lockWith(gate, store = store)
+
+        repeat(3) { lock.attemptUnlock() }
+
+        assertNull(store.entries[countKey])
+    }
+
+    @Test
+    fun sessionEndedForgetsThePersistedMisses() = runTest {
+        val store = LedgerStore()
+        val lock = lockWith(ScriptedUnlockGate(UnlockOutcome.Failed), store = store)
+        lock.attemptUnlock()
+
+        lock.sessionEnded()
+
+        assertNull(store.entries[countKey], "the next session starts with the whole budget")
     }
 }

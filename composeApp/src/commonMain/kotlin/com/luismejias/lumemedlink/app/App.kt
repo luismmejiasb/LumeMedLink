@@ -16,6 +16,7 @@ import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
 import com.luismejias.lumemedlink.core.logging.LogEvent
 import com.luismejias.lumemedlink.core.security.NoOpSecurityEventReporter
+import com.luismejias.lumemedlink.core.session.FailedAttemptLedger
 import com.luismejias.lumemedlink.core.session.InactivityLock
 import com.luismejias.lumemedlink.core.session.LockOutcome
 import com.luismejias.lumemedlink.core.session.SessionLock
@@ -62,8 +63,10 @@ public fun App() {
     val sessionManager = remember(secureStore) {
         SessionManager(TokenStore(secureStore), UnwiredRefreshClient())
     }
-    val sessionLock = remember(unlockGate) {
-        SessionLock(InactivityLock(INACTIVITY_WINDOW_MILLIS), unlockGate)
+    val sessionLock = remember(unlockGate, secureStore) {
+        // The attempt count lives in the store, not in this object: `remember` does not survive the
+        // process, and a ceiling that resets when the process dies is not a ceiling (ADR-0034).
+        SessionLock(InactivityLock(INACTIVITY_WINDOW_MILLIS), unlockGate, FailedAttemptLedger(secureStore))
     }
     val scope = rememberCoroutineScope()
     // The declared defaults, wired here because this is the composition root (ADR-0008). Both
