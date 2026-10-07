@@ -10,15 +10,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import cl.lume.uicomposer.foundations.LumeTheme
 
-// Functional privacy cover, NOT a design token: an opaque fill whose only job is to hide content
-// from the OS app-switcher snapshot and a momentary onlooker while the app is not in the
-// foreground. Replaced by a theme surface when the design system lands (S0.3).
-private val privacyCoverColor = Color(0xFF0E1116)
+// The cover is the theme's background (S0.3, task 0013): the surface every screen already stands on,
+// so a cover that comes and goes reads as the app, not as a black flash. Its only job is unchanged —
+// hide content from the OS app-switcher snapshot and a momentary onlooker while the app is not in
+// the foreground — and it depends on the colour being OPAQUE, which is forced below rather than
+// trusted: a translucent background in some future brand would turn the cover into a tint.
 
 /**
  * Wraps [content] and drops an opaque cover over it whenever the app is not RESUMED (threat model
@@ -57,7 +58,7 @@ internal fun PrivacyScreenScaffold(content: @Composable () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         content()
         if (covered) {
-            Box(modifier = Modifier.fillMaxSize().background(privacyCoverColor))
+            Box(modifier = Modifier.fillMaxSize().background(LumeTheme.current.color.background.copy(alpha = 1f)))
         }
     }
 }

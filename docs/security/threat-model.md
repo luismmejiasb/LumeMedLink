@@ -94,7 +94,9 @@ rompe a los lectores de pantalla que no se declaran herramienta) es decisión de
    el snapshot del sistema, **no** impide que la persona frente al teléfono haga una captura.
    **Y tampoco tapa una grabación de pantalla ni la duplicación por AirPlay** *(declarado 2026-10-07,
    tarea 0002, F06)*: en Android FLAG_SECURE también las ennegrece; en iOS existe la API para enterarse
-   (`sceneCaptureState`) y no se usa. Portarlo de LumeMed es la tarea 0017.
+   (`sceneCaptureState`) y no se usa. Portarlo de LumeMed es la tarea 0017. *(Cerrada 2026-10-07: el host cubre
+   todas las escenas mientras `UIScreen.isCaptured`, con gate y cebos; **sin medir en dispositivo** — el simulador
+   no reporta captura con `simctl io recordVideo`, medido con control. Se mide en un iPhone.)*
 2. **El Keychain de iOS sobrevive al uninstall; el Keystore de Android no.** El sentinel de
    instalación es un control de un solo lado (ADR-0005).
 3. **iOS veta teclados de terceros app-wide; Android no puede.** La mitigación Android es por campo y

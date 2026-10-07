@@ -43,12 +43,32 @@ kotlin {
         }
     }
 
+    // THE KEYCHAIN SPEC RUNS HOSTED (task 0015). The Kotlin/Native test binary is a bare process, and
+    // securityd grants a bare process no keychain. Measured on 2026-10-07, both halves needed:
+    // spawned `--standalone` (Kotlin's default) every SecItem call answers -25291 errSecNotAvailable,
+    // and spawned inside a booted simulator WITHOUT entitlements it answers -34018
+    // errSecMissingEntitlement. With the simulator entitlements linked in — what Xcode does for an
+    // app — and a booted device, the six pass.
+    iosSimulatorArm64().binaries.matching { it is org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable }
+        .configureEach {
+            linkerOpts(
+                "-sectcreate",
+                "__TEXT",
+                "__entitlements",
+                project.file("src/iosTest/keychain-tests.entitlements").absolutePath,
+            )
+        }
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
+            implementation(libs.jetbrains.lifecycle.viewmodel.compose)
+            // The design system (ADR-0033): every screen draws with LumeTheme's tokens and the kit's
+            // components. A text field of the kit is reached only through core/input (ADR-0013).
+            implementation(libs.lumeuicomposer)
             // core/networking — the hardened stack (ADR-0004). Ktor never leaks past core/:
             // detekt's ForbiddenImport bans io.ktor.* outside it.
             implementation(libs.ktor.client.core)
@@ -96,3 +116,24 @@ kotlin {
 // the main and host-test variants keep theirs. Revisit when CMP is bumped.
 tasks.matching { it.name == "copyAndroidDeviceTestComposeResourcesToAndroidAssets" }
     .configureEach { enabled = false }
+
+// The booted simulator the hosted half needs (task 0015). LUME_IOS_TEST_DEVICE names its UDID; CI
+// boots one and sets it, and so does a local verification run. Without it the iOS tests run as
+// before — standalone — and the Keychain spec cannot: it is EXCLUDED and the run says so out loud,
+// because a class that disappears from the count without a word is how six tests stayed skipped
+// for six weeks.
+tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest>().configureEach {
+    val hostDevice = providers.environmentVariable("LUME_IOS_TEST_DEVICE").orNull
+    if (hostDevice != null) {
+        standalone.set(false)
+        device.set(hostDevice)
+    } else {
+        filter.excludeTestsMatching("*.KeychainSecureStoreTest")
+        doFirst {
+            logger.warn(
+                "KeychainSecureStoreTest NOT RUN: set LUME_IOS_TEST_DEVICE to a booted simulator's UDID " +
+                    "(task 0015). A bare test process has no keychain.",
+            )
+        }
+    }
+}

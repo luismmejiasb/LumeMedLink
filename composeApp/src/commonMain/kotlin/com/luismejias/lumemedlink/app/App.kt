@@ -16,12 +16,14 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.lume.uicomposer.foundations.LumeTheme
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
 import com.luismejias.lumemedlink.core.logging.LogEvent
 import com.luismejias.lumemedlink.core.security.NoOpSecurityEventReporter
+import com.luismejias.lumemedlink.core.security.emittingIn
 import com.luismejias.lumemedlink.core.session.FailedAttemptLedger
-import com.luismejias.lumemedlink.core.session.InactivityLock
 import com.luismejias.lumemedlink.core.session.LockOutcome
 import com.luismejias.lumemedlink.core.session.SessionLock
 import com.luismejias.lumemedlink.core.session.SessionManager
@@ -34,9 +36,6 @@ import com.luismejias.lumemedlink.core.session.rememberSecureStore
 import com.luismejias.lumemedlink.core.session.rememberUnlockGate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-/** Inactivity window before re-authentication is demanded (§8.3). */
-private const val INACTIVITY_WINDOW_MILLIS = 300_000L
 
 /**
  * Stand-in when the platform cannot host a biometric gate. It reports [UnlockOutcome.Unavailable],
@@ -58,19 +57,17 @@ private object AbsentUnlockGate : UnlockGate {
  * framework. Everything else in this tree starts `internal`.
  *
  * The whole app renders inside [PrivacyScreenScaffold] (ADR-0010), so no screen can exist without
- * the privacy cover.
+ * the privacy cover — and inside [LumeTheme] (ADR-0033), once, here, so no screen can draw outside
+ * the design system's tokens.
  */
 @Composable
 public fun App() {
+    // What must outlive a rotation lives here; what holds the Activity does not (task 0009, ADR-0039).
+    val shell = viewModel { ShellViewModel() }
     val secureStore = rememberSecureStore()
     val unlockGate = rememberUnlockGate(secureStore) ?: AbsentUnlockGate
     val sessionManager = remember(secureStore) {
         SessionManager(TokenStore(secureStore), UnwiredRefreshClient())
-    }
-    val sessionLock = remember(unlockGate, secureStore) {
-        // The attempt count lives in the store, not in this object: `remember` does not survive the
-        // process, and a ceiling that resets when the process dies is not a ceiling (ADR-0034).
-        SessionLock(InactivityLock(INACTIVITY_WINDOW_MILLIS), unlockGate, FailedAttemptLedger(secureStore))
     }
     val scope = rememberCoroutineScope()
     // The declared defaults, wired here because this is the composition root (ADR-0008). Both
@@ -83,8 +80,19 @@ public fun App() {
     // (no base URL is configured and no auth flow exists to give it a token). Named so the next
     // reader sees a wire to connect, not a channel to write.
     val securityEvents = remember { NoOpSecurityEventReporter }
+    val sessionLock = remember(unlockGate, secureStore, securityEvents, shell) {
+        // The attempt count lives in the store, not in this object: `remember` does not survive the
+        // process, and a ceiling that resets when the process dies is not a ceiling (ADR-0034). The
+        // lock reports what it decides itself (task 0018); the launch is this composition's.
+        SessionLock(
+            shell.inactivity,
+            unlockGate,
+            FailedAttemptLedger(secureStore),
+            securityEvents.emittingIn(scope),
+        )
+    }
 
-    var hasSession by remember { mutableStateOf(false) }
+    var hasSession by remember { mutableStateOf(shell.hasSession ?: false) }
     var locked by remember { mutableStateOf(sessionLock.isLocked()) }
     var returns by remember { mutableStateOf(0) }
 
@@ -132,7 +140,24 @@ public fun App() {
         // The store is a CAPABILITY and a capability can be unavailable at launch. The decision
         // about what to do then lives in probeSession, outside this composable, so a test can
         // assert it (ADR-0025).
-        hasSession = probeSession(sessionManager, installSentinel, secureStore, logSink, securityEvents)
+        // Once per process, not once per composition: a rotation recreates this composable and must
+        // not re-run the launch probe (task 0009). The ViewModel remembers the answer, in memory only.
+        hasSession = shell.hasSession
+            ?: probeSession(sessionManager, installSentinel, secureStore, logSink, securityEvents)
+        shell.hasSession = hasSession
+    }
+
+    // THE SERVER ENDED IT (task 0020). A refused refresh erases only the token entry — not a logout
+    // (ADR-0036 point 1) — so the shell returns to Login WITHOUT the wipe; whatever the dead session
+    // left is erased by establishSession before the next one begins (ADR-0037).
+    LaunchedEffect(sessionManager) {
+        sessionManager.sessionEnded.collect { ended ->
+            if (ended) {
+                hasSession = false
+                shell.hasSession = false
+                locked = true
+            }
+        }
     }
 
     suspend fun endSession() {
@@ -149,46 +174,49 @@ public fun App() {
             logSink.log(LogEvent.LOGOUT_INCOMPLETE, LogDetail.ofEnumName(outcome.failed.first().name))
         }
         hasSession = false
+        shell.hasSession = false
         locked = true
     }
 
-    PrivacyScreenScaffold {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                // Observes pointer activity on the INITIAL pass without consuming it, so the
-                // inactivity window slides while the doctor is actually using the app. Recording
-                // activity can never unlock (InactivityLock enforces that) — it only postpones.
-                .pointerInput(sessionLock) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            awaitPointerEvent(PointerEventPass.Initial)
-                            sessionLock.recordActivity()
-                            locked = sessionLock.isLocked()
-                        }
-                    }
-                },
-        ) {
-            when (resolveDestination(hasSession, locked)) {
-                AppDestination.Login -> LoginScreen()
-
-                AppDestination.Locked -> LockedScreen(
-                    onUnlockRequested = {
-                        scope.launch {
-                            when (sessionLock.attemptUnlock()) {
-                                LockOutcome.Unlocked -> locked = false
-                                is LockOutcome.StillLocked -> locked = true
-                                // Too many misses, a changed enrollment, or no biometrics at all:
-                                // the session ends and the doctor signs in again. Fail closed.
-                                is LockOutcome.SessionEnded -> endSession()
+    LumeTheme {
+        PrivacyScreenScaffold {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // Observes pointer activity on the INITIAL pass without consuming it, so the
+                    // inactivity window slides while the doctor is actually using the app. Recording
+                    // activity can never unlock (InactivityLock enforces that) — it only postpones.
+                    .pointerInput(sessionLock) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent(PointerEventPass.Initial)
+                                sessionLock.recordActivity()
+                                locked = sessionLock.isLocked()
                             }
                         }
                     },
-                )
+            ) {
+                when (resolveDestination(hasSession, locked)) {
+                    AppDestination.Login -> LoginScreen()
 
-                AppDestination.Home -> HomeScreen(
-                    onSignOut = { scope.launch { endSession() } },
-                )
+                    AppDestination.Locked -> LockedScreen(
+                        onUnlockRequested = {
+                            scope.launch {
+                                when (sessionLock.attemptUnlock()) {
+                                    LockOutcome.Unlocked -> locked = false
+                                    is LockOutcome.StillLocked -> locked = true
+                                    // Too many misses, a changed enrollment, or no biometrics at all:
+                                    // the session ends and the doctor signs in again. Fail closed.
+                                    is LockOutcome.SessionEnded -> endSession()
+                                }
+                            }
+                        },
+                    )
+
+                    AppDestination.Home -> HomeScreen(
+                        onSignOut = { scope.launch { endSession() } },
+                    )
+                }
             }
         }
     }

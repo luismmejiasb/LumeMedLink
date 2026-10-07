@@ -37,10 +37,18 @@ fail() {
 # The last entry is the app's OWN signature-level permission, which androidx.core declares and uses
 # to keep dynamically registered receivers unexported: it grants nothing to any other app. Listed
 # because it is in the merge, and an unlisted permission is a permission nobody decided.
+#
+# The four after it are what firebase-messaging and its closure merge in (ADR-0038, read off their AAR
+# manifests on 2026-10-07): decided by that ADR so the push slice does not arrive to a gate that has
+# to be loosened in the same change. None is in the merge today.
 ALLOWED_PERMISSIONS="android.permission.INTERNET
 android.permission.USE_BIOMETRIC
 android.permission.USE_FINGERPRINT
-com.luismejias.lumemedlink.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+com.luismejias.lumemedlink.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+android.permission.ACCESS_NETWORK_STATE
+android.permission.WAKE_LOCK
+android.permission.POST_NOTIFICATIONS
+com.google.android.c2dm.permission.RECEIVE"
 
 # ── 1. Source manifest: our own declarations ────────────────────────────────────────────────────
 # PARSED, not grepped, and read off the <application> ELEMENT. The line-based filter this replaces

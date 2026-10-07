@@ -1,5 +1,7 @@
 package com.luismejias.lumemedlink.core.session
 
+import com.luismejias.lumemedlink.core.security.SecurityEventEmitter
+import com.luismejias.lumemedlink.core.security.SecurityEventKind
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.cancellation.CancellationException
@@ -32,6 +34,27 @@ internal enum class SessionEndReason {
     UNLOCK_MATERIAL_UNREADABLE,
 }
 
+/**
+ * What the platform hears when a lock attempt ends the session, by reason (task 0018). `null` is a
+ * decision, not a gap — each one says why:
+ *
+ * - [SessionEndReason.ENROLLMENT_CHANGED] is the tier working AS DESIGNED, and the platform has no name
+ *   for it (`SESSION_UNLOCK_INVALIDATED` translates to nothing; `backend-requests/0006` asks for one).
+ *   Filing it as a lockout would raise an alarm over a healthy device.
+ *
+ * Exhaustive with no `else`: a new reason stops compiling until somebody decides what it reports.
+ */
+internal fun SessionEndReason.securityEvent(): SecurityEventKind? = when (this) {
+    SessionEndReason.TOO_MANY_ATTEMPTS -> SecurityEventKind.SESSION_ENDED_UNRECOVERABLE
+    SessionEndReason.BIOMETRICS_UNAVAILABLE -> SecurityEventKind.SESSION_ENDED_UNRECOVERABLE
+    // The store could not keep the count, or the gate's own material could not be read: both are a
+    // stored secret that could not be read back or written, which is what the platform's
+    // `securityStorageFailure` names.
+    SessionEndReason.ATTEMPTS_UNRECORDABLE -> SecurityEventKind.SECURE_STORE_UNREADABLE
+    SessionEndReason.UNLOCK_MATERIAL_UNREADABLE -> SecurityEventKind.SECURE_STORE_UNREADABLE
+    SessionEndReason.ENROLLMENT_CHANGED -> null
+}
+
 /** The result of asking the lock to let the user back in. */
 internal sealed interface LockOutcome {
     data object Unlocked : LockOutcome
@@ -58,11 +81,16 @@ internal sealed interface LockOutcome {
  * - Enrollment changed or biometrics unavailable end the session immediately: in both cases
  *   re-entry is impossible or would be inherited by a new identity, and a lock that cannot tell
  *   whether it should open, stays closed.
+ *
+ * And it REPORTS what it decided, here where the fact is born (task 0018): every refused biometric,
+ * and every ended session by [SessionEndReason.securityEvent]. Until 2026-10-07 the lock produced the
+ * result and the shell discarded the reason, so `reauthFailure` and `reauthLockout` had no emitter.
  */
 internal class SessionLock(
     private val inactivityLock: InactivityLock,
     private val unlockGate: UnlockGate,
     private val attempts: FailedAttemptLedger,
+    private val events: SecurityEventEmitter,
     private val maxFailedAttempts: Int = DEFAULT_MAX_FAILED_ATTEMPTS,
 ) {
     fun isLocked(): Boolean = inactivityLock.isLocked()
@@ -98,7 +126,11 @@ internal class SessionLock(
         attempts.clear()
     }
 
-    suspend fun attemptUnlock(): LockOutcome {
+    suspend fun attemptUnlock(): LockOutcome = decideUnlock().also { outcome ->
+        if (outcome is LockOutcome.SessionEnded) outcome.reason.securityEvent()?.let(events::emit)
+    }
+
+    private suspend fun decideUnlock(): LockOutcome {
         // Read BEFORE prompting: a budget spent in an earlier process ends the session here, without
         // offering one more try. A count the store cannot read ends it too — fail closed.
         val spent = spentAttempts() ?: return LockOutcome.SessionEnded(SessionEndReason.ATTEMPTS_UNRECORDABLE)
@@ -116,6 +148,9 @@ internal class SessionLock(
             UnlockOutcome.Cancelled -> LockOutcome.StillLocked(remainingAttempts = null)
 
             UnlockOutcome.Failed -> {
+                // Reported whatever comes next: a refused biometric is the fact, and a lockout it may
+                // cause is a second fact, reported on its own.
+                events.emit(SecurityEventKind.SESSION_UNLOCK_FAILED)
                 val nowSpent = spent + 1
                 // Written BEFORE the verdict is returned, so the only window in which a killed process
                 // loses this attempt is the one between the OS's answer and this line.

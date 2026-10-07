@@ -44,6 +44,9 @@ org.jetbrains.androidx.savedstate
 org.jetbrains.compose.animation
 org.jetbrains.compose.annotation-internal
 org.jetbrains.compose.collection-internal
+# The design system's resource runtime (icons, fonts), brought by LumeUIComposer — the ONE group
+# ADR-0033 admits with the kit (task 0013). Anything else the kit brings stops here for a decision.
+org.jetbrains.compose.components
 org.jetbrains.compose.foundation
 org.jetbrains.compose.runtime
 org.jetbrains.compose.ui

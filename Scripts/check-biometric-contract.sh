@@ -187,6 +187,44 @@ else
              "The timer's clock stops in sleep; ON_START must re-read sessionLock.isLocked() while the cover is still up (ADR-0032, amended 2026-10-07)."
 fi
 
+in_main() { grep -E '^composeApp/src/(commonMain|androidMain|iosMain|iosArm64Main|iosSimulatorArm64Main)/|^androidApp/src/main/' || true; }
+
+# ── The window outlives a rotation (task 0009, ADR-0039) ────────────────────────────────────────
+# Built inside the composition, the window died with every Activity recreation and the app was reborn
+# locked for turning the phone. It lives in the shell's ViewModel; a composable building its own is the
+# regression.
+SHELL_VM="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/ShellViewModel.kt"
+hits=$(stripped_hits 'InactivityLock\(' | in_main | grep -v "^$SHELL_VM:" | grep -v '/core/session/InactivityLock.kt:' || true)
+[ -n "$hits" ] && fail "biometric: the inactivity window is built outside the shell's ViewModel" \
+    "A window built in a composition is reborn locked on every rotation (task 0009, ADR-0039). The shell's ViewModel owns it." \
+    "$hits"
+grep -qE 'class ShellViewModel[[:space:]]*:[[:space:]]*ViewModel\(\)' "$SHELL_VM" 2>/dev/null ||
+    fail "biometric: ShellViewModel is missing or is not a ViewModel" "It is what carries the window across a configuration change (ADR-0039)."
+
+# ── The ONE way a session begins (ADR-0037; tasks 0005 and 0020) ─────────────────────────────────
+# `enroll()` had no caller until 2026-10-07, so the lock would have ended every session at its first
+# close; and `establish()` wrote over whatever the previous account left. establishSession() fixes
+# both, and only if nothing else in PRODUCTION code can begin a session or make the key: a login slice
+# that called SessionManager.establish directly would bring both defects back with every test green.
+ENTRY="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session/SessionEntry.kt"
+for call in '\.establish\(' '\.enroll\(\)'; do
+    hits=$(stripped_hits "$call" | in_main | grep -v "^$ENTRY:" || true)
+    [ -n "$hits" ] && fail "biometric: a session can begin outside establishSession()" \
+        "SessionManager.establish and UnlockGate.enroll are called ONLY from core/session/SessionEntry.kt, which erases the previous session's remains and makes the tier-2 key first (ADR-0037)." \
+        "$hits"
+done
+ENTRY_BODY=$(body_of "$ENTRY" establishSession)
+for step in 'secureStore.wipe()' 'unlockGate.clear()' 'unlockGate.enroll()' 'sessionManager.establish(tokens)'; do
+    printf '%s\n' "$ENTRY_BODY" | grep -qF "$step" ||
+        fail "biometric: establishSession() no longer calls $step" \
+             "A session begins on an empty slate, with its tier-2 material, or not at all (ADR-0037)."
+done
+# Ordered: the slate is wiped and the key made BEFORE the tokens are written.
+printf '%s\n' "$ENTRY_BODY" | tr '\n' ' ' |
+    grep -qE 'secureStore\.wipe\(\).*unlockGate\.enroll\(\).*sessionManager\.establish\(tokens\)' ||
+    fail "biometric: establishSession() writes the tokens before wiping and enrolling" \
+         "The order is the contract: erase, make the key, then write (ADR-0037)."
+
 if [ $FAIL -eq 0 ]; then
     echo "biometric-contract: OK"
 else

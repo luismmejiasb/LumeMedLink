@@ -31,6 +31,10 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 # provides LocalLifecycleOwner on every target, the signal the privacy cover reads (ADR-0010).
 # Version tracks what Compose Multiplatform 1.11.1 already resolves, so no skew is introduced.
 jetbrains-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version = "2.9.6" }
+# The shell's ViewModel (task 0009, ADR-0039): the session state outlives a rotation instead of
+# being reborn locked. Same group and version as the line above — the ViewModel runtime itself already
+# ships transitively; this is its Compose entry point (`viewModel { }`) on every target.
+jetbrains-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.9.6" }
 # Tier-2 biometric gate (F4, ADR-0011). Pinned to 1.1.0 — the newest STABLE release; 1.4.0 is an
 # alpha and this family does not ship alphas in a security path. androidx.biometric (not the
 # framework BiometricPrompt) because minSdk is 26 and the framework class starts at 28: the
@@ -48,6 +52,10 @@ androidx-test-core = { module = "androidx.test:core", version = "1.7.0" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+# The design system (ADR-0033). NO VERSION, on purpose: settings.gradle.kts substitutes this
+# coordinate with the sibling checkout (a composite build) until the kit's first tag, and a version
+# here would be a number nothing resolves against.
+lumeuicomposer = { module = "cl.lume:lumeuicomposer" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }

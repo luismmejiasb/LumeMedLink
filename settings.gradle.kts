@@ -38,6 +38,23 @@ dependencyResolutionManagement {
     }
 }
 
+// The design system, consumed BY PATH until its first tag (ADR-0033, task 0013): a composite build,
+// as LumeMed consumes LumeUIKit. The coordinate below is a name, not a download — it resolves to the
+// sibling checkout and never to a repository, so nothing about it reaches a lockfile except what the
+// kit itself depends on (and that is still held to the allowlist). It ends at the kit's first tag,
+// when the coordinate gains a version and this block goes.
+//
+// `lume.kit.path` points it elsewhere, and the reason is measured: a composite build compiles the
+// kit's WORKING TREE, so a parallel session halfway through an edit over there breaks this build here
+// (2026-10-07: LumeTabBar half-written, LumeSectionPicker unresolved). Verification runs while the kit
+// is being edited point this at an export of the kit's last commit — `Scripts/kit-snapshot.sh` — whose
+// directory is still named LumeUIComposer, because the included build's name is its directory's.
+includeBuild(providers.gradleProperty("lume.kit.path").getOrElse("../LumeUIComposer")) {
+    dependencySubstitution {
+        substitute(module("cl.lume:lumeuicomposer")).using(project(":lumeuicomposer"))
+    }
+}
+
 // The KMP module: all product code lives here, in commonMain's ADR-0008 tree.
 include(":composeApp")
 

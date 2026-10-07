@@ -1,13 +1,11 @@
 package com.luismejias.lumemedlink.core.input
 
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import cl.lume.uicomposer.components.LumeFieldKeyboard
+import cl.lume.uicomposer.components.LumePasswordField
+import cl.lume.uicomposer.components.LumeTextCase
+import cl.lume.uicomposer.components.LumeTextField
 
 /**
  * What a field holds, because the correct keyboard hardening is NOT the same for both (F3,
@@ -25,80 +23,108 @@ internal enum class SensitiveFieldPurpose {
     CREDENTIAL,
 }
 
+/** Which keyboard a personal datum needs. A credential ignores it: it is always the password keyboard. */
+internal enum class SensitiveFieldFormat {
+    /** Free text: a name, an address. */
+    TEXT,
+    EMAIL,
+    PHONE,
+}
+
+/**
+ * What the kit is asked for, pulled out of the composable so a test can reach it — a security
+ * property nobody can assert is a security property nobody is keeping.
+ */
+internal data class KitFieldRequest(val masked: Boolean, val keyboard: LumeFieldKeyboard, val textCase: LumeTextCase)
+
+/**
+ * The decision this file exists for. Every personal datum is typed [LumeTextCase.Verbatim] — neither
+ * capitals nor corrections, the path by which a typed RUT or surname enters the keyboard's learned
+ * vocabulary and resurfaces as a suggestion in another app (ADR-0013). The kit's other cases keep the
+ * platform's corrections on free text, which is right for prose and exactly wrong here. That the kit
+ * turns Verbatim into "no autocorrect, no capitalization" is the KIT's contract and the kit's test
+ * (`TextCaseTests`); what this repo owns is that no personal datum is ever asked for any other way.
+ */
+internal fun kitFieldRequestFor(purpose: SensitiveFieldPurpose, format: SensitiveFieldFormat): KitFieldRequest =
+    when (purpose) {
+        // The format is ignored on purpose: "IMEs do not learn from a password field" is not the
+        // caller's guarantee to trade away for an email keyboard.
+        SensitiveFieldPurpose.CREDENTIAL -> KitFieldRequest(
+            masked = true,
+            keyboard = LumeFieldKeyboard.Default,
+            textCase = LumeTextCase.Verbatim,
+        )
+        SensitiveFieldPurpose.PERSONAL_DATA -> KitFieldRequest(
+            masked = false,
+            keyboard = when (format) {
+                SensitiveFieldFormat.TEXT -> LumeFieldKeyboard.Default
+                SensitiveFieldFormat.EMAIL -> LumeFieldKeyboard.Email
+                SensitiveFieldFormat.PHONE -> LumeFieldKeyboard.Phone
+            },
+            textCase = LumeTextCase.Verbatim,
+        )
+    }
+
 /**
  * The ONE way this app takes text that matters (ADR-0013). Every field carrying personal data or a
  * credential goes through here, and `Scripts/check-input-surfaces.sh` fails the build on a raw
- * `BasicTextField`/`TextField` outside this file.
+ * `BasicTextField`/`TextField`, or on any of the design kit's input fields, outside `core/input/`.
  *
  * Why a choke point instead of a rule per screen: keyboard and autofill hardening is a list of
  * small attributes that each screen would have to remember, and the one screen that forgets is the
  * one that leaks a RUT into a third-party keyboard's dictionary. Here the attributes are decided
  * once, and the day the platform exposes more of them they land in a single file rather than in N.
  *
- * What it does TODAY, on both platforms: no autocorrect and no capitalization suggestions (so a
- * RUT or a surname never enters the keyboard's learned vocabulary through that path), and for a
- * credential, the password keyboard type plus masking — IMEs are required not to learn from a
- * password field.
+ * Since S0.3 (task 0013, ADR-0033) the field itself is LumeUIComposer's: the look is the kit's, the
+ * keyboard decision stays here ([kitFieldRequestFor]). A credential is the kit's password field, which
+ * carries the password keyboard, masking and credential autofill; a personal datum is the kit's text
+ * field, typed verbatim.
+ *
+ * Copying inside the field is the platform's and is allowed (ADR-0013 amended 2026-10-06): it is
+ * what the person typed. Displayed data stays uncopyable — that rule lives in the gate, not here.
  *
  * What it does NOT do yet, declared rather than implied (ADR-0013 lists these): Android's
  * `IME_FLAG_NO_PERSONALIZED_LEARNING` is not reachable from common Compose in the pinned version and
- * lands here when it is. iOS's app-wide third-party keyboard veto is NOT this file's: it lives in the
- * host (`AppDelegate.shouldAllowExtensionPointIdentifier`) since 2026-08-25 — this line said it did
- * not exist until 2026-10-07.
+ * lands here — or in the kit — when it is. iOS's app-wide third-party keyboard veto is NOT this file's:
+ * it lives in the host (`AppDelegate.shouldAllowExtensionPointIdentifier`).
  *
- * Autofill used to be on that list and no longer is — the line above claimed it was unreachable,
- * and that was wrong in a way worth recording. It is not reachable *per field*: every Compose text
- * field publishes `ContentDataType.Text` semantics unconditionally, with no opt-out, so nothing
- * written here can keep a field out of the autofill structure. It IS reachable per *window*, from
- * an ancestor of the Compose view, which is why the control lives in
- * `core/input/StructureExport.kt` and the Android shell rather than in this file (F3 reopened,
- * ADR-0024). The purpose distinction this file exists for still holds and still matters: the
- * exclusion is window-wide, so the day a credential screen exists it has to ask for autofill back
+ * Autofill is not decided here either. It is not reachable *per field*: every Compose text field
+ * publishes `ContentDataType.Text` semantics unconditionally. It IS reachable per *window*, which is
+ * why the control lives in `core/input/StructureExport.kt` and the Android shell (ADR-0024). The
+ * exclusion is window-wide, so the day a credential screen ships it has to ask for autofill back
  * explicitly — a password manager is a security *gain* and must not be collateral damage.
- *
- * Deliberately unstyled: the design system (S0.3) is deferred, and a styled primitive here would
- * be the first hardcoded-style violation. S0.3 dresses it; the security attributes stay.
  */
 @Composable
 internal fun SensitiveTextField(
     value: String,
     onValueChange: (String) -> Unit,
     purpose: SensitiveFieldPurpose,
+    label: String,
+    placeholder: String,
     modifier: Modifier = Modifier,
-    keyboardType: KeyboardType = KeyboardType.Text,
+    format: SensitiveFieldFormat = SensitiveFieldFormat.TEXT,
+    onSubmit: (() -> Unit)? = null,
 ) {
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
-        singleLine = true,
-        keyboardOptions = keyboardOptionsFor(purpose, keyboardType),
-        visualTransformation = if (isMasked(purpose)) {
-            PasswordVisualTransformation()
-        } else {
-            VisualTransformation.None
-        },
-    )
+    val request = kitFieldRequestFor(purpose, format)
+    if (request.masked) {
+        LumePasswordField(
+            value = value,
+            onValueChange = onValueChange,
+            label = label,
+            placeholder = placeholder,
+            modifier = modifier,
+            onSubmit = onSubmit,
+        )
+    } else {
+        LumeTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = label,
+            placeholder = placeholder,
+            modifier = modifier,
+            keyboard = request.keyboard,
+            textCase = request.textCase,
+            onSubmit = onSubmit,
+        )
+    }
 }
-
-/**
- * The keyboard hardening decisions, pulled out of the composable so a test can reach them — a
- * security property nobody can assert is a security property nobody is keeping.
- */
-internal fun keyboardOptionsFor(
-    purpose: SensitiveFieldPurpose,
-    keyboardType: KeyboardType = KeyboardType.Text,
-): KeyboardOptions = KeyboardOptions(
-    // A credential is always typed on the password keyboard, whatever the caller asked for: IMEs
-    // are required not to learn from a password field, and that guarantee is not the caller's to
-    // trade away.
-    keyboardType = if (purpose == SensitiveFieldPurpose.CREDENTIAL) KeyboardType.Password else keyboardType,
-    // Both off for every purpose: autocorrect and auto-capitalization are the paths by which a
-    // typed value reaches the keyboard's learned vocabulary and resurfaces as a suggestion in
-    // another app — the leak is the suggestion, not the typing.
-    autoCorrectEnabled = false,
-    capitalization = KeyboardCapitalization.None,
-)
-
-/** Credentials are masked; personal data is not — a doctor must be able to check a phone number. */
-internal fun isMasked(purpose: SensitiveFieldPurpose): Boolean = purpose == SensitiveFieldPurpose.CREDENTIAL

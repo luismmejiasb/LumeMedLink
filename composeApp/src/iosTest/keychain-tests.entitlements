@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+  The iOS TEST binary's simulator entitlements (task 0015), linked into its __TEXT,__entitlements
+  section by composeApp/build.gradle.kts — the way Xcode gives a simulator app its entitlements.
+  Without them every SecItem call answers -34018 errSecMissingEntitlement; measured 2026-10-07.
+
+  NOT the app's group and not the author's team: a made-up prefix, so a test can never read or write
+  the real app's keychain items on the same simulator, and the file carries nothing of the signing.
+-->
+<dict>
+	<key>application-identifier</key>
+	<string>LUMETESTS.com.luismejias.lumemedlink.tests</string>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>LUMETESTS.com.luismejias.lumemedlink.tests</string>
+	</array>
+</dict>
+</plist>

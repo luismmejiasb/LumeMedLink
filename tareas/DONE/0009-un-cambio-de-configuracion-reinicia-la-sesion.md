@@ -26,3 +26,14 @@ ViewModel del shell. **Va con el slice de login (S1.1)**, no antes.
 - No arreglarlo con `android:configChanges` en el manifiesto: tapa el síntoma y deja el estado de
   seguridad colgado de una composición.
 - No persistir `locked=false` para sobrevivir a la rotación: eso sí sería fail-open.
+
+## Cerrada — 2026-10-07
+
+`ShellViewModel` (`app/`) guarda la ventana de inactividad y la respuesta del sondeo; el lock se reconstruye en cada
+composición alrededor de esa ventana, porque el gate biométrico sostiene la Activity y un ViewModel que lo guardara la
+filtraría. Sólo en memoria: un proceso muerto sigue naciendo bloqueado. Sin `configChanges`. ADR-0039 (una dependencia,
+`lifecycle-viewmodel-compose`, mismo grupo y versión que `lifecycle-runtime-compose`).
+
+**Cómo se verificó:** compila en los dos targets con todos los tests; gate en `check-biometric-contract.sh` (un
+`InactivityLock(` fuera del ViewModel es rojo) con su cebo. **No medido de punta a punta**: sin login no hay sesión que
+rotar — llega con S1.1, como F4.

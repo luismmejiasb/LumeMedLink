@@ -2,35 +2,30 @@ package com.luismejias.lumemedlink.core.session
 
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
- * EXECUTABLE SPEC of the SecItem mechanics — add, read, delete-then-add upsert, service-wide
- * wipe. @Ignore'd as a class, with the reason on record (bitácora 0007): the K/N test runner
- * spawns a hostless process on the simulator and securityd grants it NO keychain — every call,
- * data-protection keychain included, answers -25291 errSecNotAvailable. Nothing here is wrong;
- * there is no keychain to talk to. The day the iOS shell exists these tests run hosted, and the
- * passcode-floor semantics are verified on hardware in S1.2. Skipped shows in the report as
- * skipped — a gate's silence is never a verdict, so the silence is labeled.
+ * EXECUTABLE SPEC of the SecItem mechanics — add, read, delete-then-add upsert, a wipe of exactly this
+ * app's service.
  *
- * **2026-09-21 — the condition this comment names HAS BEEN MET, and nothing re-ran.** "The day the
- * iOS shell exists these tests run hosted": the shell has existed since 2026-08-25 (ADR-0025).
- * Whether a hosted test runner actually reaches the keychain here is UNVERIFIED — it needs the
- * Kotlin/Native test binary to run inside an app host, which this project does not configure today,
- * so it is a slice and not an edit. Written here rather than left implied, because a condition that
- * quietly comes true is how six tests stay skipped forever while a count says 130.
+ * It RUNS HOSTED since 2026-10-07 (task 0015), after six weeks ignored. The reason it could not run was
+ * measured twice and was the environment, not the code: Kotlin's test task spawns the binary
+ * `--standalone`, and securityd grants a bare process no keychain (-25291 errSecNotAvailable,
+ * bitácora 0007); spawned inside a booted simulator it still had no entitlement (-34018). The build now
+ * links simulator entitlements into the test binary, and the test task runs on the simulator
+ * LUME_IOS_TEST_DEVICE names. Without that variable this class is excluded and the run prints why
+ * (composeApp/build.gradle.kts) — never silently.
  *
- * And the count: these six are INCLUDED in the reported iOS total and do not run — the report shows
- * them as skipped. (This line used to quote the total, which went stale the next time a test was added.)
- * Running them hosted is task `0015`.
+ * The test binary's keychain group is NOT the app's (`src/iosTest/keychain-tests.entitlements`), so a
+ * run can never touch the real app's items on the same simulator.
  */
-@Ignore
 class KeychainSecureStoreTest {
 
     private val store = KeychainSecureStore()
+    private val foreignItem = ForeignKeychainItem()
 
     @AfterTest
     fun cleanUp() = runTest {
@@ -71,6 +66,23 @@ class KeychainSecureStoreTest {
         store.wipe()
         assertNull(store.get("a"))
         assertNull(store.get("b"))
+    }
+
+    @Test
+    fun wipeLeavesAnotherServiceAlone() = runTest {
+        // The wipe is this app's OWN service and nothing else (§8.13; keychain-facts): a sweep of the
+        // whole class would erase other software's secrets — on iOS a synchronizable sweep would
+        // propagate the deletion to the person's other devices. wipeClearsTheWholeService cannot see
+        // that defect, since a sweep clears this service too; this test is the one that can.
+        foreignItem.add()
+        try {
+            store.put("a", "1")
+            store.wipe()
+            assertNull(store.get("a"))
+            assertTrue(foreignItem.exists(), "the wipe reached beyond this app's own service")
+        } finally {
+            foreignItem.delete()
+        }
     }
 
     @Test

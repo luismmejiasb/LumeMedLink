@@ -1,7 +1,7 @@
 package com.luismejias.lumemedlink.core.input
 
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
+import cl.lume.uicomposer.components.LumeFieldKeyboard
+import cl.lume.uicomposer.components.LumeTextCase
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -10,53 +10,51 @@ import kotlin.test.assertTrue
 class SensitiveTextFieldTest {
 
     @Test
-    fun noPurposeEverAllowsAutocorrect() {
+    fun everyFieldIsTypedVerbatim() {
+        // Verbatim is the only case the kit types without capitals AND without corrections; the
+        // other two keep the platform's corrections, which is how a typed value enters the
+        // keyboard's vocabulary (ADR-0013). Every purpose, every format.
         SensitiveFieldPurpose.entries.forEach { purpose ->
-            assertEquals(
-                false,
-                keyboardOptionsFor(purpose).autoCorrectEnabled,
-                "autocorrect is how a typed value enters the keyboard's vocabulary: $purpose",
-            )
+            SensitiveFieldFormat.entries.forEach { format ->
+                assertEquals(
+                    LumeTextCase.Verbatim,
+                    kitFieldRequestFor(purpose, format).textCase,
+                    "$purpose/$format asks the kit for a keyboard that learns",
+                )
+            }
         }
     }
 
     @Test
-    fun noPurposeEverAllowsCapitalizationSuggestions() {
-        SensitiveFieldPurpose.entries.forEach { purpose ->
-            assertEquals(KeyboardCapitalization.None, keyboardOptionsFor(purpose).capitalization)
-        }
-    }
-
-    @Test
-    fun aCredentialIsAlwaysTypedOnThePasswordKeyboard() {
-        // Even when the caller asks for something else: the "IMEs do not learn from password
+    fun aCredentialIsAlwaysTheMaskedFieldWhateverTheFormat() {
+        // Even when the caller asks for an email keyboard: the "IMEs do not learn from password
         // fields" guarantee is not the caller's to trade away.
-        assertEquals(
-            KeyboardType.Password,
-            keyboardOptionsFor(SensitiveFieldPurpose.CREDENTIAL, KeyboardType.Email).keyboardType,
-        )
-        assertEquals(
-            KeyboardType.Password,
-            keyboardOptionsFor(SensitiveFieldPurpose.CREDENTIAL, KeyboardType.Text).keyboardType,
-        )
+        SensitiveFieldFormat.entries.forEach { format ->
+            assertTrue(kitFieldRequestFor(SensitiveFieldPurpose.CREDENTIAL, format).masked)
+        }
     }
 
     @Test
-    fun personalDataKeepsTheKeyboardTypeItNeeds() {
+    fun personalDataKeepsTheKeyboardItNeeds() {
         // A phone field must show the phone keypad; hardening must not make fields unusable, or
         // the next slice will route around the primitive.
         assertEquals(
-            KeyboardType.Phone,
-            keyboardOptionsFor(SensitiveFieldPurpose.PERSONAL_DATA, KeyboardType.Phone).keyboardType,
+            LumeFieldKeyboard.Phone,
+            kitFieldRequestFor(SensitiveFieldPurpose.PERSONAL_DATA, SensitiveFieldFormat.PHONE).keyboard,
+        )
+        assertEquals(
+            LumeFieldKeyboard.Email,
+            kitFieldRequestFor(SensitiveFieldPurpose.PERSONAL_DATA, SensitiveFieldFormat.EMAIL).keyboard,
         )
     }
 
     @Test
-    fun onlyCredentialsAreMasked() {
-        assertTrue(isMasked(SensitiveFieldPurpose.CREDENTIAL))
-        assertFalse(
-            isMasked(SensitiveFieldPurpose.PERSONAL_DATA),
-            "a doctor must be able to read back a phone number they are correcting",
-        )
+    fun personalDataIsNeverMasked() {
+        SensitiveFieldFormat.entries.forEach { format ->
+            assertFalse(
+                kitFieldRequestFor(SensitiveFieldPurpose.PERSONAL_DATA, format).masked,
+                "a doctor must be able to read back a phone number they are correcting",
+            )
+        }
     }
 }

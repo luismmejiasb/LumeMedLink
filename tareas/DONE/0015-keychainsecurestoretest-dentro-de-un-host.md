@@ -1,6 +1,6 @@
 # 0015 · Correr `KeychainSecureStoreTest` dentro de un host
 
-> **Estado:** PENDING · separada de la `0010` el 2026-10-07, que la nombraba como su punto 1 y ya decía que era «una
+> **Estado:** DONE (2026-10-07) · separada de la `0010` el 2026-10-07, que la nombraba como su punto 1 y ya decía que era «una
 > tajada y no una edición».
 
 ## De dónde sale
@@ -32,3 +32,16 @@ evaluar, ninguna probada:
 
 Los seis corren en verde dentro de un host, y un cebo (por ejemplo, el wipe que deja de filtrar por servicio) pone rojo
 al test que corresponde. El total de saltados baja de 6 a 0 **porque corren**, no porque desaparecieron.
+
+## Cerrada — 2026-10-07
+
+Corre **dentro de un simulador arrancado, con entitlements de simulador enlazados en el binario de test** — la opción 1,
+sin app anfitriona. Medido con control: `--standalone` (lo que hace Kotlin por defecto) → `-25291`; en un simulador
+arrancado sin entitlements → `-34018`; con las dos cosas → verde. `composeApp/build.gradle.kts` enlaza
+`src/iosTest/keychain-tests.entitlements` (grupo inventado, nunca el de la app) en `__TEXT,__entitlements` y corre el test
+en el simulador que nombra `LUME_IOS_TEST_DEVICE`; sin esa variable la clase se excluye **y la corrida lo dice**. CI
+arranca uno y la fija.
+
+**Cómo se verificó:** los seis pasan, más un séptimo nuevo, `wipeLeavesAnotherServiceAlone` — el único que puede ver un
+wipe que deja de filtrar por servicio (`wipeClearsTheWholeService` sigue verde con ese defecto). Cebo: el wipe sin
+servicio → **ese** test rojo, los demás verdes. Saltados en iOS: 0, porque corren.

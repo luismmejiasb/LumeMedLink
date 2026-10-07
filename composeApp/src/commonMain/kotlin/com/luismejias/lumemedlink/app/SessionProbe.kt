@@ -26,7 +26,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * before the device is first unlocked. An app that dies rather than showing a sign-in screen in
  * that window is a worse app, not a safer one.
  *
- * It lives here, outside the composable, for the same reason `keyboardOptionsFor` does: a security
+ * It lives here, outside the composable, for the same reason `kitFieldRequestFor` does: a security
  * property nobody can assert is a security property nobody is keeping. `SessionProbeTest` asserts
  * all three branches.
  *

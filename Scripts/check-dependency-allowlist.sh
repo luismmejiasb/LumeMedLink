@@ -81,9 +81,32 @@ SHIPPED_MODULES=$(cat $LOCKFILES | grep -v '^#' | grep -v '^empty' | awk -F= '
 # visible note instead: it is a real supply-chain surface on the developer's machine, but blocking
 # the build over AGP's internals would get this gate switched off, and a gate that gets switched
 # off protects nothing.
+# The ONE narrow exception (ADR-0038, task 0024): FCM for Android, decided by the author on 2026-09-26.
+# EXACT group:artifact pairs — firebase-messaging and the closure it resolves to, measured from its POMs
+# on 2026-10-07 — never a group. Everything else under the two groups stays denied: firebase-analytics,
+# crashlytics, perf, play-services-ads, play-services-measurement… A new member of the closure after a
+# bump stops here for a decision, which is the point.
+NARROW_EXCEPTION="com.google.firebase:firebase-messaging
+com.google.firebase:firebase-common
+com.google.firebase:firebase-common-ktx
+com.google.firebase:firebase-components
+com.google.firebase:firebase-annotations
+com.google.firebase:firebase-encoders
+com.google.firebase:firebase-encoders-json
+com.google.firebase:firebase-encoders-proto
+com.google.firebase:firebase-datatransport
+com.google.firebase:firebase-iid-interop
+com.google.firebase:firebase-installations
+com.google.firebase:firebase-installations-interop
+com.google.firebase:firebase-measurement-connector
+com.google.android.gms:play-services-base
+com.google.android.gms:play-services-basement
+com.google.android.gms:play-services-cloud-messaging
+com.google.android.gms:play-services-stats
+com.google.android.gms:play-services-tasks"
 deny() {
     prefix=$1; reason=$2
-    shipped=$(echo "$SHIPPED_MODULES" | grep -E "^${prefix}" || true)
+    shipped=$(echo "$SHIPPED_MODULES" | grep -E "^${prefix}" | grep -vxF "$NARROW_EXCEPTION" || true)
     if [ -n "$shipped" ]; then
         FAIL=1
         echo ""
@@ -96,8 +119,8 @@ deny() {
         echo "note: denylisted group present BUILD-TIME only (not shipped): $(echo "$buildtime" | tr '\n' ' ')"
     fi
 }
-deny 'com\.google\.firebase'        'Default-deny of crash/analytics SDKs (§8.1). Firebase is "one line away" with this IdP; the line stays unwritten.'
-deny 'com\.google\.android\.gms'    'Play Services drags analytics surface (§8.1). Play Integrity, when it lands, gets its own reviewed coordinate.'
+deny 'com\.google\.firebase'        'Default-deny of crash/analytics SDKs (§8.1). Firebase is "one line away" with this IdP; the line stays unwritten. The ONLY exception is FCM, artifact by artifact (ADR-0038).'
+deny 'com\.google\.android\.gms'    'Play Services drags analytics surface (§8.1). The FCM closure is the only exception (ADR-0038); Play Integrity, when it lands, gets its own reviewed coordinate.'
 deny 'io\.sentry'                   'Default-deny of crash/analytics SDKs (§8.1).'
 deny 'com\.bugsnag'                 'Default-deny of crash/analytics SDKs (§8.1).'
 deny 'org\.acra'                    'Default-deny of crash/analytics SDKs (§8.1).'

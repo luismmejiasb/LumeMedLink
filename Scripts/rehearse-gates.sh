@@ -186,6 +186,74 @@ f.parent.mkdir(parents=True, exist_ok=True)
 f.write_text("package com.luismejias.lumemedlink.features.bait\n\nfun bait() { LumeTextField(value = \"\", onValueChange = {}) }\n")
 '
 
+# The list the gate used to keep named four kit inputs out of nine; the kit's password field passed
+# from a screen (task 0013, 2026-10-07). The gate now refuses by default, and this is the field that
+# walked through the list.
+bait "the kit's password field in a screen — a kit input the old list did not name" check-input-surfaces.sh '
+import sys, pathlib
+root = pathlib.Path(sys.argv[1])
+f = root / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/bait/BaitScreen.kt"
+f.parent.mkdir(parents=True, exist_ok=True)
+f.write_text("package com.luismejias.lumemedlink.features.bait\n\nfun bait() { LumePasswordField(value = \"\", onValueChange = {}) }\n")
+'
+
+# A session begun outside establishSession(): the login slice calling SessionManager.establish
+# directly brings back both defects of tasks 0005 and 0020 (ADR-0037).
+bait "a session established outside establishSession()" check-biometric-contract.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/BaitLogin.kt"
+f.write_text("package com.luismejias.lumemedlink.app\n\ninternal suspend fun bait(m: SessionManager, t: SessionTokens) { m.establish(t) }\n")
+'
+
+bait "establishSession() stops making the tier-2 key" check-biometric-contract.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session/SessionEntry.kt"
+s = f.read_text()
+old = "if (!(attemptFor { unlockGate.enroll() } ?: false)) {"
+assert old in s
+f.write_text(s.replace(old, "if (false) {", 1))
+'
+
+# The cover that follows screen capture (task 0017): stop observing it, or uncover on activation
+# regardless, and a recording carries the agenda off the phone with the app in front.
+bait "the host stops observing screen capture" check-ios-host.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+s = f.read_text()
+old = "forName: UIScreen.capturedDidChangeNotification"
+assert old in s
+f.write_text(s.replace(old, "forName: UIScene.willEnterForegroundNotification", 1))
+'
+
+bait "activation uncovers the app while a capture is running" check-ios-host.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+s = f.read_text()
+old = "if !self.isCaptured {"
+assert old in s
+f.write_text(s.replace(old, "if true {", 1))
+'
+
+# The window back in the composition (task 0009): every rotation re-locks the app.
+bait "the inactivity window built in the composition again" check-biometric-contract.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+s = f.read_text()
+old = "            shell.inactivity,\n"
+assert old in s
+f.write_text(s.replace(old, "            com.luismejias.lumemedlink.core.session.InactivityLock(300_000L),\n", 1))
+'
+
+# A failed Gradle build that lets Xcode link the old framework (2026-10-07, measured).
+bait "the Kotlin build phase swallows a Gradle failure" check-ios-host.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = f.read_text()
+old = "embedAndSignAppleFrameworkForXcode || {"
+assert old in s
+f.write_text(s.replace(old, "embedAndSignAppleFrameworkForXcode; true || {", 1))
+'
+
 bait "a clinical name as a function parameter, not a property" check-data-boundary.sh '
 import sys, pathlib
 d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session"
@@ -209,6 +277,19 @@ import sys, pathlib, re
 p = pathlib.Path(sys.argv[1]) / "gradle/wrapper/gradle-wrapper.properties"
 p.write_text(re.sub(r"^distributionUrl=.*$", r"distributionUrl=https\\://evil.test/distributions/gradle-9.7.1-bin.zip", p.read_text(), flags=re.M))
 '
+# The FCM exception is ARTIFACTS, never the group (ADR-0038): with com.google.firebase allowlisted
+# for messaging, analytics riding in beside it must still fail at the denylist.
+bait "firebase-analytics shipped beside the FCM exception" check-dependency-allowlist.sh '
+import sys, pathlib
+root = pathlib.Path(sys.argv[1])
+lock = root / "androidApp/gradle.lockfile"
+lock.write_text(lock.read_text()
+    + "com.google.firebase:firebase-messaging:26.0.0=releaseRuntimeClasspath\n"
+    + "com.google.firebase:firebase-analytics:23.0.0=releaseRuntimeClasspath\n")
+allow = root / "config/dependency-allowlist.txt"
+allow.write_text(allow.read_text() + "com.google.firebase\n")
+'
+
 bait "a CI action pinned to a tag the denylist never named" check-dependency-allowlist.sh '
 import sys, pathlib, re
 p = pathlib.Path(sys.argv[1]) / ".github/workflows/ci.yml"

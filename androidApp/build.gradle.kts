@@ -73,3 +73,55 @@ dependencies {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
     compilerOptions.allWarningsAsErrors.set(true)
 }
+
+// ── The kit's Compose resources, carried by the app (task 0013, ADR-0033) ───────────────────────
+//
+// AGP 9.2's KMP-library plugin cannot ship assets (probed by the kit: its variant exposes
+// `sources.assets = null`), so LumeUIComposer's Android artifact carries no `composeResources/`, and
+// without this copy the first `LumeIcon.painter()` throws MissingResourceException. iOS needs nothing:
+// the Xcode embed flow syncs them. Ported from the kit's own reference consumer,
+// `../LumeUIComposer/sampleAndroid/build.gradle.kts`, with one difference: the kit is an INCLUDED
+// build here, so its task is reached through `gradle.includedBuild` and its output by path — a
+// composite build does not hand out another build's `project(...)`.
+abstract class CopyKitComposeResourcesIntoAssets @javax.inject.Inject constructor(
+    private val fs: FileSystemOperations,
+) : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val preparedResources: ConfigurableFileCollection
+
+    @get:Input
+    abstract val resourcePackage: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        fs.sync {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            preparedResources.forEach { dir -> from(dir) }
+            into(outputDirectory.dir("composeResources/${resourcePackage.get()}"))
+        }
+    }
+}
+
+val copyKitComposeResourcesIntoAssets =
+    tasks.register<CopyKitComposeResourcesIntoAssets>("copyKitComposeResourcesIntoAssets") {
+        val kit = gradle.includedBuild("LumeUIComposer")
+        preparedResources.from(
+            kit.projectDir.resolve(
+                "lumeuicomposer/build/generated/compose/resourceGenerator/preparedResources/commonMain/composeResources",
+            ),
+        )
+        dependsOn(kit.task(":lumeuicomposer:prepareComposeResourcesTaskForCommonMain"))
+        resourcePackage.set("cl.lume.uicomposer.generated.resources")
+    }
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            copyKitComposeResourcesIntoAssets,
+        ) { it.outputDirectory }
+    }
+}

@@ -92,6 +92,18 @@ if ! swift_has 'UIScene\.didActivateNotification'; then
     fail "ios-host: the privacy cover is never taken down" \
          "A cover that never hides is not a control, it is a blank app (ADR-0031)."
 fi
+# A recording or an AirPlay mirror carries the screen off the device while the app is IN FRONT, so
+# the focus-based cover never sees it (task 0017). Android's FLAG_SECURE blacks those out; on iOS the
+# only answer is to cover while iOS says a capture is happening — and not to uncover on activation
+# while it still is.
+if ! swift_has 'UIScreen\.capturedDidChangeNotification'; then
+    fail "ios-host: the cover does not follow screen capture" \
+         "A screen recording or AirPlay mirror shows the agenda while the app is active; observe UIScreen.capturedDidChangeNotification and cover (task 0017, threat model asymmetry 1)."
+fi
+if ! swift_has 'if[[:space:]]+!self\.isCaptured[[:space:]]*\{'; then
+    fail "ios-host: activation uncovers the app during a capture" \
+         "didActivate must keep the cover while a capture is running: a recording started in Control Center is still running when the app comes back (task 0017)."
+fi
 for dead in applicationWillResignActive applicationDidBecomeActive applicationDidEnterBackground applicationWillEnterForeground; do
     hits=$(swift_code "$dead")
     if [ -n "$hits" ]; then
@@ -117,6 +129,15 @@ fi
 if ! grep -q 'KOTLIN_FRAMEWORK_BUILD_TYPE=' "$PROJECT"; then
     fail "ios-host: the build phase does not pin KOTLIN_FRAMEWORK_BUILD_TYPE" \
          "Without it the Kotlin framework is not refreshed and the app links STALE code while the build stays green (ADR-0028). Every iOS measurement becomes worthless without announcing itself."
+fi
+
+# And the THIRD door to the same staleness (2026-10-07): the build phase ran without -e, so a Gradle
+# build that FAILED let the phase finish green and Xcode linked the previous framework. Measured: a
+# lockfile miss failed Gradle and the app on the simulator ran old Kotlin. The call must stop the
+# phase when it fails.
+if ! grep -qE 'embedAndSignAppleFrameworkForXcode \|\| \{' "$PROJECT"; then
+    fail "ios-host: a failed Kotlin build does not fail the app build" \
+         "The build phase must stop when ./gradlew fails ('|| { ...; exit 1; }'). Without it Xcode links the stale framework and stays green (ADR-0028/0030, third door)."
 fi
 
 # And the SECOND half of the same staleness, which the first fix did not touch (ADR-0030).

@@ -23,7 +23,7 @@
   doctrina de LumeNetworking sobre Ktor en `core/networking` (ADR-0004), con seams de sesión y de
   log, engines por plataforma y tests de contrato en `commonTest` corriendo en ambos targets.
   **Hecho** — bitácora 0004; el refresh single-flight y el facade real de logs llegan con S1.1.
-- **S0.3 · Design system.** **Destrabado el 2026-10-06**: el autor sacó la verificación en device
+- **S0.3 · Design system.** ✅ **Cableado el 2026-10-07** (tarea `0013`, bitácora 0046): el kit compila en la app, sus íconos se dibujan en Android y en iOS, y las pantallas placeholder usan sus componentes. Lo que sigue es del texto de abajo, ya hecho, salvo los popups (`0014`). **Destrabado el 2026-10-06**: el autor sacó la verificación en device
   del gemelo de las prioridades y decidió consumirlo (ADR-0033). Es el cableado, no un diseño:
   build compuesto con `../LumeUIComposer`, una línea en el allowlist
   (`org.jetbrains.compose.components`), la tarea de copia de recursos en `androidApp` (sin ella el

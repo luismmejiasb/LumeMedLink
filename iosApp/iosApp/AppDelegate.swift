@@ -34,6 +34,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     private var lifecycleObservers: [NSObjectProtocol] = []
 
+    /// Whether any screen of this app is being recorded, mirrored by AirPlay or otherwise captured
+    /// (task 0017, mirror of LumeMed's `ScreenSecurityMonitor`).
+    ///
+    /// On Android, FLAG_SECURE blacks out a recording and a cast as well as a screenshot. On iOS the
+    /// cover only armed when the app lost focus, so a screen recording or an AirPlay mirror carried
+    /// the agenda off the device while the app sat in front of it. iOS cannot refuse the capture, but
+    /// it says when one is happening — and then the same window covers everything, for as long as it
+    /// lasts. `.contains` over every scene, for the reason the cover itself covers every scene.
+    private var isCaptured = false
+
     /// **Scene notifications, NOT the app delegate's lifecycle methods — and this is measured.**
     ///
     /// This app is a SwiftUI `App` with a `WindowGroup`, which means it adopts the UIScene
@@ -77,10 +87,40 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             center.addObserver(
                 forName: UIScene.didActivateNotification, object: nil, queue: .main
             ) { [weak self] _ in
-                self?.hidePrivacyCover()
+                // Coming back does not end a capture: a recording started in Control Center is
+                // still running when the app becomes active again.
+                guard let self else { return }
+                self.refreshCaptureState()
+                if !self.isCaptured {
+                    self.hidePrivacyCover()
+                }
+            },
+            center.addObserver(
+                forName: UIScreen.capturedDidChangeNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                self?.captureStateChanged()
             },
         ]
         return true
+    }
+
+    /// A capture began or ended. Beginning covers at once; ending uncovers only an app that is in
+    /// front — a capture ending while the app is in the switcher must not drop the switcher's cover.
+    private func captureStateChanged() {
+        refreshCaptureState()
+        if isCaptured {
+            showPrivacyCover(on: nil)
+        } else if UIApplication.shared.applicationState == .active {
+            hidePrivacyCover()
+        }
+    }
+
+    /// `UIScreen.isCaptured` rather than `sceneCaptureState`: the latter starts at iOS 17 and this
+    /// host targets 16. Revisit with the deployment target.
+    private func refreshCaptureState() {
+        isCaptured = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .contains { $0.screen.isCaptured }
     }
 
     /// Refuses third-party keyboards app-wide (F3, §8.10).

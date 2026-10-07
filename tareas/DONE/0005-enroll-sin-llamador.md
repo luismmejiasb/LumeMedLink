@@ -28,3 +28,15 @@ slice de login, **no se toma aquí**.
 
 Un test de `SessionLock`/login que falle si, tras establecer sesión, el gate no fue enrolado. Con cebo:
 quitar la llamada lo pone rojo.
+
+## Cerrada — 2026-10-07
+
+`establishSession()` (`core/session/SessionEntry.kt`, ADR-0037) es la única forma de empezar una sesión: borra lo que
+dejó la anterior, **enrola el tier 2** y recién entonces escribe los tokens. Sin biometría no hay sesión (`TIER2_UNAVAILABLE`,
+nada escrito): es la misma dirección que ya tenía el lock con `BIOMETRICS_UNAVAILABLE`, aplicada en la puerta. El slice de
+login la llama; no hay otra.
+
+**Cómo se verificó:** `SessionEntryTest` (6 casos × 2 targets), uno de ellos exige el enrolamiento; el gate
+`check-biometric-contract.sh` rechaza `.enroll()` o `.establish(` fuera de `SessionEntry.kt` en código de producción y
+exige el orden borrar → enrolar → escribir; dos cebos en `rehearse-gates.sh` (una sesión establecida fuera, y
+`establishSession` sin enrolar), los dos rojos.

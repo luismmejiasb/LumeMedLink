@@ -1,6 +1,6 @@
 # 0013 · S0.3 — cablear LumeUIComposer como el design system de la app
 
-> **Estado:** PENDING · Abierta el 2026-10-06, con la decisión del autor de consumir el kit (ADR-0033). **Cero datos
+> **Estado:** DONE (2026-10-07) · Abierta el 2026-10-06, con la decisión del autor de consumir el kit (ADR-0033). **Cero datos
 > personales** en todo lo que toca.
 >
 > **Bloqueo:** ninguno para empezar. Partes concretas esperan tareas del kit, nombradas abajo.
@@ -74,3 +74,24 @@
 - `no_hardcoded_style` como gate: posible ahora que las pantallas se escriben contra tokens del kit, pero es su propia
   tajada (el modelo es `../LumeUIComposer/Scripts/lint-layout.sh`).
 - Los popups del kit frente al endurecimiento de ventana: `0014`.
+
+## Cerrada — 2026-10-07
+
+1. Re-verificación: hecha en la tarea `0001`.
+2. **Build compuesto**: `includeBuild("../LumeUIComposer")` con la sustitución `cl.lume:lumeuicomposer`; `:composeApp`
+   depende del kit por el catálogo (sin versión, a propósito). `-Plume.kit.path` lo apunta a una exportación del último
+   commit del kit (`Scripts/kit-snapshot.sh`): un build compuesto compila el árbol de trabajo del hermano, y una sesión
+   paralela a medio editar rompió este build (medido).
+3. **Allowlist**: una línea, `org.jetbrains.compose.components`, con el lockfile que la trae.
+4. **Recursos en Android**: tarea `copyKitComposeResourcesIntoAssets` en `androidApp`, portada del catálogo del kit.
+5. **`LumeTheme`** en la raíz, una vez; la cubierta de privacidad usa el fondo del tema (forzado opaco).
+6. **`SensitiveTextField` sobre los campos del kit**: credencial → `LumePasswordField`; dato personal →
+   `LumeTextField` con `LumeTextCase.Verbatim` (el kit ya lo tiene: su tarea `0005` cerró) y el teclado del formato.
+   **El gate tenía un hueco**: rechazaba cuatro campos del kit de nueve — `LumePasswordField`, `LumePhoneField`,
+   `LumeMultilineField`, `LumeDocumentField` y `LumeDatePickerTextField` pasaban desde una pantalla (medido con cebo:
+   verde con el gate viejo, rojo con el nuevo). Ahora rechaza por defecto todo `Lume…Field(`/`Lume…Editor(` salvo los
+   dos que no reciben texto.
+7. **Pantallas placeholder** (login, bloqueo, inicio) dentro de `LumeContainer`, con `LumeEmptyState` y un ícono del kit.
+
+Lo que esperaba del kit: la `0005` ya cerró; la barra de pestañas (`0006`) la construye la sesión del kit con la API que
+el autor aprobó hoy.

@@ -2,6 +2,7 @@ package com.luismejias.lumemedlink.core.session
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.luismejias.lumemedlink.core.security.SecurityEventEmitter
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,6 +71,7 @@ class LogoutWipeOnDeviceTest {
             InactivityLock(windowMillis = 300_000L),
             AlwaysAvailableGate(),
             FailedAttemptLedger(store),
+            SecurityEventEmitter {},
         )
         SecureStoreKey.entries.forEach { store.put(it.storageKey, "synthetic-${it.name}") }
         manager.establish(SessionTokens("acc-synthetic", "ref-synthetic", Long.MAX_VALUE))

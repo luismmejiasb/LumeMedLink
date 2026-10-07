@@ -332,7 +332,10 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 16. **Canal de eventos de seguridad**: `POST /v1/security-events`, kinds opacos, jamás contenido
     personal. El endpoint existe y **la mitad cliente está construida y probada**
     (`HttpSecurityEventReporter`, F23) — pero **lo cableado en `app/` es el no-op**: no hay base URL
-    ni flujo de auth todavía. *(Corregido 2026-09-21: esta línea decía «esta app lo consume», en
+    ni flujo de auth todavía. Y no faltaba **sólo** el cableado: hasta el 2026-10-07 `reauthFailure` y
+    `reauthLockout` **no tenían emisor** — el lock producía el resultado y el shell descartaba la razón.
+    Desde la tarea 0018 los emite `SessionLock`, donde nace el hecho, con un test dirigido por el enum.
+    *(Corregido 2026-09-21: esta línea decía «esta app lo consume», en
     presente, sobre un canal que no escribe nada. Un canal que se cree activo es peor que uno
     ausente, que es lo que ADR-0023 se escribió para evitar.)*
 17. **Dispositivo compartido — la amenaza que aquí es MÁS probable que en LumeMed**: el teléfono de

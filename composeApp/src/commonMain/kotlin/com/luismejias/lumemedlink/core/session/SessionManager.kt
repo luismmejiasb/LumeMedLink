@@ -1,6 +1,9 @@
 package com.luismejias.lumemedlink.core.session
 
 import com.luismejias.lumemedlink.core.networking.TokenProvider
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.concurrent.Volatile
@@ -34,6 +37,16 @@ internal class SessionManager(
     private var loaded = false
     private var tokens: SessionTokens? = null
 
+    private val ended = MutableStateFlow(false)
+
+    /**
+     * True once the server has refused to refresh this session (task 0020). A rejected refresh erases
+     * only the token entry — not a logout (ADR-0036 point 1) — and until 2026-10-07 the shell was not
+     * told at all: the next request simply had no token. The shell watches this and returns to Login;
+     * what the dead session left behind is erased by the next [establishSession] (ADR-0037).
+     */
+    val sessionEnded: StateFlow<Boolean> = ended.asStateFlow()
+
     // Written by the stack's response pipeline (any thread), read under the mutex.
     @Volatile
     private var rejected = false
@@ -49,12 +62,16 @@ internal class SessionManager(
         rejected = true
     }
 
-    /** Called by the login flow (shell slice) with the pair the backend issued. */
+    /**
+     * Writes the pair the backend issued. Reached ONLY through [establishSession], which erases what an
+     * earlier session left and makes the tier-2 material first (ADR-0037; the gate enforces it).
+     */
     suspend fun establish(newTokens: SessionTokens): Unit = mutex.withLock {
         tokens = newTokens
         loaded = true
         rejected = false
         tokenStore.save(newTokens)
+        ended.value = false
     }
 
     /** The wipe contract: memory + persisted entry, one call. */
@@ -83,6 +100,7 @@ internal class SessionManager(
             tokens = null
             rejected = false
             tokenStore.clear()
+            ended.value = true
             null
         } else {
             tokens = fresh

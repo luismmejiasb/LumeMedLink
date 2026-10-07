@@ -1,5 +1,6 @@
 package com.luismejias.lumemedlink.core.session
 
+import com.luismejias.lumemedlink.core.security.SecurityEventEmitter
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -78,6 +79,7 @@ class LogoutContractTest {
             InactivityLock(windowMillis = 300_000L, clock = LogoutTestClock()),
             gate,
             FailedAttemptLedger(store),
+            SecurityEventEmitter {},
         )
         return Triple(manager, gate, lock)
     }

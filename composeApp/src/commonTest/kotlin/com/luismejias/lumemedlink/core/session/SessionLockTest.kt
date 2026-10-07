@@ -1,5 +1,8 @@
 package com.luismejias.lumemedlink.core.session
 
+import com.luismejias.lumemedlink.core.security.SecurityEventEmitter
+import com.luismejias.lumemedlink.core.security.SecurityEventKind
+import com.luismejias.lumemedlink.core.security.toPlatformKind
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -72,12 +75,116 @@ private fun lockWith(
     clock: LockTestClock = LockTestClock(),
     maxAttempts: Int = 5,
     store: SecureStore = LedgerStore(),
+    events: SecurityEventEmitter = SecurityEventEmitter {},
 ) = SessionLock(
     InactivityLock(WINDOW, clock, LockTestElapsedClock(clock)),
     gate,
     FailedAttemptLedger(store),
-    maxAttempts,
+    events,
+    maxFailedAttempts = maxAttempts,
 )
+
+/** A gate whose own material cannot be read — a tampered tier-2 challenge (ADR-0035). */
+private class ThrowingUnlockGate : UnlockGate {
+    override suspend fun enroll(): Boolean = true
+
+    override suspend fun unlock(): UnlockOutcome = throw SecureStoreUnreadableException()
+
+    override suspend fun clear() = Unit
+}
+
+/** Every kind the lock emitted, in order. */
+private class RecordedEvents : SecurityEventEmitter {
+    val kinds = mutableListOf<SecurityEventKind>()
+
+    override fun emit(kind: SecurityEventKind) {
+        kinds += kind
+    }
+}
+
+/**
+ * The lock reports what it decides (task 0018). Until 2026-10-07 nothing emitted `reauthFailure` or
+ * `reauthLockout`: the lock produced the result and the shell dropped the reason.
+ */
+class SessionLockSecurityEventsTest {
+
+    @Test
+    fun aRefusedBiometricIsReportedAsAnUnlockFailure() = runTest {
+        val events = RecordedEvents()
+        val lock = lockWith(ScriptedUnlockGate(UnlockOutcome.Failed), maxAttempts = 3, events = events)
+
+        lock.attemptUnlock()
+
+        assertEquals(listOf(SecurityEventKind.SESSION_UNLOCK_FAILED), events.kinds)
+    }
+
+    @Test
+    fun theFailureThatExhaustsTheBudgetIsReportedAndSoIsTheLockout() = runTest {
+        val events = RecordedEvents()
+        val lock = lockWith(ScriptedUnlockGate(UnlockOutcome.Failed), maxAttempts = 1, events = events)
+
+        lock.attemptUnlock()
+
+        assertEquals(
+            listOf(SecurityEventKind.SESSION_UNLOCK_FAILED, SecurityEventKind.SESSION_ENDED_UNRECOVERABLE),
+            events.kinds,
+        )
+    }
+
+    @Test
+    fun aCancelledPromptAndASuccessReportNothing() = runTest {
+        val events = RecordedEvents()
+        lockWith(ScriptedUnlockGate(UnlockOutcome.Cancelled), events = events).attemptUnlock()
+        lockWith(ScriptedUnlockGate(UnlockOutcome.Unlocked), events = events).attemptUnlock()
+
+        assertTrue(events.kinds.isEmpty(), "cancelling costs nothing, and reports nothing: ${events.kinds}")
+    }
+
+    @Test
+    fun everyEndedSessionReportsWhatItsReasonMaps() = runTest {
+        // Driven by the enum: a reason added without a decision fails to compile in securityEvent()
+        // and in the exhaustive `when` below; a reason whose outcome is not emitted fails here.
+        SessionEndReason.entries.forEach { reason ->
+            val events = RecordedEvents()
+            val lock = when (reason) {
+                SessionEndReason.TOO_MANY_ATTEMPTS ->
+                    lockWith(ScriptedUnlockGate(UnlockOutcome.Failed), maxAttempts = 1, events = events)
+                SessionEndReason.ENROLLMENT_CHANGED ->
+                    lockWith(ScriptedUnlockGate(UnlockOutcome.Invalidated), events = events)
+                SessionEndReason.BIOMETRICS_UNAVAILABLE ->
+                    lockWith(ScriptedUnlockGate(UnlockOutcome.Unavailable), events = events)
+                SessionEndReason.ATTEMPTS_UNRECORDABLE -> lockWith(
+                    ScriptedUnlockGate(UnlockOutcome.Unlocked),
+                    store = LedgerStore(failOnGet = true),
+                    events = events,
+                )
+                SessionEndReason.UNLOCK_MATERIAL_UNREADABLE -> lockWith(ThrowingUnlockGate(), events = events)
+            }
+
+            assertEquals(LockOutcome.SessionEnded(reason), lock.attemptUnlock(), "scenario for $reason")
+            val expected = reason.securityEvent()
+            assertEquals(expected, events.kinds.lastOrNull().takeIf { expected != null }, "$reason")
+            if (expected == null) {
+                assertTrue(
+                    SecurityEventKind.SESSION_ENDED_UNRECOVERABLE !in events.kinds,
+                    "$reason is the tier working as designed and must not be filed as a lockout",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun everyKindThePlatformCanHearHasAnEmitterInTheLock() {
+        // The three kinds that translate onto the wire are exactly the lock's; if one stops having an
+        // emitter (or a fourth kind starts translating) this names it. SECURE_STORE_UNREADABLE is ALSO
+        // emitted by the launch probe (app/SessionProbe.kt), which has its own test.
+        val emitted = SessionEndReason.entries.mapNotNull { it.securityEvent() }.toSet() +
+            SecurityEventKind.SESSION_UNLOCK_FAILED
+        val translatable = SecurityEventKind.entries.filter { it.toPlatformKind() != null }.toSet()
+
+        assertEquals(translatable, emitted)
+    }
+}
 
 class SessionLockTest {
 

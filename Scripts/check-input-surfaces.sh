@@ -70,7 +70,15 @@ fi
 # decides. They are legal only inside core/input/, where SensitiveTextField wraps them (ADR-0013,
 # amendment of 2026-10-06; ADR-0033).
 INPUT_DIR="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/input/"
-hits=$(grep -rnE '\bLume(TextField|SearchField|OTPField|RichTextEditor)\s*\(' $SRC 2>/dev/null \
+# REFUSE BY DEFAULT, not by list (2026-10-07, task 0013). The list this replaces named four kit
+# inputs, and the kit has nine: LumePasswordField, LumePhoneField, LumeMultilineField,
+# LumeDocumentField and LumeDatePickerTextField all passed from a screen (measured with a bait). Any
+# `Lume…Field(` or `Lume…Editor(` is an input until it is named here as not being one — so the field
+# the kit adds next is refused on the day it lands, not on the day somebody remembers this file.
+# The two exemptions take no typing: a read-out, and a field that opens a list of choices.
+NOT_TEXT_INPUT='LumeReadOnlyField|LumePickerField'
+hits=$(grep -rnE '\bLume[A-Za-z]*(Field|Editor)\s*\(' $SRC 2>/dev/null \
+    | grep -vE "\b($NOT_TEXT_INPUT)\s*\(" \
     | grep -v "^$INPUT_DIR" \
     | grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)
 if [ -n "$hits" ]; then

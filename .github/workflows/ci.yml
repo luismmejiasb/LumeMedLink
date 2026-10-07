@@ -106,6 +106,20 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      # The design kit, consumed BY PATH as a composite build until its first tag (ADR-0033,
+      # task 0013): settings.gradle.kts includes ../LumeUIComposer, so it has to be a SIBLING of this
+      # checkout. actions/checkout only writes inside the workspace, hence the move. The token is the
+      # family's (LumeMed checks out its kits with the same secret); this repo's settings must carry
+      # it — until they do, this step fails, which is the honest outcome for a build that needs the kit.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: luismmejiasb/LumeUIComposer
+          token: ${{ secrets.LUME_ECOSYSTEM_TOKEN }}
+          path: LumeUIComposer
+          persist-credentials: false
+      - name: Place the kit beside this repo
+        run: mv LumeUIComposer ../LumeUIComposer
+
       # Fail in seconds, not after 15 minutes of compilation: CMP 1.11.1 needs the iOS 26 SDK.
       - name: Select Xcode 26
         run: |
@@ -129,6 +143,16 @@ jobs:
 
       - name: Lint (detekt + ktlint)
         run: ./gradlew detekt ktlintCheck
+
+      # The Keychain spec runs HOSTED (task 0015): a booted simulator and the test binary's own
+      # simulator entitlements. Without LUME_IOS_TEST_DEVICE the build excludes that class and says
+      # so — so CI sets it, and the six SecItem tests are part of every green run.
+      - name: Boot a simulator for the hosted iOS tests
+        run: |
+          RUNTIME=$(xcrun simctl list runtimes available -j | python3 -c 'import json,sys; r=[x for x in json.load(sys.stdin)["runtimes"] if x["platform"]=="iOS"]; print(sorted(r, key=lambda x: [int(p) for p in x["version"].split(".")])[-1]["identifier"])')
+          UDID=$(xcrun simctl create "LumeMedLink CI" "iPhone 17" "$RUNTIME")
+          xcrun simctl bootstatus "$UDID" -b
+          echo "LUME_IOS_TEST_DEVICE=$UDID" >> "$GITHUB_ENV"
 
       - name: Build (Android + common) and compile iOS
         run: ./gradlew build :composeApp:compileKotlinIosSimulatorArm64

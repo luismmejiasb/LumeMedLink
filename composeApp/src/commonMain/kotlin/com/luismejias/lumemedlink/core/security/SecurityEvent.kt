@@ -1,5 +1,8 @@
 package com.luismejias.lumemedlink.core.security
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+
 /**
  * What this app is allowed to tell the backend happened (§8.16, ADR-0023).
  *
@@ -55,3 +58,24 @@ internal interface SecurityEventReporter {
 internal object NoOpSecurityEventReporter : SecurityEventReporter {
     override suspend fun report(kind: SecurityEventKind) = Unit
 }
+
+/**
+ * Where a security fact is BORN hands it here, and returns at once (task 0018).
+ *
+ * Not [SecurityEventReporter] itself, because the reporter suspends on the network and the places that
+ * detect a fact are in the middle of applying a protection: an unlock verdict that waited for the backend
+ * would make every refused finger as slow as the network. So the emitter is fire-and-forget, and the
+ * launch lives in the scope its owner gives it ([emittingIn]) — structured, never a process-wide scope.
+ *
+ * Required, never defaulted, wherever it is a constructor parameter: a default of "nothing" is exactly
+ * how the lock's two kinds went unreported until 2026-10-07 — the lock produced the result and the shell
+ * dropped the reason, so the channel would have looked wired the day it got a URL and never carried a
+ * lockout.
+ */
+internal fun interface SecurityEventEmitter {
+    fun emit(kind: SecurityEventKind)
+}
+
+/** Each emission becomes one report, launched in [scope] — the owner's lifetime, not the process's. */
+internal fun SecurityEventReporter.emittingIn(scope: CoroutineScope): SecurityEventEmitter =
+    SecurityEventEmitter { kind -> scope.launch { report(kind) } }
