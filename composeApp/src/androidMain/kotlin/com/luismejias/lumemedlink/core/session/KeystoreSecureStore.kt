@@ -19,7 +19,24 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-private const val KEY_ALIAS = "lume_session_tier1"
+/**
+ * The tier-1 key's alias says how the key was MADE, because nothing else can (ADR-0009, amended
+ * 2026-10-07). `setUnlockedDeviceRequired` exists from API 28, and `KeyInfo` has no accessor for it:
+ * a key's parameters cannot be read back, only its alias. So the alias below is created ONLY with
+ * that parameter, and a key under the legacy one is, by definition, a key without it.
+ */
+internal const val TIER1_ALIAS_UNLOCKED_DEVICE_REQUIRED = "lume_session_tier1_udr"
+
+/** API 26/27, where the parameter does not exist — and every key made before 2026-10-07, on any API. */
+internal const val TIER1_ALIAS_LEGACY = "lume_session_tier1"
+
+/** Every alias a tier-1 key can live under. The wipe deletes them all; the device tests assert them all. */
+internal val TIER1_KEY_ALIASES: List<String> = listOf(TIER1_ALIAS_UNLOCKED_DEVICE_REQUIRED, TIER1_ALIAS_LEGACY)
+
+/** The alias a key made on this system lives under. One branch, so the alias and the parameter cannot disagree. */
+internal fun tier1AliasInUse(sdk: Int = Build.VERSION.SDK_INT): String =
+    if (sdk >= Build.VERSION_CODES.P) TIER1_ALIAS_UNLOCKED_DEVICE_REQUIRED else TIER1_ALIAS_LEGACY
+
 private const val STORE_DIR = "lume_secure"
 private const val GCM_TAG_BITS = 128
 
@@ -39,6 +56,13 @@ private const val GCM_TAG_BITS = 128
  * refresh must read without a biometric prompt. The tier-2 unlock key (auth-per-use,
  * BIOMETRIC_STRONG, invalidated-by-enrollment) is a different key with different parameters and
  * arrives with the shell's biometric gate (ADR-0005 pins those parameters as contract).
+ *
+ * **A key made without piece 1 is retired where piece 1 exists** (task `0008`): an install from API
+ * 26/27 keeps its key across an OS update, and reusing it by alias made the old API's degradation
+ * permanent. On API 28+ a key under [TIER1_ALIAS_LEGACY] is deleted together with the ciphertext it
+ * encrypted — a local logout, the same direction as a device-credential reset — and a new key is made
+ * with the parameter. The ciphertext is not re-encrypted: reading it would give the old key one more
+ * use, and the tier-1 tokens can be asked for again.
  *
  * A value that fails GCM authentication loads as `null` (fail closed: corrupt or key-invalidated
  * means no session, never a crash loop). Files live under [STORE_DIR]; backup is already off
@@ -104,7 +128,8 @@ internal class KeystoreSecureStore(context: Context, private val ioDispatcher: C
     override suspend fun wipe(): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             dir.deleteRecursively()
-            keyStore().deleteEntry(KEY_ALIAS)
+            val keyStore = keyStore()
+            TIER1_KEY_ALIASES.forEach { keyStore.deleteEntry(it) }
         }
     }
 
@@ -118,10 +143,18 @@ internal class KeystoreSecureStore(context: Context, private val ioDispatcher: C
     private fun keyStore(): KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
     private fun obtainKey(): SecretKey {
-        (keyStore().getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        val keyStore = keyStore()
+        val alias = tier1AliasInUse()
+        if (alias != TIER1_ALIAS_LEGACY && keyStore.containsAlias(TIER1_ALIAS_LEGACY)) {
+            // Files FIRST: a run that dies between the two lines leaves the legacy key behind and
+            // retires it next time, never ciphertext with no key that could ever have made it.
+            dir.deleteRecursively()
+            keyStore.deleteEntry(TIER1_ALIAS_LEGACY)
+        }
+        (keyStore.getKey(alias, null) as? SecretKey)?.let { return it }
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
         val spec = KeyGenParameterSpec.Builder(
-            KEY_ALIAS,
+            alias,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
         )
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
@@ -129,6 +162,8 @@ internal class KeystoreSecureStore(context: Context, private val ioDispatcher: C
             .setKeySize(256)
             .setUserAuthenticationRequired(false)
             .apply {
+                // The very condition tier1AliasInUse() chose the alias with, so the alias and the
+                // parameter cannot disagree — and the one Lint reads as the API-28 guard it is.
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     setUnlockedDeviceRequired(true)
                 }

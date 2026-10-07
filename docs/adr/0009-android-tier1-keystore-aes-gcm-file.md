@@ -42,3 +42,30 @@ construction), encrypting each value into its own file under `filesDir/lume_secu
   the shell lands (S1.2 checklist); the session logic above it is fully tested against fakes.
   Same asymmetry as iOS, where the hostless K/N test runner reaches no keychain (-25291) and the
   roundtrip spec is @Ignore'd until hosted. Both stated in bitácora 0007.
+
+## Amendment, 2026-10-07 — the alias carries the key's provenance (task `0008`)
+
+**The defect.** `obtainKey()` reused the key under its alias without asking how it was made. The generation asks for
+`setUnlockedDeviceRequired(true)` only from API 28, so a key made on API 26/27 — with the parameter missing — was
+reused forever after an operating-system update. The degradation the code accepts on an old API became permanent on a
+new one, and nothing noticed.
+
+**Why the obvious fix is not available.** "Read the key's `KeyInfo` and rotate it if it does not meet today's
+parameters" cannot see the one parameter that matters: `KeyInfo` has no accessor for `unlockedDeviceRequired` (checked
+against the API 36 `android.jar`). A key's parameters cannot be read back; only its alias can.
+
+**Decision.** The alias is the provenance. On API 28+ the key lives under `lume_session_tier1_udr`, which is created
+ONLY with the parameter; `lume_session_tier1` is the API 26/27 alias, and also the one every key made before this
+amendment carries, on any API. On API 28+, a key found under the legacy alias is retired together with the ciphertext
+it encrypted — files first, then the key — and a new key is made with the parameter. That is a local logout, the same
+direction as a device-credential reset; the ciphertext is not re-encrypted, because reading it would give the old key
+one more use and the tier-1 tokens can be asked for again. The wipe deletes both aliases.
+
+**Consequences.** Every install that predates this amendment rotates once on API 28+ — today there is none outside the
+author's devices, since no login exists. The OS update itself cannot be reproduced on an emulator: the device test
+(`Tier1KeyRotationOnDeviceTest`) seeds its RESULT — the legacy alias, made without the parameter, with a value in the
+store's own format — and a control first proves the seed is readable. Seen red for each way it can regress: the
+retirement deleted, the single alias for every API (the code before this amendment), the key retired with its
+ciphertext kept, and the old wipe that deleted only the legacy alias. That last one is only caught because the logout
+device tests now assert EVERY tier-1 alias with a precondition that the key in use existed: their old assertion named
+`lume_session_tier1`, which after this change never exists on API 28+, and would have passed without looking at the key.

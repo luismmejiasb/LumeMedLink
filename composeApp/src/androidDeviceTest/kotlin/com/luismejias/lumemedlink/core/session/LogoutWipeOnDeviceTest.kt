@@ -75,6 +75,7 @@ class LogoutWipeOnDeviceTest {
         manager.establish(SessionTokens("acc-synthetic", "ref-synthetic", Long.MAX_VALUE))
         assertTrue(manager.hasSession(), "precondition: a session exists on real storage")
         assertTrue(storeDir.listFiles().orEmpty().isNotEmpty(), "precondition: something was written")
+        assertTrue(androidKeyStore().containsAlias(tier1AliasInUse()), "precondition: the key in use exists")
 
         val outcome = performLogout(manager, store, AlwaysAvailableGate(), lock)
 
@@ -91,11 +92,14 @@ class LogoutWipeOnDeviceTest {
         )
         // ADR-0014 point 3, the one that was never implemented: deleting the key is what turns
         // "erased" into "unrecoverable" for any stray copy of the ciphertext.
-        assertFalse(
-            java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-                .containsAlias("lume_session_tier1"),
-            "the tier-1 key survived the logout, so old ciphertext would still be decryptable",
-        )
+        // EVERY tier-1 alias, not one name: since 2026-10-07 the key in use on API 28+ lives under a
+        // new alias, and asserting only the old one would pass without ever looking at it.
+        TIER1_KEY_ALIASES.forEach { alias ->
+            assertFalse(
+                androidKeyStore().containsAlias(alias),
+                "the tier-1 key '$alias' survived the logout, so old ciphertext would still be decryptable",
+            )
+        }
     }
 
     private class AlwaysAvailableGate : UnlockGate {
@@ -110,6 +114,7 @@ class LogoutWipeOnDeviceTest {
     fun wipeRemovesTheFilesAndTheKeystoreKeyItself() = runBlocking {
         SecureStoreKey.entries.forEach { store.put(it.storageKey, "synthetic-${it.name}") }
         assertTrue(storeDir.listFiles().orEmpty().isNotEmpty())
+        assertTrue(androidKeyStore().containsAlias(tier1AliasInUse()), "precondition: the key in use exists")
 
         store.wipe()
 
@@ -122,12 +127,15 @@ class LogoutWipeOnDeviceTest {
             storeDir.listFiles().orEmpty().isEmpty(),
             "ciphertext files survived the wipe: ${storeDir.listFiles()?.map { it.name }}",
         )
-        assertFalse(
-            java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-                .containsAlias("lume_session_tier1"),
-            "the Keystore key survived the wipe, so old ciphertext would still be decryptable",
-        )
+        TIER1_KEY_ALIASES.forEach { alias ->
+            assertFalse(
+                androidKeyStore().containsAlias(alias),
+                "the Keystore key '$alias' survived the wipe, so old ciphertext would still be decryptable",
+            )
+        }
     }
+
+    private fun androidKeyStore() = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
     private class FailingRefreshClient : RefreshClient {
         override suspend fun refresh(refreshToken: String): SessionTokens? = null
