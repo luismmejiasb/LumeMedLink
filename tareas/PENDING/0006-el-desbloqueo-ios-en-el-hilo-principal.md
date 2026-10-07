@@ -28,3 +28,31 @@ hardcodeado), y que `unlock()` siga siendo `suspend`.
 
 El fortification plan dice que el lado iOS del tier 2 espera el trabajo; esta tarea es una de sus
 precondiciones.
+
+## Medición del 2026-10-07 — inconcluyente por construcción, y por qué
+
+Se midió en el simulador (iPhone 17, iOS 27.0) con una sonda temporal en un worktree descartable: enrolar el ítem del
+tier 2 y llamar `unlock()` desde la composición —el hilo principal—, con un latido `NSLog` en Main cada 250 ms y capturas
+de pantalla.
+
+- `unlock()` volvió **en milisegundos con `Unlocked`**, sin ningún prompt en pantalla y sin enviar coincidencia de Face ID;
+  el latido siguió.
+- **Control 1:** sólo desbloquear (sin re-enrolar) tras reenviar la notificación de enrolamiento: `Unlocked`.
+- **Control 2, el decisivo:** con Face ID **des-enrolado**: `Unlocked` igual. En un dispositivo eso es imposible para un
+  ítem `.biometryCurrentSet`.
+
+**Conclusión: el simulador no aplica la ACL biométrica de un ítem del Keychain.** No hay prompt, así que no hay nada que
+bloquee el hilo, y esta tarea no se puede medir en ningún simulador. Tampoco ninguna otra propiedad del tier 2 de iOS
+(ADR-0011, enmendada el mismo día). Bitácora 0041.
+
+**Lo que sí hay, leído y no medido:** la documentación de Apple de `SecItemCopyMatching` (leída el 2026-10-07) dice
+*«SecItemCopyMatching blocks the calling thread, so it can cause your app's UI to hang if called from the main thread.
+Instead, call SecItemCopyMatching from a background dispatch queue or async function.»* No es el razonamiento de la
+auditoría: es el contrato de la plataforma.
+
+## Lo que espera, y de quién
+
+O se mide en un iPhone físico (build firmado con el equipo del autor, Face ID enrolado), o el autor decide aplicar el
+arreglo con la documentación como evidencia: correr la lectura en un dispatcher de IO **inyectado**, `unlock()` sigue
+siendo `suspend`. La pregunta está en `PROGRESS.md`, «Decisiones abiertas». Lo de «no arreglarlo antes de medirlo» se
+mantiene hasta que el autor diga otra cosa.

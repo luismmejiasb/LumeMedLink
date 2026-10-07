@@ -66,3 +66,14 @@ biometric match.** Never a boolean, on either platform.
 - Cancelling is not a failed attempt, so a locked phone can be dismissed indefinitely without
   ending the session. That is deliberate (ADR-0020's regression); the session still dies on the
   inactivity/expiry paths, not on the prompt count.
+
+## Amendment, 2026-10-07 — the simulator cannot verify the iOS tier either
+
+The consequence above says iOS has no equivalent "until the iOS host exists". The host has existed since 2026-08-25, and it
+is not enough: **the iOS Simulator does not enforce a Keychain item's biometric access control.** Measured with a probe in
+the host (task `0006`, bitácora 0041): the `.biometryCurrentSet` item came back in milliseconds, with no prompt on screen
+and no Face ID match sent — and, as the decisive control, also with Face ID UNENROLLED, which no device allows. So on a
+simulator the tier proves nothing at all: neither the prompt, nor its invalidation on a new enrollment, nor anything about
+the thread it blocks. Every property of the iOS tier 2 is verifiable only on a physical device; nothing in this repo claims
+otherwise today, and nothing should.
+
