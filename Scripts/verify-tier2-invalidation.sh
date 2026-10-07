@@ -43,21 +43,70 @@ tap_primary() {
     "$ADB" shell input tap $((w * 84 / 100)) $((h * 935 / 1000)) >/dev/null 2>&1
 }
 
-enroll_one_more_fingerprint() {
-    "$ADB" shell am start -a android.settings.FINGERPRINT_ENROLL >/dev/null 2>&1; sleep 4
-    "$ADB" shell input text "$PIN" >/dev/null 2>&1; sleep 1
-    "$ADB" shell input keyevent KEYCODE_ENTER >/dev/null 2>&1; sleep 3
-    i=0; while [ $i -lt 4 ]; do tap_primary; sleep 2; i=$((i + 1)); done
-    i=0; while [ $i -lt 25 ]; do
-        "$ADB" emu finger touch 7 >/dev/null 2>&1; sleep 1
-        "$ADB" emu finger remove >/dev/null 2>&1
-        i=$((i + 1))
+# The window that has input focus right now — the only cheap way to know which wizard screen is up.
+focus() { "$ADB" shell dumpsys window 2>/dev/null | grep -m1 'mCurrentFocus'; }
+
+# Polls until the focused window matches $1, for at most $2 seconds.
+wait_focus() {
+    t=0
+    while [ $t -lt "$2" ]; do
+        focus | grep -q "$1" && return 0
+        sleep 1; t=$((t + 1))
     done
-    sleep 1
-    "$ADB" shell dumpsys window 2>/dev/null | grep -q 'FingerprintEnrollFinish' || {
-        echo "FAIL could not complete a new enrollment (is a PIN set and one fingerprint present?)"
+    return 1
+}
+
+# How many fingerprints the device has enrolled. The postcondition of an enrollment is that this
+# went UP — a screen name is a proxy, the count is the fact.
+fingerprint_count() { "$ADB" shell dumpsys fingerprint 2>/dev/null | sed -n 's/.*"count":\([0-9]*\).*/\1/p' | head -1; }
+
+# Drives the system wizard by WAITING for each screen, not by sleeping a fixed time. The sleep-driven
+# version failed on 2026-10-07 on a loaded Mac (an iOS build was running beside it): the taps landed
+# on the launcher's dock — the run ended with the Play Store in front — and it reported only "could
+# not complete a new enrollment". The same steps, each waiting for its screen, enrolled at the third
+# touch. Whether the wizard was late or something else went wrong was not isolated; this version
+# does not need to know, and a failure now says which screen never came.
+enroll_one_more_fingerprint() {
+    before=$(fingerprint_count)
+    "$ADB" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
+    # A CLEAN task every time: a wizard left half-way by an earlier run (stuck on its capture screen)
+    # is a task Android would rather bring back than restart.
+    started=$("$ADB" shell am start -W --activity-clear-task -a android.settings.FINGERPRINT_ENROLL 2>&1)
+    wait_focus 'ConfirmLock' 30 || {
+        echo "FAIL the wizard never asked for the PIN (focus: $(focus))"
+        echo "$started" | sed 's/^/     am start: /'
         exit 1
     }
+    "$ADB" shell input text "$PIN" >/dev/null 2>&1
+    "$ADB" shell input keyevent KEYCODE_ENTER >/dev/null 2>&1
+    wait_focus 'FingerprintEnroll' 30 || { echo "FAIL the PIN did not open the wizard (focus: $(focus))"; exit 1; }
+    # The intro scrolls in steps ("More", "More", "I agree") before the sensor screen.
+    i=0
+    while [ $i -lt 6 ] && ! focus | grep -q 'FingerprintEnrollFindSensor\|FingerprintEnrollEnrolling'; do
+        tap_primary; sleep 2; i=$((i + 1))
+    done
+    focus | grep -q 'FingerprintEnrollFindSensor\|FingerprintEnrollEnrolling' ||
+        { echo "FAIL the wizard never reached the sensor screen (focus: $(focus))"; exit 1; }
+    # Touch, lift, and LOOK after every touch, stopping at the finish screen.
+    #
+    # A NEW virtual finger every run. This used a fixed id (7), and an id that is already enrolled
+    # never progresses: the wizard sits on the capture screen and the count does not move — measured
+    # on 2026-10-07 after a manual enrollment had used 7 first. Each run adds a print anyway, so each
+    # run needs a finger the device has not seen.
+    finger=$(( 1000 + $(date +%s) % 9000 ))
+    i=0
+    while [ $i -lt 25 ] && ! focus | grep -q 'FingerprintEnrollFinish'; do
+        "$ADB" emu finger touch "$finger" >/dev/null 2>&1; sleep 1
+        "$ADB" emu finger remove >/dev/null 2>&1; sleep 1
+        i=$((i + 1))
+    done
+    after=$(fingerprint_count)
+    if ! focus | grep -q 'FingerprintEnrollFinish' || [ "${after:-0}" -le "${before:-0}" ]; then
+        echo "FAIL could not complete a new enrollment (enrolled before=$before after=$after; focus: $(focus))"
+        echo "     That is the INSTRUMENT failing, not the property. (An emulator holds at most five"
+        echo "     fingerprints, and every run of this script adds one.)"
+        exit 1
+    fi
     tap_primary; sleep 1
 }
 

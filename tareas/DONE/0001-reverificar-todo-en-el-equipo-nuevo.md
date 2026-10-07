@@ -89,3 +89,47 @@ Para comparar, **no para copiar como hechos**: 18 `check-*.sh` verdes · 39 cebo
 
 Se mueve a `DONE/` cuando todo lo de arriba corrió verde en el equipo nuevo **y** cada diferencia con
 los valores de referencia quedó explicada por escrito en esta sección.
+
+## Cierre — 2026-10-07
+
+**Dónde:** la misma Mac corporativa del equipo viejo, con los repos movidos a `~/Documents/Lume/` y Xcode 27.0 (SDK de
+iOS 27.0). El método —simuladores propios, `ANDROID_SERIAL`, el turno de build para los `xcodebuild` de los scripts— y
+la historia de cada arreglo están en la bitácora 0036.
+
+| Qué | Resultado |
+| --- | --- |
+| Gradle: detekt, ktlint, `build`, `compileKotlinIosSimulatorArm64` | verde · 124 en Android host · 130 en iOS, 6 saltados, 124 corren |
+| Los 18 `check-*.sh`, y la mitad del de red sobre el manifiesto fusionado | verdes |
+| `rehearse-gates.sh` | 40 cebos, todos rojos |
+| `numbered-docs-have-no-collisions.py` | sin colisiones |
+| Host iOS (`xcodebuild`, DerivedData propio fuera del repo) | BUILD SUCCEEDED |
+| `verify-ios-link-freshness.sh` | PRESENT con la guarda / ABSENT sin ella |
+| `verify-ios-privacy-cover.sh` | OK en iOS 27.0, 26.5 y 18.6 |
+| `verify-install-sentinel.sh --with-live-control` | OK, después de arreglar el instrumento |
+| `verify-no-backup.sh --with-live-control` | probado; el control vuelve a extraer por D2D |
+| `verify-tier2-invalidation.sh` | probado, después de arreglar el instrumento |
+| Instrumentados (las tres clases, con `am instrument`) | 12 de 12 |
+
+**Cada diferencia con los valores de referencia:**
+
+- **40 cebos, no 39.** El cuadragésimo llegó con la S0.3 el 2026-10-06 (bitácora 0035).
+- **Los tamaños del snapshot del cover**: plano 2 225–2 316 B y control 12 434–12 471 B, contra «~1–2 KB» y «~7–10 KB».
+  Los absolutos dependen del modelo de dispositivo: la referencia se midió en un iPhone 17 Pro y un iPad Pro, y acá en un
+  iPhone 17 (27.0 y 26.5) y un iPhone 16 (18.6). El mismo modelo dio lo mismo en las tres versiones de iOS, y la
+  proporción —que es lo que el script exige— se mantiene en unas cinco veces. **Los hechos de ciclo de vida de ADR-0031 se
+  sostienen también en iOS 27.0**, que era la duda de esta tarea.
+- **Instrumentados**: la referencia nombra sólo `LogoutWipeOnDeviceTest` 4/4; las tres clases son 4 + 4 + 4.
+- **Tres verificadores no podían decir la verdad en este entorno**, y se arreglaron antes de creerles: el del sentinel
+  (su ancla de inyección no existe desde ADR-0031, su `trap` dejaba el proyecto roto y tomaba el `.app` del DerivedData
+  compartido), los dos de iOS que elegían «el primer simulador encendido», y el del tier 2, que manejaba el asistente de
+  huella con `sleep` fijos. Bitácora 0036.
+- **El AVD llegó sin PIN ni huella.** Se fijó el PIN `1234` y se enroló una huella; cada corrida de
+  `verify-tier2-invalidation.sh` agrega otra, y el emulador admite cinco.
+- **La memoria**: el symlink ya existe con el nombre que sale de la ruta nueva (`-Users-luis-mejias1-Documents-Lume-LumeMedLink`).
+- **Los hermanos** no están en `~/Documents/iOS/Projects/` sino todos juntos en `~/Documents/Lume/`: las rutas relativas
+  (`../LumeMed`, `../lumemed-cloud-platform`, `../LumeUIComposer`) resuelven igual.
+- **El árbol de hoy compila**, incluida la S0.3 (`1d2ddd1`), que se escribió en una sesión sin red y nunca había compilado.
+
+**Fuera, declarado:** API 26–29 no se midió (no hay imagen de esas versiones en esta máquina); un warning del enlazador
+de iOS sobre un objeto de ICU compilado para iOS-simulator 18.5 frente al deployment target 16.0 quedó observado y sin
+investigar.

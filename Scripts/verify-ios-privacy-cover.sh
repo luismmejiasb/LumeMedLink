@@ -24,15 +24,36 @@
 #
 # It never touches the working tree: everything happens in a throwaway git worktree.
 #
-# Usage: Scripts/verify-ios-privacy-cover.sh   (needs a booted iOS simulator; runs three builds)
+# Usage: Scripts/verify-ios-privacy-cover.sh [--device <udid>]
+#        (needs a booted iOS simulator; runs three builds)
 
 set -u
 REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$REPO_ROOT" || exit 1
 
 BUNDLE_ID=com.luismejias.lumemedlink
-DEVICE=$(xcrun simctl list devices booted 2>/dev/null | sed -n 's/.*(\([0-9A-F-]\{36\}\)) (Booted).*/\1/p' | head -1)
+DEVICE=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --device) shift; DEVICE="${1:-}" ;;
+        *) echo "unknown argument: $1"; exit 2 ;;
+    esac
+    shift
+done
+if [ -z "$DEVICE" ]; then
+    # Only when exactly ONE simulator is booted. On a Mac shared by several sessions, "the first
+    # booted one" can be another repo's simulator — and this script uninstalls, installs and opens
+    # Settings on whatever it picks. Pass `--device "$(lume-sim …)"` instead of letting it guess.
+    BOOTED=$(xcrun simctl list devices booted 2>/dev/null | sed -n 's/.*(\([0-9A-F-]\{36\}\)) (Booted).*/\1/p')
+    if [ "$(printf '%s\n' "$BOOTED" | grep -c .)" -gt 1 ]; then
+        echo "verify: more than one simulator is booted; pass --device <udid> instead of letting this guess"
+        exit 1
+    fi
+    DEVICE=$BOOTED
+fi
 [ -n "$DEVICE" ] || { echo "verify: boot an iOS simulator first (xcrun simctl boot '<device>')"; exit 1; }
+xcrun simctl list devices booted 2>/dev/null | grep -q "$DEVICE" ||
+    { echo "verify: simulator $DEVICE is not booted"; exit 1; }
 echo "verify-ios-privacy-cover: simulator $DEVICE"
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/lume-cover.XXXXXX") || exit 1

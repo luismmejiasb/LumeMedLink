@@ -38,7 +38,15 @@ BUNDLE_ID="com.luismejias.lumemedlink"
 HOST_DIR="iosApp/iosApp"
 OBSERVER="$HOST_DIR/InstallSentinelObserver.swift"
 PROBE="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/SessionProbe.kt"
-PROBE_BACKUP="$(mktemp)"
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/lume-sentinel.XXXXXX") || exit 1
+PROBE_BACKUP="$WORK/SessionProbe.kt.orig"
+# OWN DerivedData, never Xcode's shared one. The shared folder is keyed by the project's PATH, so a
+# checkout that moved (or a second clone) leaves another `iosApp-<hash>` beside this one, and the
+# `find … | head -1` this script used to run picked whichever came first — it could install a
+# build of different, older code and report on it. A verifier that can measure the wrong binary is
+# the stale-artifact defect of ADR-0028 and ADR-0030 one level up.
+DD="$WORK/dd"
+APP="$DD/Build/Products/Debug-iphonesimulator/LumeMedLink.app"
 DEVICE=""
 LIVE_CONTROL=0
 
@@ -52,19 +60,42 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$DEVICE" ]; then
-    DEVICE=$(xcrun simctl list devices available 2>/dev/null | grep "(Booted)" | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+    # Only when exactly ONE simulator is booted. With several sessions on one Mac, "the first
+    # booted one" can be another repo's simulator, and this script installs, uninstalls and seeds
+    # Keychain items on whatever it picks. Guessing is not allowed: pass `--device "$(lume-sim …)"`.
+    BOOTED=$(xcrun simctl list devices available 2>/dev/null | grep "(Booted)" | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+    if [ "$(printf '%s\n' "$BOOTED" | grep -c .)" -gt 1 ]; then
+        echo "FAIL more than one simulator is booted; pass --device <udid> instead of letting this guess."
+        exit 1
+    fi
+    DEVICE=$BOOTED
 fi
 if [ -z "$DEVICE" ]; then
     echo "FAIL no booted simulator. Boot one, or pass --device <udid>."
     exit 1
 fi
 
+# Undoes EVERY edit this script makes to the working tree, on any exit. It used to undo two of the
+# four: an early exit (a host that failed to build, an interrupt) deleted the observer file and
+# left `AppDelegate.swift` calling it and the project listing it — a tree that no longer compiled,
+# with nothing saying why. Each step is idempotent, so a normal exit that already cleaned up loses
+# nothing by running it again.
 cleanup() {
     rm -f "$OBSERVER"
+    python3 - "$HOST_DIR/AppDelegate.swift" "iosApp/iosApp.xcodeproj/project.pbxproj" <<'PYEOF'
+import sys
+delegate, project = sys.argv[1], sys.argv[2]
+s = open(delegate).read()
+open(delegate, "w").write(s.replace("        InstallSentinelObserver.observeThenSeed()\n", ""))
+s = open(project).read()
+open(project, "w").write("".join(l for l in s.splitlines(True) if "InstallSentinelObserver" not in l))
+PYEOF
     [ -s "$PROBE_BACKUP" ] && cp "$PROBE_BACKUP" "$PROBE"
-    rm -f "$PROBE_BACKUP"
+    rm -rf "$WORK"
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+# An interrupt EXITS (and so cleans up once) instead of cleaning up and carrying on building.
+trap 'exit 130' INT TERM
 
 cp "$PROBE" "$PROBE_BACKUP"
 
@@ -115,13 +146,20 @@ enum InstallSentinelObserver {
 SWIFTEOF
     # Call it as the very first thing the host does, BEFORE Compose composes and therefore before
     # the boundary runs. That ordering is what makes launch B able to see the inherited secret.
+    #
+    # Anchored to the SIGNATURE of didFinishLaunching, not to its body. The body-shaped anchor this
+    # used before (`-> Bool { return true }`) stopped existing on 2026-09-21, when ADR-0031 gave the
+    # method a real body, and the failed assert was ignored: the observer file was written, listed
+    # in the project and never CALLED, so every launch read NO-FILE and the run blamed the premise.
+    # The instrument broke and the verdict pointed at the thing being measured.
     python3 - "$HOST_DIR/AppDelegate.swift" <<'PYEOF'
-import sys
+import re, sys
 p = sys.argv[1]
 s = open(p).read()
-anchor = "    ) -> Bool {\n        return true\n    }"
-assert anchor in s, "AppDelegate anchor not found"
-s = s.replace(anchor, "    ) -> Bool {\n        InstallSentinelObserver.observeThenSeed()\n        return true\n    }", 1)
+m = re.search(r"didFinishLaunchingWithOptions[^)]*\)\s*->\s*Bool\s*\{\n", s)
+if m is None:
+    raise SystemExit("didFinishLaunchingWithOptions not found in AppDelegate.swift")
+s = s[:m.end()] + "        InstallSentinelObserver.observeThenSeed()\n" + s[m.end():]
 open(p, "w").write(s)
 PYEOF
 }
@@ -168,13 +206,15 @@ open(p, "w").write(s)
 PYEOF
 }
 
+# SIGNED, unlike the other verifiers: what this one measures is the Keychain, and an unsigned
+# build has no keychain-access-groups entitlement — every SecItem call fails and the run reads
+# ERROR(...) instead of PRESENT/ABSENT (the host's first launch crashed on exactly that, ADR-0025).
 build_and_install() {
     xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug \
-        -sdk iphonesimulator -destination "generic/platform=iOS Simulator" build >/dev/null 2>&1 || {
-        echo "FAIL the host did not build"; exit 1; }
-    APP=$(find "$HOME/Library/Developer/Xcode/DerivedData/iosApp-"*/Build/Products/Debug-iphonesimulator \
-        -maxdepth 1 -name "LumeMedLink.app" 2>/dev/null | head -1)
-    [ -z "$APP" ] && { echo "FAIL no built .app"; exit 1; }
+        -sdk iphonesimulator -destination "generic/platform=iOS Simulator" \
+        -derivedDataPath "$DD" build > "$WORK/build.log" 2>&1 || {
+        echo "FAIL the host did not build"; tail -20 "$WORK/build.log"; exit 1; }
+    [ -d "$APP" ] || { echo "FAIL no built .app at $APP"; exit 1; }
     xcrun simctl install "$DEVICE" "$APP" >/dev/null 2>&1
 }
 
@@ -202,8 +242,12 @@ run_cycle() {
 }
 
 echo "device: $DEVICE"
-write_observer
+# A broken INSTRUMENT is not a verdict about the premise. If the observer cannot be installed, say
+# so and stop, instead of running launches that can only ever read NO-FILE.
+write_observer || { echo "FAIL the observer could not be injected into AppDelegate.swift (instrument, not premise)"; exit 1; }
 add_observer_to_project
+[ "$(grep -c InstallSentinelObserver iosApp/iosApp.xcodeproj/project.pbxproj)" -eq 4 ] ||
+    { echo "FAIL the observer could not be added to the Xcode project (instrument, not premise)"; exit 1; }
 
 FAIL=0
 run_cycle "CON el sentinel (comportamiento de producción)"
