@@ -35,3 +35,14 @@ que distinga «ausente» de «ilegible»?
 Un test de device que escribe una entrada, corrompe un byte del archivo cifrado, y exige que la
 lectura (a) no devuelva el valor, (b) no lance hacia la UI, y (c) produzca la señal. Con cebo: sin el
 arreglo, (c) debe fallar.
+
+## Cierre — 2026-10-07
+
+**Decisión del autor:** que `get()` lance (ADR-0035), por simetría con iOS. **Construido:** `SecureStoreUnreadableException`;
+el almacén de Android lanza ante un dato que existe y no se lee, y obtiene la clave antes de leer (para no confundir lo que
+retiró la rotación de la `0008` con un dato manipulado); `SessionLock` convierte cualquier fallo del gate en
+`UNLOCK_MATERIAL_UNREADABLE` en vez de dejarlo subir al shell. **Verificado** en el emulador con
+`UnreadableStoreOnDeviceTest` —byte invertido: no vuelve el valor, nada se cae, sale la señal— y visto rojo con el `null`
+de antes. Bitácora 0044.
+
+**Fuera:** el evento del camino de desbloqueo todavía no se reporta (no hay reporter en el lock: tarea `0018`).

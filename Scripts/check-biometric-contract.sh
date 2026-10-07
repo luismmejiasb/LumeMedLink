@@ -100,6 +100,12 @@ require_in "$IOS_GATE" enroll 'kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly' 
     "the iOS tier-2 item lost its passcode floor" \
     "The accessibility class travels inside the access control object and must stay at the ADR-0005 floor."
 
+# The prompting read runs OFF the main thread (task 0006): SecItemCopyMatching blocks the thread
+# that calls it for as long as Face ID is up, and Apple says not to call it from main.
+body_of "$IOS_GATE" unlock | grep -qE 'withContext\( ?ioDispatcher ?\) ?\{ ?readUnlockSecret\(\) ?\}' ||
+    fail "biometric-contract: the iOS unlock does not leave the main thread" \
+         "unlock() must run the Keychain read through the injected ioDispatcher (task 0006)."
+
 # Weaker ACL flags that would still compile and still show a prompt, while accepting a PIN or any
 # enrolled biometric — the exact silent downgrades this gate exists to catch.
 hits=$(stripped_hits 'kSecAccessControlBiometryAny|kSecAccessControlUserPresence|kSecAccessControlDevicePasscode|kSecAccessControlOr' || true)

@@ -8,6 +8,10 @@ import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import platform.CoreFoundation.CFDataCreate
 import platform.CoreFoundation.CFDataGetLength
 import platform.CoreFoundation.CFDataRef
@@ -102,7 +106,13 @@ internal fun unlockOutcomeForKeychainStatus(status: Int): UnlockOutcome = when (
  * object, where `WhenPasscodeSetThisDeviceOnly` keeps the ADR-0005 floor.
  */
 @OptIn(ExperimentalForeignApi::class)
-internal class KeychainUnlockGate : UnlockGate {
+internal class KeychainUnlockGate(
+    // OFF the main thread, injected (§6). SecItemCopyMatching on this item IS the Face ID prompt, and
+    // it blocks the thread that calls it until the person answers; Apple's documentation says not to
+    // call it from main. Task 0006: decided by the author on Apple's word on 2026-10-07, because no
+    // simulator can measure it — the simulator does not apply the item's biometric ACL (bitácora 0041).
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : UnlockGate {
 
     override suspend fun enroll(): Boolean {
         if (!biometricsUsable()) return false
@@ -139,7 +149,9 @@ internal class KeychainUnlockGate : UnlockGate {
         return status == errSecSuccess
     }
 
-    override suspend fun unlock(): UnlockOutcome = memScoped {
+    override suspend fun unlock(): UnlockOutcome = withContext(ioDispatcher) { readUnlockSecret() }
+
+    private fun readUnlockSecret(): UnlockOutcome = memScoped {
         val service = KEYCHAIN_SERVICE.toCfString()
         val account = UNLOCK_ACCOUNT.toCfString()
         val query = cfDictionary(

@@ -342,4 +342,20 @@ class SessionLockTest {
 
         assertNull(store.entries[countKey], "the next session starts with the whole budget")
     }
+
+    @Test
+    fun aGateThatCannotEvenAskEndsTheSessionInsteadOfCrashing() = runTest {
+        // ADR-0035: the Android tier-2 challenge now THROWS when tampered. Before 2026-10-07 any
+        // exception from the gate escaped attemptUnlock() into the shell's coroutine.
+        val throwing = object : UnlockGate {
+            override suspend fun enroll(): Boolean = true
+            override suspend fun unlock(): UnlockOutcome = throw SecureStoreUnreadableException()
+            override suspend fun clear() = Unit
+        }
+
+        assertEquals(
+            LockOutcome.SessionEnded(SessionEndReason.UNLOCK_MATERIAL_UNREADABLE),
+            lockWith(throwing).attemptUnlock(),
+        )
+    }
 }

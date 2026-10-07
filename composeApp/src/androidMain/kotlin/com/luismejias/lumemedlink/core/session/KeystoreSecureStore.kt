@@ -64,7 +64,8 @@ private const val GCM_TAG_BITS = 128
  * with the parameter. The ciphertext is not re-encrypted: reading it would give the old key one more
  * use, and the tier-1 tokens can be asked for again.
  *
- * A value that fails GCM authentication loads as `null` (fail closed: corrupt or key-invalidated
+ * A value that fails GCM authentication THROWS `SecureStoreUnreadableException` (ADR-0035; it loaded as
+ * `null` until 2026-10-07). Before that change it read: (fail closed: corrupt or key-invalidated
  * means no session, never a crash loop). Files live under [STORE_DIR]; backup is already off
  * app-wide: `allowBackup=false` plus `dataExtractionRules`, which is what actually closes the
  * device-to-device path (F6/ADR-0015 — allowBackup alone does NOT, at targetSdk >= 31).
@@ -93,28 +94,34 @@ internal class KeystoreSecureStore(context: Context, private val ioDispatcher: C
         mutex.withLock {
             val file = fileFor(key)
             if (!file.exists()) return@withLock null
-            val blob = file.readBytes()
-            if (blob.isEmpty()) return@withLock null
-            val ivSize = blob[0].toInt()
-            if (ivSize <= 0 || blob.size < 1 + ivSize) return@withLock null
-            val iv = blob.copyOfRange(1, 1 + ivSize)
-            val ciphertext = blob.copyOfRange(1 + ivSize, blob.size)
-            // Every failure to recover the plaintext reads as "no session", never as a crash.
-            // AEADBadTagException alone was NOT enough, and the gap was real: `obtainKey()` and
-            // `cipher.init()` sit inside this same block and throw a DIFFERENT family —
-            // KeyPermanentlyInvalidatedException (the key died with a credential change),
-            // UserNotAuthenticatedException, UnrecoverableKeyException, KeyStoreException. Those
-            // are exactly the states a lost or reset device produces, and letting them escape
-            // would turn a fail-closed read into a crash loop on launch. GeneralSecurityException
-            // is their common ancestor; IOException covers a truncated or unreadable blob.
+            // EXISTS but cannot be read → it throws, it does not read as "never written" (ADR-0035,
+            // task 0003). Until 2026-10-07 every failure here returned null: a blob whose GCM tag did
+            // not close — the signature of a tampered file — looked exactly like a first launch, and
+            // SECURE_STORE_UNREADABLE was never reported. probeSession already turns this exception into
+            // that signal and a sign-in screen (ADR-0025), which is what iOS's store has done all along.
+            // Still fail CLOSED: no value comes back, and no caller gets a crash (every caller catches).
+            // The key FIRST: obtaining it may retire a key made without unlockedDeviceRequired, and
+            // that retirement deletes what it encrypted (task 0008). A file it deleted was not tampered
+            // with — as far as the new key is concerned it was never written.
+            val secretKey = try {
+                obtainKey()
+            } catch (_: GeneralSecurityException) {
+                throw SecureStoreUnreadableException()
+            }
+            if (!file.exists()) return@withLock null
             try {
+                val blob = file.readBytes()
+                val ivSize = blob.firstOrNull()?.toInt() ?: throw SecureStoreUnreadableException()
+                if (ivSize <= 0 || blob.size < 1 + ivSize) throw SecureStoreUnreadableException()
+                val iv = blob.copyOfRange(1, 1 + ivSize)
+                val ciphertext = blob.copyOfRange(1 + ivSize, blob.size)
                 val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-                cipher.init(Cipher.DECRYPT_MODE, obtainKey(), GCMParameterSpec(GCM_TAG_BITS, iv))
+                cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_BITS, iv))
                 cipher.doFinal(ciphertext).decodeToString()
             } catch (_: GeneralSecurityException) {
-                null
+                throw SecureStoreUnreadableException()
             } catch (_: IOException) {
-                null
+                throw SecureStoreUnreadableException()
             }
         }
     }

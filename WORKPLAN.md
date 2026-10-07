@@ -3,6 +3,10 @@
 > Plan vivo por slices. Se actualiza **en el mismo cambio** que mueve el trabajo (§10). Hermano de
 > `PROGRESS.md` (el estado) y de la bitácora (el porqué de cada iteración).
 
+> **Orden (decisión del autor del 2026-09-26, ADR-0036): el lado paciente se adelanta.** Las tajadas S2.x
+> pueden ir antes que el resto de la FASE 1; la política de sesión del tier paciente (sucesor de ADR-0003)
+> sigue siendo precondición de todo código de sesión de paciente.
+
 ## FASE 0 — Cimientos (sin gate externo)
 
 - **S0.1 · Esqueleto KMP.** Proyecto Compose Multiplatform (androidTarget + iOS), árbol de ADR-0008,
@@ -115,4 +119,4 @@
 
 - Skills Kotlin equivalentes a los nueve de la familia Swift: no existen (§0.0).
 - ~~Fila de LumeMedLink en el tablero del ecosistema~~ — **entregada el 2026-08-20** (§1.1). Se deja tachada, no borrada: siguió pidiéndose un mes porque nada recomputa la prosa.
-- Nombre público (App Store / Play Store): pendiente, junto al de LumeMed (§0).
+- Nombre público (App Store / Play Store): **LumeMedLink**, decidido el 2026-09-26 (ADR-0036), sujeto a la verificación de marca frente a Medilink.

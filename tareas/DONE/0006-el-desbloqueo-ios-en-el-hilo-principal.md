@@ -56,3 +56,11 @@ O se mide en un iPhone físico (build firmado con el equipo del autor, Face ID e
 arreglo con la documentación como evidencia: correr la lectura en un dispatcher de IO **inyectado**, `unlock()` sigue
 siendo `suspend`. La pregunta está en `PROGRESS.md`, «Decisiones abiertas». Lo de «no arreglarlo antes de medirlo» se
 mantiene hasta que el autor diga otra cosa.
+
+## Cierre — 2026-10-07
+
+**Decisión del autor:** aplicar el arreglo con la documentación de Apple como evidencia, porque ningún simulador puede
+medirlo. **Construido:** `KeychainUnlockGate` recibe un `ioDispatcher` inyectado (IO por defecto) y la lectura que muestra
+Face ID corre en él; `unlock()` sigue siendo `suspend`. `check-biometric-contract.sh` lo exige, con cebo. **Sin medir en
+un iPhone**: queda como confirmación pendiente, y ya no la contaminaría la falta de `NSFaceIDUsageDescription` (agregada
+en la `0002`).

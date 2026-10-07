@@ -23,6 +23,13 @@ internal enum class SessionEndReason {
      * ceiling that cannot be enforced is not offered (ADR-0034).
      */
     ATTEMPTS_UNRECORDABLE,
+
+    /**
+     * The gate could not even ask: its own material is unreadable — a tampered tier-2 challenge
+     * (ADR-0035) — or it failed in a way nobody classified. Until 2026-10-07 that exception escaped
+     * the lock into the shell's coroutine.
+     */
+    UNLOCK_MATERIAL_UNREADABLE,
 }
 
 /** The result of asking the lock to let the user back in. */
@@ -97,7 +104,7 @@ internal class SessionLock(
         val spent = spentAttempts() ?: return LockOutcome.SessionEnded(SessionEndReason.ATTEMPTS_UNRECORDABLE)
         if (spent >= maxFailedAttempts) return LockOutcome.SessionEnded(SessionEndReason.TOO_MANY_ATTEMPTS)
 
-        return when (unlockGate.unlock()) {
+        return when (askTheGate() ?: return LockOutcome.SessionEnded(SessionEndReason.UNLOCK_MATERIAL_UNREADABLE)) {
             UnlockOutcome.Unlocked -> {
                 // Best effort: a count that survives a success costs the NEXT lock some attempts, which
                 // is the safe direction, so a store hiccup here must not keep the doctor out.
@@ -129,6 +136,16 @@ internal class SessionLock(
     // is dropped on purpose: its message is a platform's free text, and §8.1 allows one logging path
     // with a closed vocabulary. Cancellation is re-thrown first, by type and by asking the job, because
     // a store that wraps a platform call can convert it on the way out (ADR-0026).
+
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
+    private suspend fun askTheGate(): UnlockOutcome? = try {
+        unlockGate.unlock()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (unreadable: Throwable) {
+        currentCoroutineContext().ensureActive()
+        null
+    }
 
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
     private suspend fun spentAttempts(): Int? = try {

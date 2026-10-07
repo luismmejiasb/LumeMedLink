@@ -497,6 +497,14 @@ s = s.replace(old, "")
 s += "\nprivate fun KeyGenParameterSpec.Builder.unused() = setInvalidatedByBiometricEnrollment(true)\n"
 p.write_text(s)
 '
+bait "the Face ID read back on the main thread" check-biometric-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/session/KeychainUnlockGate.kt"
+s = p.read_text()
+old = "withContext(ioDispatcher) { readUnlockSecret() }"
+assert s.count(old) == 1
+p.write_text(s.replace(old, "readUnlockSecret()"))
+'
 # F02, F04 · the plist and the entitlements, as iOS reads them
 IOS_PLIST_EDIT='
 import sys, pathlib

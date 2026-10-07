@@ -4,11 +4,8 @@
 Three namespaces here name their files `NNNN-slug.md` and are addressed by that number in
 prose: the ADRs, the requests to the backend, and the bitacora.
 
-**The bitacora index is deliberately NOT checked.** `docs/bitacora/README.md` declares itself
-abandoned at entry 0001 and says the real index is the directory listing; rebuilding or deleting
-that table is the author's decision, recorded there. Checking it would report a decision as a
-defect. When the author rebuilds it, the reconciliation block from the LumeMed sibling drops
-straight in.
+There is no bitacora index to reconcile: the author had the abandoned README deleted (ADR-0036,
+2026-10-07). The directory listing is the index.
 
 Nothing in this repo READS those trees, so a collision is invisible to the compiler, to the linter
 and to every test: it is the "una regla sin gate se cae sola" failure mode committed on

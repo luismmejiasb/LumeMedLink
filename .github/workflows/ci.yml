@@ -88,8 +88,8 @@ jobs:
       # Measured in LumeMed on 2026-09-21: a cherry-pick from a parallel session landed eight docs
       # on numbers that branch had already used and the pipeline stayed green. Both sessions had
       # numbered correctly against the tree in front of them — the collision is born when the
-      # branches join. The bitacora index is deliberately NOT checked here; its README declares
-      # itself abandoned at entry 0001 and rebuilding it is the author's call.
+      # branches join. There is no bitacora index to check: the abandoned README was deleted by the
+      # author's decision (ADR-0036); the directory listing is the index.
       - name: Gate — numbered documents have no collisions
         run: python3 Scripts/numbered-docs-have-no-collisions.py
 

@@ -13,6 +13,12 @@ package com.luismejias.lumemedlink.core.session
 internal interface SecureStore {
     suspend fun put(key: String, value: String)
 
+    /**
+     * The value, or `null` when nothing was ever written. An entry that EXISTS and cannot be read —
+     * tampered, truncated, or encrypted under a key that is gone — throws
+     * [SecureStoreUnreadableException] instead of reading as "never written" (ADR-0035): a manipulated
+     * store is a security event, and `null` would erase it into a first launch.
+     */
     suspend fun get(key: String): String?
 
     suspend fun remove(key: String)
@@ -20,6 +26,13 @@ internal interface SecureStore {
     /** Removes every entry this app owns. Part of the logout contract (§8.13). */
     suspend fun wipe()
 }
+
+/**
+ * An entry exists and cannot be read (ADR-0035). Deliberately NOT an IllegalStateException — that is
+ * CancellationException's supertype, and a catch of one would swallow the other — and deliberately
+ * without a cause or a platform message: what the OS said is not ours to write down (§8.1).
+ */
+internal class SecureStoreUnreadableException : Exception("secure store entry unreadable")
 
 /**
  * Every secret this app can persist, as an ENUM rather than loose constants (F5, ADR-0014).

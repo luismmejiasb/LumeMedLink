@@ -40,11 +40,11 @@ Cambiar una exige ADR nuevo que derogue al anterior (§10):
 | Decisión | Valor | Nota |
 | --- | --- | --- |
 | Nombre interno | **LumeMedLink** | Decisión del autor (2026-08-17), tomada con las alternativas registradas en la bitácora 0001. Repo/target/carpeta. `git@github.com:luismmejiasb/LumeMedLink.git`. |
-| Nombre público (App Store / Play Store) | **PENDIENTE** | Misma pendiente que LumeMed (§0 suyo): el autor evalúa marca pública sin «Lume». Los strings visibles se localizan, así que renombrar público es barato. |
+| Nombre público (App Store / Play Store) | **LumeMedLink** | Decidido por el autor el 2026-09-26 (ADR-0036), sujeto a la verificación de marca frente a Medilink que registra el vault (INAPI antes de publicar); si falla, se reabre. Los strings visibles se localizan, así que renombrar público es barato. |
 | Plataforma | **Kotlin Multiplatform** — Android + iOS, UI en **Compose Multiplatform**, phone-first | ADR-0002. Portrait primero; iPad/tablet no es objetivo del v1. |
 | Dirección del titular | **Dentro de la frontera, geolocalizada por Google vía el backend** | ADR-0027 (2026-08-25, decisión del autor), que enmienda ADR-0001. La llave jamás en el binario: en LumeMed ese fue el motivo de diferir Google (`ADR-0030 de LumeMed`), y acá pesa más porque el teléfono es del paciente y §8.17 lo da por compartido. Pedido `backend-requests/0005`. |
 | Frontera de datos | **Cero contenido clínico en esta app.** Ficha, diagnósticos, notas, resultados, recetas: JAMÁS | ADR-0001. Es la decisión que define el producto. La lista de lo que SÍ maneja también es cerrada: perfil, citas (existencia/fecha/lugar), contactos, y las llaves de la teleconsulta futura. |
-| Audiencias | **Dos roles**: médico (gestión no clínica) y paciente | El gate de ADR-0006 **se abrió** (ver su enmienda del 2026-09-15): `ADR-0035 del backend` existe y su superficie está construida. Se sigue construyendo primero el lado médico, y la política de sesión del tier de paciente debe aterrizar en un sucesor de ADR-0003 **antes** de que exista código de sesión de paciente. |
+| Audiencias | **Dos roles**: médico (gestión no clínica) y paciente | El gate de ADR-0006 **se abrió** (ver su enmienda del 2026-09-15): `ADR-0035 del backend` existe y su superficie está construida. **El lado paciente se adelanta** (decisión del autor del 2026-09-26, ADR-0036), y la política de sesión del tier de paciente debe aterrizar en un sucesor de ADR-0003 **antes** de que exista código de sesión de paciente. |
 | Backend | El mismo **lumemed-cloud-platform**, por su contrato OpenAPI versionado | El contrato de hoy no publica rol paciente ni tier de auth de paciente. Todo endpoint nuevo se pide por `docs/backend-requests/`, como hace LumeMed. |
 | Identidad / IdP | **Google Identity Platform** — el mismo IdP de la familia. Médicos: MFA TOTP obligatoria (heredan su cuenta). Pacientes: **política pendiente de ADR** (ADR-0003 la deja abierta a propósito) | Jamás auth casera (espejo del §8.2 de LumeMed). |
 | UI | **Compose Multiplatform.** El design system es **`LumeUIComposer`** (`../LumeUIComposer`), el gemelo de LumeUIKit en Compose, consumido por path (build compuesto) hasta su primer tag. **Decidido por el autor el 2026-10-06**: la verificación en device con lector de pantalla dejó de condicionarlo, y el fallback `designkit` ya no se construye | ADR-0002 §UI, ADR-0033. Un componente reutilizable vive en el kit, jamás inline en una pantalla. Cero estilos hardcodeados. |
@@ -391,9 +391,10 @@ de LumeMed») — la regla de precisión que LumeMed ya aplica.
 
 ## 12. Orden de construcción y DoD
 
-**Se empieza por el lado médico**, que no está gated: shell (auth con la cuenta de médico existente)
-→ agenda de citas (lectura) → contactos → perfil. **El lado paciente espera su ADR del backend**
-(ADR-0006): identidad, consentimiento, y el modelo de amenaza propio que `ADR-0031 del backend` exige.
+**El lado paciente se adelanta** (decisión del autor del 2026-09-26, ADR-0036): sus tajadas (WORKPLAN S2.x)
+pueden construirse antes que el resto de la FASE 1 del médico (shell → agenda → contactos → perfil). Lo que no
+cambia: la política de sesión del tier paciente aterriza en un sucesor de ADR-0003 **antes** de que exista código
+de sesión de paciente (ADR-0006 punto 3), y el enrolamiento sigue mediado por la clínica.
 
 **DoD por slice**: feature completa en sus capas + concurrencia correcta + UI por el kit + red por el
 stack + tests (incluidos los de datos del §9) + **checklist de datos personales**: logs · caché
@@ -429,9 +430,8 @@ logout wipe · bloqueo de sesión. Un slice no pasa si alguno aplica y falta.
   ni `docs/bitacora`**, así que la colisión es invisible para el compilador, para detekt y para todos
   los tests. **[lint: `numbered-docs-have-no-collisions.py`, con sus tres cebos en
   `rehearse-gates.sh`]** — barre además **hacia arriba**, porque el piso de «no escaneó cero» sólo
-  guarda hacia abajo. **El índice de la bitácora NO se comprueba** a propósito: su README se declara
-  abandonado en la entrada 0001 y reconstruirlo lo decide el autor (§10); comprobarlo sería reportar
-  una decisión como defecto. Viene de LumeMed, donde un `cherry-pick` de una sesión paralela aterrizó
+  guarda hacia abajo. El índice de la bitácora ya no existe: el autor decidió borrarlo (ADR-0036); el
+  índice es el listado del directorio. Viene de LumeMed, donde un `cherry-pick` de una sesión paralela aterrizó
   ocho documentos sobre números ya usados con el pipeline en verde: **las dos sesiones numeraron
   bien**, y la colisión nace al **unir**.
 
