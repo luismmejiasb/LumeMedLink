@@ -50,9 +50,10 @@ NAMESPACES = [
     ("docs/adr", ["docs/adr"], 25),
     ("docs/backend-requests", ["docs/backend-requests"], 5),
     ("docs/bitacora", ["docs/bitacora"], 25),
-    # ONE namespace over two folders: a task MOVES from PENDING to DONE when it closes, so a number
-    # must be unique across both or the move itself creates the collision (added 2026-09-24).
-    ("tareas", ["tareas/PENDING", "tareas/DONE"], 10),
+    # ONE namespace over three folders: a task MOVES from PENDING to DONE when it closes, so a number
+    # must be unique across both or the move itself creates the collision (added 2026-09-24). FREEZE
+    # joined on 2026-10-07 (the author froze what waits on a deployed backend), as in the backend.
+    ("tareas", ["tareas/PENDING", "tareas/FREEZE", "tareas/DONE"], 10),
 ]
 
 # Canonical shape. `NNNN-slug.md`.

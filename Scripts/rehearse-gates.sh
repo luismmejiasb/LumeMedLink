@@ -765,6 +765,16 @@ d.mkdir(parents=True, exist_ok=True)
 shutil.copy(sorted((root / "docs/adr").glob("0*.md"))[0], d / "0001-bait.md")
 '
 
+# A frozen task is still an address: FREEZE shares the one number space with PENDING and DONE.
+bait "a frozen task reuses a closed task's number" numbered-docs-have-no-collisions.py '
+import sys, pathlib, shutil
+root = pathlib.Path(sys.argv[1])
+d = root / "tareas/FREEZE"
+d.mkdir(parents=True, exist_ok=True)
+src = sorted((root / "tareas/DONE").glob("0*.md"))[0]
+shutil.copy(src, d / (src.name[:4] + "-bait-frozen.md"))
+'
+
 bait "a number that cannot be addressed" numbered-docs-have-no-collisions.py '
 import sys, pathlib
 (pathlib.Path(sys.argv[1]) / "docs/bitacora/0099b-bait.md").write_text("# bait\n")

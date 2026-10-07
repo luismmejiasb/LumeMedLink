@@ -1,5 +1,7 @@
 # 0012 · Las citas del paciente: cancelar y reagendar con motivo, y enterarse de lo que haga la consulta
 
+> **FREEZE (2026-10-07, decisión del autor):** todo lo que espera un backend desplegado queda congelado. Aquí: espera el contrato publicado del backend (sus tareas 0020–0022) y un backend desplegado. Vuelve a `PENDING/` cuando exista.
+
 > **Estado:** PENDING · espera dos cosas: el contrato del backend (sus tareas `0020` a `0022`) y que el
 > autor le dé prioridad al lado del paciente. Escrita el 2026-09-26 desde la sesión del backend, por
 > encargo del autor.

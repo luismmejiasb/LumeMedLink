@@ -377,7 +377,7 @@ ADRs numeradas en `docs/adr/` (contexto → decisión → consecuencias; las cer
 editan). `WORKPLAN.md` + `PROGRESS.md` + bitácora en español, actualizados **en el mismo cambio** que
 mueve el trabajo. **`tareas/`** (desde 2026-09-24, espejo de `../LumeMed/tareas/` y del backend): el
 *cómo* de una tajada con el detalle que no cabe en una fila — bloqueo citado, qué NO hacer, cómo se
-verifica —, en `PENDING/` y `DONE/` bajo un solo espacio de números (§13). Nació para que un traspaso
+verifica —, en `PENDING/`, `FREEZE/` y `DONE/` bajo un solo espacio de números (§13). **`FREEZE/`** (desde 2026-10-07, decisión del autor, como en el backend): **todo lo que espera un backend desplegado** — un dominio, un contrato publicado, un endpoint vivo — no se trabaja hasta que vuelva a `PENDING/`. Nació para que un traspaso
 de equipo no dependiera de la memoria de una sesión. ⚠️ **Los números de ADR de este repo, los de LumeMed y los del backend son tres
 numeraciones independientes**: toda cita cruzada dice de quién es («ADR-0031 del backend», «ADR-0005
 de LumeMed») — la regla de precisión que LumeMed ya aplica.

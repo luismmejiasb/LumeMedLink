@@ -1,5 +1,7 @@
 # 0011 · F17 — deep links y universal links
 
+> **FREEZE (2026-10-07, decisión del autor):** todo lo que espera un backend desplegado queda congelado. Aquí: la mitad positiva espera un dominio de producción; la negativa (gates y cebos) ya está hecha. Vuelve a `PENDING/` cuando exista.
+
 ## De dónde sale
 
 `docs/security/fortification-plan.md`, fila F17: la **única** tajada de fortificación en ⬜. **El lado cliente** no
