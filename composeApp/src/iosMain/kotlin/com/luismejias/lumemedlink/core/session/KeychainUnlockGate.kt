@@ -59,6 +59,30 @@ private const val ERR_SEC_NOT_AVAILABLE = -25291
 private const val ERR_SEC_INTERACTION_NOT_ALLOWED = -25308
 
 /**
+ * What a failed `SecItemCopyMatching` on the tier-2 item means for the attempt count (ADR-0011,
+ * ADR-0034). A top-level `internal` function so an iosTest can pin it where "cancelling costs
+ * nothing" can actually break (task `0010`) — no keychain is needed to ask what a status means.
+ */
+internal fun unlockOutcomeForKeychainStatus(status: Int): UnlockOutcome = when (status) {
+    ERR_SEC_USER_CANCELED -> UnlockOutcome.Cancelled
+
+    // The item vanished: `.biometryCurrentSet` destroys it when enrollment changes, which is
+    // exactly the event this tier is paid to detect.
+    errSecItemNotFound -> UnlockOutcome.Invalidated
+
+    // HONEST AMBIGUITY, declared rather than papered over: iOS reports both "wrong biometric" and
+    // "item invalidated by re-enrollment" as errSecAuthFailed, so this app cannot always tell them
+    // apart. Both are treated as a failed attempt, and the attempt ceiling ends the session either
+    // way — the fail-closed direction is the same.
+    ERR_SEC_AUTH_FAILED -> UnlockOutcome.Failed
+
+    ERR_SEC_NOT_AVAILABLE, ERR_SEC_INTERACTION_NOT_ALLOWED -> UnlockOutcome.Unavailable
+
+    // Unclassified counts against an attacker, never for one (ADR-0020 of LumeMed, mirrored).
+    else -> UnlockOutcome.Failed
+}
+
+/**
  * iOS tier-2 gate (ADR-0005, ADR-0011): a Keychain item whose access control is
  * `.biometryCurrentSet`, holding random key material.
  *
@@ -133,30 +157,14 @@ internal class KeychainUnlockGate : UnlockGate {
         CFRelease(account)
         CFRelease(service)
 
-        when (status) {
-            errSecSuccess -> {
-                val data: CFDataRef? = out.value?.reinterpret()
-                val length = CFDataGetLength(data).toInt()
-                if (data != null) CFRelease(data)
-                // Real material of the expected size came back, so the OS authenticated the user.
-                if (length == SECRET_BYTES) UnlockOutcome.Unlocked else UnlockOutcome.Failed
-            }
-
-            ERR_SEC_USER_CANCELED -> UnlockOutcome.Cancelled
-
-            // The item vanished: `.biometryCurrentSet` destroys it when enrollment changes, which
-            // is exactly the event this tier is paid to detect.
-            errSecItemNotFound -> UnlockOutcome.Invalidated
-
-            // HONEST AMBIGUITY, declared rather than papered over: iOS reports both "wrong
-            // biometric" and "item invalidated by re-enrollment" as errSecAuthFailed, so this app
-            // cannot always tell them apart. Both are treated as a failed attempt, and the attempt
-            // ceiling ends the session either way — the fail-closed direction is the same.
-            ERR_SEC_AUTH_FAILED -> UnlockOutcome.Failed
-
-            ERR_SEC_NOT_AVAILABLE, ERR_SEC_INTERACTION_NOT_ALLOWED -> UnlockOutcome.Unavailable
-
-            else -> UnlockOutcome.Failed
+        if (status == errSecSuccess) {
+            val data: CFDataRef? = out.value?.reinterpret()
+            val length = CFDataGetLength(data).toInt()
+            if (data != null) CFRelease(data)
+            // Real material of the expected size came back, so the OS authenticated the user.
+            if (length == SECRET_BYTES) UnlockOutcome.Unlocked else UnlockOutcome.Failed
+        } else {
+            unlockOutcomeForKeychainStatus(status)
         }
     }
 

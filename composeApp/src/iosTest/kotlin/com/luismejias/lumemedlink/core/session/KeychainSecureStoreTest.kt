@@ -23,8 +23,9 @@ import kotlin.test.assertNull
  * so it is a slice and not an edit. Written here rather than left implied, because a condition that
  * quietly comes true is how six tests stay skipped forever while a count says 130.
  *
- * And the count: these six are INCLUDED in the reported iOS total — the report says 130, and 6 of
- * those do not run, so 124 do.
+ * And the count: these six are INCLUDED in the reported iOS total and do not run — the report shows
+ * them as skipped. (This line used to quote the total, which went stale the next time a test was added.)
+ * Running them hosted is task `0015`.
  */
 @Ignore
 class KeychainSecureStoreTest {

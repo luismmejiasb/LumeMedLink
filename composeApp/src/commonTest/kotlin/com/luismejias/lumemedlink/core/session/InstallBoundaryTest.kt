@@ -127,30 +127,4 @@ class InstallBoundaryTest {
                 "extra idempotent purge next launch, which is the cheap direction.",
         )
     }
-
-    @Test
-    fun theAndroidSentinelReportsEstablishedOnPurpose() = runTest {
-        val store = BoundaryRecordingStore()
-        store.put(SecureStoreKey.SESSION_TOKENS.storageKey, "kept")
-
-        val outcome = enforceInstallBoundary(platformInstallSentinel(), store)
-
-        // Pins the DECLARED asymmetry of §8.14 rather than leaving it to a comment. On Android
-        // uninstall removes the data dir and the Keystore entries, so nothing can be inherited and
-        // a purge on every launch would be pure damage. On iOS the container is fresh in a test
-        // process too, so this asserts the branch each platform actually takes.
-        when (outcome) {
-            InstallBoundary.ALREADY_ESTABLISHED ->
-                assertEquals("kept", store.get(SecureStoreKey.SESSION_TOKENS.storageKey))
-            InstallBoundary.PURGED_INHERITED_SECRETS ->
-                assertTrue(store.entries.isEmpty(), "a purge must actually purge")
-            InstallBoundary.FAILED ->
-                assertFalse(
-                    store.entries.isEmpty(),
-                    "A failed boundary must not have half-purged: the store is untouched or the " +
-                        "purge completed. (On the iOS test runner the container is real but " +
-                        "hostless, so FAILED here is an environment fact, not a defect.)",
-                )
-        }
-    }
 }

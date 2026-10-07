@@ -4,6 +4,7 @@ import android.os.Build
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.security.KeyFactory
@@ -24,8 +25,10 @@ private const val TEST_ALIAS = "lume_test_tier2_contract"
  * downgrades the request would all sail past a grep and leave the lock decorative. `KeyInfo` is
  * the OS's own answer about the key it actually created, and these assertions are that answer.
  *
- * Runs with `./gradlew :composeApp:connectedAndroidTest` (a booted device or emulator required).
- * It needs no biometric enrollment: it inspects the key's REQUIREMENTS, never authenticates.
+ * Runs on a booted device or emulator: `./gradlew :composeApp:connectedAndroidDeviceTest`, or — where a phantom
+ * adb device breaks that task — the installed APK through `am instrument` (task `0001`). It never authenticates; it
+ * inspects the key's REQUIREMENTS. It does need a biometric ENROLLED: Android refuses to create a per-use key
+ * without one, which is how this test's first run failed (bitácora 0010). This line used to say the opposite.
  */
 @RunWith(AndroidJUnit4::class)
 class UnlockKeyContractTest {
@@ -60,9 +63,15 @@ class UnlockKeyContractTest {
         val info = generateAndInspect()
 
         // A validity window > 0 would mean "authenticated recently is good enough", which is the
-        // silent downgrade that also voids invalidation-on-enrollment.
+        // silent downgrade that also voids invalidation-on-enrollment. "Every use" is SPELLED
+        // differently on each side of API 30, because the key is built differently there: the API 30+
+        // branch asks for timeout 0, the legacy one for -1, and KeyInfo reports what was asked. This
+        // asserted 0 everywhere, so on API 26–29 it could only fail (task 0010). The legacy value is
+        // read from the platform documentation and was NOT measured: no image below API 37 exists on
+        // the machine that wrote this.
+        val perUse = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) 0 else -1
         assertEquals(
-            0,
+            perUse,
             info.userAuthenticationValidityDurationSeconds,
             "Per-use authentication is contract: any positive window voids the invalidation property.",
         )
@@ -70,7 +79,9 @@ class UnlockKeyContractTest {
 
     @Test
     fun theTierTwoKeyAcceptsStrongBiometricsOnly() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return // API < 30 has no such accessor.
+        // SKIPPED, visibly, below API 30 — where KeyInfo has no accessor for it. This used to `return`,
+        // which the report counts as a PASS: a test that checked nothing, reported as one that did.
+        assumeTrue("API < 30 has no KeyInfo.userAuthenticationType", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
         val info = generateAndInspect()
 
         assertEquals(

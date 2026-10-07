@@ -84,10 +84,7 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
 
         return when (val prompted = promptForSignature(signature)) {
             is PromptResult.Succeeded -> verifySignature(prompted.signature, challenge, entry)
-            PromptResult.Cancelled -> UnlockOutcome.Cancelled
-            PromptResult.Failed -> UnlockOutcome.Failed
-            PromptResult.Unavailable -> UnlockOutcome.Unavailable
-            PromptResult.Invalidated -> UnlockOutcome.Invalidated
+            is PromptResult.Ended -> prompted.outcome
         }
     }
 
@@ -115,10 +112,9 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
 
     private sealed interface PromptResult {
         data class Succeeded(val signature: Signature) : PromptResult
-        data object Cancelled : PromptResult
-        data object Failed : PromptResult
-        data object Unavailable : PromptResult
-        data object Invalidated : PromptResult
+
+        /** The prompt ended without a signature; what that means is [unlockOutcomeForPromptError]'s call. */
+        data class Ended(val outcome: UnlockOutcome) : PromptResult
     }
 
     private suspend fun promptForSignature(signature: Signature): PromptResult = withContext(Dispatchers.Main) {
@@ -131,14 +127,20 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
                         val signed = result.cryptoObject?.signature
                         if (continuation.isActive) {
                             continuation.resume(
-                                if (signed == null) PromptResult.Failed else PromptResult.Succeeded(signed),
+                                if (signed == null) {
+                                    PromptResult.Ended(UnlockOutcome.Failed)
+                                } else {
+                                    PromptResult.Succeeded(signed)
+                                },
                             )
                         }
                     }
 
                     override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                         // errString is the OS's localized text; it is never logged (§8.1).
-                        if (continuation.isActive) continuation.resume(mapError(errorCode))
+                        if (continuation.isActive) {
+                            continuation.resume(PromptResult.Ended(unlockOutcomeForPromptError(errorCode)))
+                        }
                     }
 
                     // Deliberately NOT resumed here: a single mismatch leaves the prompt open
@@ -157,22 +159,6 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
             prompt.authenticate(info, BiometricPrompt.CryptoObject(signature))
             continuation.invokeOnCancellation { prompt.cancelAuthentication() }
         }
-    }
-
-    private fun mapError(errorCode: Int): PromptResult = when (errorCode) {
-        // Dismissing is NOT a failed attempt (ADR-0020 of LumeMed, mirrored): counting it would
-        // log a doctor out for putting the phone down.
-        BiometricPrompt.ERROR_NEGATIVE_BUTTON,
-        BiometricPrompt.ERROR_USER_CANCELED,
-        BiometricPrompt.ERROR_CANCELED,
-        -> PromptResult.Cancelled
-
-        BiometricPrompt.ERROR_NO_BIOMETRICS,
-        BiometricPrompt.ERROR_HW_NOT_PRESENT,
-        BiometricPrompt.ERROR_HW_UNAVAILABLE,
-        -> PromptResult.Unavailable
-
-        else -> PromptResult.Failed
     }
 
     private fun biometricsUsable(): Boolean =
@@ -196,6 +182,31 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
     private fun generateKeyPair() {
         generateUnlockKeyPair(UNLOCK_KEY_ALIAS)
     }
+}
+
+/**
+ * What a terminal [BiometricPrompt] error means for the attempt count (ADR-0011, ADR-0034).
+ *
+ * A top-level `internal` function so a host test can pin it at the layer where "cancelling costs
+ * nothing" can actually break (task `0010`): the policy above it only ever sees [UnlockOutcome].
+ *
+ * - Dismissing is NOT a failed attempt (ADR-0020 of LumeMed, mirrored): counting it would log a
+ *   doctor out for putting the phone down.
+ * - Anything not classified here counts as a miss — an outcome nobody classified should count
+ *   against an attacker, not excuse one (the same ADR's correction, mirrored).
+ */
+internal fun unlockOutcomeForPromptError(errorCode: Int): UnlockOutcome = when (errorCode) {
+    BiometricPrompt.ERROR_NEGATIVE_BUTTON,
+    BiometricPrompt.ERROR_USER_CANCELED,
+    BiometricPrompt.ERROR_CANCELED,
+    -> UnlockOutcome.Cancelled
+
+    BiometricPrompt.ERROR_NO_BIOMETRICS,
+    BiometricPrompt.ERROR_HW_NOT_PRESENT,
+    BiometricPrompt.ERROR_HW_UNAVAILABLE,
+    -> UnlockOutcome.Unavailable
+
+    else -> UnlockOutcome.Failed
 }
 
 /**
