@@ -59,7 +59,7 @@ con los canales de exportación de estructura del SO (ADR-0024). Colas atadas al
 
 | # | Slice | Estado | Nota |
 | --- | --- | --- | --- |
-| F17 | Deep links / universal links seguros | ⬜ | **DESBLOQUEADO 2026-08-25**: el host iOS existe (ADR-0025). El plist ya niega `CFBundleURLTypes` con gate; los universal links son el slice. |
+| F17 | Deep links / universal links seguros | 🟡 2026-10-07 | **DESBLOQUEADO 2026-08-25**: el host iOS existe (ADR-0025). El plist ya niega `CFBundleURLTypes` con gate; los universal links son el slice. **La mitad negativa, cerrada en las dos plataformas (2026-10-07, tarea 0011):** `check-deep-links.sh` exige en el manifiesto fuente y en el fusionado que todo esquema de un intent filter sea `https` y que todo filtro navegable con `https` lleve `autoVerify` — antes un esquema propio pasaba todos los gates de Android —, y el rechazo de iOS ganó su cebo. **Falta la positiva**: dominio (no hay), archivos de asociación y un router que pase por el lock, que espera destinos reales. Bitácora 0042. |
 | F18 | Contenido no confiable no rompe la app | ✅ 2026-08-21 | Decodificación tolerante (un campo desconocido cuesta una fila, no la página) + **el 2xx con HTML se rechaza en la validación** (portal cautivo, F12) + bytes remotos sólo por el stack, y **cualquier escritura en disco fuera de `core/` falla** (P4, ADR-0022). Los cargadores de imágenes con red propia siguen en el denylist (ADR-0018). |
 | F19 | Cero entrega de documentos | ✅ 2026-08-21 | Ampliado de «sin share sheet» a **ninguna vía de entregar un archivo**: impresión (Android e iOS), creación de documentos, document pickers, MediaStore, chooser. 5 cebos rojos. |
 

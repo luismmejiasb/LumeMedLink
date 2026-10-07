@@ -79,6 +79,8 @@ jobs:
         run: Scripts/check-install-sentinel.sh
       - name: Gate — logout contract (F5, ADR-0014)
         run: Scripts/check-logout-contract.sh
+      - name: Gate — deep links, https only and verified (F17, §8.12)
+        run: Scripts/check-deep-links.sh
 
       # The number IS the address: the constitution and the author say "ADR-0029" and expect one
       # file to answer. Nothing in this repo READS docs/adr, docs/backend-requests or docs/bitacora,
@@ -144,6 +146,13 @@ jobs:
         env:
           LUME_REQUIRE_MERGED_MANIFEST: '1'
         run: Scripts/check-network-posture.sh
+
+      # Same reason as the step above: a library's redirect activity with a custom scheme arrives by
+      # manifest merge, and only the merged manifest shows it (F17, task 0011).
+      - name: Gate — deep links, MERGED manifest (F17, §8.12)
+        env:
+          LUME_REQUIRE_MERGED_MANIFEST: '1'
+        run: Scripts/check-deep-links.sh
 
       - name: Build the iOS host
         run: |

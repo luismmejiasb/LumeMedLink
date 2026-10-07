@@ -392,6 +392,74 @@ swap("HttpClientEngine = lumeDarwinEngine()", "HttpClientEngine = Darwin.create 
 p.write_text(s)
 '
 
+# ── Deep links (F17, task 0011): https only, App Links verified — and the iOS half finally baited ──
+LINK_EDIT='
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/AndroidManifest.xml"
+s = p.read_text()
+anchor = "            </intent-filter>\n        </activity>"
+assert s.count(anchor) == 1, "bait anchor not found"
+def add_filter(xml):
+    global s
+    s = s.replace(anchor, "            </intent-filter>\n" + xml + "        </activity>")
+'
+bait "a custom scheme on the main activity, for development" check-deep-links.sh "$LINK_EDIT"'
+add_filter("""            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="lumemedlink" android:host="open" />
+            </intent-filter>
+""")
+p.write_text(s)
+'
+bait "an https App Link that is not verified" check-deep-links.sh "$LINK_EDIT"'
+add_filter("""            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="example.invalid" />
+            </intent-filter>
+""")
+p.write_text(s)
+'
+bait "https and a custom scheme merged into one filter" check-deep-links.sh "$LINK_EDIT"'
+add_filter("""            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="example.invalid" />
+                <data android:scheme="lumemedlink" />
+            </intent-filter>
+""")
+p.write_text(s)
+'
+bait "a redirect activity with a custom scheme, the way an auth library brings one" check-deep-links.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/AndroidManifest.xml"
+s = p.read_text()
+anchor = "    </application>"
+assert s.count(anchor) == 1
+s = s.replace(anchor, """        <activity android:name=".AuthRedirectReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.luismejias.lumemedlink.auth" />
+            </intent-filter>
+        </activity>
+""" + anchor)
+p.write_text(s)
+'
+bait "a custom URL scheme in the iOS host" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/Info.plist"
+s = p.read_text()
+anchor = "<dict>"
+assert anchor in s
+s = s.replace(anchor, "<dict>\n\t<key>CFBundleURLTypes</key>\n\t<array>\n\t\t<dict>\n\t\t\t<key>CFBundleURLSchemes</key>\n\t\t\t<array>\n\t\t\t\t<string>lumemedlink</string>\n\t\t\t</array>\n\t\t</dict>\n\t</array>", 1)
+p.write_text(s)
+'
+
 # ── Numbered documents: the number IS the address, and nothing in this repo reads those trees ───
 bait "two ADRs claim one number" numbered-docs-have-no-collisions.py '
 import sys, pathlib, shutil

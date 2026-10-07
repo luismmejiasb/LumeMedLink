@@ -33,3 +33,21 @@ con el lock— antes; la verificación de dominio espera.
   todavía** —un `<data android:scheme=…>` pasaría todos—, así que esta tarea lo agrega, con su cebo.
 - No dejar que un link abra una pantalla con la sesión bloqueada, ni siquiera para mostrar el lock
   «encima».
+
+## Avance — 2026-10-07: la mitad negativa, cerrada
+
+- **`Scripts/check-deep-links.sh`**, el gate que Android no tenía: sobre el manifiesto fuente y sobre **todos** los
+  fusionados, todo esquema que declare un intent filter es `https` (ni `http`, ni uno propio; un filtro que mezcla `https`
+  con otro esquema también cae, porque Android junta los `<data>` de un filtro), y todo filtro navegable con `https` lleva
+  `android:autoVerify="true"`. Parseado, no greppeado. En CI: la mitad fuente en el job de gates, la fusionada en el de
+  build con `LUME_REQUIRE_MERGED_MANIFEST=1` — es la que ve la actividad de redirección con esquema propio que trae una
+  librería de auth.
+- **Cuatro cebos** de ese gate y **el que le faltaba al rechazo de `CFBundleURLTypes`** en `check-ios-host.sh`: el ensayo
+  pasa de 47 a 52, todos rojos; verificado además que el rojo es por la regla y no por un error de parseo.
+
+## Lo que queda, y por qué espera
+
+La mitad positiva: el entitlement de associated domains y el `apple-app-site-association`, el intent filter con
+`autoVerify` y el `assetlinks.json`, y el router en `app/` que pase por el lock. Sin dominio no hay archivos de asociación
+que servir, y sin destinos (agenda, contactos) un router sería código especulativo; se construye con el primer destino
+real. El gate ya exige la forma que esa mitad tendrá que tener.
