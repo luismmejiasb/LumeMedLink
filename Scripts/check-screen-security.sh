@@ -40,9 +40,13 @@ SHELL_CODE=$(find "$SHELL_MAIN" -name '*.kt' -print0 2>/dev/null |
     xargs -0 python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten 2>/dev/null)
 calls() { printf '%s\n' "$SHELL_CODE" | grep -qE "$1"; }
 
-if ! calls 'window\.setFlags\([^)]*FLAG_SECURE'; then
-    fail "screen-security: the shell does not CALL window.setFlags(..FLAG_SECURE..)" \
-         "ADR-0010 makes screenshot protection app-wide; the Activity must set FLAG_SECURE in androidApp/src/main."
+# The call WITH ITS VALUE: `setFlags(flags, mask)` sets `flags` under `mask`, so
+# `setFlags(0, FLAG_SECURE)` is a call that names the flag and CLEARS it — and the old pattern,
+# "any setFlags mentioning FLAG_SECURE", accepted it (task 0002, F14, reproduced). Only the shape
+# that sets it is the control.
+if ! calls 'window\.setFlags\( ?WindowManager\.LayoutParams\.FLAG_SECURE, ?WindowManager\.LayoutParams\.FLAG_SECURE,? ?\)'; then
+    fail "screen-security: the shell does not CALL window.setFlags(FLAG_SECURE, FLAG_SECURE)" \
+         "ADR-0010 makes screenshot protection app-wide; the Activity must set FLAG_SECURE in androidApp/src/main, as both the value and the mask."
 fi
 if ! calls 'window\.decorView\.filterTouchesWhenObscured[[:space:]]*=[[:space:]]*true'; then
     fail "screen-security: tapjacking guard is not ASSIGNED true on the decor view" \
@@ -50,7 +54,16 @@ if ! calls 'window\.decorView\.filterTouchesWhenObscured[[:space:]]*=[[:space:]]
 fi
 
 # ── ABSENCE ─────────────────────────────────────────────────────────────────────────────────────
-hits=$(grep -rnE 'clearFlags\([^)]*FLAG_SECURE' $SRC 2>/dev/null || true)
+# Every OTHER write that touches the flag, as code (comments and strings blanked): clearFlags, a
+# setFlags whose value is not FLAG_SECURE, a mask arithmetic with .inv(), and Compose's per-window
+# SecureFlagPolicy.SecureOff on a dialog or popup. This used to know one spelling, clearFlags — a
+# denylist of one, the shape ADR-0024 rejected.
+hits=$(for f in $(find $SRC -name '*.kt' -type f 2>/dev/null); do
+    python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten "$f" 2>/dev/null |
+        grep -oE 'clearFlags\([^)]*FLAG_SECURE[^)]*\)|setFlags\( ?[^,()]*, ?[^)]*FLAG_SECURE[^)]*\)|FLAG_SECURE ?\)?\.inv\(\)|SecureFlagPolicy\.SecureOff' |
+        grep -vE '^setFlags\( ?WindowManager\.LayoutParams\.FLAG_SECURE, ?WindowManager\.LayoutParams\.FLAG_SECURE' |
+        sed "s|^|$f: |"
+done)
 if [ -n "$hits" ]; then
     fail "screen-security: FLAG_SECURE is being cleared" \
          "Nothing may drop the app-wide screenshot protection (ADR-0010)." "$hits"

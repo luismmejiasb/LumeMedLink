@@ -30,3 +30,15 @@ model", requiring its own ADR.
 - A "narrow scope" clinician token is a contract request (backend-requests/) before the first
   authenticated read: reusing LumeMed's full-scope token here would put clinical read capability
   inside the lower-boundary app — exactly what the environment separation exists to prevent.
+
+## Amendment, 2026-10-07 — the access token lives one hour, and that is the platform's decision
+
+The decision above lists "access token ≤15 min" for doctors. That number was never reachable: Identity Platform inherits
+its ID tokens from Firebase Authentication, which issues them for one hour with no setting to shorten them. The platform
+recorded it on 2026-10-03 in `ADR-0070 of the backend`, accepted by the author: the access token lives **one hour**, the
+verifier rejects any token whose `exp − iat` exceeds 3600 s, and what compensates the hour is that authorization is
+resolved from the database on every request. This app does not own that number and does not restate it as its own.
+
+What it does own is unchanged, and is what protects the shared device (§8.17) in the meantime: the inactivity window and
+the biometric re-entry anchored to key material (ADR-0011, ADR-0032, ADR-0034). Refresh with rotation stands.
+

@@ -106,7 +106,8 @@ internal class KeychainUnlockGate : UnlockGate {
 
     override suspend fun enroll(): Boolean {
         if (!biometricsUsable()) return false
-        deleteItem()
+        // Best effort HERE only: the add below fails loudly if a stale item were really in the way.
+        runCatching { deleteItem() }
         val secret = randomBytes(SECRET_BYTES) ?: return false
         val accessControl = SecAccessControlCreateWithFlags(
             null,
@@ -184,10 +185,13 @@ internal class KeychainUnlockGate : UnlockGate {
             kSecAttrAccount to account,
             kSecUseDataProtectionKeychain to kCFBooleanTrue,
         )
-        SecItemDelete(query)
+        val status = SecItemDelete(query)
         CFRelease(query)
         CFRelease(account)
         CFRelease(service)
+        // The status used to be dropped, so a failed erase read as a done one at logout (ADR-0014;
+        // task 0002, F10). "Not found" is success: there was nothing to erase.
+        check(status == errSecSuccess || status == errSecItemNotFound) { "tier-2 item not deleted: $status" }
     }
 
     private fun randomBytes(size: Int): ByteArray? {

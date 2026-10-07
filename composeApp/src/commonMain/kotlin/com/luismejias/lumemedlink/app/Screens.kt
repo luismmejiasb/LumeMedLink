@@ -11,9 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-// Placeholder screens: unstyled BasicText on purpose — the design system (S0.3) is deferred pending
-// the LumeUIComposer verdict, and a styled placeholder would be the first hardcoded-style
-// violation. These carry structure, not appearance; they gain the kit's tokens when S0.3 lands.
+// Placeholder screens: unstyled BasicText on purpose — the design system is LumeUIComposer (ADR-0033,
+// decided 2026-10-06) and it is not wired yet (task 0013); a styled placeholder would be the first
+// hardcoded-style violation. These carry structure, not appearance; they gain the kit's tokens then.
 
 @Composable
 internal fun LoginScreen() {

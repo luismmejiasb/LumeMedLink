@@ -8,7 +8,8 @@
 #
 # The host is small on purpose, and everything in it is a decision the constitution names:
 #   PRESENCE  the third-party keyboard veto (§8.10, the one asymmetry in iOS's favour) and the
-#             privacy cover on willResignActive (ADR-0010 / mirror of ADR-0028 of LumeMed).
+#             privacy cover on the SCENE's willDeactivate (ADR-0031 — the app-delegate method this line
+#             used to name is never called in a scene app, and the body below forbids it).
 #   ABSENCE   ATS exceptions (§7), file sharing and document delivery (ADR-0007), custom URL
 #             schemes (§8.12), a SHARED keychain access group (ADR-0001 — LumeMed is signed by the
 #             same team and holds the record), clipboard, ad-hoc networking, and free-text logging.
@@ -145,39 +146,71 @@ if ! grep -q 'CODE_SIGN_ENTITLEMENTS' "$PROJECT"; then
          "Without entitlements the app belongs to no keychain group and every SecItem call answers -34018. The file existing is not the control; the project pointing at it is."
 fi
 
-# ── ABSENCE, in the Info.plist ──────────────────────────────────────────────────────────────────
-# XML comments are stripped first: this plist EXPLAINS each forbidden key by name, and a plain grep
-# would fail on its own documentation. (Caught here exactly as it was caught in F12's NSC.)
-plist_code=$(sed 's/<!--.*-->//g' "$PLIST" | awk 'BEGIN{c=0} /<!--/{c=1} !c{print} /-->/{c=0}')
-plist_has() { echo "$plist_code" | grep -q "$1"; }
+# ── The Info.plist and the entitlements, PARSED (ADR-0029 decision 4; task 0002, F02/F04) ──────
+# These two used to be read with sed and awk, which drop the line on which a comment OPENS: a
+# forbidden key with a trailing comment after it — ATS switched off, a shared keychain group listed
+# first — kept this gate green (reproduced). plistlib parses what iOS will read, a comment is
+# invisible to it, and it runs on the ubuntu job, which has no plutil.
+plist_problems() {
+    python3 - "$PLIST" "$ENTITLEMENTS" composeApp/src/iosMain <<'PY'
+import pathlib, plistlib, re, sys
+plist_path, ent_path, ios_main = sys.argv[1], sys.argv[2], pathlib.Path(sys.argv[3])
+try:
+    info = plistlib.loads(pathlib.Path(plist_path).read_bytes())
+    ent = plistlib.loads(pathlib.Path(ent_path).read_bytes())
+except Exception as error:  # a file iOS cannot read is never a pass
+    print(f"cannot parse: {error}")
+    sys.exit(0)
 
-if plist_has 'NSAppTransportSecurity'; then
-    fail "ios-host: ATS key present in Info.plist" \
-         "ATS is secure by default and every key under it is a weakening (§7). The control is that there is nothing to read." \
-         "$(echo "$plist_code" | grep -n 'NSAppTransportSecurity')"
-fi
-if plist_has 'UIFileSharingEnabled' || plist_has 'LSSupportsOpeningDocumentsInPlace'; then
-    fail "ios-host: the app container is exposed to Files.app" \
-         "Either key turns this app's container into a share point. This app never hands a document to anyone (ADR-0007, F19)."
-fi
-if plist_has 'CFBundleURLTypes'; then
-    fail "ios-host: custom URL scheme declared" \
-         "Any app can claim a custom scheme (§8.12). Deep links arrive as verified universal links or not at all."
-fi
+forbidden = {
+    "NSAppTransportSecurity": "ATS is secure by default and every key under it is a weakening (§7)",
+    "UIFileSharingEnabled": "it turns the container into a share point (ADR-0007, F19)",
+    "LSSupportsOpeningDocumentsInPlace": "it turns the container into a share point (ADR-0007, F19)",
+    "CFBundleURLTypes": "any app can claim a custom scheme; links arrive as verified universal links or not at all (§8.12)",
+}
+for key, why in forbidden.items():
+    if key in info:
+        print(f"Info.plist declares {key}: {why}")
 
-# ── ABSENCE, in the entitlements ────────────────────────────────────────────────────────────────
-# The keychain group must be the app's own and nothing else. A shared group would let any app signed
-# by the same team read this app's session tokens — and LumeMed, which holds the clinical record, is
-# signed by the same team. That is the boundary this whole repo exists for (ADR-0001).
-groups=$(sed 's/<!--.*-->//g' "$ENTITLEMENTS" | awk 'BEGIN{c=0} /<!--/{c=1} !c{print} /-->/{c=0}' \
-    | grep -A20 'keychain-access-groups' | grep '<string>' || true)
-if [ -n "$groups" ]; then
-    bad=$(echo "$groups" | grep -v 'AppIdentifierPrefix)$(CFBundleIdentifier)' || true)
-    if [ -n "$bad" ]; then
-        fail "ios-host: a keychain access group other than this app's own" \
-             "A shared group is readable by every app signed by the same team, LumeMed included (ADR-0001)." "$bad"
-    fi
-fi
+# Face ID refuses an app with no usage description — on a physical device, invisible on the
+# simulator, which does not even apply the item's biometric ACL (bitácora 0041). LumeMed learned it
+# by a crash (its ADR-0015). Required as soon as iOS code asks for biometrics.
+uses_biometrics = any(
+    re.search(r"kSecAccessControlBiometry|LAContext", f.read_text(errors="replace"))
+    for f in ios_main.rglob("*.kt")
+)
+if uses_biometrics and not str(info.get("NSFaceIDUsageDescription", "")).strip():
+    print("Info.plist has no NSFaceIDUsageDescription, and iosMain uses biometrics: Face ID refuses the app on a device")
+
+allowed_entitlements = {"keychain-access-groups"}
+for key in sorted(set(ent) - allowed_entitlements):
+    print(f"entitlement {key} is not on this gate's allowlist (an app group is a keychain group too); adding one needs an ADR")
+groups = ent.get("keychain-access-groups", [])
+if groups != ["$(AppIdentifierPrefix)$(CFBundleIdentifier)"]:
+    print(f"keychain-access-groups is {groups!r}: it must be exactly the app's own group — a shared one is readable by every app the same team signs, LumeMed included (ADR-0001)")
+PY
+}
+problems=$(plist_problems)
+[ -n "$problems" ] && fail "ios-host: the Info.plist or the entitlements break the host's posture" \
+    "Parsed, the way iOS reads them." "$problems"
+
+# ── What the host LINKS (task 0002, F17) ────────────────────────────────────────────────────────
+# §8.1's brake on crash and analytics SDKs is "doble y con gate", and both halves were Gradle-only:
+# a Sentry `import` plus a Swift package reference in the project passed every gate (reproduced).
+# The host links the Kotlin framework and Apple's UI frameworks, nothing else; a dependency here
+# needs an ADR and a committed Package.resolved, exactly like a Gradle one.
+pkg=$(grep -nE 'XCRemoteSwiftPackageReference|XCLocalSwiftPackageReference|XCSwiftPackageProductDependency' "$PROJECT" || true)
+[ -n "$pkg" ] && fail "ios-host: the Xcode project depends on a Swift package" \
+    "A dependency of the host goes through an ADR (§8.8, ADR-0018), not through Xcode." "$pkg"
+managers=$(find iosApp \( -name Podfile -o -name Package.swift -o -name Cartfile -o -name Package.resolved \) -not -path '*/build/*' 2>/dev/null)
+[ -n "$managers" ] && fail "ios-host: a dependency manager file in the host" \
+    "The host has no third-party dependency (§8.8)." "$managers"
+imports=$(for f in $(find iosApp -name '*.swift' -not -path '*/build/*' 2>/dev/null); do
+    python3 Scripts/lib/uncomment.py --lang c --strip-strings "$f" 2>/dev/null |
+        grep -nE '^[[:space:]]*(@testable[[:space:]]+)?import[[:space:]]+' | sed "s|^|$f:|"
+done | grep -vE 'import[[:space:]]+(SwiftUI|UIKit|Foundation|LumeMedLink)[[:space:]]*$' || true)
+[ -n "$imports" ] && fail "ios-host: the host imports a module it is not allowed to link" \
+    "Allowed: SwiftUI, UIKit, Foundation and the Kotlin framework. Anything else is a dependency, and needs an ADR (§8.1, §8.8)." "$imports"
 
 # ── ABSENCE, in the Swift ───────────────────────────────────────────────────────────────────────
 hits=$(swift_code 'UIPasteboard')

@@ -108,3 +108,11 @@ production logout». Gate nuevo `Scripts/check-logout-contract.sh`, con 4 cebos 
 la entrada de tokens, no el namespace. Es un final de sesión igual de real, y **no se cambia aquí
 porque es política, no implementación**: decidir que un refresh rechazado destruya la clave tier-1 y
 el material tier-2 es una decisión del autor, no una que esta enmienda pueda tomar sola.
+
+## Note, 2026-10-07 — the tier-2 step could not fail
+
+`TIER2_MATERIAL` was reported as done even when the deletion failed: Android wrapped it in
+`runCatching`, iOS dropped `SecItemDelete`'s status. Both now throw on a real failure so the contract can
+report it, and treat "nothing to delete" as success — on Android a platform fact now pinned by a device
+test (deleting an alias that was never made does not throw). `enroll()` keeps its own deletion best effort
+(task `0002`, F10). Unchanged: the logout device test still uses a gate double for this step.

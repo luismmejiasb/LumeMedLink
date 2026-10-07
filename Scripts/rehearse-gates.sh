@@ -460,6 +460,199 @@ s = s.replace(anchor, "<dict>\n\t<key>CFBundleURLTypes</key>\n\t<array>\n\t\t<di
 p.write_text(s)
 '
 
+# ── Task 0002: the completeness pass's findings, each control removed while its words stay ──────
+# F01 · coming back from sleep must re-ask the lock
+bait "the shell stops re-asking the lock when the app comes back" check-biometric-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+s = p.read_text()
+old = "                locked = sessionLock.isLocked()\n                returns += 1\n"
+assert s.count(old) == 1
+p.write_text(s.replace(old, "                returns += 1\n"))
+'
+# F03 · the key parameters, hidden where a line filter used to read them as code
+bait "user authentication required, hidden inside a block comment" check-biometric-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/session/BiometricUnlockGate.kt"
+s = p.read_text()
+old = "        .setUserAuthenticationRequired(true)\n"
+assert s.count(old) == 1
+p.write_text(s.replace(old, "        /*\n        .setUserAuthenticationRequired(true) once QA has a fingerprint\n         */\n"))
+'
+bait "the iOS ACL flag replaced, its name left in a trailing comment" check-biometric-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/session/KeychainUnlockGate.kt"
+s = p.read_text()
+old = "            kSecAccessControlBiometryCurrentSet,\n"
+assert s.count(old) == 1
+p.write_text(s.replace(old, "            0u, // was kSecAccessControlBiometryCurrentSet\n"))
+'
+bait "the enrollment invalidation moved into a helper nobody calls" check-biometric-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/session/BiometricUnlockGate.kt"
+s = p.read_text()
+old = "        .setInvalidatedByBiometricEnrollment(true)\n"
+assert s.count(old) == 1
+s = s.replace(old, "")
+s += "\nprivate fun KeyGenParameterSpec.Builder.unused() = setInvalidatedByBiometricEnrollment(true)\n"
+p.write_text(s)
+'
+# F02, F04 · the plist and the entitlements, as iOS reads them
+IOS_PLIST_EDIT='
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/Info.plist"
+s = p.read_text()
+anchor = "\t<key>CFBundleDevelopmentRegion</key>"
+assert s.count(anchor) == 1
+'
+bait "ATS switched off, with a comment that opens on the key line" check-ios-host.sh "$IOS_PLIST_EDIT"'
+p.write_text(s.replace(anchor, "\t<key>NSAppTransportSecurity</key> <!-- TEMP: staging is plain http;\n\t     remove before TestFlight -->\n\t<dict><key>NSAllowsArbitraryLoads</key><true/></dict>\n" + anchor))
+'
+bait "the Face ID usage description removed" check-ios-host.sh '
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/Info.plist"
+s = p.read_text()
+s2 = re.sub(r"\t<key>NSFaceIDUsageDescription</key>\n\t<string>[^<]*</string>\n", "", s)
+assert s2 != s
+p.write_text(s2)
+'
+IOS_ENT_EDIT='
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/iosApp.entitlements"
+s = p.read_text()
+anchor = "\t\t<string>$(AppIdentifierPrefix)$(CFBundleIdentifier)</string>\n"
+assert s.count(anchor) == 1
+'
+bait "a shared keychain group listed first, behind a trailing comment" check-ios-host.sh "$IOS_ENT_EDIT"'
+p.write_text(s.replace(anchor, "\t\t<string>$(AppIdentifierPrefix)com.luismejias.lume.shared</string> <!-- SSO with LumeMed;\n -->\n" + anchor))
+'
+bait "an app group, which is a keychain group too" check-ios-host.sh "$IOS_ENT_EDIT"'
+p.write_text(s.replace("\t<key>keychain-access-groups</key>", "\t<key>com.apple.security.application-groups</key>\n\t<array><string>group.com.luismejias.lume</string></array>\n\t<key>keychain-access-groups</key>"))
+'
+# F17 · what the iOS host links
+bait "a crash SDK imported and started in the iOS host" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+s = p.read_text()
+assert s.startswith("import UIKit\n")
+p.write_text(s.replace("import UIKit\n", "import UIKit\nimport Sentry\n", 1))
+'
+bait "a Swift package referenced by the Xcode project" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = p.read_text()
+anchor = "/* End PBXProject section */"
+assert s.count(anchor) == 1
+p.write_text(s.replace(anchor, anchor + "\n/* Begin XCRemoteSwiftPackageReference section */\n\t\t1A00000000000000000000FF /* XCRemoteSwiftPackageReference \"sentry-cocoa\" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = \"https://github.com/getsentry/sentry-cocoa\"; };\n/* End XCRemoteSwiftPackageReference section */"))
+'
+# F14 · FLAG_SECURE, cleared by spellings the old pattern accepted
+SECURE_EDIT='
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/kotlin/com/luismejias/lumemedlink/android/MainActivity.kt"
+s = p.read_text()
+'
+bait "FLAG_SECURE cleared by setFlags(0, FLAG_SECURE)" check-screen-security.sh "$SECURE_EDIT"'
+s2 = re.sub(r"setFlags\(\s*WindowManager\.LayoutParams\.FLAG_SECURE,", "setFlags(0,", s, count=1)
+assert s2 != s
+p.write_text(s2)
+'
+bait "a popup opting out of FLAG_SECURE" check-screen-security.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app"
+(d / "InsecurePopup.kt").write_text("package com.luismejias.lumemedlink.app\n\nimport androidx.compose.ui.window.PopupProperties\nimport androidx.compose.ui.window.SecureFlagPolicy\n\ninternal val previewPopup = PopupProperties(securePolicy = SecureFlagPolicy.SecureOff)\n")
+'
+# F15 · iOS lock-screen and launcher surfaces, called from Kotlin or Swift
+bait "remote notifications and Spotlight called from iosMain Kotlin" check-preauth-surfaces.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/app"
+(d / "Donation.kt").write_text("package com.luismejias.lumemedlink.app\n\nimport platform.CoreSpotlight.CSSearchableIndex\nimport platform.UIKit.UIApplication\n\ninternal fun donate() {\n    UIApplication.sharedApplication.registerForRemoteNotifications()\n    CSSearchableIndex.defaultSearchableIndex()\n}\n")
+'
+bait "a home-screen quick action in the iOS host" check-preauth-surfaces.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+p.write_text(p.read_text() + "\nfunc quickActions() { UIApplication.shared.shortcutItems = [UIApplicationShortcutItem(type: \"a\", localizedTitle: \"t\")] }\n")
+'
+bait "a notification built on a line that opens with a comment" check-preauth-surfaces.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/app"
+d.mkdir(parents=True, exist_ok=True)
+(d / "Reminder.kt").write_text("package com.luismejias.lumemedlink.app\n\nimport android.content.Context\nimport androidx.core.app.NotificationCompat\n\ninternal fun remind(c: Context, text: String) =\n    /* reminder */ NotificationCompat.Builder(c, \"x\").setContentText(text)\n")
+'
+# F19 · the sentinel the launch actually uses
+bait "the shell hands the launch an always-has-run sentinel" check-install-sentinel.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+s = p.read_text()
+old = "    val installSentinel = remember { platformInstallSentinel() }\n"
+assert s.count(old) == 1
+p.write_text(s.replace(old, "    val installSentinel = remember {\n        object : com.luismejias.lumemedlink.core.session.InstallSentinel {\n            override suspend fun hasRunBefore(): Boolean = true\n            override suspend fun markHasRun() = Unit\n        }\n    }\n"))
+'
+bait "the marker excluded from backup with value = false" check-install-sentinel.sh '
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/session/PlatformInstallSentinel.ios.kt"
+s = p.read_text()
+s2 = re.sub(r"value = true,(\s*forKey = NSURLIsExcludedFromBackupKey)", r"value = false,\1", s)
+assert s2 != s
+p.write_text(s2)
+'
+# F20 · the release build made debuggable from outside its own block
+bait "every build type made debuggable, release included" check-release-hardening.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "androidApp/build.gradle.kts"
+s = p.read_text()
+anchor = "    buildFeatures { compose = true }"
+assert s.count(anchor) == 1
+p.write_text(s.replace(anchor, "    buildTypes.configureEach { isDebuggable = true }\n\n" + anchor))
+'
+# F11 · broad catches where the cancellation guard did not look
+bait "a broad catch with no ensureActive, in a per-target iOS source set" check-cancellation-guard.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/iosArm64Main/kotlin/com/luismejias/lumemedlink/core/session"
+(d / "Swallow.kt").write_text("package com.luismejias.lumemedlink.core.session\n\ninternal suspend fun swallow(block: suspend () -> Unit) {\n    try {\n        block()\n    } catch (e: Throwable) {\n        Unit\n    }\n}\n")
+'
+bait "an IllegalStateException catch — CancellationException is one" check-cancellation-guard.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session"
+(d / "Swallow.kt").write_text("package com.luismejias.lumemedlink.core.session\n\ninternal suspend fun swallow(block: suspend () -> Unit) {\n    try {\n        block()\n    } catch (e: IllegalStateException) {\n        Unit\n    }\n}\n")
+'
+# url-hygiene had no bait at all
+bait "a personal datum put in a query parameter" check-url-hygiene.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/networking"
+(d / "Lookup.kt").write_text("package com.luismejias.lumemedlink.core.networking\n\nimport io.ktor.client.HttpClient\nimport io.ktor.client.request.get\nimport io.ktor.client.request.parameter\n\ninternal suspend fun lookup(client: HttpClient, value: String) = client.get(\"v1/patients\") { parameter(\"email\", value) }\n")
+'
+# F08 + F17(deep links) · the MERGED manifest halves, which no bait could reach while build/ was excluded
+MERGED_EDIT='
+import sys, pathlib, shutil
+root = pathlib.Path(sys.argv[1])
+src = root / "androidApp/src/main/AndroidManifest.xml"
+d = root / "androidApp/build/intermediates/merged_manifest/release/processReleaseMainManifest"
+d.mkdir(parents=True, exist_ok=True)
+m = d / "AndroidManifest.xml"
+s = src.read_text()
+'
+bait "an advertising-id permission merged in by a dependency" check-network-posture.sh "$MERGED_EDIT"'
+anchor = "    <uses-permission android:name=\"android.permission.INTERNET\" />"
+assert s.count(anchor) == 1
+m.write_text(s.replace(anchor, anchor + "\n    <uses-permission android:name=\"com.google.android.gms.permission.AD_ID\" />"))
+'
+bait "a library redirect activity with a custom scheme, only in the merge" check-deep-links.sh "$MERGED_EDIT"'
+anchor = "    </application>"
+assert s.count(anchor) == 1
+m.write_text(s.replace(anchor, "        <activity android:name=\"net.example.RedirectReceiver\" android:exported=\"true\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.VIEW\" />\n                <category android:name=\"android.intent.category.BROWSABLE\" />\n                <data android:scheme=\"net.example.auth\" />\n            </intent-filter>\n        </activity>\n" + anchor))
+'
+
+# ── The gate on the gates' rehearsal: every gate CI runs has at least one bait here ─────────────
+# §9 says this script "borra cada control", and on 2026-10-07 four of the gates CI ran had no bait
+# at all — which is exactly how two of them stayed walkable (task 0002, F20).
+for g in $(grep -oE 'Scripts/check-[a-z-]+\.sh' .github/workflows/ci.yml | sort -u); do
+    name=$(basename "$g")
+    if ! grep -qE "^bait .* $name( |$)" "$0"; then
+        echo "  GREEN  meta: $name runs in CI and has no bait in this rehearsal"
+        FAIL=$((FAIL + 1))
+    fi
+done
+
 # ── Numbered documents: the number IS the address, and nothing in this repo reads those trees ───
 bait "two ADRs claim one number" numbered-docs-have-no-collisions.py '
 import sys, pathlib, shutil

@@ -77,3 +77,12 @@ simulator the tier proves nothing at all: neither the prompt, nor its invalidati
 the thread it blocks. Every property of the iOS tier 2 is verifiable only on a physical device; nothing in this repo claims
 otherwise today, and nothing should.
 
+## Amendment, 2026-10-07 — what the tier does NOT tell apart: people already enrolled
+
+The tier is anchored to key material the OS releases on a match against the enrolled set, and is
+invalidated when that set changes. What it cannot do, and this ADR never said: tell apart the people who
+were ALREADY enrolled when the key was made. A household member's finger or face enrolled before the
+session opens it (task `0002`, F05). Neither BiometricPrompt nor `.biometryCurrentSet` reports whose
+biometric matched, so no code here closes it without home-made authentication, which §8.2 forbids.
+Declared in the threat model's T2; the way back into a session on a shared phone is the author's
+decision (task `0016`).

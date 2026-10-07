@@ -140,3 +140,29 @@ o un `UserDefaults` **en Swift** pasaban sin tocar nada — y el `UserDefaults` 
 P3, que es Kotlin. Escrita, con el tokenizador para que un comentario siga siendo prosa.
 
 El ensayo pasa de 15 cebos a **35**.
+
+## Third pass, 2026-10-07 — what the completeness pass found still blind (task `0002`)
+
+Twelve holes of the same family, each reproduced on a copy before the fix, each with a bait now:
+- **Line filters that survived the second pass:** the key parameters of the biometric contract (a
+  parameter in a `/* */` block, or `0u, // was kSecAccessControlBiometryCurrentSet`, kept it green), the
+  install sentinel, and the pre-auth scan (a line opening with `/*` was skipped whole). All read the
+  tokenizer now, and the key parameters are asserted inside the function that makes the key.
+- **Configuration grepped instead of parsed:** the iOS `Info.plist` and entitlements (ATS off, a shared
+  keychain group or an app group, behind a trailing comment, passed). Now `plistlib`, which also runs on
+  the ubuntu job.
+- **The call without its value:** `setFlags(0, FLAG_SECURE)` clears the flag and satisfied the presence
+  check; `value = false` satisfied the backup-exclusion one. Both assert the value now, and every other
+  write to FLAG_SECURE is refused.
+- **Scope:** the cancellation guard skipped the per-target iOS source sets, the Android shell and
+  `IllegalStateException`; the pre-auth gate saw iOS APIs only in Swift; the permission allowlist saw only
+  `android.permission.*` in one merged variant; the sentinel gate checked the function, not that the
+  launch uses it; release hardening read one block and missed `configureEach`.
+- **Nothing at all:** what the iOS host links (a Swift package or a Sentry import passed every gate).
+- **The rehearsal itself:** four gates CI runs had no bait, and merged-manifest halves could not be baited
+  while the rehearsal excluded `build/`. Merged-manifest baits now write a merged manifest into the copy,
+  and a meta-check fails the rehearsal when a gate in `ci.yml` has no bait.
+
+The rehearsal goes from 52 to 75 baits. Named and NOT fixed: `runCatching` around a suspending call is
+still invisible to the cancellation guard, and `kfun.py` takes the first function of a name, so an
+overload declared first acts as a decoy (reproduced by a refuter).

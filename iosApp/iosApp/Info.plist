@@ -14,6 +14,15 @@
 	  · CFBundleURLTypes — custom URL schemes are prohibited (§8.12): any app can claim one. Deep
 	    links arrive as verified universal links or not at all.
 	-->
+	<!--
+	  One key is PRESENT on purpose: Face ID refuses an app without a usage description, on a device —
+	  never on the simulator, which does not even apply the item's biometric ACL (bitácora 0041). The
+	  tier-2 unlock (ADR-0011) asks for Face ID through the Keychain, so without this line it fails on
+	  every Face ID iPhone. Generic on purpose: no name, no data, nothing about whose session it is.
+	  check-ios-host.sh requires it whenever iosMain asks for biometrics (task 0002, F02).
+	-->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID te permite volver a tu sesión sin escribir tu contraseña.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>

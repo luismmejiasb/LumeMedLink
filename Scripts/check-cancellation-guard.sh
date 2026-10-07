@@ -33,8 +33,9 @@ cd "$REPO_ROOT" || exit 1
 FAIL=0
 
 # Production code only. A test may catch broadly to ASSERT on the failure; that is the test's job.
-FILES=$(find composeApp/src/commonMain composeApp/src/androidMain composeApp/src/iosMain \
-    -name '*.kt' -type f 2>/dev/null)
+# EVERY production source set — the per-target iOS ones and the Android shell included. It used to
+# read three, and a broad catch in iosArm64Main or androidApp passed (task 0002, F11, reproduced).
+FILES=$(find composeApp/src/*Main androidApp/src/main -name '*.kt' -type f 2>/dev/null)
 
 # The one registered exception, with its reason written down — the same discipline the backend's
 # UNENFORCEABLE_PATIENT_ROUTES uses, and for the same reason: an exemption nobody can read is an
@@ -65,14 +66,17 @@ for f in $FILES; do
     case " $EXEMPT_ONE_LINE " in *" $f "*) continue ;; esac
     # Comment lines stripped first — a KDoc explaining this very rule must not trip it. (This gate
     # would otherwise fail on its own ADR quotations inside the files it guards.)
-    code=$(grep -vE '^[[:space:]]*(//|\*|/\*)' "$f")
+    code=$(python3 Scripts/lib/uncomment.py --lang c --strip-strings "$f" 2>/dev/null)
 
     # `.*` and not `[^)]*`: the first draft used the latter and its own bait walked through it —
     # a catch annotated `catch (@Suppress("TooGenericExceptionCaught") e: Throwable)` contains a
     # `)` inside the annotation, so the negated class stopped there and never reached the type.
     # Every broad catch in this repo that MATTERS carries exactly that annotation, so the gate was
     # blind to precisely the population it was written for.
-    broad=$(echo "$code" | grep -nE 'catch[[:space:]]*\(.*:[[:space:]]*(Throwable|Exception)[[:space:]]*\)' || true)
+    # IllegalStateException and RuntimeException too: CancellationException IS one of them, so
+    # catching either swallows it exactly like Throwable does. Not yet seen here: `runCatching`
+    # around a suspending call, which this pattern still cannot tell from a harmless one (declared).
+    broad=$(echo "$code" | grep -nE 'catch[[:space:]]*\(.*:[[:space:]]*(Throwable|Exception|RuntimeException|IllegalStateException)[[:space:]]*\)' || true)
     [ -z "$broad" ] && continue
 
     if ! echo "$code" | grep -q 'ensureActive()'; then

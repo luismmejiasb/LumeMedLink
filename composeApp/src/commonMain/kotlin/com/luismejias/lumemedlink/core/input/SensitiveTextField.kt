@@ -41,9 +41,10 @@ internal enum class SensitiveFieldPurpose {
  * password field.
  *
  * What it does NOT do yet, declared rather than implied (ADR-0013 lists these): Android's
- * `IME_FLAG_NO_PERSONALIZED_LEARNING` is not reachable from common Compose in the pinned version,
- * and iOS's app-wide third-party keyboard veto needs the iOS host that does not exist. Those land
- * in this file when they become reachable.
+ * `IME_FLAG_NO_PERSONALIZED_LEARNING` is not reachable from common Compose in the pinned version and
+ * lands here when it is. iOS's app-wide third-party keyboard veto is NOT this file's: it lives in the
+ * host (`AppDelegate.shouldAllowExtensionPointIdentifier`) since 2026-08-25 — this line said it did
+ * not exist until 2026-10-07.
  *
  * Autofill used to be on that list and no longer is — the line above claimed it was unreachable,
  * and that was wrong in a way worth recording. It is not reachable *per field*: every Compose text

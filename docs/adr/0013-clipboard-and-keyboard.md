@@ -88,3 +88,7 @@ outside `core/input/`, and `SensitiveTextField` will wrap them when S0.3 lands (
 free-text keyboard asks for sentence capitalization and the platform's autocorrect, which point 3
 closes for `PERSONAL_DATA`; until the kit can be asked for verbatim free text (no capitalization, no
 autocorrect), personal free text stays on the primitive's own field.
+
+## Note, 2026-10-07 — the iOS keyboard veto exists
+
+Where this ADR says the iOS third-party keyboard veto waits for a host that does not exist: the host has existed since 2026-08-25 (ADR-0025), and the veto is in it — `AppDelegate.shouldAllowExtensionPointIdentifier` refuses `.keyboard`, asserted by `check-ios-host.sh`. Found by the completeness pass of task `0002`.

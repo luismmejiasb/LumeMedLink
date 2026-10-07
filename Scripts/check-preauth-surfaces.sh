@@ -37,8 +37,15 @@ fail() {
 }
 
 # Skips comment lines: a KDoc explaining the rule must not be mistaken for breaking it.
+# Comments blanked by the tokenizer, per language, with line numbers kept (ADR-0029). This used to
+# drop every line that STARTED with `/*` — so `/* reminder */ NotificationCompat.Builder(…)` passed
+# (task 0002, found by its refuter, reproduced). String literals stay: a forbidden name inside a
+# string is still worth a look here.
 scan() {
-    grep -rnE "$1" $SRC 2>/dev/null | grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|/\*)' || true
+    for f in $(find $SRC -type f \( -name '*.kt' -o -name '*.xml' \) 2>/dev/null); do
+        case "$f" in *.xml) lang=xml ;; *) lang=c ;; esac
+        python3 Scripts/lib/uncomment.py --lang "$lang" "$f" 2>/dev/null | grep -nE "$1" | sed "s|^|$f:|"
+    done
 }
 
 # ── The notification shade / lock screen ────────────────────────────────────────────────────────
@@ -105,6 +112,21 @@ if [ -f "$MANIFEST" ]; then
     fi
 fi
 
+# ── iOS APIs called from KOTLIN (task 0002, F15) ────────────────────────────────────────────────
+# The Swift half below only reads the host. Kotlin/Native calls the same frameworks from iosMain —
+# registering for remote notifications, donating to Spotlight or Handoff — and that half had no
+# scan: a Kotlin file doing all three passed (reproduced). Comments and literals blanked (ADR-0029).
+kt_ios_hits=$(for f in $(find composeApp/src -path '*ios*' -name '*.kt' -not -path '*Test*' 2>/dev/null); do
+    python3 Scripts/lib/uncomment.py --lang c --strip-strings "$f" 2>/dev/null |
+        grep -nE 'UNUserNotificationCenter|registerForRemoteNotifications|NSUserActivity|CSSearchableItem|CSSearchableIndex|isEligibleForHandoff|isEligibleForSearch|setEligibleFor|UIApplicationShortcutItem|shortcutItems|INInteraction|WidgetKit|ActivityKit' |
+        sed "s|^|$f:|"
+done)
+if [ -n "$kt_ios_hits" ]; then
+    fail "pre-auth: an iOS lock-screen, search or launcher surface called from Kotlin" \
+         "Notifications, Spotlight, Handoff, quick actions and widgets all publish outside the unlocked app; none exists by decision (ADR-0012, §8.5)." \
+         "$kt_ios_hits"
+fi
+
 # ── The iOS host: the same rule, the other platform's names (ADR-0012) ─────────────────────────
 # Comments and string literals stripped by the shared tokenizer, so a KDoc naming an API is prose
 # (ADR-0029). Presence of ANY of these is the failure: none of these surfaces exists by decision,
@@ -127,7 +149,7 @@ if [ -d "$SWIFT_SRC" ]; then
         fail "pre-auth: a widget surface in the iOS host" \
              "A widget renders before anyone authenticates (threat model T2, ADR-0012)." "$hits"
     fi
-    hits=$(swift_scan 'NSUserActivity|CSSearchableItem|CSSearchableIndex|isEligibleForHandoff|isEligibleForSearch')
+    hits=$(swift_scan 'NSUserActivity|CSSearchableItem|CSSearchableIndex|isEligibleForHandoff|isEligibleForSearch|UIApplicationShortcutItem|shortcutItems|INInteraction')
     if [ -n "$hits" ]; then
         fail "pre-auth: Handoff or Spotlight indexing in the iOS host" \
              "Both publish app content outside the app — Spotlight to the lock screen, Handoff to another device (ADR-0012)." "$hits"

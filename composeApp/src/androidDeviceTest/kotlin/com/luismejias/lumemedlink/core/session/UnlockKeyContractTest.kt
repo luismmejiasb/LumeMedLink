@@ -91,6 +91,14 @@ class UnlockKeyContractTest {
         )
     }
 
+    @Test
+    fun deletingAnAliasThatDoesNotExistIsNotAnError() {
+        // The tier-2 clear() now lets a failed deletion THROW, so the logout contract reports it
+        // (task 0002, F10). That is only right if deleting an alias that was never made — every logout
+        // of a session that never enrolled the tier — does not throw too. A platform fact, pinned here.
+        keyStore().deleteEntry("lume_test_alias_that_was_never_created")
+    }
+
     private fun generateAndInspect(): KeyInfo {
         runCatching { keyStore().deleteEntry(TEST_ALIAS) }
         generateUnlockKeyPair(TEST_ALIAS)

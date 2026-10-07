@@ -14,7 +14,7 @@ local.properties
 # macOS
 .DS_Store
 
-# Xcode (the iOS host, when it exists)
+# Xcode (the iOS host)
 xcuserdata/
 *.xcworkspace/xcshareddata/swiftpm/
 
@@ -40,3 +40,9 @@ service-account*.json
 # Xcode local state — the project and the scheme are committed; user state and build output are not.
 iosApp/**/xcuserdata/
 iosApp/**/*.xcworkspace/xcuserdata/
+
+# Apple signing and API keys (APNs, App Store Connect) and heap dumps, which carry tokens and
+# whatever the process held (task 0002, F21).
+*.p8
+*.hprof
+/captures/

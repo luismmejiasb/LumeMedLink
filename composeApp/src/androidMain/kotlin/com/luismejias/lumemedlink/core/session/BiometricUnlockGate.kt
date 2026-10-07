@@ -52,7 +52,8 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
 
     override suspend fun enroll(): Boolean = withContext(Dispatchers.Default) {
         if (!biometricsUsable()) return@withContext false
-        deleteKey()
+        // Best effort HERE only: a stale key that will not delete is replaced by the generation below.
+        runCatching { deleteKey() }
         try {
             generateKeyPair()
         } catch (_: java.security.GeneralSecurityException) {
@@ -175,8 +176,13 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
         null
     }
 
+    /**
+     * Throws when the key cannot be deleted, so the logout contract can REPORT the step instead of
+     * reading a swallowed failure as success (ADR-0014: a partial wipe that reports success is worse
+     * than one that reports failure; task 0002, F10). An absent alias is not a failure.
+     */
     private fun deleteKey() {
-        runCatching { keyStore().deleteEntry(UNLOCK_KEY_ALIAS) }
+        keyStore().deleteEntry(UNLOCK_KEY_ALIAS)
     }
 
     private fun generateKeyPair() {

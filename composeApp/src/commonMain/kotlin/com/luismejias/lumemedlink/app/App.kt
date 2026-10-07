@@ -3,6 +3,7 @@ package com.luismejias.lumemedlink.app
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +13,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
 import com.luismejias.lumemedlink.core.logging.LogEvent
@@ -82,6 +86,26 @@ public fun App() {
 
     var hasSession by remember { mutableStateOf(false) }
     var locked by remember { mutableStateOf(sessionLock.isLocked()) }
+    var returns by remember { mutableStateOf(0) }
+
+    // COMING BACK RE-ASKS THE LOCK (2026-10-07, task 0002 / F01). The timer below runs on the
+    // dispatcher's clock, and that clock stops while the device sleeps — the very clocks ADR-0032
+    // rejected for MEASURING the window. The measurement was fixed; the trigger was not: a phone that
+    // slept for an hour came back with the agenda on screen until the leftover awake time ran out or
+    // somebody touched it. So the lock is re-read on ON_START, while the privacy cover is still up
+    // (it only drops at RESUMED), and the timer restarts from what is really left. Reading can only
+    // CLOSE the lock: InactivityLock opens on a real re-authentication and nothing else.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, sessionLock) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) {
+                locked = sessionLock.isLocked()
+                returns += 1
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     // THE WINDOW CLOSES ON ITS OWN. Until 2026-09-21 nothing re-read the lock except the pointer
     // handler below, so five minutes could elapse with the agenda on screen and the app would only
@@ -92,7 +116,7 @@ public fun App() {
     // It sleeps for the remaining time rather than polling, and re-asks after waking: if activity
     // slid the window while this was suspended, `millisUntilLock` simply returns a new positive
     // number and it sleeps again. No restart needed, no tick to tune.
-    LaunchedEffect(sessionLock, hasSession, locked) {
+    LaunchedEffect(sessionLock, hasSession, locked, returns) {
         if (!hasSession || locked) return@LaunchedEffect
         while (true) {
             val remaining = sessionLock.millisUntilLock()

@@ -40,6 +40,14 @@ existe (sin widgets, sin shortcuts, sin permiso de notificaciones, sin banderas 
 futuro push sólo puede tomar la forma de `shared/PushSignal`, **que no tiene campo de texto**; gate
 `check-preauth-surfaces.sh` con 8 cebos (ADR-0012, bitácora 0011). Pendientes de T2: el end-to-end
 de F4 (espera el login) y el cover iOS de host.
+**Residual declarado el 2026-10-07 (tarea 0002, F05): la biometría no distingue personas dentro del
+teléfono.** El desbloqueo acepta **cualquier** huella o rostro enrolado en el dispositivo cuando se creó
+la clave — el de un familiar incluido —, porque ni `BiometricPrompt` ni `.biometryCurrentSet` dicen de
+quién es el dedo. Lo que el tier compra es que un enrolamiento **nuevo** no herede la sesión; uno
+**anterior** sí la abre. Ningún arreglo de código lo cierra sin auth casera (prohibida): la decisión de
+cómo volver a la sesión en un teléfono compartido es del autor (tarea 0016).
+**Y la ventana que se dormía (F01):** hasta el 2026-10-07 la app volvía del sueño con la sesión abierta
+hasta el primer toque; ahora re-pregunta al lock al volver (ADR-0032, enmendada).
 
 ### T3 · Persistencia posterior
 Datos que sobreviven al logout, al cambio de usuario o a la desinstalación. **Controles**: logout =
@@ -70,6 +78,10 @@ un token robado aquí queda acotado por diseño). Pinning diferido con su trade-
 ### T6 · App maliciosa co-residente
 **Controles**: App Links/universal links verificados con identificadores opacos (§8.12); Play
 Integrity / App Attest server-side (§8.11); sin custom schemes; sin IPC expuesto sin permiso.
+**Canal sin declarar hasta el 2026-10-07 (tarea 0002, F13): el árbol de accesibilidad.** Un servicio de
+accesibilidad habilitado —el que instala un familiar con el PIN, o malware— lee el texto de cada nodo
+aunque haya FLAG_SECURE, que sólo bloquea píxeles. Sin control hoy; qué hacer (la bandera de API 34+
+rompe a los lectores de pantalla que no se declaran herramienta) es decisión del autor (tarea 0021).
 
 ## Las CINCO asimetrías de plataforma que un auditor debe saber
 
@@ -80,6 +92,9 @@ Integrity / App Attest server-side (§8.11); sin custom schemes; sin IPC expuest
    el contenedor queda plano con cada capa por separado y **vuelve a traer contenido sin ninguna** —
    control en vivo, `Scripts/verify-ios-privacy-cover.sh`. Residual de iOS, declarado: el cover tapa
    el snapshot del sistema, **no** impide que la persona frente al teléfono haga una captura.
+   **Y tampoco tapa una grabación de pantalla ni la duplicación por AirPlay** *(declarado 2026-10-07,
+   tarea 0002, F06)*: en Android FLAG_SECURE también las ennegrece; en iOS existe la API para enterarse
+   (`sceneCaptureState`) y no se usa. Portarlo de LumeMed es la tarea 0017.
 2. **El Keychain de iOS sobrevive al uninstall; el Keystore de Android no.** El sentinel de
    instalación es un control de un solo lado (ADR-0005).
 3. **iOS veta teclados de terceros app-wide; Android no puede.** La mitigación Android es por campo y

@@ -101,3 +101,7 @@ manager stopped working.
   test reports which case each run hit instead of letting the reader assume the good one.
 - iOS is untouched by all of this. It has its own structure-export surfaces and its own answer, and
   neither can be written before the host exists.
+
+## Note, 2026-10-07 — the iOS keyboard veto exists
+
+Where this ADR says the iOS third-party keyboard veto waits for a host that does not exist: the host has existed since 2026-08-25 (ADR-0025), and the veto is in it — `AppDelegate.shouldAllowExtensionPointIdentifier` refuses `.keyboard`, asserted by `check-ios-host.sh`. Found by the completeness pass of task `0002`.

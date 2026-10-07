@@ -46,6 +46,25 @@ echo "$release" | grep -q 'isDebuggable = false' ||
 echo "$release" | grep -q 'isDebuggable = true' &&
     fail "the release build is DEBUGGABLE" "This is the shipped artifact (ADR-0021)."
 
+# A debuggable flag ANYWHERE but the debug block (task 0002, F20). This gate read only the
+# `getByName("release")` block, so `buildTypes.configureEach { isDebuggable = true }` — which applies
+# to release too — passed (reproduced). Everything but the debug block's own body is searched.
+outside_debug=$(printf '%s\n' "$CODE" | python3 -c '
+import re, sys
+code = sys.stdin.read()
+m = re.search(r"getByName\(\"debug\"\)\s*\{", code)
+if m:
+    depth, i = 0, m.end() - 1
+    for i in range(m.end() - 1, len(code)):
+        depth += {"{": 1, "}": -1}.get(code[i], 0)
+        if depth == 0:
+            break
+    code = code[:m.start()] + code[i + 1:]
+print(" ".join(code.split()))')
+printf '%s' "$outside_debug" | grep -qE 'isDebuggable ?= ?true|debuggable ?\( ?true' &&
+    fail "a build type other than debug can become DEBUGGABLE" \
+         "Only getByName(\"debug\") may say isDebuggable = true; a configureEach or another block reaches the release too (ADR-0021)."
+
 if [ $FAIL -eq 0 ]; then
     echo "release-hardening: OK"
 else

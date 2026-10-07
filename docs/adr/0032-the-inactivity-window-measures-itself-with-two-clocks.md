@@ -95,3 +95,14 @@ with comments and string literals stripped (ADR-0029). Two baits in `rehearse-ga
 
 The failed-attempt ceiling named above as living in memory now lives in the tier-1 store and outlives
 the process: ADR-0034.
+
+## Amendment, 2026-10-07 — the measurement was right, the trigger slept
+
+Decision 2 says the window closes on its own. It did, on the dispatcher's clock: `delay(remaining)` runs
+on the kind of clock this ADR rejected for measuring — on Android, the default executor's (read in the
+shipped dex), which stops while the device sleeps. A phone that slept for an hour came back with the
+agenda on screen until the leftover awake time ran out or somebody touched it (task `0002`, F01, found
+independently by two auditors and confirmed by both refuters). Now the shell re-reads
+`sessionLock.isLocked()` on `ON_START`, while the privacy cover is still up, and restarts the timer from
+what is really left; reading can only close the lock. `check-biometric-contract.sh` asserts the re-read,
+with a bait. Measured: nothing — Home is unreachable without login, and a simulator does not sleep.

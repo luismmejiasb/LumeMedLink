@@ -28,7 +28,29 @@ fail() {
 # Comments AND imports are stripped. The import alone satisfied every presence check in the first
 # draft of this gate — its own bait rehearsal caught five green failures in a row, which is the same
 # trap FLAG_SECURE's gate fell into three times: a MENTION is not the mechanism.
-code() { grep -vE '^[[:space:]]*(//|\*|/\*|import )' "$1" 2>/dev/null; }
+# The tokenizer, not a line filter (ADR-0029 decision 3; task 0002, F19): a `/* */` block's inner
+# lines start with neither `//` nor `*`, and the line filter this used to be read them as code.
+code() { python3 Scripts/lib/uncomment.py --lang c --strip-strings "$1" 2>/dev/null | grep -vE '^[[:space:]]*import '; }
+SHELL_APP="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+flat() { python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten "$1" 2>/dev/null; }
+
+# ── The REAL sentinel must be the one the launch uses (task 0002, F19) ───────────────────────────
+# This gate checked the function and never the wiring: App() handing probeSession an object that
+# always answers "has run" — handy while debugging a reinstall — kept every gate green, and an iOS
+# reinstall would then inherit the previous installation's Keychain session (reproduced).
+APP_FLAT=$(flat "$SHELL_APP")
+if ! printf '%s' "$APP_FLAT" | grep -qE 'val installSentinel = remember \{ platformInstallSentinel\(\) \}'; then
+    fail "install-sentinel: the shell does not build the platform's sentinel" \
+         "App() must use platformInstallSentinel(), the one that knows a fresh container (ADR-0028)."
+fi
+if ! printf '%s' "$APP_FLAT" | grep -qE 'probeSession\( ?sessionManager, ?installSentinel,'; then
+    fail "install-sentinel: the launch probe is not handed the shell's sentinel" \
+         "probeSession must receive the installSentinel the shell built, or the boundary checks something else (ADR-0028)."
+fi
+if printf '%s' "$APP_FLAT" | grep -qE 'object ?: ?[A-Za-z.]*InstallSentinel'; then
+    fail "install-sentinel: the shell defines its own InstallSentinel" \
+         "A sentinel defined in the shell is a sentinel nobody tests (ADR-0028)."
+fi
 
 # ── The guard must be ON the launch path, and BEFORE the session is looked for ───────────────────
 if ! code "$PROBE" | grep -q 'enforceInstallBoundary('; then
@@ -48,7 +70,8 @@ if ! code "$IOS" | grep -q 'NSFileProtectionNone'; then
     fail "install-sentinel: the marker is not readable before first unlock" \
          "A protected marker cannot be read by a background launch on a locked phone, which then concludes fresh-install and purges a VALID session — the documented mass-logout failure of this pattern (ADR-0028)."
 fi
-if ! code "$IOS" | grep -q 'NSURLIsExcludedFromBackupKey'; then
+# The key WITH ITS VALUE: `value = false` names the key and does the opposite (task 0002, F19).
+if ! flat "$IOS" | grep -qE 'setResourceValue\( ?value ?= ?true, ?forKey ?= ?NSURLIsExcludedFromBackupKey'; then
     fail "install-sentinel: the marker is not excluded from backup" \
          "A restore would land WITH the marker and skip the purge, leaving restored Keychain residue in place (ADR-0028, section 8.5)."
 fi

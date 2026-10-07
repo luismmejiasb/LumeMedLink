@@ -33,9 +33,14 @@ fail() {
 
 # Every permission this app is allowed to ship with. A permission arriving by merge from a
 # dependency is still a permission the app requests, so it must be listed here consciously.
+#
+# The last entry is the app's OWN signature-level permission, which androidx.core declares and uses
+# to keep dynamically registered receivers unexported: it grants nothing to any other app. Listed
+# because it is in the merge, and an unlisted permission is a permission nobody decided.
 ALLOWED_PERMISSIONS="android.permission.INTERNET
 android.permission.USE_BIOMETRIC
-android.permission.USE_FINGERPRINT"
+android.permission.USE_FINGERPRINT
+com.luismejias.lumemedlink.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
 
 # ── 1. Source manifest: our own declarations ────────────────────────────────────────────────────
 # PARSED, not grepped, and read off the <application> ELEMENT. The line-based filter this replaces
@@ -128,7 +133,9 @@ else
 fi
 
 # ── 4. The MERGED manifest: what dependencies put in the shipped app ────────────────────────────
-MERGED=$(find androidApp/build -path '*merged_manifest*' -name 'AndroidManifest.xml' 2>/dev/null | head -1)
+# EVERY merged variant, not the first one found (task 0002, F08). Read as a list, newline-separated.
+MERGED_ALL=$(find androidApp/build -path '*merged_manifest*' -name 'AndroidManifest.xml' 2>/dev/null)
+MERGED=$(printf '%s\n' "$MERGED_ALL" | head -1)
 if [ -z "$MERGED" ]; then
     # THE HALF THAT NEVER RAN. This skip is fine on a developer machine before a build — and in CI
     # it made the assertion that gives this gate its whole point a no-op that printed OK. The gates
@@ -147,14 +154,29 @@ if [ -z "$MERGED" ]; then
     [ $FAIL -eq 0 ] && exit 0 || exit 1
 fi
 
-if grep -q 'android:usesCleartextTraffic="true"' "$MERGED"; then
+for m in $MERGED_ALL; do
+if grep -q 'android:usesCleartextTraffic="true"' "$m"; then
     fail "network: the MERGED manifest permits cleartext" \
-         "A dependency re-enabled it; our source manifest says otherwise. Inspect the merge blame report." "$MERGED"
+         "A dependency re-enabled it; our source manifest says otherwise. Inspect the merge blame report." "$m"
 fi
-grep -q 'android:networkSecurityConfig=' "$MERGED" ||
-    fail "network: the merged manifest lost the networkSecurityConfig reference" "Check manifest merging."
+grep -q 'android:networkSecurityConfig=' "$m" ||
+    fail "network: the merged manifest lost the networkSecurityConfig reference" "Check manifest merging." "$m"
+done
 
-merged_perms=$(grep -oE 'android:name="android\.permission\.[A-Z_]+"' "$MERGED" | sed 's/android:name="//;s/"//' | sort -u)
+# PARSED, every uses-permission and uses-permission-sdk-23, by FULL name (task 0002, F08). The regex
+# this replaces only saw `android.permission.*`: `com.google.android.gms.permission.AD_ID` or FCM's
+# `c2dm` permission would have shipped with this gate green (reproduced), and today's merge already
+# carries one it never reported — androidx.core's own signature permission, below.
+merged_perms=$(for m in $MERGED_ALL; do python3 - "$m" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+A = "{http://schemas.android.com/apk/res/android}"
+root = ET.parse(sys.argv[1]).getroot()
+for tag in ("uses-permission", "uses-permission-sdk-23"):
+    for node in root.iter(tag):
+        print(node.get(A + "name"))
+PY
+done | sort -u)
 for perm in $merged_perms; do
     echo "$ALLOWED_PERMISSIONS" | grep -qx "$perm" || {
         blame=$(find androidApp/build -name 'manifest-merger-blame*' 2>/dev/null | head -1)
@@ -166,7 +188,7 @@ for perm in $merged_perms; do
 done
 
 if [ $FAIL -eq 0 ]; then
-    echo "network-posture: OK (merged manifest checked, $(echo "$merged_perms" | wc -l | tr -d ' ') permissions)"
+    echo "network-posture: OK ($(printf '%s\n' "$MERGED_ALL" | wc -l | tr -d ' ') merged manifests checked, $(echo "$merged_perms" | wc -l | tr -d ' ') permissions)"
 else
     exit 1
 fi
