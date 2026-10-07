@@ -124,7 +124,7 @@ la historia de cada arreglo están en la bitácora 0036.
   compartido), los dos de iOS que elegían «el primer simulador encendido», y el del tier 2, que manejaba el asistente de
   huella con `sleep` fijos. Bitácora 0036.
 - **El AVD llegó sin PIN ni huella.** Se fijó el PIN `1234` y se enroló una huella; cada corrida de
-  `verify-tier2-invalidation.sh` agrega otra, y el emulador admite cinco.
+  `verify-tier2-invalidation.sh` agrega otra, y Android las limita por usuario (cinco en el default de AOSP; no se midió acá).
 - **La memoria**: el symlink ya existe con el nombre que sale de la ruta nueva (`-Users-luis-mejias1-Documents-Lume-LumeMedLink`).
 - **Los hermanos** no están en `~/Documents/iOS/Projects/` sino todos juntos en `~/Documents/Lume/`: las rutas relativas
   (`../LumeMed`, `../lumemed-cloud-platform`, `../LumeUIComposer`) resuelven igual.

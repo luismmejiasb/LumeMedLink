@@ -103,8 +103,8 @@ enroll_one_more_fingerprint() {
     after=$(fingerprint_count)
     if ! focus | grep -q 'FingerprintEnrollFinish' || [ "${after:-0}" -le "${before:-0}" ]; then
         echo "FAIL could not complete a new enrollment (enrolled before=$before after=$after; focus: $(focus))"
-        echo "     That is the INSTRUMENT failing, not the property. (An emulator holds at most five"
-        echo "     fingerprints, and every run of this script adds one.)"
+        echo "     That is the INSTRUMENT failing, not the property. (Every run of this script adds a"
+        echo "     fingerprint, and Android caps them per user — five in the AOSP default.)"
         exit 1
     fi
     tap_primary; sleep 1
