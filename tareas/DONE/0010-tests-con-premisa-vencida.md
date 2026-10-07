@@ -54,3 +54,11 @@ primera corrida demostró (bitácora 0010): corregido.
 
 **Una pregunta que salió de fijar el mapeo, para el autor** (en `PROGRESS.md`, «Decisiones abiertas»): `ERROR_TIMEOUT` —
 un prompt que expira sin que nadie lo toque— cuenta hoy como intento fallido.
+
+## Actualización — 2026-10-07, el lado API < 30 medido
+
+En un emulador API 27: `UnlockKeyContractTest` 5 de 5 — la aserción de «por uso» pasa con `-1`, y la de biometría fuerte se
+**salta de forma visible** (código −4, supuesto no cumplido), que era el objetivo. De paso, la corrida destapó una premisa
+no dicha en `Tier1KeyRotationOnDeviceTest` (la `0008`): asumía API 28+ y en API 27 fallaba donde el alias viejo es el
+correcto; ahora lo declara con `assumeTrue`, y el otro test de ese archivo compara el alias en uso en vez de uno que en API
+27 nunca existe. Bitácora 0045.

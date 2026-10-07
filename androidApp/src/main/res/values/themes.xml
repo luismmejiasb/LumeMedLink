@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- No ActionBar: the shell is Compose edge to edge; system chrome is the app's to draw. -->
-    <style name="Theme.LumeMedLink" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- No ActionBar: the shell is Compose edge to edge; system chrome is the app's to draw.
+         AppCompat, not the framework theme, and the reason is measured (task 0023, 2026-10-07): below
+         API 28 androidx.biometric shows its own FingerprintDialogFragment, an AppCompat AlertDialog,
+         and under a framework theme it throws "You need to use a Theme.AppCompat theme" — on an API 27
+         emulator the app died the moment the unlock prompt opened. check-biometric-contract.sh requires it. -->
+    <style name="Theme.LumeMedLink" parent="Theme.AppCompat.Light.NoActionBar" />
 </resources>

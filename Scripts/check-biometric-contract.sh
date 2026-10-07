@@ -106,6 +106,21 @@ body_of "$IOS_GATE" unlock | grep -qE 'withContext\( ?ioDispatcher ?\) ?\{ ?read
     fail "biometric-contract: the iOS unlock does not leave the main thread" \
          "unlock() must run the Keychain read through the injected ioDispatcher (task 0006)."
 
+# The activity theme is AppCompat (task 0023, measured on API 27): below API 28 the biometric
+# library's own dialog is an AppCompat AlertDialog and throws under a framework theme.
+theme_parent=$(python3 - androidApp/src/main/res/values/themes.xml <<'PY'
+import sys, xml.etree.ElementTree as ET
+for style in ET.parse(sys.argv[1]).getroot().iter("style"):
+    if style.get("name") == "Theme.LumeMedLink":
+        print(style.get("parent", ""))
+PY
+)
+case "$theme_parent" in
+    Theme.AppCompat*|Theme.MaterialComponents*|Theme.Material3*) ;;
+    *) fail "biometric-contract: the app theme is not AppCompat ($theme_parent)" \
+            "Below API 28 the biometric prompt is an AppCompat dialog and crashes under a framework theme (task 0023)." ;;
+esac
+
 # Weaker ACL flags that would still compile and still show a prompt, while accepting a PIN or any
 # enrolled biometric — the exact silent downgrades this gate exists to catch.
 hits=$(stripped_hits 'kSecAccessControlBiometryAny|kSecAccessControlUserPresence|kSecAccessControlDevicePasscode|kSecAccessControlOr' || true)

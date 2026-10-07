@@ -1,10 +1,12 @@
 package com.luismejias.lumemedlink.core.session
 
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
@@ -45,6 +47,9 @@ class Tier1KeyRotationOnDeviceTest {
 
     @Test
     fun aKeyMadeWithoutTheParameterIsRetiredWithItsCiphertext() = runBlocking {
+        // Only where the parameter EXISTS. Below API 28 the legacy alias is the right one and must be
+        // reused — this test said nothing about that, and failed on the first API 27 run (2026-10-07).
+        assumeTrue("unlockedDeviceRequired starts at API 28", Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
         store.wipe()
         val legacyKey = seedLegacyKeyAndValue()
         // CONTROL — the seed is real: the legacy key can still read what it wrote. Without this, a
@@ -70,12 +75,15 @@ class Tier1KeyRotationOnDeviceTest {
     fun aKeyMadeWithTheParameterIsNotRotated() = runBlocking {
         store.wipe()
         store.put(SecureStoreKey.SESSION_TOKENS.storageKey, "synthetic-kept")
-        val created = keyStore().getCreationDate(TIER1_ALIAS_UNLOCKED_DEVICE_REQUIRED)
+        // The alias THIS system uses: on API 26/27 that is the legacy one, and comparing dates of an alias
+        // that never exists there would pass without looking (null == null).
+        val alias = tier1AliasInUse()
+        val created = checkNotNull(keyStore().getCreationDate(alias)) { "precondition: the key in use exists" }
 
         assertEquals("synthetic-kept", store.get(SecureStoreKey.SESSION_TOKENS.storageKey))
         assertEquals(
             created,
-            keyStore().getCreationDate(TIER1_ALIAS_UNLOCKED_DEVICE_REQUIRED),
+            keyStore().getCreationDate(alias),
             "a current key must be reused, not remade on every launch",
         )
     }

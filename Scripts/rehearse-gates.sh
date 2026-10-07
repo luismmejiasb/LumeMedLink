@@ -505,6 +505,13 @@ old = "withContext(ioDispatcher) { readUnlockSecret() }"
 assert s.count(old) == 1
 p.write_text(s.replace(old, "readUnlockSecret()"))
 '
+bait "the app theme back to the framework one" check-biometric-contract.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/res/values/themes.xml"
+s = p.read_text()
+assert "parent=\"Theme.AppCompat.Light.NoActionBar\"" in s
+p.write_text(s.replace("parent=\"Theme.AppCompat.Light.NoActionBar\"", "parent=\"android:Theme.Material.Light.NoActionBar\""))
+'
 # F02, F04 · the plist and the entitlements, as iOS reads them
 IOS_PLIST_EDIT='
 import sys, pathlib
