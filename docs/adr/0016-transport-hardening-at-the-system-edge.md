@@ -141,3 +141,40 @@ stack installs.
 - **Not closed, registered:** both engines silently honour a system-configured proxy;
   `androidx.emoji2` fetches a font through Play Services outside the stack; TLS metadata (SNI,
   timing) still reveals which host is contacted.
+
+## Amendment, 2026-10-07 — the session's other shared stores, and a test on the live session
+
+Task `0004` (from the audit of 2026-09-20/21, corrected on 2026-09-24). Three things change on iOS.
+
+**The seam covers every shared store, and is renamed accordingly.** `applyLumeCachePosture()` becomes
+`applyLumeSessionPosture()` and, besides the cache, sets `URLCredentialStorage = null`,
+`HTTPCookieStorage = null` and `HTTPShouldSetCookies = false`. The credential store was the system's
+shared, persistent one, and nothing here had ever said no to it; no HTTP authentication fills it today,
+and the line makes "never" the configuration rather than the current usage. The cookie lines are NOT a
+fix: Ktor 3.5.2 already nulls the cookie store before our block runs — read in its `createSession` in
+September, and **measured now**: with our cookie line removed, the live session's cookie store is
+still null. They move the guarantee out of a dependency's internals and into this repo, where an
+upgrade cannot remove it silently. The audit's claim that a `Set-Cookie` survived logout was false,
+and this ADR does not declare a cookie asymmetry with Android, because there is none.
+
+**One construction path.** `platformHttpEngine()` returns `lumeDarwinEngine()`, the only place the
+engine is assembled. Its `addition` parameter exists for one test and production passes nothing —
+which `check-network-posture.sh` now requires.
+
+**The configuration is verified on the session the real engine creates.** `DarwinSessionPostureTest`
+(iosTest) runs a loopback HTTP server that answers with a Basic challenge; the challenge handler is the
+one place Ktor hands back the live `NSURLSession`, and the test reads its `configuration`. A test of
+`applyLumeSessionPosture()` alone would pass while a Ktor upgrade moved one of its own settings after
+our block; this one would not. Seen red for each assignment it guards (the cache, the credential
+store, cookie sending, and the shared cookie store installed after Ktor's null), and green with only
+our cookie line removed — the expected insurance result.
+
+**And a gate, for the first time on this half.** `check-network-posture.sh` asserts the calls INSIDE
+the functions production runs (`Scripts/lib/kfun.py` extracts a function's body with comments and
+literals blanked), each setter once and with its value; seven baits in `rehearse-gates.sh`, one of
+which first landed in the KDoc that quotes the line — so a bait anchor must now be unique in its file.
+
+What this amendment does NOT change in the consequences above: the stack (`lumeHttpClient`) has still
+never reached a real host, ATS is still unobserved on a device, and no disk write was observed —
+this verifies the configuration NSURLSession receives, not what the system then does with it. The
+Darwin engine itself has now opened a socket, to 127.0.0.1, inside a test.

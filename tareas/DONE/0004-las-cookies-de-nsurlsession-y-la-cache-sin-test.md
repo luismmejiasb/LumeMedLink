@@ -39,3 +39,24 @@ La auditoría del 2026-09-20/21 y su corrección del 2026-09-24.
 ## Cómo se verifica
 
 El test, visto rojo quitando cada asignación.
+
+## Cierre — 2026-10-07
+
+**Construido**, en el commit que mueve esta tarea:
+
+- `applyLumeSessionPosture()` (renombrada: ya no es sólo la caché) agrega `setURLCredentialStorage(null)`,
+  `setHTTPCookieStorage(null)` y `setHTTPShouldSetCookies(false)`. `platformHttpEngine()` devuelve `lumeDarwinEngine()`, el
+  único lugar donde se arma el engine.
+- `DarwinSessionPostureTest` (iosTest) **pasa por el engine real**: un servidor loopback contesta con un desafío Basic y el
+  manejador lee la configuración de la `NSURLSession` viva. Visto rojo quitando la caché, el almacén de credenciales y el
+  `false` del envío de cookies, y poniendo el almacén de cookies compartido después del de Ktor.
+- La mitad iOS de `check-network-posture.sh` afirma las asignaciones dentro de las funciones que producción ejecuta
+  (`Scripts/lib/kfun.py`), con siete cebos en `rehearse-gates.sh`: 47, todos rojos.
+- Enmienda de ADR-0016; bitácora 0037.
+
+**Lo que la tarea daba como no medido, y ahora lo está:** el argumento con que Ktor 3.5.2 anula el almacén de cookies.
+Quitando sólo nuestra línea, la sesión viva sigue con el almacén en `null`. Nuestra línea es un seguro, como decía la
+tarea, y el test es lo que avisa si un upgrade lo vuelve necesario.
+
+**Fuera, como la tarea pedía:** nada se afirma sobre disco sin tráfico real (esto cierra la configuración, no la
+observación), y el threat model no gana ninguna asimetría de cookies.

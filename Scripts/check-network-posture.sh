@@ -93,7 +93,41 @@ if [ -f "androidApp/src/main/res/xml/network_security_config_debug.xml" ]; then
          "Debuggable builds would silently load it instead (ADR-0016)."
 fi
 
-# ── 3. The MERGED manifest: what dependencies put in the shipped app ────────────────────────────
+# ── 3. iOS: the NSURLSession posture (F12; ADR-0016, amended 2026-10-07; task 0004) ─────────────
+# Until 2026-10-07 nothing gated this half: the line that keeps the bearer token out of
+# Library/Caches had no test and no gate, though its KDoc offered itself as a seam for both.
+#
+# Asserted INSIDE the functions production runs, with comments and literals blanked (ADR-0029):
+# platformHttpEngine() builds lumeDarwinEngine() with no addition, lumeDarwinEngine registers the
+# posture, and the posture switches each shared store off — once, with no later call of the same
+# setter to override it. The same words anywhere else in the file (a helper nobody calls, a comment,
+# a string) are not the control. Whether KTOR still lets the posture have the last word is not a grep
+# question: DarwinSessionPostureTest measures it on the live session the real engine creates.
+IOS_ENGINE="composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/networking/PlatformHttpEngine.ios.kt"
+kfun() { python3 Scripts/lib/kfun.py "$IOS_ENGINE" "$1" 2>/dev/null; }
+occurrences() { printf '%s' "$1" | grep -oF "$2" | wc -l | tr -d ' '; }
+if [ ! -f "$IOS_ENGINE" ]; then
+    fail "network (iOS): the engine file is missing" "$IOS_ENGINE"
+else
+    [ "$(kfun platformHttpEngine)" = "lumeDarwinEngine()" ] ||
+        fail "network (iOS): platformHttpEngine() does not build lumeDarwinEngine() with no addition" \
+             "Production must build the engine the posture test measures, and must add nothing to it."
+    kfun lumeDarwinEngine | grep -qF 'configureSession { applyLumeSessionPosture() }' ||
+        fail "network (iOS): the engine does not register the session posture" \
+             "lumeDarwinEngine must call configureSession { applyLumeSessionPosture() } (ADR-0016)."
+    POSTURE=$(kfun applyLumeSessionPosture)
+    for call in 'setURLCache(null)' 'setURLCredentialStorage(null)' 'setHTTPCookieStorage(null)' \
+        'setHTTPShouldSetCookies(false)'; do
+        setter="${call%%(*}("
+        if [ "$(occurrences "$POSTURE" "$call")" -lt 1 ] ||
+            [ "$(occurrences "$POSTURE" "$setter")" -ne "$(occurrences "$POSTURE" "$call")" ]; then
+            fail "network (iOS): the session posture does not set $call, or sets it more than one way" \
+                 "applyLumeSessionPosture must switch each shared store off, and nothing after may switch it back (ADR-0016, task 0004)."
+        fi
+    done
+fi
+
+# ── 4. The MERGED manifest: what dependencies put in the shipped app ────────────────────────────
 MERGED=$(find androidApp/build -path '*merged_manifest*' -name 'AndroidManifest.xml' 2>/dev/null | head -1)
 if [ -z "$MERGED" ]; then
     # THE HALF THAT NEVER RAN. This skip is fine on a developer machine before a build — and in CI

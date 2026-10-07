@@ -348,6 +348,50 @@ s = s.replace("import UIKit", "import UIKit\n/*\n shouldAllowExtensionPointIdent
 p.write_text(s)
 '
 
+# ── The iOS session posture: the setter, with its value, inside the function production runs ────
+# (task 0004). Each bait leaves the WORDS in the file and removes the CONTROL.
+POSTURE_EDIT='
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/networking/PlatformHttpEngine.ios.kt"
+s = p.read_text()
+def swap(old, new):
+    # UNIQUE, not merely present: the first draft of these baits replaced the first match, which for
+    # one of them was the KDoc that quotes the line, so the bait edited a comment and the gate stayed
+    # green for the right reason. A bait that can land in a comment is not a bait.
+    global s
+    assert s.count(old) == 1, "bait anchor must occur exactly once: " + repr(old)
+    s = s.replace(old, new)
+'
+bait "the credential store left as the shared one" check-network-posture.sh "$POSTURE_EDIT"'
+swap("    setURLCredentialStorage(null)\n", "")
+p.write_text(s)
+'
+bait "cookies sent again, the false line flipped" check-network-posture.sh "$POSTURE_EDIT"'
+swap("    setHTTPShouldSetCookies(false)\n", "    setHTTPShouldSetCookies(true)\n")
+p.write_text(s)
+'
+bait "the cookie store nulled only inside a comment" check-network-posture.sh "$POSTURE_EDIT"'
+swap("    setHTTPCookieStorage(null)\n", "    // setHTTPCookieStorage(null)\n")
+p.write_text(s)
+'
+bait "the cache line moved to a helper nobody calls" check-network-posture.sh "$POSTURE_EDIT"'
+swap("    setURLCache(null)\n", "")
+s += "\ninternal fun NSURLSessionConfiguration.unusedPosture() {\n    setURLCache(null)\n}\n"
+p.write_text(s)
+'
+bait "a later call in the posture switches the cache back on" check-network-posture.sh "$POSTURE_EDIT"'
+swap("    setHTTPShouldSetCookies(false)\n", "    setHTTPShouldSetCookies(false)\n    setURLCache(NSURLCache.sharedURLCache)\n")
+p.write_text(s)
+'
+bait "the engine stops registering the posture" check-network-posture.sh "$POSTURE_EDIT"'
+swap("configureSession { applyLumeSessionPosture() }", "configureSession { }")
+p.write_text(s)
+'
+bait "production builds an engine of its own beside the measured one" check-network-posture.sh "$POSTURE_EDIT"'
+swap("HttpClientEngine = lumeDarwinEngine()", "HttpClientEngine = Darwin.create { }")
+p.write_text(s)
+'
+
 # ── Numbered documents: the number IS the address, and nothing in this repo reads those trees ───
 bait "two ADRs claim one number" numbered-docs-have-no-collisions.py '
 import sys, pathlib, shutil
