@@ -4,7 +4,7 @@
 #
 # Android 14+ only: `isAccessibilityDataSensitive` is what the platform honours. The verifier shows a
 # TEMPORARY SensitiveTextField on the login screen with synthetic data, and a TEMPORARY device test reads the
-# live tree through UiAutomation. Three things must hold:
+# live tree through UiAutomation (the field is drawn on the sign-in screen, under the app's name). Three things must hold:
 #   1. the CONTROL — a node of ours marked directly — reads sensitive: the instrument can see the property;
 #   2. the typed value reads sensitive;
 #   3. the label reads NOT sensitive (the author: labels and guidance stay readable).
@@ -19,16 +19,15 @@ R=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd $R || exit 1
 T=$(mktemp -d "${TMPDIR:-/tmp}/lume-a11y.XXXXXX") || exit 1
 KIT_ARG=${LUME_KIT_PATH:+-Plume.kit.path=$LUME_KIT_PATH}
-SCREENS=composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/Screens.kt
+SCREENS=composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/auth/login/LoginScreen.kt
 FIELD=composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/input/SensitiveTextField.kt
 PROBE=composeApp/src/androidDeviceTest/kotlin/com/luismejias/lumemedlink/core/input/A11yProbe.kt
 cp $SCREENS $T/Screens.kt.orig; cp $FIELD $T/SensitiveTextField.kt.orig
 restore() { cp $T/Screens.kt.orig $R/$SCREENS; cp $T/SensitiveTextField.kt.orig $R/$FIELD; rm -f $R/$PROBE; rm -rf $T; }
 trap restore EXIT
 python3 - <<'PY'
-p="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/Screens.kt"; s=open(p).read()
-old='''            message = "Inicio de sesión — pendiente del flujo de auth",
-        )'''
+p="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/auth/login/LoginScreen.kt"; s=open(p).read()
+old='''        LumeDivider()'''
 assert old in s
 s=s.replace(old, old+'''
         com.luismejias.lumemedlink.core.input.SensitiveTextField(
@@ -42,7 +41,7 @@ s=s.replace(old, old+'''
             "Control-marcado",
             androidx.compose.ui.Modifier.semantics { isSensitiveData = true },
         )''',1)
-s=s.replace("package com.luismejias.lumemedlink.app\n\n","package com.luismejias.lumemedlink.app\n\nimport androidx.compose.ui.semantics.isSensitiveData\nimport androidx.compose.ui.semantics.semantics\n",1)
+s=s.replace("package com.luismejias.lumemedlink.features.auth.login\n\n","package com.luismejias.lumemedlink.features.auth.login\n\nimport androidx.compose.ui.semantics.isSensitiveData\nimport androidx.compose.ui.semantics.semantics\n",1)
 open(p,"w").write(s)
 PY
 cat > $PROBE <<'KT'

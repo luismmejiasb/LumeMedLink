@@ -49,6 +49,17 @@ class SensitiveTextFieldTest {
     }
 
     @Test
+    fun aRutIsTheKitsDocumentFieldTypedVerbatim() {
+        val rut = kitFieldRequestFor(SensitiveFieldPurpose.PERSONAL_DATA, SensitiveFieldFormat.RUT)
+        assertTrue(rut.document)
+        assertEquals(LumeTextCase.Verbatim, rut.textCase)
+        SensitiveFieldFormat.entries.filter { it != SensitiveFieldFormat.RUT }.forEach { format ->
+            assertFalse(kitFieldRequestFor(SensitiveFieldPurpose.PERSONAL_DATA, format).document, "$format")
+        }
+        assertFalse(kitFieldRequestFor(SensitiveFieldPurpose.CREDENTIAL, SensitiveFieldFormat.RUT).document)
+    }
+
+    @Test
     fun personalDataIsNeverMasked() {
         SensitiveFieldFormat.entries.forEach { format ->
             assertFalse(

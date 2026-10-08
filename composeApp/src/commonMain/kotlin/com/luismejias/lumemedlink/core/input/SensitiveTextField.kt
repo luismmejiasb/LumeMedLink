@@ -2,8 +2,14 @@ package com.luismejias.lumemedlink.core.input
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import cl.lume.uicomposer.components.LumeDocumentField
+import cl.lume.uicomposer.components.LumeDocumentFormat
 import cl.lume.uicomposer.components.LumeFieldKeyboard
+import cl.lume.uicomposer.components.LumeFieldState
+import cl.lume.uicomposer.components.LumeFieldSubmit
+import cl.lume.uicomposer.components.LumeFieldValidation
 import cl.lume.uicomposer.components.LumePasswordField
+import cl.lume.uicomposer.components.LumeRevealLabels
 import cl.lume.uicomposer.components.LumeTextCase
 import cl.lume.uicomposer.components.LumeTextField
 
@@ -29,13 +35,22 @@ internal enum class SensitiveFieldFormat {
     TEXT,
     EMAIL,
     PHONE,
+
+    /** A Chilean RUT: the kit's document field, which formats and limits it as typed. */
+    RUT,
 }
 
 /**
  * What the kit is asked for, pulled out of the composable so a test can reach it — a security
  * property nobody can assert is a security property nobody is keeping.
  */
-internal data class KitFieldRequest(val masked: Boolean, val keyboard: LumeFieldKeyboard, val textCase: LumeTextCase)
+internal data class KitFieldRequest(
+    val masked: Boolean,
+    val keyboard: LumeFieldKeyboard,
+    val textCase: LumeTextCase,
+    /** The kit's document field instead of its text field: it formats the RUT as typed. */
+    val document: Boolean = false,
+)
 
 /**
  * The decision this file exists for. Every personal datum is typed [LumeTextCase.Verbatim] — neither
@@ -60,8 +75,11 @@ internal fun kitFieldRequestFor(purpose: SensitiveFieldPurpose, format: Sensitiv
                 SensitiveFieldFormat.TEXT -> LumeFieldKeyboard.Default
                 SensitiveFieldFormat.EMAIL -> LumeFieldKeyboard.Email
                 SensitiveFieldFormat.PHONE -> LumeFieldKeyboard.Phone
+                // The document field decides its own keyboard; this value is not used for it.
+                SensitiveFieldFormat.RUT -> LumeFieldKeyboard.Default
             },
             textCase = LumeTextCase.Verbatim,
+            document = format == SensitiveFieldFormat.RUT,
         )
     }
 
@@ -103,6 +121,13 @@ internal fun SensitiveTextField(
     placeholder: String,
     modifier: Modifier = Modifier,
     format: SensitiveFieldFormat = SensitiveFieldFormat.TEXT,
+    validation: LumeFieldValidation = LumeFieldValidation.Neutral,
+    state: LumeFieldState = LumeFieldState.Enabled,
+    submit: LumeFieldSubmit = LumeFieldSubmit.Done,
+    /** A credential's show/hide control; `null` hides it. */
+    reveal: LumeRevealLabels? = null,
+    /** A password being CREATED: the platform offers a strong one instead of saving a half-typed secret. */
+    newCredential: Boolean = false,
     onSubmit: (() -> Unit)? = null,
 ) {
     val request = kitFieldRequestFor(purpose, format)
@@ -113,6 +138,24 @@ internal fun SensitiveTextField(
             label = label,
             placeholder = placeholder,
             modifier = modifier,
+            reveal = reveal,
+            newCredential = newCredential,
+            state = state,
+            validation = validation,
+            submit = submit,
+            onSubmit = onSubmit,
+        )
+    } else if (request.document) {
+        LumeDocumentField(
+            value = value,
+            onValueChange = onValueChange,
+            label = label,
+            placeholder = placeholder,
+            modifier = modifier,
+            format = LumeDocumentFormat.ChileanRut,
+            state = state,
+            validation = validation,
+            submit = submit,
             onSubmit = onSubmit,
         )
     } else {
@@ -124,6 +167,9 @@ internal fun SensitiveTextField(
             modifier = modifier,
             keyboard = request.keyboard,
             textCase = request.textCase,
+            state = state,
+            validation = validation,
+            submit = submit,
             onSubmit = onSubmit,
         )
     }

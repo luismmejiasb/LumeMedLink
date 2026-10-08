@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,16 +25,18 @@ import com.luismejias.lumemedlink.core.logging.LogEvent
 import com.luismejias.lumemedlink.core.security.NoOpSecurityEventReporter
 import com.luismejias.lumemedlink.core.security.emittingIn
 import com.luismejias.lumemedlink.core.session.FailedAttemptLedger
-import com.luismejias.lumemedlink.core.session.LockOutcome
 import com.luismejias.lumemedlink.core.session.SessionLock
 import com.luismejias.lumemedlink.core.session.SessionManager
 import com.luismejias.lumemedlink.core.session.TokenStore
 import com.luismejias.lumemedlink.core.session.UnlockGate
 import com.luismejias.lumemedlink.core.session.UnlockOutcome
+import com.luismejias.lumemedlink.core.session.establishSession
 import com.luismejias.lumemedlink.core.session.performLogout
 import com.luismejias.lumemedlink.core.session.platformInstallSentinel
 import com.luismejias.lumemedlink.core.session.rememberSecureStore
 import com.luismejias.lumemedlink.core.session.rememberUnlockGate
+import com.luismejias.lumemedlink.features.auth.flow.AuthFlowHost
+import com.luismejias.lumemedlink.features.auth.unlock.UnlockScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -93,6 +96,14 @@ public fun App() {
     }
 
     var hasSession by remember { mutableStateOf(shell.hasSession ?: false) }
+    val authSession by shell.auth.collectAsState()
+    val reauthenticating by shell.reauthenticating.collectAsState()
+    // A flow that restarts — an alert that ends the attempt, a finished password reset — starts from
+    // empty forms, as LumeMed wipes on leave.
+    val authRestarts by authSession.flow.restarts.collectAsState()
+    LaunchedEffect(authRestarts) {
+        if (authRestarts > 0) shell.freshAuth()
+    }
     var locked by remember { mutableStateOf(sessionLock.isLocked()) }
     var returns by remember { mutableStateOf(0) }
 
@@ -175,6 +186,8 @@ public fun App() {
         }
         hasSession = false
         shell.hasSession = false
+        shell.reauthenticating.value = false
+        shell.freshAuth()
         locked = true
     }
 
@@ -196,22 +209,48 @@ public fun App() {
                         }
                     },
             ) {
-                when (resolveDestination(hasSession, locked)) {
-                    AppDestination.Login -> LoginScreen()
-
-                    AppDestination.Locked -> LockedScreen(
-                        onUnlockRequested = {
-                            scope.launch {
-                                when (sessionLock.attemptUnlock()) {
-                                    LockOutcome.Unlocked -> locked = false
-                                    is LockOutcome.StillLocked -> locked = true
-                                    // Too many misses, a changed enrollment, or no biometrics at all:
-                                    // the session ends and the doctor signs in again. Fail closed.
-                                    is LockOutcome.SessionEnded -> endSession()
-                                }
-                            }
+                val authFlow = @Composable { onCancel: (() -> Unit)? ->
+                    AuthFlowHost(
+                        session = authSession,
+                        // The ONE way a session begins (ADR-0037): erase what was there, make the
+                        // biometric material, then write. Handed to the feature per call.
+                        establish = { tokens ->
+                            establishSession(tokens, sessionManager, secureStore, unlockGate, sessionLock)
                         },
+                        onEstablished = {
+                            hasSession = true
+                            shell.hasSession = true
+                            locked = sessionLock.isLocked()
+                            shell.reauthenticating.value = false
+                            shell.freshAuth()
+                        },
+                        onCancel = onCancel,
                     )
+                }
+                when (resolveDestination(hasSession, locked)) {
+                    AppDestination.Login -> authFlow(null)
+
+                    AppDestination.Locked -> if (reauthenticating) {
+                        authFlow {
+                            shell.reauthenticating.value = false
+                            shell.freshAuth()
+                        }
+                    } else {
+                        UnlockScreen(
+                            retryEpoch = 0,
+                            onUnlock = { sessionLock.attemptUnlock() },
+                            onUnlocked = { locked = false },
+                            // Too many misses, a changed enrollment, or no biometrics at all: the
+                            // session ends and the doctor signs in again. Fail closed.
+                            onSessionEnded = { scope.launch { endSession() } },
+                            // A new sign-in replaces this session; establishSession erases it first.
+                            onUsePassword = {
+                                shell.freshAuth()
+                                shell.reauthenticating.value = true
+                            },
+                            onChangeAccount = { scope.launch { endSession() } },
+                        )
+                    }
 
                     AppDestination.Home -> HomeScreen(
                         onSignOut = { scope.launch { endSession() } },

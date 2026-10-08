@@ -47,7 +47,8 @@ if [ -s "$WORK/local.patch" ]; then
     echo "  (uncommitted changes carried over)"
 fi
 
-SCREENS="$TREE/composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/Screens.kt"
+# The marker is the app's name on the sign-in screen (it moved here from app/Screens.kt with the auth flow).
+SCREENS="$TREE/composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/auth/flow/AuthCopy.kt"
 DD="$WORK/dd"
 BIN="$DD/Build/Products/Debug-iphonesimulator/LumeMedLink.app/LumeMedLink.debug.dylib"
 ALT="$DD/Build/Products/Debug-iphonesimulator/LumeMedLink.app/LumeMedLink"

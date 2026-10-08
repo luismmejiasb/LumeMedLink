@@ -41,6 +41,8 @@
   (`docs/backend-requests/0001-token-de-alcance-estrecho.md`) y espera el ADR del backend; mientras
   tanto avanza la mitad sin UI (`core/session`). La UI del login es lo último — espera S0.3 o nace
   con placeholder sin estilo.
+  **2026-10-07:** la UI está construida, copiada del flujo de LumeMed (ADR-0043), sobre un gateway sin conectar;
+  conectarlo es la tarea `0028`, en FREEZE hasta que haya backend desplegado.
 - **S1.2 · Checklist de plataforma del §8.** FLAG_SECURE + cover iOS, `allowBackup=false` +
   `dataExtractionRules`, networkSecurityConfig, ATS. Verificado en device, no sólo declarado.
 - **S1.3 · Agenda (lectura).** Las citas del médico. Sin motivo clínico en ningún DTO (ADR-0001 se
