@@ -1,6 +1,6 @@
 # 0021 · El árbol de accesibilidad, un canal sin declarar
 
-> **Estado:** PENDING · decidida por el autor el 2026-10-07; bloqueada en el kit · abierta el 2026-10-07 por la pasada de completitud (tarea `0002`, hallazgo F13), que sobrevivió a
+> **Estado:** DONE (2026-10-07) · abierta el 2026-10-07 por la pasada de completitud (tarea `0002`, hallazgo F13), que sobrevivió a
 > dos refutadores. Evidencia y comandos: bitácora 0043.
 
 ## De dónde sale
@@ -24,3 +24,11 @@ El autor eligió la opción B: los datos sensibles que la persona escribe no se 
 (ADR-0042). **Medido**: la marca puesta como `modifier` del campo del kit queda en la raíz y no llega al nodo editable
 (control positivo visto). Pedido al kit el mismo día. `Scripts/verify-accessibility-sensitivity.sh` está en rojo por eso
 y se cierra la tarea cuando se ponga verde.
+
+## Cerrada — 2026-10-07
+
+El kit agregó `LumeFieldSensitivity` (su tarea 0022): marca **sólo** el nodo del valor. `SensitiveTextField` pide
+`Personal` para todo campo que dibuja (test dirigido por propósito y formato); la contraseña y el código el kit los marca
+siempre. **Medido** con `Scripts/verify-accessibility-sensitivity.sh` en el emulador API 37, control positivo visto: los
+nodos editables —el campo sintético y los RUT y contraseña reales del ingreso— salen `sensitive=true`; los rótulos, los
+textos de ayuda y «Mostrar contraseña», `false`. El verificador, rojo desde la mañana, está verde.

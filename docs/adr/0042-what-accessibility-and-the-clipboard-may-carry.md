@@ -32,3 +32,10 @@ marked, the label not marked — and is **red today for exactly the second**. It
 ## Confirmed — 2026-10-07
 
 The author read back every interpretation written in this ADR (what counts as "not now", "a different phone", both roles, the full wipe on the old phone, close-then-warn, accessibility tools still reading the value, the 2-minute expiry, "no capability" meaning no hardware, both codes) and confirmed them as meant.
+
+## Landed — 2026-10-07 (accessibility)
+
+The kit's `LumeFieldSensitivity` marks the value's node only; `SensitiveTextField` asks for `Personal` on every field.
+`Scripts/verify-accessibility-sensitivity.sh` is green on the API 37 emulator, control seen: value nodes sensitive,
+labels and guidance not. The clipboard half still waits on the kit's task 0023.
+

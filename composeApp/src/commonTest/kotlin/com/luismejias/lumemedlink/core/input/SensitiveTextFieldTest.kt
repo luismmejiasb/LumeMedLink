@@ -1,6 +1,7 @@
 package com.luismejias.lumemedlink.core.input
 
 import cl.lume.uicomposer.components.LumeFieldKeyboard
+import cl.lume.uicomposer.components.LumeFieldSensitivity
 import cl.lume.uicomposer.components.LumeTextCase
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -57,6 +58,20 @@ class SensitiveTextFieldTest {
             assertFalse(kitFieldRequestFor(SensitiveFieldPurpose.PERSONAL_DATA, format).document, "$format")
         }
         assertFalse(kitFieldRequestFor(SensitiveFieldPurpose.CREDENTIAL, SensitiveFieldFormat.RUT).document)
+    }
+
+    @Test
+    fun everyValueIsHiddenFromAccessibilityServicesThatAreNotTools() {
+        // ADR-0042: the kit's Ordinary would let every accessibility service read what was typed.
+        SensitiveFieldPurpose.entries.forEach { purpose ->
+            SensitiveFieldFormat.entries.forEach { format ->
+                assertEquals(
+                    LumeFieldSensitivity.Personal,
+                    kitFieldRequestFor(purpose, format).sensitivity,
+                    "$purpose/$format",
+                )
+            }
+        }
     }
 
     @Test

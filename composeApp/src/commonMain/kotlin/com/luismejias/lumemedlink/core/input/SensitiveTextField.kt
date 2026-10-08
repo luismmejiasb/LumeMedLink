@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeDocumentField
 import cl.lume.uicomposer.components.LumeDocumentFormat
 import cl.lume.uicomposer.components.LumeFieldKeyboard
+import cl.lume.uicomposer.components.LumeFieldSensitivity
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
@@ -50,6 +51,12 @@ internal data class KitFieldRequest(
     val textCase: LumeTextCase,
     /** The kit's document field instead of its text field: it formats the RUT as typed. */
     val document: Boolean = false,
+    /**
+     * Whether the typed VALUE is hidden from accessibility services that are not accessibility tools
+     * (ADR-0042). Every field this file draws carries personal data or a credential, so always Personal; the
+     * kit marks the value's node only, and the label and help stay readable.
+     */
+    val sensitivity: LumeFieldSensitivity = LumeFieldSensitivity.Personal,
 )
 
 /**
@@ -80,6 +87,7 @@ internal fun kitFieldRequestFor(purpose: SensitiveFieldPurpose, format: Sensitiv
             },
             textCase = LumeTextCase.Verbatim,
             document = format == SensitiveFieldFormat.RUT,
+            sensitivity = LumeFieldSensitivity.Personal,
         )
     }
 
@@ -153,6 +161,7 @@ internal fun SensitiveTextField(
             placeholder = placeholder,
             modifier = modifier,
             format = LumeDocumentFormat.ChileanRut,
+            sensitivity = request.sensitivity,
             state = state,
             validation = validation,
             submit = submit,
@@ -167,6 +176,7 @@ internal fun SensitiveTextField(
             modifier = modifier,
             keyboard = request.keyboard,
             textCase = request.textCase,
+            sensitivity = request.sensitivity,
             state = state,
             validation = validation,
             submit = submit,
