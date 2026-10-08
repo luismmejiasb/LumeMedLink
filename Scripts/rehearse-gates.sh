@@ -411,20 +411,37 @@ p.write_text(s)
 '
 
 # ── The iOS host ────────────────────────────────────────────────────────────────────────────────
-bait "the relink guard is deleted from the build phase" check-ios-host.sh '
+bait "the framework stamp is frozen, so the generated file never changes" check-ios-host.sh '
 import sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
 s = p.read_text()
-before = s
-s = s.replace("rm -f \\\"$TARGET_BUILD_DIR/$EXECUTABLE_PATH\\\"", "true")
-if s == before: raise SystemExit("bait did not apply")
-p.write_text(s)
+old = "static let value = \\\\\\\"$NOW\\\\\\\""
+if old not in s: raise SystemExit("bait did not apply")
+p.write_text(s.replace(old, "static let value = \\\\\\\"frozen\\\\\\\"", 1))
 '
-bait "the framework stamp is dropped, so nothing notices it moved" check-ios-host.sh '
+bait "the stamp file is not declared as an output of the build phase" check-ios-host.sh '
 import sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
-s = p.read_text().replace("kotlin-framework.stamp", "unused.tmp")
-p.write_text(s)
+s = p.read_text()
+old = "\"$(DERIVED_FILE_DIR)/KotlinFrameworkStamp.swift\","
+if old not in s: raise SystemExit("bait did not apply")
+p.write_text(s.replace(old, "", 1))
+'
+bait "the stamp file is left out of the Sources phase" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = p.read_text()
+lines = [l for l in s.split("\n") if "KotlinFrameworkStamp.swift in Sources */," not in l]
+if len(lines) == len(s.split("\n")): raise SystemExit("bait did not apply")
+p.write_text("\n".join(lines))
+'
+bait "the build phase deletes the linked product again" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = p.read_text()
+old = "printf \x27%s\\\\n\x27"
+if old not in s: raise SystemExit("bait did not apply")
+p.write_text(s.replace(old, "rm -f \\\\\"$TARGET_BUILD_DIR/$EXECUTABLE_PATH\\\\\"\\\\n    " + old, 1))
 '
 bait "the cover goes back to the app-delegate method that scenes never call" check-ios-host.sh '
 import sys, pathlib

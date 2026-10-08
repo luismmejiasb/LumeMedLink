@@ -1,6 +1,6 @@
 # 0025 · El primer build de Xcode tras un cambio de Kotlin falla al firmar
 
-> **Estado:** PENDING · abierta el 2026-10-07, medida una vez con su control. Técnica, no del autor.
+> **Estado:** DONE (2026-10-08)
 
 ## De dónde sale
 
@@ -26,3 +26,16 @@ cambio sólo de Kotlin → **un** build verde con el código nuevo.
 
 - No volver al framework en la fase Frameworks: ADR-0030 midió que no funciona.
 - No quitar el borrado sin reemplazo: es lo que impide el binario byte-idéntico con Kotlin viejo.
+
+## Cerrada — 2026-10-08
+
+El build phase ya no borra productos. Escribe el sello del framework en `KotlinFrameworkStamp.swift`, en
+`DERIVED_FILE_DIR`, sólo cuando cambió; lo declara como salida **y** lo tiene en la fase Sources — medido que una salida
+declarada sola no se compila (el sello cambió y nada se re-enlazó). Cuando Kotlin cambia, ese objeto cambia y el enlace
+corre **en el mismo build**, planificado como cualquier otro.
+
+**Cómo se verificó:** a mano, un cambio sólo de Kotlin → un build firmado, `Ld` presente, el marcador en el binario. Y
+`Scripts/verify-ios-link-freshness.sh`, ahora **firmado** —con `CODE_SIGNING_ALLOWED=NO` no hay paso de firma, que es
+justo donde fallaba, y por eso este verificador estuvo verde sobre el defecto—: con el mecanismo, el cambio llega; con el
+sello congelado (control), no llega. Gate en `check-ios-host.sh` (salida declarada, en Sources, sello vivo, nada se
+borra) con cuatro cebos.

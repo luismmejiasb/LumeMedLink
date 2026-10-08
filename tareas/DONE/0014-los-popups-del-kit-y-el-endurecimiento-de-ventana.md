@@ -1,6 +1,6 @@
 # 0014 · Los popups del kit, ¿quedan bajo el endurecimiento de ventana?
 
-> **Estado:** PENDING · Abierta el 2026-10-06. **Medida el 2026-10-08: el toque a través de un popup pasa; bloqueada en el kit.** Es una **sospecha sin medir**, escrita así a propósito: se mide antes de
+> **Estado:** DONE (2026-10-08)
 > arreglar nada.
 >
 > **Bloqueo:** necesita `0013` (el kit cableado) y el emulador.
@@ -62,3 +62,10 @@ protección que nadie midió.
 El arreglo es del kit (la app no alcanza la ventana del popup): pedido el 2026-10-08 — que sus popups pongan
 `filterTouchesWhenObscured` en su vista raíz. Se cierra cuando B3 salga verde con los controles verdes.
 
+## Cerrada — 2026-10-08
+
+El kit arregló lo medido (su commit `ae2f97d`): todo popup que dibuja —`LumeAlert`, los dos de `LumeMenu`, las dos
+presentaciones de `LumePickerField`— pone `filterTouchesWhenObscured` en la vista raíz de su ventana, siempre, sin
+opción. Re-medido con `Scripts/verify-popup-hardening.sh`: **B3 verde** —un toque a través de la superposición de otra
+app ya no cierra la alerta— con los cuatro controles verdes y la captura de la alerta todavía negra. Nada que cablear en
+la app.

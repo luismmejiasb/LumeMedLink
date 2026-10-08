@@ -80,3 +80,13 @@ nothing, and this repo has been fooled by exactly that on this exact file.
 - **Declared, not fixed:** the same question exists for the Android side of the KMP build and has
   **not** been measured. Gradle tracks its own inputs there, so there is reason to believe it is
   fine — but reason to believe is what this ADR is about.
+
+## Amendment — 2026-10-08: the relink no longer deletes a product (task 0025)
+
+Deleting the linked product from the build phase made the FIRST build after a Kotlin change fail at CodeSign: Xcode had
+planned the build without a link step, and the file it expected to sign was gone. The second build linked. The phase now
+writes the framework's stamp into `KotlinFrameworkStamp.swift` (in `DERIVED_FILE_DIR`, only when it changed), declared as
+an output AND compiled from the Sources phase — an output alone is not compiled, measured. When Kotlin changes, that
+object changes and the link runs in the same build. `verify-ios-link-freshness.sh` now builds SIGNED, which is where the
+old failure hid, and its control freezes the stamp.
+

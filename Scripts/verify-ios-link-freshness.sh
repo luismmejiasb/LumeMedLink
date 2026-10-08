@@ -28,6 +28,9 @@ command -v xcodebuild >/dev/null 2>&1 || { echo "verify: xcodebuild is required"
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "verify: not a git repository"; exit 1; }
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/lume-link.XXXXXX") || exit 1
+# The design kit, by path (ADR-0033): the worktree has no sibling, so it is named. LUME_KIT_PATH points at an
+# export of the kit's last commit when another session is editing it (Scripts/kit-snapshot.sh).
+KIT=${LUME_KIT_PATH:-$(CDPATH= cd -- "$REPO_ROOT/../LumeUIComposer" && pwd)}
 TREE="$WORK/tree"
 cleanup() {
     git worktree remove --force "$TREE" >/dev/null 2>&1
@@ -54,9 +57,12 @@ BIN="$DD/Build/Products/Debug-iphonesimulator/LumeMedLink.app/LumeMedLink.debug.
 ALT="$DD/Build/Products/Debug-iphonesimulator/LumeMedLink.app/LumeMedLink"
 
 build() {
-    (cd "$TREE" && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+    # SIGNED, as a real build: with CODE_SIGNING_ALLOWED=NO there is no CodeSign step, and that is exactly
+    # where the first relink mechanism failed — the first build after a Kotlin change died at CodeSign and
+    # this verifier stayed green (task 0025). And ONE build per change must be enough.
+    (cd "$TREE" && env "ORG_GRADLE_PROJECT_lume.kit.path=$KIT" xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
         -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-        -derivedDataPath "$DD" CODE_SIGNING_ALLOWED=NO build) > "$WORK/$1.log" 2>&1
+        -derivedDataPath "$DD" build) > "$WORK/$1.log" 2>&1
 }
 
 # The marker is a Kotlin string literal, so it lands in the binary as UTF-16 — `strings` is blind
@@ -91,16 +97,15 @@ build withguard || { echo "FAIL: the guarded build did not succeed"; tail -20 "$
 GUARDED=$(marker_in_binary LUMEFRESHNESSPROBE1)
 
 # ── THE LIVE CONTROL ────────────────────────────────────────────────────────────────────────────
-# Strip the relink guard out of the build phase and run the SAME experiment. If the control does
-# not reproduce the hole, this script is not measuring what it claims and its green means nothing.
+# Freeze the stamp the build phase writes — the generated Swift file then never changes — and run the
+# SAME experiment. If the control does not reproduce the hole, this script is not measuring what it claims.
 echo "  build 3/4 — control: the same change with the guard REMOVED"
 python3 - "$TREE/iosApp/iosApp.xcodeproj/project.pbxproj" <<'PY'
 import pathlib, sys
 p = pathlib.Path(sys.argv[1])
 s = p.read_text()
 before = s
-s = s.replace('rm -f \\"$TARGET_BUILD_DIR/$EXECUTABLE_PATH\\"\\n', '')
-s = s.replace('rm -f \\"$TARGET_BUILD_DIR/$EXECUTABLE_FOLDER_PATH\\"/*.debug.dylib\\n', '')
+s = s.replace('static let value = \\\\\\"$NOW\\\\\\"', 'static let value = \\\\\\"frozen\\\\\\"')
 if s == before:
     raise SystemExit("the control could not be applied: the relink guard was not found")
 p.write_text(s)

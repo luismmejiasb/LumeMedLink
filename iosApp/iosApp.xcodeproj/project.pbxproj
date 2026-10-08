@@ -9,12 +9,14 @@
 /* Begin PBXBuildFile section */
 		1A000000000000000000000A /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000007 /* iOSApp.swift */; };
 		1A000000000000000000000B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000008 /* AppDelegate.swift */; };
+		1A000000000000000000001A /* KotlinFrameworkStamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000019 /* KotlinFrameworkStamp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		1A0000000000000000000006 /* LumeMedLink.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LumeMedLink.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A0000000000000000000007 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		1A0000000000000000000008 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		1A0000000000000000000019 /* KotlinFrameworkStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KotlinFrameworkStamp.swift; sourceTree = DERIVED_FILE_DIR; };
 		1A0000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A0000000000000000000016 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -51,6 +53,7 @@
 			children = (
 				1A0000000000000000000007 /* iOSApp.swift */,
 				1A0000000000000000000008 /* AppDelegate.swift */,
+				1A0000000000000000000019 /* KotlinFrameworkStamp.swift */,
 				1A0000000000000000000009 /* Info.plist */,
 				1A0000000000000000000016 /* iosApp.entitlements */,
 			);
@@ -132,10 +135,11 @@
 			);
 			name = "Build Kotlin framework";
 			outputPaths = (
+				"$(DERIVED_FILE_DIR)/KotlinFrameworkStamp.swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# KOTLIN_FRAMEWORK_BUILD_TYPE is NOT optional here, and its absence fails SILENTLY.\n# Without it KGP prints 'Unable to detect Kotlin framework build type' as a WARNING, does not\n# refresh build/xcode-frameworks, and the link then uses whatever framework was left there.\n# The build stays green while the app runs OLD Kotlin — which is exactly what happened between\n# 2026-08-25 and 2026-09-07 and invalidated every iOS device observation in that window.\ncd \"$SRCROOT/..\"\nif [ \"$CONFIGURATION\" = \"Release\" ]; then KFBT=release; else KFBT=debug; fi\nKOTLIN_FRAMEWORK_BUILD_TYPE=$KFBT ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode || {\n    # A FAILED Kotlin build must fail the app build. Without this line it did not: a build phase\n    # runs without -e, the last command below succeeds, and Xcode linked the PREVIOUS framework\n    # with the build green - measured 2026-10-07 (a lockfile miss failed Gradle; the app ran old\n    # Kotlin). Same silent staleness as ADR-0028 and ADR-0030, third door.\n    echo \"error: the Kotlin framework did not build - refusing to link a stale one\"\n    exit 1\n}\n\n# FORCE A RELINK WHEN THE FRAMEWORK CHANGED, and the reason is measured, not assumed.\n# Nothing Xcode tracks points at this framework: it is a STATIC framework pulled in by\n# OTHER_LDFLAGS -framework, so the link task has no declared input that changes when Kotlin\n# changes. A Kotlin-only edit therefore left the app binary BYTE-IDENTICAL while Gradle happily\n# rebuilt the framework next to it — same sha256, same mtime, old code, build green.\n# Declaring the framework in the Frameworks build phase was tried first and MEASURED NOT TO\n# WORK: the entry in BUILT_PRODUCTS_DIR is a symlink whose own mtime never moves (ADR-0030).\n# Deleting the product is what the build system does understand.\nFW=\"$SRCROOT/../composeApp/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME/LumeMedLink.framework/LumeMedLink\"\nSTAMP=\"$DERIVED_FILE_DIR/kotlin-framework.stamp\"\nmkdir -p \"$DERIVED_FILE_DIR\"\nNOW=$(stat -f '%m %z' \"$FW\" 2>/dev/null || echo absent)\nif [ \"$NOW\" != \"$(cat \"$STAMP\" 2>/dev/null)\" ]; then\n    echo \"note: Kotlin framework changed - forcing a relink\"\n    rm -f \"$TARGET_BUILD_DIR/$EXECUTABLE_PATH\"\n    rm -f \"$TARGET_BUILD_DIR/$EXECUTABLE_FOLDER_PATH\"/*.debug.dylib\n    printf '%s' \"$NOW\" > \"$STAMP\"\nfi\n";
+			shellScript = "# KOTLIN_FRAMEWORK_BUILD_TYPE is NOT optional here, and its absence fails SILENTLY.\n# Without it KGP prints 'Unable to detect Kotlin framework build type' as a WARNING, does not\n# refresh build/xcode-frameworks, and the link then uses whatever framework was left there.\n# The build stays green while the app runs OLD Kotlin — which is exactly what happened between\n# 2026-08-25 and 2026-09-07 and invalidated every iOS device observation in that window.\ncd \"$SRCROOT/..\"\nif [ \"$CONFIGURATION\" = \"Release\" ]; then KFBT=release; else KFBT=debug; fi\nKOTLIN_FRAMEWORK_BUILD_TYPE=$KFBT ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode || {\n    # A FAILED Kotlin build must fail the app build. Without this line it did not: a build phase\n    # runs without -e, the last command below succeeds, and Xcode linked the PREVIOUS framework\n    # with the build green - measured 2026-10-07 (a lockfile miss failed Gradle; the app ran old\n    # Kotlin). Same silent staleness as ADR-0028 and ADR-0030, third door.\n    echo \"error: the Kotlin framework did not build - refusing to link a stale one\"\n    exit 1\n}\n\n# MAKE THE LINK SEE THE FRAMEWORK, through a source file Xcode compiles (task 0025, amending ADR-0030).\n# Nothing Xcode tracks points at this framework: it is a STATIC framework pulled in by\n# OTHER_LDFLAGS -framework, so a Kotlin-only edit left the app binary BYTE-IDENTICAL (ADR-0030).\n# The first fix deleted the linked product from here - and the build had already been PLANNED without\n# a link step, so the first build after a Kotlin change failed at CodeSign (\"No such file\") and only the\n# second linked (measured 2026-10-07). Instead: a generated Swift file carries the framework's stamp. It is\n# an OUTPUT of this phase, so Xcode compiles it; when the framework moves its content moves, the object\n# changes, and the link runs in the SAME build, planned like any other. It is written only when the\n# stamp changed, so an unchanged framework recompiles nothing.\nFW=\"$SRCROOT/../composeApp/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME/LumeMedLink.framework/LumeMedLink\"\nSTAMP_SWIFT=\"$DERIVED_FILE_DIR/KotlinFrameworkStamp.swift\"\nmkdir -p \"$DERIVED_FILE_DIR\"\nNOW=$(stat -f '%m %z' \"$FW\" 2>/dev/null || echo absent)\nWANTED=\"// Generated by the Build Kotlin framework phase (task 0025). Do not edit. kotlin-framework.stamp\nenum KotlinFrameworkStamp { static let value = \\\"$NOW\\\" }\"\nif [ \"$WANTED\" != \"$(cat \"$STAMP_SWIFT\" 2>/dev/null)\" ]; then\n    echo \"note: Kotlin framework changed - its stamp moves, so the app links again\"\n    printf '%s\\n' \"$WANTED\" > \"$STAMP_SWIFT\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -146,6 +150,7 @@
 			files = (
 				1A000000000000000000000A /* iOSApp.swift in Sources */,
 				1A000000000000000000000B /* AppDelegate.swift in Sources */,
+				1A000000000000000000001A /* KotlinFrameworkStamp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

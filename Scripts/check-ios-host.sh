@@ -146,21 +146,34 @@ fi
 # tracks changes when Kotlin changes, and a Kotlin-only edit leaves the app binary byte-identical.
 # Measured, with a control: same sha256, same mtime, old code, build green.
 #
-# The ASSIGNMENT and the CALL, not the words: the build phase must compare the framework against a
-# stamp AND delete the linked product when it moved. Declaring the framework in the Frameworks
-# build phase was tried first and measured NOT to work — the entry in BUILT_PRODUCTS_DIR is a
-# symlink whose own mtime never moves — so asserting a file reference here would assert a control
-# that does nothing.
+# The MECHANISM, not the words (amended by task 0025). The first fix DELETED the linked product from the
+# build phase, and Xcode had already planned the build without a link step: the first build after a
+# Kotlin change failed at CodeSign and only the second linked (measured 2026-10-07). Now the phase writes
+# the framework's stamp into a generated Swift file that it declares as an OUTPUT; Xcode compiles it, its
+# object changes when the framework moves, and the link is planned like any other. Three things: the file
+# is a declared output, its content carries the live stamp, and nothing deletes a product mid-build.
 #
 # This gate only proves the mechanism is WRITTEN. That it WORKS is
-# Scripts/verify-ios-link-freshness.sh, which runs the two-build experiment with a live control.
-if ! grep -q 'kotlin-framework.stamp' "$PROJECT"; then
-    fail "ios-host: the build phase does not stamp the Kotlin framework" \
-         "Without a stamp there is nothing to compare, so nothing can notice the framework moved (ADR-0030)."
+# Scripts/verify-ios-link-freshness.sh, which runs the experiment, signed, with a live control.
+if ! grep -qF '"$(DERIVED_FILE_DIR)/KotlinFrameworkStamp.swift",' "$PROJECT"; then
+    fail "ios-host: the framework stamp is not an output of the build phase" \
+         "Without the declared output Xcode never compiles the stamp, so nothing makes the link run when Kotlin changed (task 0025)."
 fi
-if ! grep -q 'rm -f .*TARGET_BUILD_DIR/\$EXECUTABLE_PATH' "$PROJECT"; then
-    fail "ios-host: the build phase does not force a relink when the framework changed" \
-         "Deleting the linked product is what makes Xcode link again; nothing else in this project points at the framework (ADR-0030)."
+if ! grep -qF 'static let value = \\\"$NOW\\\"' "$PROJECT" ||
+    ! grep -qF 'printf '"'"'%s\\n'"'"' \"$WANTED\" > \"$STAMP_SWIFT\"' "$PROJECT"; then
+    fail "ios-host: the build phase does not write the framework's live stamp" \
+         "The generated file must carry the framework's current stamp, or it never changes and the app links stale Kotlin (ADR-0030, task 0025)."
+fi
+# A declared output is NOT compiled by itself (measured: the stamp changed, nothing relinked). The file has to
+# be in the target's Sources, referenced from DERIVED_FILE_DIR.
+if ! grep -qF 'KotlinFrameworkStamp.swift in Sources */,' "$PROJECT" ||
+    ! grep -qE 'KotlinFrameworkStamp\.swift; sourceTree = DERIVED_FILE_DIR;' "$PROJECT"; then
+    fail "ios-host: the framework stamp is not compiled" \
+         "KotlinFrameworkStamp.swift must be in the Sources phase, from DERIVED_FILE_DIR; a script output alone is never compiled (task 0025)."
+fi
+if grep -qE 'rm -f [^;]*TARGET_BUILD_DIR' "$PROJECT"; then
+    fail "ios-host: the build phase deletes a built product" \
+         "Deleting a product after Xcode planned the build makes the first build after a Kotlin change fail at CodeSign (task 0025)."
 fi
 if ! grep -q 'CODE_SIGN_ENTITLEMENTS' "$PROJECT"; then
     fail "ios-host: the project does not reference the entitlements file" \
