@@ -44,3 +44,7 @@ any fingerprint or face registered on it can open your session" — and the thre
 - "Immediately" is server-side. The old phone learns at its next request; the app is online-only and re-asks
   the server when it comes back to the foreground, so in practice that is the next time anyone looks at it.
   A data-only push could make it truly immediate once push exists (ADR-0038).
+
+## Confirmed — 2026-10-07
+
+The author read back every interpretation written in this ADR (what counts as "not now", "a different phone", both roles, the full wipe on the old phone, close-then-warn, accessibility tools still reading the value, the 2-minute expiry, "no capability" meaning no hardware, both codes) and confirmed them as meant.

@@ -28,3 +28,7 @@ marked, the label not marked — and is **red today for exactly the second**. It
 - Android 13 and below: the mark does not exist; accessibility services read everything, as before.
 - A service that falsely declares itself an accessibility tool still reads the value; Play policy, not the app,
   polices that claim.
+
+## Confirmed — 2026-10-07
+
+The author read back every interpretation written in this ADR (what counts as "not now", "a different phone", both roles, the full wipe on the old phone, close-then-warn, accessibility tools still reading the value, the 2-minute expiry, "no capability" meaning no hardware, both codes) and confirmed them as meant.

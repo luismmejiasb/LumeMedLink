@@ -33,3 +33,7 @@ sensor busy or lets the prompt expire gains exactly what dismissing the prompt a
 
 Pinned by `PromptErrorMappingTest` (Android, including the check before the prompt), `KeychainStatusMappingTest`
 (iOS) and `SessionLockTest` (twenty `NotNow` in a row: still locked, nothing spent, nothing reported).
+
+## Confirmed — 2026-10-07
+
+The author read back every interpretation written in this ADR (what counts as "not now", "a different phone", both roles, the full wipe on the old phone, close-then-warn, accessibility tools still reading the value, the 2-minute expiry, "no capability" meaning no hardware, both codes) and confirmed them as meant.

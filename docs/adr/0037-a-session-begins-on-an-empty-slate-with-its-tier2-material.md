@@ -68,3 +68,7 @@ How this repo reads it, so the exception cannot become the way around the rule:
   from being one factor; each re-entry is a full round trip, so it is slower and costs per SMS.
 - Until it exists, `TIER2_UNAVAILABLE` stays as written: no session. The fallback needs a deployed backend, so it
   is task `0026`, in `tareas/FREEZE/`.
+
+## Confirmed — 2026-10-07
+
+The author read back every interpretation written in this ADR (what counts as "not now", "a different phone", both roles, the full wipe on the old phone, close-then-warn, accessibility tools still reading the value, the 2-minute expiry, "no capability" meaning no hardware, both codes) and confirmed them as meant.
