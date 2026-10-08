@@ -12,6 +12,7 @@ import cl.lume.uicomposer.components.LumeLinkSize
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeText
+import cl.lume.uicomposer.components.LumeTextAlignment
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -56,8 +57,16 @@ internal fun UnlockScreen(
         LumeCard(inset = LumeCardInset.Focal, alignment = LumeStackAlignment.Center) {
             LumeStack(spacing = { large }) {
                 LumeStack(spacing = { small }) {
-                    LumeText(text = AuthCopy.UNLOCK_TITLE, style = LumeTextStyle.HeadingLarge)
-                    LumeText(text = AuthCopy.UNLOCK_BODY, color = LumeTextColor.Secondary)
+                    LumeText(
+                        text = AuthCopy.UNLOCK_TITLE,
+                        style = LumeTextStyle.HeadingLarge,
+                        alignment = LumeTextAlignment.Center,
+                    )
+                    LumeText(
+                        text = AuthCopy.UNLOCK_BODY,
+                        color = LumeTextColor.Secondary,
+                        alignment = LumeTextAlignment.Center,
+                    )
                 }
                 LumeIconTile(icon = LumeIcon.Shield, size = LumeIconTileSize.Large)
                 AuthPrimaryButton(

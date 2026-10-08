@@ -13,6 +13,7 @@ import cl.lume.uicomposer.components.LumeReadOnlyField
 import cl.lume.uicomposer.components.LumeReadOnlyFieldDesign
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeText
+import cl.lume.uicomposer.components.LumeTextAlignment
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -42,7 +43,12 @@ internal fun TotpEnrollmentScreen(model: TotpEnrollmentModel, retryEpoch: Int) {
             footnote = AuthCopy.TOTP_KEY_FOOTNOTE,
             design = LumeReadOnlyFieldDesign.Code,
         )
-        LumeText(text = AuthCopy.TOTP_REPLACES, style = LumeTextStyle.Caption, color = LumeTextColor.Secondary)
+        LumeText(
+            text = AuthCopy.TOTP_REPLACES,
+            style = LumeTextStyle.Caption,
+            color = LumeTextColor.Secondary,
+            alignment = LumeTextAlignment.Center,
+        )
         LumeButton(
             content = LumeButtonContent.Title(AuthCopy.CONTINUE),
             width = LumeButtonWidth.Fill,

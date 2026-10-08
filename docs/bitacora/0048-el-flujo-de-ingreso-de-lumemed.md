@@ -34,7 +34,8 @@ cebos, los instrumentados).
 En el simulador de iOS, con un build temporal que recorre las pantallas: la tarjeta, el ícono, los títulos, el campo de
 seis cajas, el disco de volver sólo donde corresponde y la alerta única se ven como en LumeMed. Dos detalles: el enlace
 «¿Olvidaste tu contraseña?» quedaba centrado y no al borde (corregido); y los textos de varias líneas no se centran —
-`LumeText` no tiene alineación—, pedido al kit.
+`LumeText` no tenía alineación—, pedido al kit, que la agregó el mismo día (`LumeTextAlignment`): los textos de
+la tarjeta focal quedan centrados, visto en el simulador.
 
 ## Lo que decide el autor
 

@@ -10,6 +10,7 @@ import cl.lume.uicomposer.components.LumeResultKind
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeText
+import cl.lume.uicomposer.components.LumeTextAlignment
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -19,8 +20,8 @@ import cl.lume.uicomposer.foundations.LumeIcon
 internal fun AuthHeader(icon: LumeIcon, title: String, body: String) {
     LumeStack(alignment = LumeStackAlignment.Center, spacing = { medium }) {
         LumeIconTile(icon = icon, size = LumeIconTileSize.Large)
-        LumeText(text = title, style = LumeTextStyle.HeadingLarge)
-        LumeText(text = body, color = LumeTextColor.Secondary)
+        LumeText(text = title, style = LumeTextStyle.HeadingLarge, alignment = LumeTextAlignment.Center)
+        LumeText(text = body, color = LumeTextColor.Secondary, alignment = LumeTextAlignment.Center)
     }
 }
 

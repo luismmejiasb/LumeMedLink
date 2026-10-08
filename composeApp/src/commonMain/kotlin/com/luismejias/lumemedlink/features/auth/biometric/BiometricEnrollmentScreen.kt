@@ -3,6 +3,7 @@ package com.luismejias.lumemedlink.features.auth.biometric
 import androidx.compose.runtime.Composable
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeText
+import cl.lume.uicomposer.components.LumeTextAlignment
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -26,7 +27,12 @@ internal fun BiometricEnrollmentScreen(
 ) {
     LumeStack(spacing = { large }) {
         AuthHeader(icon = LumeIcon.Shield, title = AuthCopy.BIOMETRIC_TITLE, body = AuthCopy.BIOMETRIC_BODY)
-        LumeText(text = AuthCopy.BIOMETRIC_PERSONAL, style = LumeTextStyle.Caption, color = LumeTextColor.Secondary)
+        LumeText(
+            text = AuthCopy.BIOMETRIC_PERSONAL,
+            style = LumeTextStyle.Caption,
+            color = LumeTextColor.Secondary,
+            alignment = LumeTextAlignment.Center,
+        )
         AuthPrimaryButton(
             title = AuthCopy.BIOMETRIC_ACTIVATE,
             loadingMessage = AuthCopy.BIOMETRIC_ACTIVATING,
