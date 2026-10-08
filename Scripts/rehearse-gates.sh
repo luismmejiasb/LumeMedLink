@@ -254,6 +254,25 @@ assert old in s
 f.write_text(s.replace(old, "embedAndSignAppleFrameworkForXcode; true || {", 1))
 '
 
+# The copy policy dropped from the root (ADR-0042): the kit falls back to the synced system clipboard.
+bait "the app root without the field clipboard policy" check-input-surfaces.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+s = f.read_text()
+old = "FieldClipboardPolicy {"
+assert old in s
+f.write_text(s.replace(old, "run {", 1))
+'
+
+bait "the field clipboard policy weakened to System" check-input-surfaces.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/input/FieldClipboardPolicy.kt"
+s = f.read_text()
+old = "LumeClipboardPolicy.LocalExpiring"
+assert old in s
+f.write_text(s.replace(old, "LumeClipboardPolicy.System", 1))
+'
+
 bait "a clinical name as a function parameter, not a property" check-data-boundary.sh '
 import sys, pathlib
 d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session"

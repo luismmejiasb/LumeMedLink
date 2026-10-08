@@ -39,3 +39,9 @@ The kit's `LumeFieldSensitivity` marks the value's node only; `SensitiveTextFiel
 `Scripts/verify-accessibility-sensitivity.sh` is green on the API 37 emulator, control seen: value nodes sensitive,
 labels and guidance not. The clipboard half still waits on the kit's task 0023.
 
+## Landed — 2026-10-07 (clipboard)
+
+`core/input/FieldClipboardPolicy` provides the kit's `LumeClipboardPolicy.LocalExpiring` around the whole app;
+`check-input-surfaces.sh` refuses the root without it or a weaker policy (two baits). Not measured across two devices:
+Universal Clipboard cannot be reproduced on the simulator.
+

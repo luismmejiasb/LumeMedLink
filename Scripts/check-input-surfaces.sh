@@ -88,6 +88,21 @@ if [ -n "$hits" ]; then
 fi
 
 # ── Weakenings of the primitive itself ──────────────────────────────────────────────────────────
+# What is copied inside a field stays on the phone and expires (ADR-0042, task 0022). The policy is decided
+# ONCE, in core/input, and the composition root must wrap the app in it — the kit's default is the plain
+# system clipboard, so an app root without the wrapper silently copies to every device on the account.
+POLICY="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/input/FieldClipboardPolicy.kt"
+APP_ROOT="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/app/App.kt"
+if ! python3 Scripts/lib/kfun.py "$POLICY" FieldClipboardPolicy 2>/dev/null |
+    grep -qF 'LocalLumeClipboardPolicy provides LumeClipboardPolicy.LocalExpiring'; then
+    fail "input: the field clipboard policy is not LocalExpiring" \
+         "core/input/FieldClipboardPolicy must provide LumeClipboardPolicy.LocalExpiring (ADR-0042)."
+fi
+if ! python3 Scripts/lib/kfun.py "$APP_ROOT" App 2>/dev/null | grep -qF 'FieldClipboardPolicy {'; then
+    fail "input: the app root is not wrapped in FieldClipboardPolicy" \
+         "Without it every kit field copies to the system clipboard, synced across the person's devices (ADR-0042)."
+fi
+
 hits=$(scan 'autoCorrectEnabled[[:space:]]*=[[:space:]]*true|autoCorrect[[:space:]]*=[[:space:]]*true')
 if [ -n "$hits" ]; then
     fail "input: autocorrect re-enabled on an input field" \

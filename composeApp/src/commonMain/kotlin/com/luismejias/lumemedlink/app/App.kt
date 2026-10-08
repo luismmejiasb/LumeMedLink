@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.lume.uicomposer.foundations.LumeTheme
+import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
 import com.luismejias.lumemedlink.core.logging.LogEvent
@@ -192,69 +193,71 @@ public fun App() {
     }
 
     LumeTheme {
-        PrivacyScreenScaffold {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    // Observes pointer activity on the INITIAL pass without consuming it, so the
-                    // inactivity window slides while the doctor is actually using the app. Recording
-                    // activity can never unlock (InactivityLock enforces that) — it only postpones.
-                    .pointerInput(sessionLock) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                awaitPointerEvent(PointerEventPass.Initial)
-                                sessionLock.recordActivity()
-                                locked = sessionLock.isLocked()
+        FieldClipboardPolicy {
+            PrivacyScreenScaffold {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // Observes pointer activity on the INITIAL pass without consuming it, so the
+                        // inactivity window slides while the doctor is actually using the app. Recording
+                        // activity can never unlock (InactivityLock enforces that) — it only postpones.
+                        .pointerInput(sessionLock) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent(PointerEventPass.Initial)
+                                    sessionLock.recordActivity()
+                                    locked = sessionLock.isLocked()
+                                }
                             }
-                        }
-                    },
-            ) {
-                val authFlow = @Composable { onCancel: (() -> Unit)? ->
-                    AuthFlowHost(
-                        session = authSession,
-                        // The ONE way a session begins (ADR-0037): erase what was there, make the
-                        // biometric material, then write. Handed to the feature per call.
-                        establish = { tokens ->
-                            establishSession(tokens, sessionManager, secureStore, unlockGate, sessionLock)
                         },
-                        onEstablished = {
-                            hasSession = true
-                            shell.hasSession = true
-                            locked = sessionLock.isLocked()
-                            shell.reauthenticating.value = false
-                            shell.freshAuth()
-                        },
-                        onCancel = onCancel,
-                    )
-                }
-                when (resolveDestination(hasSession, locked)) {
-                    AppDestination.Login -> authFlow(null)
-
-                    AppDestination.Locked -> if (reauthenticating) {
-                        authFlow {
-                            shell.reauthenticating.value = false
-                            shell.freshAuth()
-                        }
-                    } else {
-                        UnlockScreen(
-                            retryEpoch = 0,
-                            onUnlock = { sessionLock.attemptUnlock() },
-                            onUnlocked = { locked = false },
-                            // Too many misses, a changed enrollment, or no biometrics at all: the
-                            // session ends and the doctor signs in again. Fail closed.
-                            onSessionEnded = { scope.launch { endSession() } },
-                            // A new sign-in replaces this session; establishSession erases it first.
-                            onUsePassword = {
-                                shell.freshAuth()
-                                shell.reauthenticating.value = true
+                ) {
+                    val authFlow = @Composable { onCancel: (() -> Unit)? ->
+                        AuthFlowHost(
+                            session = authSession,
+                            // The ONE way a session begins (ADR-0037): erase what was there, make the
+                            // biometric material, then write. Handed to the feature per call.
+                            establish = { tokens ->
+                                establishSession(tokens, sessionManager, secureStore, unlockGate, sessionLock)
                             },
-                            onChangeAccount = { scope.launch { endSession() } },
+                            onEstablished = {
+                                hasSession = true
+                                shell.hasSession = true
+                                locked = sessionLock.isLocked()
+                                shell.reauthenticating.value = false
+                                shell.freshAuth()
+                            },
+                            onCancel = onCancel,
                         )
                     }
+                    when (resolveDestination(hasSession, locked)) {
+                        AppDestination.Login -> authFlow(null)
 
-                    AppDestination.Home -> HomeScreen(
-                        onSignOut = { scope.launch { endSession() } },
-                    )
+                        AppDestination.Locked -> if (reauthenticating) {
+                            authFlow {
+                                shell.reauthenticating.value = false
+                                shell.freshAuth()
+                            }
+                        } else {
+                            UnlockScreen(
+                                retryEpoch = 0,
+                                onUnlock = { sessionLock.attemptUnlock() },
+                                onUnlocked = { locked = false },
+                                // Too many misses, a changed enrollment, or no biometrics at all: the
+                                // session ends and the doctor signs in again. Fail closed.
+                                onSessionEnded = { scope.launch { endSession() } },
+                                // A new sign-in replaces this session; establishSession erases it first.
+                                onUsePassword = {
+                                    shell.freshAuth()
+                                    shell.reauthenticating.value = true
+                                },
+                                onChangeAccount = { scope.launch { endSession() } },
+                            )
+                        }
+
+                        AppDestination.Home -> HomeScreen(
+                            onSignOut = { scope.launch { endSession() } },
+                        )
+                    }
                 }
             }
         }
