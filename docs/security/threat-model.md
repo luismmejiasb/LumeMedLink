@@ -111,3 +111,13 @@ rompe a los lectores de pantalla que no se declaran herramienta) es decisión de
    registra con esa marca, no como hecho.)* Corre al revés que las otras cuatro: contra un atacante
    que consigue un certificado mal emitido por una CA pública **y escala**, Android sería el lado
    débil. Ninguna de las dos asimetrías de TLS está cerrada hoy — y **Pinning es UNA de dos vías**, no la única: la otra es clasificar el ancla en el `handleChallenge` de Darwin — más barata y sin acoplarse a la rotación de certificados —, y su evidencia es de simulador, sin confirmar en device (ADR-0017 Parte 2).
+
+## Decisiones del autor del 2026-10-07 que mueven este modelo
+
+- **Dispositivo compartido (§8.17, T2):** el teléfono no se comparte por regla — un solo teléfono por cuenta, y una
+  sesión en otro cierra la anterior y avisa al dueño (ADR-0041, pendiente del backend). **Residual declarado:** una
+  huella o un rostro ajeno enrolado en el propio teléfono del dueño sigue abriendo la sesión.
+- **Árbol de accesibilidad (T6):** lo escrito se marca sensible, los rótulos no (ADR-0042); hoy **no** aplicado — la
+  marca no llega al nodo editable del kit (medido) y espera una adición del kit. Android 13 y anteriores: sin marca.
+- **Portapapeles de iOS dentro de campos:** sólo local y con vencimiento de 2 minutos (ADR-0042), esperando al kit.
+

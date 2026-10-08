@@ -80,7 +80,10 @@ internal fun unlockOutcomeForKeychainStatus(status: Int): UnlockOutcome = when (
     // way — the fail-closed direction is the same.
     ERR_SEC_AUTH_FAILED -> UnlockOutcome.Failed
 
-    ERR_SEC_NOT_AVAILABLE, ERR_SEC_INTERACTION_NOT_ALLOWED -> UnlockOutcome.Unavailable
+    // "Not now": the phone locked while the item was being read, or the keychain cannot answer at
+    // this moment. Nobody failed, so nothing is counted and nothing ends (ADR-0040). The same event on
+    // Android — the device locking under the prompt — was already a free cancel; now both agree.
+    ERR_SEC_NOT_AVAILABLE, ERR_SEC_INTERACTION_NOT_ALLOWED -> UnlockOutcome.NotNow
 
     // Unclassified counts against an attacker, never for one (ADR-0020 of LumeMed, mirrored).
     else -> UnlockOutcome.Failed

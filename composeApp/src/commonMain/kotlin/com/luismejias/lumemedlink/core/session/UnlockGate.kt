@@ -13,6 +13,15 @@ internal sealed interface UnlockOutcome {
     /** The user dismissed the prompt. Does NOT count as a failed attempt. */
     data object Cancelled : UnlockOutcome
 
+    /**
+     * The platform could not ask RIGHT NOW: the prompt timed out with nobody touching it, the sensor is
+     * busy, the phone locked mid-read (ADR-0040, task 0019). The app stays locked, the attempt is not
+     * counted and the session does not end — the person tries again. An attacker gains nothing: the
+     * door stays shut and still needs a matching biometric. Until 2026-10-07 these ended the session
+     * with a full wipe, for something nobody did.
+     */
+    data object NotNow : UnlockOutcome
+
     /** The biometric did not match, or the OS reported an authentication failure. Counts. */
     data object Failed : UnlockOutcome
 

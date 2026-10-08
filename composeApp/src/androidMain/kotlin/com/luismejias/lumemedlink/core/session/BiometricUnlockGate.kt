@@ -51,7 +51,8 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
     UnlockGate {
 
     override suspend fun enroll(): Boolean = withContext(Dispatchers.Default) {
-        if (!biometricsUsable()) return@withContext false
+        // Enrolling needs biometrics usable NOW: a busy sensor is not the moment to make the key.
+        if (unlockOutcomeForCapability(capability()) != null) return@withContext false
         // Best effort HERE only: a stale key that will not delete is replaced by the generation below.
         runCatching { deleteKey() }
         try {
@@ -65,7 +66,7 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
     }
 
     override suspend fun unlock(): UnlockOutcome {
-        if (!biometricsUsable()) return UnlockOutcome.Unavailable
+        unlockOutcomeForCapability(capability())?.let { return it }
         val challenge = secureStore.get(SecureStoreKey.UNLOCK_CHALLENGE.storageKey)
             ?.let { runCatching { Base64.getDecoder().decode(it) }.getOrNull() }
             ?: return UnlockOutcome.Unavailable
@@ -162,9 +163,8 @@ internal class BiometricUnlockGate(private val activity: FragmentActivity, priva
         }
     }
 
-    private fun biometricsUsable(): Boolean =
-        BiometricManager.from(activity).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
-            BiometricManager.BIOMETRIC_SUCCESS
+    private fun capability(): Int =
+        BiometricManager.from(activity).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
 
     private fun keyStore(): KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
@@ -207,12 +207,28 @@ internal fun unlockOutcomeForPromptError(errorCode: Int): UnlockOutcome = when (
     BiometricPrompt.ERROR_CANCELED,
     -> UnlockOutcome.Cancelled
 
+    // Nobody failed: the prompt expired untouched, or the sensor is busy for now (ADR-0040).
+    BiometricPrompt.ERROR_TIMEOUT,
+    BiometricPrompt.ERROR_HW_UNAVAILABLE,
+    -> UnlockOutcome.NotNow
+
     BiometricPrompt.ERROR_NO_BIOMETRICS,
     BiometricPrompt.ERROR_HW_NOT_PRESENT,
-    BiometricPrompt.ERROR_HW_UNAVAILABLE,
     -> UnlockOutcome.Unavailable
 
     else -> UnlockOutcome.Failed
+}
+
+/**
+ * What the check BEFORE the prompt means (ADR-0040): `null` when biometrics can be used. Only a
+ * TEMPORARILY unavailable sensor is [UnlockOutcome.NotNow]; no hardware, nothing enrolled or a pending
+ * security update are [UnlockOutcome.Unavailable] — re-entry is impossible, not postponed. Until
+ * 2026-10-07 every answer but success ended the session, the busy sensor included.
+ */
+internal fun unlockOutcomeForCapability(result: Int): UnlockOutcome? = when (result) {
+    BiometricManager.BIOMETRIC_SUCCESS -> null
+    BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> UnlockOutcome.NotNow
+    else -> UnlockOutcome.Unavailable
 }
 
 /**

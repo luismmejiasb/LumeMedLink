@@ -215,6 +215,21 @@ class SessionLockTest {
     }
 
     @Test
+    fun aPlatformThatCannotAskNowCostsNothingAndEndsNothing() = runTest {
+        // ADR-0040 (task 0019): a prompt that expired untouched, a busy sensor, a phone that locked
+        // mid-read. Until 2026-10-07 the last two ENDED the session with a full wipe.
+        val store = LedgerStore()
+        val events = RecordedEvents()
+        val lock = lockWith(ScriptedUnlockGate(UnlockOutcome.NotNow), maxAttempts = 2, store = store, events = events)
+
+        repeat(20) { assertEquals(LockOutcome.StillLocked(remainingAttempts = null), lock.attemptUnlock()) }
+
+        assertTrue(lock.isLocked())
+        assertNull(store.entries[countKey], "a postponed prompt spent an attempt")
+        assertTrue(events.kinds.isEmpty(), "nobody failed, so nothing is reported: ${events.kinds}")
+    }
+
+    @Test
     fun failedAttemptsCountDownAndReportRemaining() = runTest {
         val lock = lockWith(ScriptedUnlockGate(UnlockOutcome.Failed), maxAttempts = 3)
 

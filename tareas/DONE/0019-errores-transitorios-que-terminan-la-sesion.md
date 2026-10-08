@@ -1,6 +1,6 @@
 # 0019 · Errores transitorios que terminan la sesión
 
-> **Estado:** PENDING · abierta el 2026-10-07 por la pasada de completitud (tarea `0002`, hallazgo F09), que sobrevivió a
+> **Estado:** DONE (2026-10-07) · abierta el 2026-10-07 por la pasada de completitud (tarea `0002`, hallazgo F09), que sobrevivió a
 > dos refutadores. Evidencia y comandos: bitácora 0043.
 
 ## De dónde sale
@@ -18,3 +18,13 @@ situación con su resultado en las dos plataformas.
 ## Qué NO hacer
 
 - No cambiarlo sin la decisión del autor: es una dirección de falla.
+
+## Cerrada — 2026-10-07
+
+El autor eligió la opción B. `UnlockOutcome.NotNow` (ADR-0040): el prompt que expira sin que nadie lo toque, el
+sensor ocupado (también en el chequeo previo) y el teléfono que se bloquea a mitad de la lectura en iOS dejan la app
+**bloqueada, sin contar el intento y sin cerrar la sesión**. Sin hardware, sin enrolar o con actualización pendiente
+sigue siendo `Unavailable`; lo no clasificado sigue contando.
+
+**Cómo se verificó:** `PromptErrorMappingTest` (incluido el chequeo previo), `KeychainStatusMappingTest` y
+`SessionLockTest` (veinte `NotNow` seguidos: bloqueada, nada gastado, nada reportado).

@@ -36,9 +36,10 @@ class KeychainStatusMappingTest {
     }
 
     @Test
-    fun aKeychainThatCannotAnswerIsUnavailable() {
+    fun aKeychainThatCannotAnswerNowCostsNothing() {
+        // ADR-0040: the phone locked mid-read is not a failure and not the end of the session.
         listOf(NOT_AVAILABLE, INTERACTION_NOT_ALLOWED).forEach { status ->
-            assertEquals(UnlockOutcome.Unavailable, unlockOutcomeForKeychainStatus(status), "status $status")
+            assertEquals(UnlockOutcome.NotNow, unlockOutcomeForKeychainStatus(status), "status $status")
         }
     }
 

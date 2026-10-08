@@ -147,6 +147,9 @@ internal class SessionLock(
 
             UnlockOutcome.Cancelled -> LockOutcome.StillLocked(remainingAttempts = null)
 
+            // Free, like a dismissal, and for the same reason: nobody failed (ADR-0040).
+            UnlockOutcome.NotNow -> LockOutcome.StillLocked(remainingAttempts = null)
+
             UnlockOutcome.Failed -> {
                 // Reported whatever comes next: a refused biometric is the fact, and a lockout it may
                 // cause is a second fact, reported on its own.

@@ -1,5 +1,6 @@
 package com.luismejias.lumemedlink.core.session
 
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -49,11 +50,31 @@ class PromptErrorMappingTest {
     }
 
     @Test
+    fun aPromptNobodyTouchedOrABusySensorCostsNothing() {
+        // ADR-0040: stays locked, no attempt, no logout.
+        listOf(BiometricPrompt.ERROR_TIMEOUT, BiometricPrompt.ERROR_HW_UNAVAILABLE).forEach { code ->
+            assertEquals(UnlockOutcome.NotNow, unlockOutcomeForPromptError(code), "error code $code")
+        }
+    }
+
+    @Test
+    fun theCheckBeforeThePromptPostponesOnlyABusySensor() {
+        assertEquals(null, unlockOutcomeForCapability(BiometricManager.BIOMETRIC_SUCCESS))
+        assertEquals(UnlockOutcome.NotNow, unlockOutcomeForCapability(BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE))
+        listOf(
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE,
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED,
+            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED,
+        ).forEach { result ->
+            assertEquals(UnlockOutcome.Unavailable, unlockOutcomeForCapability(result), "capability $result")
+        }
+    }
+
+    @Test
     fun noUsableBiometricsIsUnavailable() {
         listOf(
             BiometricPrompt.ERROR_NO_BIOMETRICS,
             BiometricPrompt.ERROR_HW_NOT_PRESENT,
-            BiometricPrompt.ERROR_HW_UNAVAILABLE,
         ).forEach { code ->
             assertEquals(UnlockOutcome.Unavailable, unlockOutcomeForPromptError(code), "error code $code")
         }
