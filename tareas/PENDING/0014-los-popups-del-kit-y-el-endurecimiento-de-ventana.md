@@ -1,6 +1,6 @@
 # 0014 · Los popups del kit, ¿quedan bajo el endurecimiento de ventana?
 
-> **Estado:** PENDING · Abierta el 2026-10-06. Es una **sospecha sin medir**, escrita así a propósito: se mide antes de
+> **Estado:** PENDING · Abierta el 2026-10-06. **Medida el 2026-10-08: el toque a través de un popup pasa; bloqueada en el kit.** Es una **sospecha sin medir**, escrita así a propósito: se mide antes de
 > arreglar nada.
 >
 > **Bloqueo:** necesita `0013` (el kit cableado) y el emulador.
@@ -39,3 +39,26 @@ esta medición adjunta, y se dice en el gemelo LumeUIKit aunque iOS no lo necesi
 
 - No dar el hueco por cierto sin la medición, ni por inexistente sin ella.
 - No esquivar los popups del kit con diálogos propios: sería un componente en una pantalla.
+
+## Medido — 2026-10-08; espera al kit
+
+`Scripts/verify-popup-hardening.sh`, en el emulador API 37, con todos sus controles válidos:
+
+| Medición | Resultado |
+| --- | --- |
+| A · FLAG_SECURE: `screencap` con la alerta abierta (control: el launcher, luma 83) | **negro** (luma 0.1): el popup hereda FLAG_SECURE |
+| B0 · ventana principal, sin superposición: tocar «Mostrar contraseña» | el toque llega (control) |
+| B1 · ventana principal, a través de una superposición de OTRA app | **rechazado**: `filterTouchesWhenObscured` funciona |
+| B2 · alerta, sin superposición: tocar «Cerrar» | la cierra (control) |
+| B3 · alerta, a través de la superposición | **la cierra igual: el popup se puede tapjackear** |
+| Autofill | no aplica: ningún popup del kit tiene un campo de texto (leído en sus fuentes) |
+
+**Confirmada la mitad del toque, descartadas las otras dos.** Dos golpes en el instrumento, atrapados por controles: los
+argumentos con espacios se parten en `adb shell` (se pasa una clave), y el primer blanco del control de la ventana
+principal —el enlace «¿Olvidaste tu contraseña?»— no servía, porque la pantalla que abre se titula con las mismas
+palabras: el texto «seguía ahí» aunque el toque hubiera navegado. Sin el control B0, B1 habría pasado por una
+protección que nadie midió.
+
+El arreglo es del kit (la app no alcanza la ventana del popup): pedido el 2026-10-08 — que sus popups pongan
+`filterTouchesWhenObscured` en su vista raíz. Se cierra cuando B3 salga verde con los controles verdes.
+
