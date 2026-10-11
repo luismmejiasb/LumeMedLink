@@ -66,7 +66,7 @@ internal fun AppointmentsScreen(
 ) {
     val load by model.state.collectAsState()
     val segment by model.segment.collectAsState()
-    CareLoadView(load, onRetry = model::refresh) { content ->
+    CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(title = stringResource(Res.string.appointments_title), scroll = LumeContainerScroll.Scrollable) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
                 val upcomingLabel = if (content.upcoming.isEmpty()) {

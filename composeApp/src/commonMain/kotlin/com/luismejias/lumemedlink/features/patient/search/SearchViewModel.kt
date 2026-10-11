@@ -2,8 +2,14 @@ package com.luismejias.lumemedlink.features.patient.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.luismejias.lumemedlink.core.care.CareResult
+import com.luismejias.lumemedlink.core.care.Commune
+import com.luismejias.lumemedlink.core.care.DirectoryDoctor
+import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.RecentSearch
+import com.luismejias.lumemedlink.core.care.Slot
+import com.luismejias.lumemedlink.core.care.Specialty
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.parts.markLoading
 import com.luismejias.lumemedlink.features.patient.parts.toLoad
@@ -12,20 +18,27 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/** Buscar's form (p2): both choices are required before "Buscar médicos" turns on. */
-internal data class SearchCriteria(val specialty: String? = null, val commune: String? = null) {
-    val complete: Boolean get() = specialty != null && commune != null
+/**
+ * Buscar's owner (ADR-0045): the tab's stack and every screen's model on it, from the search (p2) to the
+ * booking (a2). Each step is a suspend function a test can call; the screens launch them.
+ */
+internal class SearchViewModel(private val care: PatientCareGateway, private val directory: DirectoryGateway) :
+    ViewModel() {
+    val flow = SearchFlow()
 
-    override fun toString(): String = "SearchCriteria(complete=$complete)"
-}
-
-/** Buscar's owner (ADR-0045). */
-internal class SearchViewModel(private val care: PatientCareGateway) : ViewModel() {
     private val recentLoad = MutableStateFlow<CareLoad<List<RecentSearch>>>(CareLoad.Loading)
     val recent: StateFlow<CareLoad<List<RecentSearch>>> = recentLoad.asStateFlow()
 
     private val chosen = MutableStateFlow(SearchCriteria())
     val criteria: StateFlow<SearchCriteria> = chosen.asStateFlow()
+
+    val specialties = CatalogPicker({ directory.specialties() }) { listOf(it.name) + it.synonyms }
+    val communes = CatalogPicker({
+        chosen.value.specialty?.let { directory.communes(it.code) } ?: CareResult.Ok(emptyList())
+    }) { listOf(it.name) }
+    val results = ResultsModel(directory, care::today)
+    val schedule = ScheduleModel(directory, care::appointments, care::today)
+    val booking = BookingModel(directory)
 
     init {
         refresh()
@@ -40,16 +53,99 @@ internal class SearchViewModel(private val care: PatientCareGateway) : ViewModel
         recentLoad.value = care.recentSearches().toLoad { it }
     }
 
-    fun specialtyChosen(name: String) {
-        chosen.value = chosen.value.copy(specialty = name)
+    /** Runs a step of the flow in this ViewModel's scope — a screen never owns the work it starts. */
+    fun launch(step: suspend SearchViewModel.() -> Unit) {
+        viewModelScope.launch { step() }
     }
 
-    fun communeChosen(name: String) {
-        chosen.value = chosen.value.copy(commune = name)
+    // ── The form (p2) ──────────────────────────────────────────────────────────────────────────
+
+    suspend fun openSpecialty() {
+        flow.push(SearchRoute.SPECIALTY)
+        specialties.load()
     }
 
-    /** A recent search fills both at once. */
-    fun recentChosen(search: RecentSearch) {
-        chosen.value = SearchCriteria(search.specialty, search.commune)
+    suspend fun openCommune() {
+        flow.push(SearchRoute.COMMUNE)
+        communes.load()
+    }
+
+    /** A new specialty drops the commune when it has no doctors of it — e3 lists only communes that do. */
+    suspend fun specialtyChosen(specialty: Specialty) {
+        val commune = chosen.value.commune
+        chosen.value = SearchCriteria(specialty, commune)
+        flow.back()
+        if (commune != null) {
+            val available = directory.communes(specialty.code)
+            if (available is CareResult.Ok && available.value.none { it.code == commune.code }) {
+                chosen.value = SearchCriteria(specialty, null)
+            }
+        }
+    }
+
+    fun communeChosen(commune: Commune) {
+        chosen.value = chosen.value.copy(commune = commune)
+        flow.back()
+    }
+
+    suspend fun search() {
+        if (!chosen.value.complete) return
+        results.clear()
+        if (flow.top != SearchRoute.RESULTS) flow.push(SearchRoute.RESULTS)
+        results.load(chosen.value)
+    }
+
+    /** A recent search fills both choices from the catalogs, then searches. Names that no longer exist are skipped. */
+    suspend fun recentChosen(search: RecentSearch) {
+        val specialty = (directory.specialties() as? CareResult.Ok)?.value?.firstOrNull { it.name == search.specialty }
+            ?: return
+        val commune = (directory.communes(specialty.code) as? CareResult.Ok)?.value
+            ?.firstOrNull { it.name == search.commune } ?: return
+        chosen.value = SearchCriteria(specialty, commune)
+        search()
+    }
+
+    /** e5: «Las Condes · 3 médicos» searches the same specialty there. */
+    suspend fun nearbyChosen(commune: Commune) {
+        chosen.value = chosen.value.copy(commune = commune)
+        search()
+    }
+
+    // ── Filters (p4) ───────────────────────────────────────────────────────────────────────────
+
+    fun openFilters() {
+        results.openFilters()
+        flow.push(SearchRoute.FILTERS)
+    }
+
+    fun filtersApplied() {
+        results.applyDraft()
+        flow.back()
+    }
+
+    // ── Booking (a1, a2) ───────────────────────────────────────────────────────────────────────
+
+    suspend fun schedule(doctor: DirectoryDoctor) {
+        flow.push(SearchRoute.SCHEDULE)
+        schedule.load(doctor)
+    }
+
+    fun confirm(doctor: DirectoryDoctor, slot: Slot) {
+        booking.start(doctor, slot)
+        flow.push(SearchRoute.CONFIRM)
+    }
+
+    /** The hour was taken: back to a1 with fresh hours, on the same day. */
+    suspend fun chooseAnotherHour() {
+        val state = booking.state.value ?: return
+        booking.outcomeSeen()
+        flow.backTo(SearchRoute.SCHEDULE)
+        schedule.load(state.doctor, keepDay = state.slot.date)
+    }
+
+    /** a3's «Listo» or «Ver mis citas»: the flow is over; the tab starts again from its form. */
+    fun finishBooking() {
+        booking.clear()
+        flow.reset()
     }
 }

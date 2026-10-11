@@ -62,7 +62,7 @@ internal fun SettingsScreen(
     onEntry: (SettingsEntry) -> Unit,
 ) {
     val load by model.state.collectAsState()
-    CareLoadView(load, onRetry = model::refresh) { content ->
+    CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
         val profile = content.profile
         LumeContainer(title = stringResource(Res.string.settings_title), scroll = LumeContainerScroll.Scrollable) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {

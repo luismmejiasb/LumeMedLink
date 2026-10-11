@@ -15,7 +15,6 @@ import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
 import com.luismejias.lumemedlink.features.patient.parts.past
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
-import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
 import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
@@ -101,19 +100,6 @@ class PatientTabsTest {
         val all = ready(MyDoctorsViewModel(design).also { it.load() }).all
         assertFalse(all.single { it.doctor.id == "p-pinto" }.sharesContact)
         assertTrue(all.single { it.doctor.id == "p-fuentes" }.sharesContact)
-    }
-
-    @Test
-    fun searchingNeedsBothChoicesAndARecentSearchFillsThem() = runTest {
-        val search = SearchViewModel(design).also { it.load() }
-        assertFalse(search.criteria.value.complete)
-        search.specialtyChosen("Dermatología")
-        assertFalse(search.criteria.value.complete)
-        search.communeChosen("Las Condes")
-        assertTrue(search.criteria.value.complete)
-        val recent = (search.recent.value as CareLoad.Ready).content.first()
-        search.recentChosen(recent)
-        assertEquals(recent.specialty, search.criteria.value.specialty)
     }
 
     @Test

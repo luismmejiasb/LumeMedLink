@@ -59,7 +59,7 @@ internal fun MyDoctorsScreen(
     onSearch: () -> Unit,
 ) {
     val load by model.state.collectAsState()
-    CareLoadView(load, onRetry = model::refresh) { content ->
+    CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(title = stringResource(Res.string.tab_doctors), scroll = LumeContainerScroll.Scrollable) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
                 if (content.all.isEmpty()) {

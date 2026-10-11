@@ -70,7 +70,7 @@ internal fun HomeScreen(
     onSearch: () -> Unit,
 ) {
     val load by model.state.collectAsState()
-    CareLoadView(load, onRetry = model::refresh) { home ->
+    CareLoadView(load, onRetry = model::refresh, standalone = true) { home ->
         LumeContainer(scroll = LumeContainerScroll.Scrollable) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
                 HomeBrand()

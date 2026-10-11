@@ -14,7 +14,7 @@ contrato 0.96.0; lo que no, va en `docs/backend-requests/0008`.
 1. **Las cinco pestañas y su barra — HECHO 2026-10-11.** Inicio (p1, e7), Buscar (p2), Mis citas (p5, e8), Mis
    médicos (p6, e9), Configuración (p7), sobre `LumeTabBar` con el contador de «por confirmar» en Citas.
    `core/care/PatientCare.kt` + `ScriptedPatientCare`; `features/patient/`; `app/SessionScope`.
-2. **Buscar → reservar** (e0–e3, p3, p4, a1–a4, e2, e5, e6, e10): especialidad y comuna desde los catálogos,
+2. **Buscar → reservar — HECHO 2026-10-11** (e0–e3, p3, p4, a1–a4, e2, e5, e6; e10 es de «cambiar hora», tajada 3): especialidad y comuna desde los catálogos,
    resultados del directorio, filtros, día y hora de la disponibilidad, confirmar, «Reserva enviada» (el médico
    confirma: `REQUESTED`). Reservar manda `clientId`.
 3. **Tu próxima cita** (f1–f4): cómo llegar, cambiar (reagendar es la operación atómica del contrato, nunca cancelar
@@ -25,6 +25,17 @@ contrato 0.96.0; lo que no, va en `docs/backend-requests/0008`.
 7. **El médico** (m1–m3): agenda simple, pacientes como contactos, su perfil.
 
 Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
+
+### El guion de la búsqueda (`core/care/DirectoryScript.kt`)
+
+| Para ver | Haz |
+| --- | --- |
+| p3, tres médicos | Medicina general en Providencia |
+| e5, comunas cercanas | Cardiología en Vitacura |
+| e6, sin conexión | cualquier especialidad en Ñuñoa |
+| la hora se acaba de tomar | Dra. Rendón, lunes 21, 10:00 |
+| una reserva por confirmar por médico | reservar dos veces al mismo médico |
+| la hora que ya tienes | Cardiología en Las Condes, lunes 21: falta las 09:00 (Dr. Pinto) |
 
 ## Cómo se verifica
 
@@ -41,7 +52,6 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 - **«Correo» en Mis médicos**: abrir la app de correo es el intent de envío de Android, que ADR-0007 cierra sin
   excepciones. ¿Se abre una excepción para una dirección sin adjunto?
 - **Un avatar como accesorio de fila** del kit, para las iniciales del médico (hoy: tile de persona con color estable).
-- **Un reloj relleno** en el kit: el diseño dibuja un disco ámbar; `LumeIcon.Clock` es contorno.
 - **El diseño c1 muestra «Motivo que escribiste»** (texto clínico): el autor ya quitó el motivo y esta app no lo tiene
   (ADR-0001); el paquete de diseño debería corregirse.
 - **e8 dibuja una tercera pestaña «Canceladas»** en Mis citas que p5 no tiene: ¿cuál manda?

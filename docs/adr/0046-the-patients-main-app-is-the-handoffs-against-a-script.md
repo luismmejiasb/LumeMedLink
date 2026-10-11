@@ -56,6 +56,17 @@ Two contract facts shape the screens and are not the design's:
 6. **The avatar's camera badge in Configuración waits for the photo flow** (k1–k4), which has no contract: the
    profile has no photo field.
 
+7. **Search to booking (p3–a4) leaves out four things the design draws.** «Más cerca» in p4 needs the patient's
+   location, and a coordinate is no excuse for a «cerca de ti» (constitution §1.0, ADR-0027). «Previsión» in p4
+   and a2: the contract has no coverage on a professional and books without one. «Motivo de la consulta» in a2:
+   removed by the author, and a clinical reason has no place here (ADR-0001). «¿Ya sabes a quién buscas?» in p2:
+   the design has no screen for a search by name, though the contract takes a `name`.
+8. **a1 draws only free hours.** Availability returns no taken ones, so the design's struck-out hours are not
+   drawn; an hour the patient already holds elsewhere is left out with a line naming the clash. The days are the
+   kit's chips over the next month, without the month and year menus.
+9. **Rating, its count and the number of visits** in p3 come from the script (request `0008` §4); filtering and
+   sorting run over what the search returned.
+
 ## Consequences
 
 - The flows behind the tab roots (search to booking, detail, change, cancel, rating, photo, the doctor's three

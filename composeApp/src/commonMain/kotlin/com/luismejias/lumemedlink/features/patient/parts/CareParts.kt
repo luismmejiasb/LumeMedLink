@@ -1,12 +1,15 @@
 package com.luismejias.lumemedlink.features.patient.parts
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeActivityIndicator
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeTag
 import cl.lume.uicomposer.components.LumeTagStyle
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -38,6 +41,7 @@ import com.luismejias.lumemedlink.resources.weekdays_long
 import com.luismejias.lumemedlink.resources.weekdays_short
 import com.luismejias.lumemedlink.shared.CalendarDate
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -70,28 +74,40 @@ internal fun <T> MutableStateFlow<CareLoad<T>>.markLoading() {
     if (value !is CareLoad.Ready) value = CareLoad.Loading
 }
 
-/** Renders the waiting and failed states of a tab root, and [content] once it is ready. */
+/**
+ * Renders the waiting and failed states of a read, and [content] once it is ready. [standalone] wraps the two
+ * states in their own centred region (a tab root); inside a pushed screen they sit in the screen's region.
+ * [offlineTitle] and [offlineBody] replace the generic words where the design names what failed (e6).
+ */
 @Composable
-internal fun <T> CareLoadView(load: CareLoad<T>, onRetry: () -> Unit, content: @Composable (T) -> Unit) {
-    when (load) {
-        CareLoad.Loading -> LumeContainer(alignment = LumeContainerAlignment.Center) {
-            LumeActivityIndicator(contentDescription = stringResource(Res.string.care_loading))
+internal fun <T> CareLoadView(
+    load: CareLoad<T>,
+    onRetry: () -> Unit,
+    standalone: Boolean = false,
+    offlineTitle: StringResource = Res.string.care_offline_title,
+    offlineBody: StringResource = Res.string.care_offline_body,
+    content: @Composable (T) -> Unit,
+) {
+    val state: @Composable () -> Unit = {
+        when (load) {
+            CareLoad.Loading -> LumeActivityIndicator(contentDescription = stringResource(Res.string.care_loading))
+            is CareLoad.Failed -> {
+                val offline = load.failure == CareFailure.Offline
+                LumeEmptyState(
+                    icon = if (offline) LumeIcon.Wifi else LumeIcon.Alert,
+                    title = stringResource(if (offline) offlineTitle else Res.string.care_unavailable_title),
+                    message = stringResource(if (offline) offlineBody else Res.string.care_unavailable_body),
+                    action = LumeButtonContent.Title(stringResource(Res.string.common_retry)),
+                    onAction = onRetry,
+                )
+            }
+            is CareLoad.Ready -> Unit
         }
-        is CareLoad.Failed -> LumeContainer(alignment = LumeContainerAlignment.Center) {
-            val offline = load.failure == CareFailure.Offline
-            LumeEmptyState(
-                icon = if (offline) LumeIcon.Wifi else LumeIcon.Alert,
-                title = stringResource(
-                    if (offline) Res.string.care_offline_title else Res.string.care_unavailable_title,
-                ),
-                message = stringResource(
-                    if (offline) Res.string.care_offline_body else Res.string.care_unavailable_body,
-                ),
-                action = LumeButtonContent.Title(stringResource(Res.string.common_retry)),
-                onAction = onRetry,
-            )
-        }
-        is CareLoad.Ready -> content(load.content)
+    }
+    when {
+        load is CareLoad.Ready -> content(load.content)
+        standalone -> LumeContainer(alignment = LumeContainerAlignment.Center) { state() }
+        else -> LumeStack(modifier = Modifier.fillMaxWidth(), spacing = { medium }) { state() }
     }
 }
 
@@ -118,6 +134,14 @@ internal fun shortDateText(date: CalendarDate): String = stringResource(
 internal fun weekdayDayText(date: CalendarDate): String = stringResource(
     Res.string.date_weekday_day,
     stringArrayResource(Res.array.weekdays_short)[date.isoWeekday - 1],
+    date.day,
+)
+
+/** "Lunes 21" / "Monday 21": a day within the booking horizon, named in full. */
+@Composable
+internal fun longWeekdayDayText(date: CalendarDate): String = stringResource(
+    Res.string.date_weekday_day,
+    stringArrayResource(Res.array.weekdays_long)[date.isoWeekday - 1],
     date.day,
 )
 

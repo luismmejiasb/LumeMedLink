@@ -24,8 +24,6 @@ import com.luismejias.lumemedlink.core.care.RecentSearch
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.search_action
-import com.luismejias.lumemedlink.resources.search_by_name_body
-import com.luismejias.lumemedlink.resources.search_by_name_title
 import com.luismejias.lumemedlink.resources.search_choose
 import com.luismejias.lumemedlink.resources.search_commune
 import com.luismejias.lumemedlink.resources.search_intro
@@ -38,7 +36,8 @@ import org.jetbrains.compose.resources.stringResource
 private enum class Criterion { SPECIALTY, COMMUNE }
 
 /**
- * Buscar (p2). The recent searches are the only read; a failure to load them hides the section rather than the
+ * Buscar (p2). «¿Ya sabes a quién buscas?» waits: the design has no screen for a search by name (the contract
+ * does take a `name`). The recent searches are the only read; a failure to load them hides the section rather than the
  * form — searching does not depend on them.
  */
 @Composable
@@ -47,7 +46,6 @@ internal fun SearchScreen(
     onPickSpecialty: () -> Unit,
     onPickCommune: () -> Unit,
     onSearch: () -> Unit,
-    onSearchByName: () -> Unit,
 ) {
     val criteria by model.criteria.collectAsState()
     val recent by model.recent.collectAsState()
@@ -68,8 +66,8 @@ internal fun SearchScreen(
                 ) { criterion ->
                     val (label, value, icon) = when (criterion) {
                         Criterion.SPECIALTY ->
-                            Triple(Res.string.search_specialty, criteria.specialty, LumeIcon.Stethoscope)
-                        Criterion.COMMUNE -> Triple(Res.string.search_commune, criteria.commune, LumeIcon.Pin)
+                            Triple(Res.string.search_specialty, criteria.specialty?.name, LumeIcon.Stethoscope)
+                        Criterion.COMMUNE -> Triple(Res.string.search_commune, criteria.commune?.name, LumeIcon.Pin)
                     }
                     LumeListRow(
                         title = value ?: stringResource(Res.string.search_choose),
@@ -94,22 +92,11 @@ internal fun SearchScreen(
                         items = searches,
                         key = { "${it.specialty}/${it.commune}" },
                         scrolls = false,
-                        onRowTap = { search: RecentSearch ->
-                            model.recentChosen(search)
-                            onSearch()
-                        },
+                        onRowTap = { search: RecentSearch -> model.launch { recentChosen(search) } },
                     ) { search ->
                         LumeListRow(title = search.specialty, description = search.commune, disclosure = true)
                     }
                 }
-            }
-            LumeList(items = listOf(Unit), key = { it }, scrolls = false, onRowTap = { onSearchByName() }) {
-                LumeListRow(
-                    title = stringResource(Res.string.search_by_name_title),
-                    description = stringResource(Res.string.search_by_name_body),
-                    leading = LumeListAccessory.Icon(LumeIcon.Search, ""),
-                    disclosure = true,
-                )
             }
         }
     }

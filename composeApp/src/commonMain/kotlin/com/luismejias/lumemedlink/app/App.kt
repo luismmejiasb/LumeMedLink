@@ -238,6 +238,7 @@ public fun App() {
                             AccessRole.PATIENT -> InSessionScope(patientScope) {
                                 PatientMainHost(
                                     care = patientCare,
+                                    directory = patientCare,
                                     onSignOut = {
                                         patientScope.reset()
                                         access.restart()

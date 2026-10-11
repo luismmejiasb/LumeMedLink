@@ -19,13 +19,17 @@ internal class ScriptedPatientCare(
     private val world: CareWorld = CareWorld.DESIGN,
     private val failure: CareFailure? = null,
     private val latency: suspend () -> Unit = { delay(LATENCY_MILLIS) },
-) : PatientCareGateway {
+) : PatientCareGateway,
+    DirectoryGateway {
+    /** What this run booked, by its client key: memory only, gone with the instance. */
+    private val booked = LinkedHashMap<String, PatientAppointment>()
+
     override fun today(): CalendarDate = TODAY
 
     override suspend fun profile(): CareResult<PatientProfile> = answer(PROFILE)
 
     override suspend fun appointments(): CareResult<List<PatientAppointment>> =
-        answer(if (world == CareWorld.DESIGN) APPOINTMENTS else emptyList())
+        answer((if (world == CareWorld.DESIGN) APPOINTMENTS else emptyList()) + booked.values)
 
     override suspend fun ratingPrompts(): CareResult<List<RatingPrompt>> = answer(
         if (world == CareWorld.DESIGN) {
@@ -61,6 +65,65 @@ internal class ScriptedPatientCare(
     override suspend fun sentRatingCount(): CareResult<Int> = answer(if (world == CareWorld.DESIGN) 3 else 0)
 
     override suspend fun hasUnreadNotices(): CareResult<Boolean> = answer(world == CareWorld.DESIGN)
+
+    override suspend fun specialties(): CareResult<List<Specialty>> = answer(DirectoryScript.SPECIALTIES)
+
+    override suspend fun communes(specialtyCode: String): CareResult<List<Commune>> =
+        answer(DirectoryScript.communesWith(specialtyCode))
+
+    override suspend fun search(specialtyCode: String, communeCode: String): CareResult<List<DirectoryDoctor>> {
+        if (communeCode == DirectoryScript.OFFLINE_COMMUNE) return CareResult.Failed(CareFailure.Offline)
+        return answer(DirectoryScript.doctorsIn(specialtyCode, communeCode, TODAY, ::isBooked))
+    }
+
+    override suspend fun nearbyCommunes(specialtyCode: String, communeCode: String): CareResult<List<NearbyCommune>> =
+        answer(DirectoryScript.nearby(specialtyCode, communeCode, TODAY))
+
+    override suspend fun availability(
+        doctorId: String,
+        locationId: String,
+        from: CalendarDate,
+        to: CalendarDate,
+    ): CareResult<List<Slot>> = answer(DirectoryScript.slots(doctorId, from, to).filterNot { isBooked(doctorId, it) })
+
+    override suspend fun book(doctorId: String, locationId: String, slot: Slot, clientId: String): BookingResult {
+        latency()
+        failure?.let {
+            return BookingResult.Failed(
+                if (it ==
+                    CareFailure.Offline
+                ) {
+                    BookingFailure.Offline
+                } else {
+                    BookingFailure.Unavailable
+                },
+            )
+        }
+        booked[clientId]?.let { return BookingResult.Booked(it) }
+        val pending = (APPOINTMENTS + booked.values)
+            .any { it.doctor.id == doctorId && it.status == AppointmentStatus.REQUESTED && it.date >= TODAY }
+        return when {
+            pending -> BookingResult.Failed(BookingFailure.AlreadyPending)
+            DirectoryScript.takenOnArrival(doctorId, slot, TODAY) || isBooked(doctorId, slot) ->
+                BookingResult.Failed(BookingFailure.SlotTaken)
+            else -> {
+                val appointment = PatientAppointment(
+                    id = "a-$clientId",
+                    doctor = DirectoryScript.doctorOf(doctorId),
+                    date = slot.date,
+                    start = slot.start,
+                    minutes = slot.minutes,
+                    status = AppointmentStatus.REQUESTED,
+                    place = DirectoryScript.placeOf(doctorId),
+                )
+                booked[clientId] = appointment
+                BookingResult.Booked(appointment)
+            }
+        }
+    }
+
+    private fun isBooked(doctorId: String, slot: Slot): Boolean =
+        booked.values.any { it.doctor.id == doctorId && it.date == slot.date && it.start == slot.start }
 
     private suspend fun <T> answer(value: T): CareResult<T> {
         latency()

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
+import com.luismejias.lumemedlink.features.patient.parts.folded
 import com.luismejias.lumemedlink.features.patient.parts.markLoading
 import com.luismejias.lumemedlink.features.patient.parts.toLoad
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,11 +26,6 @@ internal data class MyDoctorsContent(val all: List<MyDoctor>, val query: String 
             if (wanted.isEmpty()) return true
             return listOf(entry.doctor.displayName, entry.doctor.specialty).any { it.folded().contains(wanted) }
         }
-
-        private val ACCENTS =
-            mapOf('á' to 'a', 'é' to 'e', 'í' to 'i', 'ó' to 'o', 'ú' to 'u', 'ü' to 'u', 'ñ' to 'n')
-
-        fun String.folded(): String = trim().lowercase().map { ACCENTS[it] ?: it }.joinToString("")
     }
 }
 
