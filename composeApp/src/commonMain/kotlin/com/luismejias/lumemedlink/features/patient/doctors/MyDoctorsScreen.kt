@@ -136,7 +136,7 @@ private fun DoctorCard(
                                 stringResource(Res.string.doctors_call),
                             ),
                             emphasis = LumeButtonEmphasis.OutlineNeutral,
-                            size = LumeButtonSize.Small,
+                            size = LumeButtonSize.Card,
                             onClick = { onCall(phone) },
                         )
                     }
@@ -147,7 +147,7 @@ private fun DoctorCard(
                                 stringResource(Res.string.doctors_mail),
                             ),
                             emphasis = LumeButtonEmphasis.OutlineNeutral,
-                            size = LumeButtonSize.Small,
+                            size = LumeButtonSize.Card,
                             onClick = { onMail(email) },
                         )
                     }

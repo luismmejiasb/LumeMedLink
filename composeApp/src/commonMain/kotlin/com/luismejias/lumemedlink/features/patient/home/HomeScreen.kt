@@ -221,14 +221,14 @@ private fun NextAppointmentCard(
             ) {
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.home_directions)),
-                    size = LumeButtonSize.Small,
+                    size = LumeButtonSize.Pair,
                     width = LumeButtonWidth.Fill,
                     onClick = { onDirections(next) },
                 )
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.home_change_or_cancel)),
                     emphasis = LumeButtonEmphasis.Outline,
-                    size = LumeButtonSize.Small,
+                    size = LumeButtonSize.Pair,
                     width = LumeButtonWidth.Fill,
                     onClick = { onChangeOrCancel(next) },
                 )

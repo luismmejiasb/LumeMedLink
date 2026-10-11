@@ -9,6 +9,7 @@ import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonRole
+import cl.lume.uicomposer.components.LumeButtonSize
 import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeCalloutStyle
@@ -18,7 +19,6 @@ import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeEmptyState
-import cl.lume.uicomposer.components.LumeEqualRow
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListRow
@@ -32,6 +32,8 @@ import cl.lume.uicomposer.components.LumeSegmentedControl
 import cl.lume.uicomposer.components.LumeSegmentedSelection
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
+import cl.lume.uicomposer.components.LumeStackAxis
+import cl.lume.uicomposer.components.LumeStackStyle
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -208,10 +210,16 @@ private fun AppointmentCard(
                     text = stringResource(Res.string.appointments_requested_note),
                     color = LumeTextColor.Secondary,
                 )
-                actionable -> LumeEqualRow {
+                actionable -> LumeStack(
+                    axis = LumeStackAxis.Horizontal,
+                    style = LumeStackStyle.Fixed,
+                    alignment = LumeStackAlignment.Fill,
+                    spacing = { small },
+                ) {
                     LumeButton(
                         content = LumeButtonContent.Title(stringResource(Res.string.appointments_change)),
                         emphasis = LumeButtonEmphasis.OutlineNeutral,
+                        size = LumeButtonSize.Pair,
                         width = LumeButtonWidth.Fill,
                         onClick = { onChange(appointment) },
                     )
@@ -219,6 +227,7 @@ private fun AppointmentCard(
                         content = LumeButtonContent.Title(stringResource(Res.string.appointments_cancel)),
                         emphasis = LumeButtonEmphasis.Outline,
                         role = LumeButtonRole.Destructive,
+                        size = LumeButtonSize.Pair,
                         width = LumeButtonWidth.Fill,
                         onClick = { onCancel(appointment) },
                     )
