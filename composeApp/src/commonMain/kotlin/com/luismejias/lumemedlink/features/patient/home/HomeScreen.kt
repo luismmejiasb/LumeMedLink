@@ -173,7 +173,7 @@ private fun NextAppointmentCard(
     onChangeOrCancel: (PatientAppointment) -> Unit,
 ) {
     val relative = relativeDayText(next.date, home.today)
-    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Solid, inset = LumeCardInset.Section) {
+    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Solid, inset = LumeCardInset.Feature) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
             LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Spread) {
                 LumeEyebrow(
