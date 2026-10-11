@@ -266,7 +266,7 @@
     <string name="appointments_change">Cambiar</string>
     <string name="appointments_cancel">Cancelar</string>
     <string name="appointments_requested_note">El médico confirma cada reserva. Te avisaremos apenas lo haga.</string>
-    <string name="appointments_window">Puedes cambiar o cancelar hasta %1$d h antes. Después, comunícate con la consulta.</string>
+    <string name="appointments_window">Puedes cambiar o cancelar hasta **%1$d h antes**. Después, comunícate con la consulta.</string>
     <string name="appointments_empty_upcoming">Aún no tienes citas próximas</string>
     <string name="appointments_empty_past">Aún no tienes citas pasadas</string>
     <string name="doctors_search_prompt">Buscar entre tus médicos</string>
@@ -333,7 +333,10 @@
     <string name="results_next">Próxima hora</string>
     <string name="results_no_slot">Sin horas en el próximo mes</string>
     <string name="results_book">Agendar</string>
-    <string name="results_rating">%1$s (%2$d) · %3$s</string>
+    <plurals name="rating_spoken">
+        <item quantity="one">%1$s de 5, %2$d opinión, %3$s</item>
+        <item quantity="other">%1$s de 5, %2$d opiniones, %3$s</item>
+    </plurals>
     <string name="results_empty_title">No hay médicos de %1$s en %2$s</string>
     <string name="results_empty_body">Prueba en una comuna cercana: estas sí tienen horas.</string>
     <string name="results_nearby">Comunas cercanas</string>
@@ -359,7 +362,11 @@
         <item quantity="other">Ver %1$d médicos</item>
     </plurals>
     <string name="schedule_title">Agendar</string>
-    <string name="schedule_days">Días con horas</string>
+    <string name="schedule_month">Mes</string>
+    <string name="schedule_year">Año</string>
+    <string name="schedule_yours">Tu cita</string>
+    <string name="schedule_yours_spoken">%1$s, tu cita</string>
+    <string name="sent_waiting">**Esperando confirmación** del médico. Te avisaremos apenas responda.</string>
     <string name="schedule_morning">%1$s · mañana</string>
     <string name="schedule_afternoon">Tarde</string>
     <string name="schedule_clash">A las %1$s ya tienes cita con %2$s.</string>
@@ -372,12 +379,11 @@
     <string name="confirm_duration">Duración</string>
     <string name="confirm_duration_value">%1$d minutos · consulta presencial</string>
     <string name="confirm_place">Dirección</string>
-    <string name="confirm_note">%1$s confirma cada reserva. La hora queda reservada para ti mientras tanto.</string>
+    <string name="confirm_note">%1$s **confirma cada reserva**. La hora queda reservada para ti mientras tanto.</string>
     <string name="confirm_back">Volver</string>
     <string name="confirm_action">Confirmar reserva</string>
     <string name="confirm_running">Enviando la reserva…</string>
     <string name="sent_title">¡Reserva enviada!</string>
-    <string name="sent_body">%1$s · %2$s con %3$s. Esperando confirmación del médico: te avisaremos apenas responda.</string>
     <string name="booked_title">¡Cita reservada!</string>
     <string name="booked_body">%1$s · %2$s con %3$s.</string>
     <string name="sent_view">Ver mis citas</string>

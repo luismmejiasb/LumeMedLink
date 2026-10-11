@@ -7,10 +7,12 @@ import com.luismejias.lumemedlink.core.care.DirectoryScript
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.search.BookingOutcome
+import com.luismejias.lumemedlink.features.patient.search.HourTile
 import com.luismejias.lumemedlink.features.patient.search.SearchFilters
 import com.luismejias.lumemedlink.features.patient.search.SearchRoute
 import com.luismejias.lumemedlink.features.patient.search.SearchSort
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
+import com.luismejias.lumemedlink.features.patient.search.calendarMonth
 import com.luismejias.lumemedlink.shared.ClockTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -111,7 +113,7 @@ class BookingFlowTest {
         val rendon = results().shown.first { it.doctor.id == "p-rendon" }
         model.schedule(rendon)
         val schedule = (model.schedule.state.value as CareLoad.Ready).content
-        val slot = schedule.morning.first()
+        val slot = schedule.morning.free().first()
         model.schedule.slotChosen(slot)
         model.confirm(rendon, slot)
         model.booking.book()
@@ -129,7 +131,9 @@ class BookingFlowTest {
         model.search()
         val vera = results().shown.first { it.doctor.id == "p-vera" }
         model.schedule(vera)
-        val slot = (model.schedule.state.value as CareLoad.Ready).content.let { it.morning + it.afternoon }.first()
+        val slot = (model.schedule.state.value as CareLoad.Ready).content.let {
+            it.morning + it.afternoon
+        }.free().first()
         model.confirm(vera, slot)
         model.booking.book()
         val first = assertIs<BookingOutcome.Sent>(model.booking.state.value?.outcome).appointment
@@ -147,7 +151,7 @@ class BookingFlowTest {
         model.schedule(rendon)
         val monday = script.today().plusDays(5)
         model.schedule.dayChosen(monday)
-        val ten = (model.schedule.state.value as CareLoad.Ready).content.morning.firstOrNull {
+        val ten = (model.schedule.state.value as CareLoad.Ready).content.morning.free().firstOrNull {
             it.start ==
                 ClockTime(10, 0)
         }
@@ -169,7 +173,29 @@ class BookingFlowTest {
         val monday = script.today().plusDays(5)
         model.schedule.dayChosen(monday)
         val content = (model.schedule.state.value as CareLoad.Ready).content
-        assertFalse(content.morning.any { it.start == ClockTime(9, 0) }, "the patient has Dr. Pinto at 09:00")
+        assertFalse(content.morning.free().any { it.start == ClockTime(9, 0) }, "the patient has Dr. Pinto at 09:00")
+        val mine = content.morning.filterIsInstance<HourTile.Mine>().single()
+        assertEquals(ClockTime(9, 0), mine.start, "drawn as «Tu cita», and refused")
         assertEquals(listOf("p-pinto"), content.clashes.map { it.doctor.id })
     }
+
+    @Test
+    fun theStripShowsTheWholeMonthAndANewMonthOpensOnItsFirstDayWithHours() = runTest {
+        choose("Medicina general", "Providencia")
+        model.search()
+        model.schedule(results().shown.first { it.doctor.id == "p-rendon" })
+        val september = (model.schedule.state.value as CareLoad.Ready).content
+        val tomorrow = script.today().plusDays(1)
+        assertEquals(tomorrow, september.strip.first(), "the strip opens at tomorrow")
+        assertTrue(september.strip.any { it !in september.days }, "a weekend has no hours and is still drawn")
+        val october = september.months.first { it.month == 10 }
+        model.schedule.monthChosen(october)
+        val content = (model.schedule.state.value as CareLoad.Ready).content
+        assertEquals(october, content.month)
+        assertEquals(content.days.first { it.calendarMonth == october }, content.day)
+        assertTrue(content.strip.all { it.calendarMonth == october && it <= content.lastDay })
+    }
 }
+
+private fun List<HourTile>.free(): List<com.luismejias.lumemedlink.core.care.Slot> =
+    filterIsInstance<HourTile.Free>().map { it.slot }

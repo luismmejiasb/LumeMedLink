@@ -261,7 +261,7 @@
     <string name="appointments_change">Change</string>
     <string name="appointments_cancel">Cancel</string>
     <string name="appointments_requested_note">The doctor confirms every booking. We’ll let you know as soon as they do.</string>
-    <string name="appointments_window">You can change or cancel up to %1$d h before. After that, contact the practice.</string>
+    <string name="appointments_window">You can change or cancel up to **%1$d h before**. After that, contact the practice.</string>
     <string name="appointments_empty_upcoming">You have no upcoming appointments yet</string>
     <string name="appointments_empty_past">You have no past appointments yet</string>
     <string name="doctors_search_prompt">Search your doctors</string>
@@ -328,7 +328,10 @@
     <string name="results_next">Next available</string>
     <string name="results_no_slot">No times in the next month</string>
     <string name="results_book">Book</string>
-    <string name="results_rating">%1$s (%2$d) · %3$s</string>
+    <plurals name="rating_spoken">
+        <item quantity="one">%1$s out of 5, %2$d review, %3$s</item>
+        <item quantity="other">%1$s out of 5, %2$d reviews, %3$s</item>
+    </plurals>
     <string name="results_empty_title">No %1$s doctors in %2$s</string>
     <string name="results_empty_body">Try a nearby commune: these do have times.</string>
     <string name="results_nearby">Nearby communes</string>
@@ -354,7 +357,11 @@
         <item quantity="other">Show %1$d doctors</item>
     </plurals>
     <string name="schedule_title">Book</string>
-    <string name="schedule_days">Days with times</string>
+    <string name="schedule_month">Month</string>
+    <string name="schedule_year">Year</string>
+    <string name="schedule_yours">Yours</string>
+    <string name="schedule_yours_spoken">%1$s, your appointment</string>
+    <string name="sent_waiting">**Waiting for confirmation** from the doctor. We’ll let you know as soon as they answer.</string>
     <string name="schedule_morning">%1$s · morning</string>
     <string name="schedule_afternoon">Afternoon</string>
     <string name="schedule_clash">At %1$s you already have an appointment with %2$s.</string>
@@ -367,12 +374,11 @@
     <string name="confirm_duration">Length</string>
     <string name="confirm_duration_value">%1$d minutes · in person</string>
     <string name="confirm_place">Address</string>
-    <string name="confirm_note">%1$s confirms every booking. The time is held for you meanwhile.</string>
+    <string name="confirm_note">%1$s **confirms every booking**. The time is held for you meanwhile.</string>
     <string name="confirm_back">Back</string>
     <string name="confirm_action">Confirm booking</string>
     <string name="confirm_running">Sending the booking…</string>
     <string name="sent_title">Booking sent!</string>
-    <string name="sent_body">%1$s · %2$s with %3$s. Waiting for the doctor to confirm: we’ll let you know as soon as they do.</string>
     <string name="booked_title">Appointment booked!</string>
     <string name="booked_body">%1$s · %2$s with %3$s.</string>
     <string name="sent_view">See my appointments</string>

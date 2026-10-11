@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeAlert
 import cl.lume.uicomposer.components.LumeAlertAction
+import cl.lume.uicomposer.components.LumeAlertPresentation
 import cl.lume.uicomposer.components.LumeAsyncButton
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
@@ -14,26 +15,33 @@ import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonFeedback
 import cl.lume.uicomposer.components.LumeButtonSize
 import cl.lume.uicomposer.components.LumeButtonWidth
-import cl.lume.uicomposer.components.LumeCalloutBox
+import cl.lume.uicomposer.components.LumeCallout
+import cl.lume.uicomposer.components.LumeCalloutStyle
+import cl.lume.uicomposer.components.LumeCalloutSurface
 import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeCardStyle
+import cl.lume.uicomposer.components.LumeDay
+import cl.lume.uicomposer.components.LumeDayState
+import cl.lume.uicomposer.components.LumeDayStrip
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListChrome
+import cl.lume.uicomposer.components.LumeListDensity
 import cl.lume.uicomposer.components.LumeListIconInk
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
+import cl.lume.uicomposer.components.LumeMenuPicker
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAxis
 import cl.lume.uicomposer.components.LumeStackStyle
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
-import cl.lume.uicomposer.components.LumeToggleGroup
-import cl.lume.uicomposer.components.LumeToggleGroupLayout
-import cl.lume.uicomposer.components.LumeToggleGroupSelection
+import cl.lume.uicomposer.components.LumeTimeSlot
+import cl.lume.uicomposer.components.LumeTimeSlotGrid
+import cl.lume.uicomposer.components.LumeTimeSlotState
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeStatusStyle
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
@@ -48,7 +56,7 @@ import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
 import com.luismejias.lumemedlink.features.patient.parts.capitalized
 import com.luismejias.lumemedlink.features.patient.parts.longDateText
 import com.luismejias.lumemedlink.features.patient.parts.longWeekdayDayText
-import com.luismejias.lumemedlink.features.patient.parts.weekdayDayText
+import com.luismejias.lumemedlink.features.patient.parts.strongRuns
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.booked_body
 import com.luismejias.lumemedlink.resources.booked_title
@@ -68,37 +76,44 @@ import com.luismejias.lumemedlink.resources.confirm_running
 import com.luismejias.lumemedlink.resources.confirm_title
 import com.luismejias.lumemedlink.resources.confirm_when
 import com.luismejias.lumemedlink.resources.confirm_when_value
+import com.luismejias.lumemedlink.resources.months_long
 import com.luismejias.lumemedlink.resources.pending_with_body
 import com.luismejias.lumemedlink.resources.pending_with_title
 import com.luismejias.lumemedlink.resources.schedule_afternoon
 import com.luismejias.lumemedlink.resources.schedule_cancel
 import com.luismejias.lumemedlink.resources.schedule_clash
 import com.luismejias.lumemedlink.resources.schedule_continue
-import com.luismejias.lumemedlink.resources.schedule_days
+import com.luismejias.lumemedlink.resources.schedule_month
 import com.luismejias.lumemedlink.resources.schedule_morning
 import com.luismejias.lumemedlink.resources.schedule_none
 import com.luismejias.lumemedlink.resources.schedule_title
-import com.luismejias.lumemedlink.resources.sent_body
+import com.luismejias.lumemedlink.resources.schedule_year
+import com.luismejias.lumemedlink.resources.schedule_yours
+import com.luismejias.lumemedlink.resources.schedule_yours_spoken
 import com.luismejias.lumemedlink.resources.sent_done
 import com.luismejias.lumemedlink.resources.sent_title
 import com.luismejias.lumemedlink.resources.sent_view
+import com.luismejias.lumemedlink.resources.sent_waiting
 import com.luismejias.lumemedlink.resources.taken_action
 import com.luismejias.lumemedlink.resources.taken_body
 import com.luismejias.lumemedlink.resources.taken_title
+import com.luismejias.lumemedlink.resources.weekdays_short
+import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 
 /** The doctor at the head of a1 and a2. */
 @Composable
 private fun DoctorHeader(entry: DirectoryDoctor) {
     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
-        DoctorIdentity(entry.doctor, entry.doctor.specialty, ratingLine(entry))
+        DoctorIdentity(entry.doctor, listOf(entry.doctor.specialty)) { DoctorRating(entry) }
     }
 }
 
 /**
- * a1. Only free hours are drawn — the design's struck-out taken ones are not in what availability returns, and
- * an hour the patient already holds elsewhere is left out with a line saying why. PROVISIONAL (ADR-0046): the
- * days are the kit's chips, without the design's month and year menus; the horizon is the next month.
+ * a1. The month and year menus offer only months with open agenda; the strip draws every day of the month in the
+ * booking window and refuses the ones without hours. An hour the patient already holds is drawn as «Tu cita» and
+ * refused, with a line saying why. PROVISIONAL (ADR-0046): the taken hours are not drawn — availability returns only
+ * free ones.
  */
 @Composable
 internal fun ScheduleScreen(model: SearchViewModel, onBack: () -> Unit) {
@@ -135,29 +150,85 @@ internal fun ScheduleScreen(model: SearchViewModel, onBack: () -> Unit) {
                 LumeEmptyState(icon = LumeIcon.Calendar, title = stringResource(Res.string.schedule_none))
                 return@CareLoadView
             }
-            LumeEyebrow(stringResource(Res.string.schedule_days))
-            val dayLabels = content.days.associateWith { weekdayDayText(it).capitalized() }
-            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Overflow) {
-                LumeToggleGroup(
-                    items = content.days,
-                    selection = LumeToggleGroupSelection.Exclusive(day, model.schedule::dayChosen),
-                    label = { dayLabels.getValue(it) },
-                    layout = LumeToggleGroupLayout.HorizontalHug,
-                )
-            }
-            val selection = LumeToggleGroupSelection.Single(content.slot, model.schedule::slotChosen)
+            MonthAndYear(content, model.schedule)
+            DayStrip(content, model.schedule)
             if (content.morning.isNotEmpty()) {
                 LumeEyebrow(stringResource(Res.string.schedule_morning, longWeekdayDayText(day)))
-                SlotGrid(content.morning, selection)
+                HourGrid(content.morning, content.slot, model.schedule::slotChosen)
             }
             Clashes(content.morningClashes)
             if (content.afternoon.isNotEmpty()) {
                 LumeEyebrow(stringResource(Res.string.schedule_afternoon))
-                SlotGrid(content.afternoon, selection)
+                HourGrid(content.afternoon, content.slot, model.schedule::slotChosen)
             }
             Clashes(content.afternoonClashes)
         }
     }
+}
+
+@Composable
+private fun MonthAndYear(content: ScheduleContent, schedule: ScheduleModel) {
+    val monthNames = stringArrayResource(Res.array.months_long)
+    LumeStack(axis = LumeStackAxis.Horizontal, spacing = { small }) {
+        LumeMenuPicker(
+            options = content.months,
+            selected = content.month,
+            label = { monthNames[it.month - 1].capitalized() },
+            onSelect = schedule::monthChosen,
+            contentDescription = stringResource(Res.string.schedule_month),
+        )
+        LumeMenuPicker(
+            options = content.years,
+            selected = content.month.year,
+            label = { it.toString() },
+            onSelect = schedule::yearChosen,
+            contentDescription = stringResource(Res.string.schedule_year),
+        )
+    }
+}
+
+@Composable
+private fun DayStrip(content: ScheduleContent, schedule: ScheduleModel) {
+    val weekdays = stringArrayResource(Res.array.weekdays_short)
+    val strip = content.strip
+    val open = content.days.toSet()
+    val spoken = strip.associateWith { longDateText(it) }
+    LumeDayStrip(
+        days = strip.map { date ->
+            LumeDay(
+                weekday = weekdays[date.isoWeekday - 1].capitalized(),
+                day = date.day.toString(),
+                contentDescription = spoken.getValue(date),
+                state = if (date in open) LumeDayState.Available else LumeDayState.Unavailable,
+            )
+        },
+        selected = strip.indexOf(content.day).takeIf { it >= 0 },
+        onSelect = { schedule.dayChosen(strip[it]) },
+    )
+}
+
+/** Half a day of hours: the free ones to choose and the patient's own, refused, in time order. */
+@Composable
+private fun HourGrid(tiles: List<HourTile>, chosen: Slot?, onChoose: (Slot) -> Unit) {
+    val yours = stringResource(Res.string.schedule_yours)
+    val spokenYours = tiles.filterIsInstance<HourTile.Mine>().associateWith {
+        stringResource(Res.string.schedule_yours_spoken, it.start.display)
+    }
+    LumeTimeSlotGrid(
+        slots = tiles.map { tile ->
+            when (tile) {
+                is HourTile.Free -> LumeTimeSlot(tile.start.display)
+                is HourTile.Mine -> LumeTimeSlot(
+                    time = tile.start.display,
+                    state = LumeTimeSlotState.Booked,
+                    note = yours,
+                    contentDescription = spokenYours.getValue(tile),
+                )
+            }
+        },
+        selected = tiles.indexOfFirst { it is HourTile.Free && it.slot == chosen }.takeIf { it >= 0 },
+        onSelect = { index -> (tiles[index] as? HourTile.Free)?.let { onChoose(it.slot) } },
+    )
 }
 
 /** «A las 09:00 ya tienes cita con el Dr. Pinto», under the half of the day the hour belongs to. */
@@ -169,16 +240,6 @@ private fun Clashes(clashes: List<PatientAppointment>) {
             color = LumeTextColor.Warning,
         )
     }
-}
-
-@Composable
-private fun SlotGrid(slots: List<Slot>, selection: LumeToggleGroupSelection<Slot>) {
-    LumeToggleGroup(
-        items = slots,
-        selection = selection,
-        label = { it.start.display },
-        layout = LumeToggleGroupLayout.Wrapped,
-    )
 }
 
 /**
@@ -221,7 +282,13 @@ internal fun ConfirmScreen(
         },
     ) {
         DoctorHeader(doctor)
-        LumeList(items = listOf(0, 1, 2), key = { it }, scrolls = false, chrome = LumeListChrome.Open) { row ->
+        LumeList(
+            items = listOf(0, 1, 2),
+            key = { it },
+            density = LumeListDensity.Compact,
+            scrolls = false,
+            chrome = LumeListChrome.Open,
+        ) { row ->
             when (row) {
                 0 -> DetailRow(
                     LumeIcon.Calendar,
@@ -240,26 +307,36 @@ internal fun ConfirmScreen(
                 )
             }
         }
-        LumeCalloutBox(text = stringResource(Res.string.confirm_note, doctor.doctor.displayName)) {}
+        LumeCallout(
+            runs = stringResource(Res.string.confirm_note, doctor.doctor.displayName).strongRuns(),
+            style = LumeCalloutStyle.Info,
+            surface = LumeCalloutSurface.Washed,
+        )
     }
     when (val outcome = state.outcome) {
         null -> Unit
         is BookingOutcome.Sent -> {
             val status = outcome.appointment.status
             val waiting = status == AppointmentStatus.REQUESTED
+            val waitingNote = stringResource(Res.string.sent_waiting).strongRuns()
             LumeAlert(
                 visible = true,
                 style = LumeStatusStyle.Success,
                 title = stringResource(if (waiting) Res.string.sent_title else Res.string.booked_title),
-                message = stringResource(
-                    if (waiting) Res.string.sent_body else Res.string.booked_body,
-                    date,
-                    slot.start.display,
-                    doctor.doctor.displayName,
-                ),
+                message = stringResource(Res.string.booked_body, date, slot.start.display, doctor.doctor.displayName),
                 confirm = LumeAlertAction(stringResource(Res.string.sent_view)) { onSeeAppointments(status) },
                 cancel = LumeAlertAction(stringResource(Res.string.sent_done)) { onDone(status) },
-            )
+                presentation = LumeAlertPresentation.Result,
+            ) {
+                if (waiting) {
+                    LumeCallout(
+                        runs = waitingNote,
+                        style = LumeCalloutStyle.Warning,
+                        surface = LumeCalloutSurface.Washed,
+                        icon = LumeIcon.Bell,
+                    )
+                }
+            }
         }
         is BookingOutcome.Refused -> RefusalAlert(outcome.failure, slot, doctor, model)
     }

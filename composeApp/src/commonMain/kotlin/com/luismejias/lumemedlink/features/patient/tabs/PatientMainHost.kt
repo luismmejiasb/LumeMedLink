@@ -1,18 +1,21 @@
 package com.luismejias.lumemedlink.features.patient.tabs
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.lume.uicomposer.components.LumeCountBadge
+import cl.lume.uicomposer.components.LumeFloatingTabBarClearance
 import cl.lume.uicomposer.components.LumeTabBar
 import cl.lume.uicomposer.components.LumeTabBarItem
+import cl.lume.uicomposer.components.LumeTabBarStyle
 import cl.lume.uicomposer.components.LumeToastHost
 import cl.lume.uicomposer.components.rememberLumeToastHostState
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -29,6 +32,7 @@ import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeScreen
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
+import com.luismejias.lumemedlink.features.patient.parts.LocalTabBarClearance
 import com.luismejias.lumemedlink.features.patient.search.SearchHost
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
 import com.luismejias.lumemedlink.features.patient.settings.SettingsEntry
@@ -101,59 +105,60 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
     val showsTabBar = selected != PatientTab.SEARCH || searchRoutes.last().showsTabBar
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                when (selected) {
-                    PatientTab.HOME -> HomeScreen(
-                        model = home,
-                        onDirections = {},
-                        onChangeOrCancel = {},
-                        onOpenAppointment = {},
-                        onRate = {},
-                        onSearch = { tabs.show(PatientTab.SEARCH) },
-                    )
-                    PatientTab.SEARCH -> SearchHost(search, onBooked)
-                    PatientTab.APPOINTMENTS -> AppointmentsScreen(
-                        model = appointments,
-                        onOpen = {},
-                        onChange = {},
-                        onCancel = {},
-                        onSearch = { tabs.show(PatientTab.SEARCH) },
-                    )
-                    PatientTab.DOCTORS -> MyDoctorsScreen(
-                        model = doctors,
-                        onOpen = {},
-                        onCall = contact::dial,
-                        onSearch = { tabs.show(PatientTab.SEARCH) },
-                    )
-                    PatientTab.SETTINGS -> SettingsScreen(
-                        model = settings,
-                        onEditPhone = {},
-                        onEditEmail = {},
-                        onEntry = { if (it == SettingsEntry.SIGN_OUT) onSignOut() },
-                    )
-                }
-            }
-            if (showsTabBar) {
-                LumeTabBar(
-                    items = listOf(
-                        LumeTabBarItem(LumeIcon.Home, stringResource(Res.string.tab_home)),
-                        LumeTabBarItem(LumeIcon.Search, stringResource(Res.string.tab_search)),
-                        LumeTabBarItem(
-                            LumeIcon.Calendar,
-                            stringResource(Res.string.tab_appointments),
-                            badge = LumeCountBadge(
-                                awaiting,
-                                pluralStringResource(Res.plurals.tab_pending_badge, awaiting, awaiting),
-                            ),
-                        ),
-                        LumeTabBarItem(LumeIcon.Doctors, stringResource(Res.string.tab_doctors)),
-                        LumeTabBarItem(LumeIcon.Gear, stringResource(Res.string.tab_settings)),
-                    ),
-                    selected = selected.ordinal,
-                    onSelect = { tabs.show(PatientTab.entries[it]) },
+        // The bar floats over the content, which scrolls under it: each screen leaves the kit's clearance at its end.
+        CompositionLocalProvider(LocalTabBarClearance provides if (showsTabBar) LumeFloatingTabBarClearance else 0.dp) {
+            when (selected) {
+                PatientTab.HOME -> HomeScreen(
+                    model = home,
+                    onDirections = {},
+                    onChangeOrCancel = {},
+                    onOpenAppointment = {},
+                    onRate = {},
+                    onSearch = { tabs.show(PatientTab.SEARCH) },
+                )
+                PatientTab.SEARCH -> SearchHost(search, onBooked)
+                PatientTab.APPOINTMENTS -> AppointmentsScreen(
+                    model = appointments,
+                    onOpen = {},
+                    onChange = {},
+                    onCancel = {},
+                    onSearch = { tabs.show(PatientTab.SEARCH) },
+                )
+                PatientTab.DOCTORS -> MyDoctorsScreen(
+                    model = doctors,
+                    onOpen = {},
+                    onCall = contact::dial,
+                    onSearch = { tabs.show(PatientTab.SEARCH) },
+                )
+                PatientTab.SETTINGS -> SettingsScreen(
+                    model = settings,
+                    onEditPhone = {},
+                    onEditEmail = {},
+                    onEntry = { if (it == SettingsEntry.SIGN_OUT) onSignOut() },
                 )
             }
+        }
+        if (showsTabBar) {
+            LumeTabBar(
+                items = listOf(
+                    LumeTabBarItem(LumeIcon.Home, stringResource(Res.string.tab_home)),
+                    LumeTabBarItem(LumeIcon.Search, stringResource(Res.string.tab_search)),
+                    LumeTabBarItem(
+                        LumeIcon.Calendar,
+                        stringResource(Res.string.tab_appointments),
+                        badge = LumeCountBadge(
+                            awaiting,
+                            pluralStringResource(Res.plurals.tab_pending_badge, awaiting, awaiting),
+                        ),
+                    ),
+                    LumeTabBarItem(LumeIcon.Doctors, stringResource(Res.string.tab_doctors)),
+                    LumeTabBarItem(LumeIcon.Gear, stringResource(Res.string.tab_settings)),
+                ),
+                selected = selected.ordinal,
+                onSelect = { tabs.show(PatientTab.entries[it]) },
+                modifier = Modifier.align(Alignment.BottomCenter),
+                style = LumeTabBarStyle.Floating,
+            )
         }
         LumeToastHost(toasts, dismissLabel = stringResource(Res.string.toast_dismiss))
     }

@@ -15,6 +15,8 @@ import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
+import cl.lume.uicomposer.components.LumeListRowTextStyle
+import cl.lume.uicomposer.components.LumeNavBar
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeText
@@ -23,6 +25,7 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.RecentSearch
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
+import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.search_action
 import com.luismejias.lumemedlink.resources.search_choose
@@ -50,7 +53,10 @@ internal fun SearchScreen(
 ) {
     val criteria by model.criteria.collectAsState()
     val recent by model.recent.collectAsState()
-    LumeContainer(title = stringResource(Res.string.tab_search), scroll = LumeContainerScroll.Scrollable) {
+    LumeContainer(
+        scroll = LumeContainerScroll.Scrollable,
+        topBar = { LumeNavBar(title = stringResource(Res.string.tab_search)) },
+    ) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
             LumeText(text = stringResource(Res.string.search_intro), color = LumeTextColor.Secondary)
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
@@ -72,10 +78,11 @@ internal fun SearchScreen(
                         Criterion.COMMUNE -> Triple(Res.string.search_commune, criteria.commune?.name, LumeIcon.Pin)
                     }
                     LumeListRow(
-                        title = value ?: stringResource(Res.string.search_choose),
-                        description = stringResource(label),
+                        title = stringResource(label),
+                        description = value ?: stringResource(Res.string.search_choose),
                         leading = LumeListAccessory.Tile(icon, LumeTileTint.Azure),
                         disclosure = true,
+                        textStyle = LumeListRowTextStyle.LabelOverValue,
                     )
                 }
                 LumeCallout(text = stringResource(Res.string.search_required_note))
@@ -97,10 +104,16 @@ internal fun SearchScreen(
                         scrolls = false,
                         onRowTap = { search: RecentSearch -> model.launch { recentChosen(search) } },
                     ) { search ->
-                        LumeListRow(title = search.specialty, description = search.commune, disclosure = true)
+                        LumeListRow(
+                            title = search.specialty,
+                            description = search.commune,
+                            disclosure = true,
+                            textStyle = LumeListRowTextStyle.Strong,
+                        )
                     }
                 }
             }
+            TabBarClearance()
         }
     }
 }

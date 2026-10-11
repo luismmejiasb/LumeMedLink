@@ -10,7 +10,9 @@ import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonRole
 import cl.lume.uicomposer.components.LumeButtonWidth
-import cl.lume.uicomposer.components.LumeCalloutBox
+import cl.lume.uicomposer.components.LumeCallout
+import cl.lume.uicomposer.components.LumeCalloutStyle
+import cl.lume.uicomposer.components.LumeCalloutSurface
 import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeContainer
@@ -22,6 +24,7 @@ import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeListStyle
+import cl.lume.uicomposer.components.LumeNavBar
 import cl.lume.uicomposer.components.LumeSegmentedControl
 import cl.lume.uicomposer.components.LumeSegmentedSelection
 import cl.lume.uicomposer.components.LumeStack
@@ -32,11 +35,13 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
 import com.luismejias.lumemedlink.features.patient.parts.capitalized
 import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
 import com.luismejias.lumemedlink.features.patient.parts.relativeDayText
 import com.luismejias.lumemedlink.features.patient.parts.shortDateText
 import com.luismejias.lumemedlink.features.patient.parts.statusLabel
+import com.luismejias.lumemedlink.features.patient.parts.strongRuns
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.appointments_cancel
 import com.luismejias.lumemedlink.resources.appointments_change
@@ -68,7 +73,10 @@ internal fun AppointmentsScreen(
     val load by model.state.collectAsState()
     val segment by model.segment.collectAsState()
     CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
-        LumeContainer(title = stringResource(Res.string.appointments_title), scroll = LumeContainerScroll.Scrollable) {
+        LumeContainer(
+            scroll = LumeContainerScroll.Scrollable,
+            topBar = { LumeNavBar(title = stringResource(Res.string.appointments_title)) },
+        ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
                 val upcomingLabel = if (content.upcoming.isEmpty()) {
                     stringResource(Res.string.appointments_upcoming_plain)
@@ -123,8 +131,13 @@ internal fun AppointmentsScreen(
                     )
                 }
                 if (segment == AppointmentsSegment.UPCOMING && content.upcoming.isNotEmpty()) {
-                    LumeCalloutBox(text = stringResource(Res.string.appointments_window, content.changeWindowHours)) {}
+                    LumeCallout(
+                        runs = stringResource(Res.string.appointments_window, content.changeWindowHours).strongRuns(),
+                        style = LumeCalloutStyle.Info,
+                        surface = LumeCalloutSurface.Washed,
+                    )
                 }
+                TabBarClearance()
             }
         }
     }

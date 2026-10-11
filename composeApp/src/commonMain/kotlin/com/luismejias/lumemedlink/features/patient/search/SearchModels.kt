@@ -172,6 +172,30 @@ internal class ResultsModel(private val directory: DirectoryGateway, private val
 
 private val NOON = ClockTime(12, 0)
 
+/** A month of the calendar, as a1's month and year menus choose it. */
+internal data class CalendarMonth(val year: Int, val month: Int) : Comparable<CalendarMonth> {
+    val first: CalendarDate get() = CalendarDate(year, month, 1)
+
+    val last: CalendarDate get() = CalendarDate(year, month, CalendarDate.daysIn(year, month))
+
+    override fun compareTo(other: CalendarMonth): Int = compareValuesBy(this, other, { it.year }, { it.month })
+}
+
+internal val CalendarDate.calendarMonth: CalendarMonth get() = CalendarMonth(year, month)
+
+/** One hour of a1's grid: a free one to choose, or one the patient already holds («Tu cita»), which is refused. */
+internal sealed interface HourTile {
+    val start: ClockTime
+
+    data class Free(val slot: Slot) : HourTile {
+        override val start: ClockTime get() = slot.start
+    }
+
+    data class Mine(val appointment: PatientAppointment) : HourTile {
+        override val start: ClockTime get() = appointment.start
+    }
+}
+
 internal data class ScheduleContent(
     val doctor: DirectoryDoctor,
     /** The free hours, minus any that falls on an appointment the patient already has. */
@@ -180,12 +204,30 @@ internal data class ScheduleContent(
     val own: List<PatientAppointment>,
     val day: CalendarDate?,
     val slot: Slot?,
+    /** The booking window: tomorrow to the horizon. */
+    val firstDay: CalendarDate,
+    val lastDay: CalendarDate,
+    val month: CalendarMonth,
 ) {
+    /** The days that have a free hour. */
     val days: List<CalendarDate> get() = slots.map { it.date }.distinct()
 
-    val morning: List<Slot> get() = slots.filter { it.date == day && it.start < NOON }
+    /** The months with open agenda — the only ones the month menu offers (spec a1). */
+    val months: List<CalendarMonth> get() = days.map { it.calendarMonth }.distinct()
 
-    val afternoon: List<Slot> get() = slots.filter { it.date == day && it.start >= NOON }
+    val years: List<Int> get() = months.map { it.year }.distinct()
+
+    /** Every day of the chosen month inside the window; one without hours is drawn and refused. */
+    val strip: List<CalendarDate>
+        get() {
+            val from = maxOf(firstDay, month.first)
+            val to = minOf(lastDay, month.last)
+            return if (from > to) emptyList() else (0..from.daysUntil(to)).map { from.plusDays(it) }
+        }
+
+    val morning: List<HourTile> get() = tiles().filter { it.start < NOON }
+
+    val afternoon: List<HourTile> get() = tiles().filter { it.start >= NOON }
 
     /** The patient's appointments on the day shown — why an hour they might expect is missing. */
     val clashes: List<PatientAppointment> get() = own.filter { it.date == day }
@@ -193,6 +235,10 @@ internal data class ScheduleContent(
     val morningClashes: List<PatientAppointment> get() = clashes.filter { it.start < NOON }
 
     val afternoonClashes: List<PatientAppointment> get() = clashes.filter { it.start >= NOON }
+
+    private fun tiles(): List<HourTile> =
+        (slots.filter { it.date == day }.map { HourTile.Free(it) } + clashes.map { HourTile.Mine(it) })
+            .sortedBy { it.start }
 
     override fun toString(): String = "ScheduleContent(slots=${slots.size}, chosen=${slot != null})"
 }
@@ -209,7 +255,8 @@ internal class ScheduleModel(
     suspend fun load(doctor: DirectoryDoctor, keepDay: CalendarDate? = null) {
         current.value = CareLoad.Loading
         val from = today().plusDays(1)
-        val free = directory.availability(doctor.doctor.id, doctor.locationId, from, from.plusDays(HORIZON_DAYS))
+        val to = from.plusDays(HORIZON_DAYS)
+        val free = directory.availability(doctor.doctor.id, doctor.locationId, from, to)
         val own = ownAppointments()
         current.value = allOf(free, own) {
             val mine = own.ok.upcoming(today())
@@ -217,11 +264,25 @@ internal class ScheduleModel(
             val days = slots.map { it.date }.distinct()
             val day =
                 keepDay?.takeIf { it in days } ?: doctor.nextSlot?.date?.takeIf { it in days } ?: days.firstOrNull()
-            ScheduleContent(doctor, slots, mine, day, null)
+            ScheduleContent(doctor, slots, mine, day, null, from, to, (day ?: from).calendarMonth)
         }
     }
 
-    fun dayChosen(day: CalendarDate) = update { copy(day = day, slot = null) }
+    fun dayChosen(day: CalendarDate) = update {
+        if (day in days) copy(day = day, slot = null, month = day.calendarMonth) else this
+    }
+
+    /** A new month opens on its first day with hours. */
+    fun monthChosen(month: CalendarMonth) = update {
+        copy(month = month, day = days.firstOrNull { it.calendarMonth == month }, slot = null)
+    }
+
+    /** A new year opens on its first month with agenda. */
+    fun yearChosen(year: Int) = update {
+        months.firstOrNull { it.year == year }?.let { month ->
+            copy(month = month, day = days.firstOrNull { it.calendarMonth == month }, slot = null)
+        } ?: this
+    }
 
     fun slotChosen(slot: Slot?) = update { copy(slot = slot) }
 

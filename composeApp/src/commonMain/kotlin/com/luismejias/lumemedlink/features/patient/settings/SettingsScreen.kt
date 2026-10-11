@@ -15,6 +15,7 @@ import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowRole
 import cl.lume.uicomposer.components.LumeListRowTextStyle
+import cl.lume.uicomposer.components.LumeNavBar
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeTag
@@ -25,6 +26,7 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.PatientProfile
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.settings_complaints
 import com.luismejias.lumemedlink.resources.settings_complaints_body
@@ -64,7 +66,10 @@ internal fun SettingsScreen(
     val load by model.state.collectAsState()
     CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
         val profile = content.profile
-        LumeContainer(title = stringResource(Res.string.settings_title), scroll = LumeContainerScroll.Scrollable) {
+        LumeContainer(
+            scroll = LumeContainerScroll.Scrollable,
+            topBar = { LumeNavBar(title = stringResource(Res.string.settings_title)) },
+        ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
                 LumeStack(
                     modifier = Modifier.fillMaxWidth(),
@@ -143,6 +148,7 @@ internal fun SettingsScreen(
                         role = LumeListRowRole.Destructive,
                     )
                 }
+                TabBarClearance()
             }
         }
     }

@@ -14,8 +14,8 @@ import com.luismejias.lumemedlink.resources.common_back
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * A screen pushed onto a tab's stack: the kit's nav bar with its back disc, over the region's content. The bar
- * sits inside the container because the container is what keeps clear of the status bar.
+ * A screen pushed onto a tab's stack: the kit's inline nav bar with its back disc in the container's top bar, which
+ * runs edge to edge and under the status bar, over the region's content.
  */
 @Composable
 internal fun PushedScreen(
@@ -25,14 +25,21 @@ internal fun PushedScreen(
     action: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    LumeContainer(scroll = scroll, actionStyle = LumeContainerActionStyle.Bar, action = action) {
-        LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
+    LumeContainer(
+        scroll = scroll,
+        actionStyle = LumeContainerActionStyle.Bar,
+        action = action,
+        topBar = {
             LumeNavBar(
                 title = title,
                 back = LumeNavBarBack(stringResource(Res.string.common_back), onBack),
                 titleStyle = LumeNavBarTitleStyle.Inline,
             )
+        },
+    ) {
+        LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
             content()
+            TabBarClearance()
         }
     }
 }

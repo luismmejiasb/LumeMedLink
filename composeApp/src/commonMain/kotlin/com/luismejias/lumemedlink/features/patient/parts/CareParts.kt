@@ -185,18 +185,18 @@ internal fun AppointmentStatusTag(status: AppointmentStatus) {
 }
 
 /**
- * A doctor's marker in a row: the person glyph on a tile whose colour is stable per doctor. PROVISIONAL (ADR-0046):
- * the design draws their initials on a disc, and a list row takes no avatar yet.
+ * A doctor's marker in a row: their initials on a disc whose colour is stable per doctor, silent because the row's
+ * title already says the name.
  */
 internal fun doctorMarker(doctor: CareDoctor): LumeListAccessory =
-    LumeListAccessory.Tile(LumeIcon.PersonFill, LumeTileTint.deterministic(doctor.id), doctor.displayName)
+    LumeListAccessory.Avatar(doctor.initials, LumeTileTint.deterministic(doctor.id))
 
 /**
  * A doctor as the design heads a card with them (p3, a1, a2): the initials on their stable colour, the name
- * stressed, and each of [details] as a quieter line under it.
+ * stressed, each of [details] as a quieter line under it, and [extra] — the rating — last.
  */
 @Composable
-internal fun DoctorIdentity(doctor: CareDoctor, vararg details: String) {
+internal fun DoctorIdentity(doctor: CareDoctor, details: List<String>, extra: (@Composable () -> Unit)? = null) {
     LumeStack(axis = LumeStackAxis.Horizontal, alignment = LumeStackAlignment.Center) {
         LumeAvatar(
             initials = doctor.initials,
@@ -206,6 +206,7 @@ internal fun DoctorIdentity(doctor: CareDoctor, vararg details: String) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
             LumeText(text = doctor.displayName, weight = LumeTextWeight.Strong)
             details.forEach { LumeText(text = it, style = LumeTextStyle.TextSmall, color = LumeTextColor.Secondary) }
+            extra?.invoke()
         }
     }
 }

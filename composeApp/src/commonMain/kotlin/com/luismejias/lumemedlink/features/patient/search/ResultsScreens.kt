@@ -14,16 +14,19 @@ import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeChip
+import cl.lume.uicomposer.components.LumeChipStyle
 import cl.lume.uicomposer.components.LumeDivider
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFieldState
+import cl.lume.uicomposer.components.LumeFilterChip
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListSection
 import cl.lume.uicomposer.components.LumeListSelection
+import cl.lume.uicomposer.components.LumeRating
 import cl.lume.uicomposer.components.LumeSegmentedControl
 import cl.lume.uicomposer.components.LumeSegmentedSelection
 import cl.lume.uicomposer.components.LumeStack
@@ -49,6 +52,7 @@ import com.luismejias.lumemedlink.resources.filters_attention
 import com.luismejias.lumemedlink.resources.filters_clear
 import com.luismejias.lumemedlink.resources.filters_four_stars
 import com.luismejias.lumemedlink.resources.filters_sort
+import com.luismejias.lumemedlink.resources.rating_spoken
 import com.luismejias.lumemedlink.resources.results_book
 import com.luismejias.lumemedlink.resources.results_change
 import com.luismejias.lumemedlink.resources.results_count
@@ -64,7 +68,6 @@ import com.luismejias.lumemedlink.resources.results_next
 import com.luismejias.lumemedlink.resources.results_no_slot
 import com.luismejias.lumemedlink.resources.results_offline_body
 import com.luismejias.lumemedlink.resources.results_offline_title
-import com.luismejias.lumemedlink.resources.results_rating
 import com.luismejias.lumemedlink.resources.results_remove_filter
 import com.luismejias.lumemedlink.resources.results_sorted_attended
 import com.luismejias.lumemedlink.resources.results_sorted_best
@@ -170,41 +173,46 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
                 return@CareLoadView
             }
             LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Overflow, spacing = { small }) {
-                LumeButton(
-                    content = LumeButtonContent.LeadingIcon(
-                        LumeIcon.Sliders,
-                        if (filters.activeCount == 0) {
-                            stringResource(Res.string.results_filters)
-                        } else {
-                            stringResource(Res.string.results_filters_count, filters.activeCount)
-                        },
-                    ),
-                    emphasis = if (filters.activeCount ==
-                        0
-                    ) {
-                        LumeButtonEmphasis.OutlineNeutral
+                val filtersTitle = stringResource(Res.string.results_filters)
+                LumeFilterChip(
+                    title = filtersTitle,
+                    isSelected = filters.activeCount > 0,
+                    contentDescription = if (filters.activeCount == 0) {
+                        filtersTitle
                     } else {
-                        LumeButtonEmphasis.Filled
+                        stringResource(Res.string.results_filters_count, filters.activeCount)
                     },
-                    size = LumeButtonSize.Small,
-                    pill = true,
+                    count = filters.activeCount.takeIf { it > 0 }?.toString(),
+                    icon = LumeIcon.Sliders,
                     onClick = model::openFilters,
                 )
                 if (filters.sort != SearchSort.SOONEST) {
                     val label = stringResource(filters.sort.label)
-                    LumeChip(label, stringResource(Res.string.results_remove_filter, label)) {
+                    LumeChip(
+                        label,
+                        stringResource(Res.string.results_remove_filter, label),
+                        style = LumeChipStyle.Washed,
+                    ) {
                         model.results.setFilters(filters.copy(sort = SearchSort.SOONEST))
                     }
                 }
                 if (filters.window != AvailabilityWindow.ANY) {
                     val label = stringResource(Res.string.window_week)
-                    LumeChip(label, stringResource(Res.string.results_remove_filter, label)) {
+                    LumeChip(
+                        label,
+                        stringResource(Res.string.results_remove_filter, label),
+                        style = LumeChipStyle.Washed,
+                    ) {
                         model.results.setFilters(filters.copy(window = AvailabilityWindow.ANY))
                     }
                 }
                 if (filters.fourStarsUp) {
                     val label = stringResource(Res.string.filters_four_stars)
-                    LumeChip(label, stringResource(Res.string.results_remove_filter, label)) {
+                    LumeChip(
+                        label,
+                        stringResource(Res.string.results_remove_filter, label),
+                        style = LumeChipStyle.Washed,
+                    ) {
                         model.results.setFilters(filters.copy(fourStarsUp = false))
                     }
                 }
@@ -227,7 +235,7 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
 private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook: () -> Unit) {
     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
         LumeStack(alignment = LumeStackAlignment.Fill, spacing = { medium }) {
-            DoctorIdentity(entry.doctor, entry.doctor.specialty, ratingLine(entry))
+            DoctorIdentity(entry.doctor, listOf(entry.doctor.specialty)) { DoctorRating(entry) }
             LumeDivider()
             LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Spread) {
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
@@ -246,7 +254,7 @@ private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook
                 }
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.results_book)),
-                    size = LumeButtonSize.Small,
+                    size = LumeButtonSize.Card,
                     state = if (entry.nextSlot != null) LumeFieldState.Enabled else LumeFieldState.Disabled,
                     onClick = onBook,
                 )
@@ -255,14 +263,28 @@ private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook
     }
 }
 
-/**
- * "★ 4,9 (128) · Providencia", or only the commune when nobody has rated yet. PROVISIONAL: the kit's rating, which
- * draws the star filled and the value stressed, is on its way (task 0030).
- */
+/** «★ 4,9 (128) · Providencia» as the kit's rating, or only the commune when nobody has rated yet. */
 @Composable
-internal fun ratingLine(entry: DirectoryDoctor): String = entry.rating?.let { rating ->
-    "★ " + stringResource(Res.string.results_rating, rating.decimal(), entry.ratingCount, entry.commune)
-} ?: entry.commune
+internal fun DoctorRating(entry: DirectoryDoctor) {
+    val rating = entry.rating
+    if (rating == null) {
+        LumeText(text = entry.commune, style = LumeTextStyle.TextSmall, color = LumeTextColor.Secondary)
+        return
+    }
+    val score = rating.decimal()
+    LumeRating(
+        score = score,
+        contentDescription = pluralStringResource(
+            Res.plurals.rating_spoken,
+            entry.ratingCount,
+            score,
+            entry.ratingCount,
+            entry.commune,
+        ),
+        count = "(${entry.ratingCount})",
+        trailing = "· ${entry.commune}",
+    )
+}
 
 /** "4,9": one decimal, Chile's comma. The value is the server's; only its writing is the app's. */
 private fun Double.decimal(): String {

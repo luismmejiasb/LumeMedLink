@@ -9,8 +9,10 @@ import cl.lume.uicomposer.components.LumeAvatar
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
+import cl.lume.uicomposer.components.LumeButtonSize
 import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCard
+import cl.lume.uicomposer.components.LumeCardInset
 import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
@@ -27,6 +29,7 @@ import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
+import cl.lume.uicomposer.components.LumeStackStyle
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
@@ -36,6 +39,7 @@ import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.RatingPrompt
 import com.luismejias.lumemedlink.features.patient.parts.AppointmentStatusTag
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
 import com.luismejias.lumemedlink.features.patient.parts.dayMonthText
 import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
 import com.luismejias.lumemedlink.features.patient.parts.longDateText
@@ -58,9 +62,8 @@ import com.luismejias.lumemedlink.resources.search_doctor
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Inicio (p1, e7). PROVISIONAL deviations (ADR-0046): the bell and the profile disc of the design's header wait
- * for the kit (LumeNavBar has no trailing slot, on purpose), and the hero card is the kit's accent card — a
- * tinted wash — where the design fills it with the accent.
+ * Inicio (p1, e7). PROVISIONAL deviation (ADR-0046): the bell and the profile disc of the design's header wait
+ * for the kit (LumeNavBar has no trailing slot, on purpose). The hero card is the kit's solid accent card.
  */
 @Composable
 internal fun HomeScreen(
@@ -133,6 +136,7 @@ internal fun HomeScreen(
                         )
                     }
                 }
+                TabBarClearance()
             }
         }
     }
@@ -155,9 +159,9 @@ private fun NextAppointmentCard(
     onChangeOrCancel: (PatientAppointment) -> Unit,
 ) {
     val relative = relativeDayText(next.date, home.today)
-    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Accent) {
+    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Solid, inset = LumeCardInset.Section) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
-            LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
+            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Spread) {
                 LumeEyebrow(
                     title = stringResource(
                         if (home.today == next.date) Res.string.home_next_today else Res.string.home_next,
@@ -173,7 +177,7 @@ private fun NextAppointmentCard(
                 )
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
                     LumeText(text = next.doctor.displayName, style = LumeTextStyle.HeadingSmall)
-                    LumeText(text = next.doctor.specialty, color = LumeTextColor.Secondary)
+                    LumeText(text = next.doctor.specialty, style = LumeTextStyle.TextSmall)
                 }
             }
             LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
@@ -195,15 +199,22 @@ private fun NextAppointmentCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Fill, spacing = { small }) {
+            LumeStack(
+                axis = LumeStackAxis.Horizontal,
+                style = LumeStackStyle.Fixed,
+                alignment = LumeStackAlignment.Fill,
+                spacing = { small },
+            ) {
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.home_directions)),
+                    size = LumeButtonSize.Small,
                     width = LumeButtonWidth.Fill,
                     onClick = { onDirections(next) },
                 )
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.home_change_or_cancel)),
-                    emphasis = LumeButtonEmphasis.OutlineNeutral,
+                    emphasis = LumeButtonEmphasis.Outline,
+                    size = LumeButtonSize.Small,
                     width = LumeButtonWidth.Fill,
                     onClick = { onChangeOrCancel(next) },
                 )
