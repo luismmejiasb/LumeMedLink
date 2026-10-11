@@ -155,7 +155,7 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
                 }
                 return@CareLoadView
             }
-            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Wrap, spacing = { small }) {
+            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Overflow, spacing = { small }) {
                 LumeButton(
                     content = LumeButtonContent.LeadingIcon(
                         LumeIcon.Sliders,
