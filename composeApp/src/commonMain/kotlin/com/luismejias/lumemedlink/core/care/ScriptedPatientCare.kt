@@ -24,12 +24,25 @@ internal class ScriptedPatientCare(
     /** What this run booked, by its client key: memory only, gone with the instance. */
     private val booked = LinkedHashMap<String, PatientAppointment>()
 
+    /** What this run moved, by the move's client key: the new appointment, waiting for the doctor (spec f3). */
+    private val moved = LinkedHashMap<String, PatientAppointment>()
+
+    /** What this run cancelled or withdrew, by appointment id. */
+    private val cancelled = mutableSetOf<String>()
+
     override fun today(): CalendarDate = TODAY
+
+    /** The design's status bar: 9:41. */
+    override fun now(): ClockTime = NOW
 
     override suspend fun profile(): CareResult<PatientProfile> = answer(PROFILE)
 
-    override suspend fun appointments(): CareResult<List<PatientAppointment>> =
-        answer((if (world == CareWorld.DESIGN) APPOINTMENTS else emptyList()) + booked.values)
+    override suspend fun appointments(): CareResult<List<PatientAppointment>> = answer(all())
+
+    private fun all(): List<PatientAppointment> =
+        ((if (world == CareWorld.DESIGN) APPOINTMENTS else emptyList()) + booked.values + moved.values).map {
+            if (it.id in cancelled) it.copy(status = AppointmentStatus.CANCELLED) else it
+        }
 
     override suspend fun ratingPrompts(): CareResult<List<RatingPrompt>> = answer(
         if (world == CareWorld.DESIGN) {
@@ -65,7 +78,7 @@ internal class ScriptedPatientCare(
 
     override suspend fun search(specialtyCode: String, communeCode: String): CareResult<List<DirectoryDoctor>> {
         if (communeCode == DirectoryScript.OFFLINE_COMMUNE) return CareResult.Failed(CareFailure.Offline)
-        return answer(DirectoryScript.doctorsIn(specialtyCode, communeCode, TODAY, ::isBooked))
+        return answer(DirectoryScript.doctorsIn(specialtyCode, communeCode, TODAY, NOW, ::isBooked))
     }
 
     override suspend fun nearbyCommunes(specialtyCode: String, communeCode: String): CareResult<List<NearbyCommune>> =
@@ -76,7 +89,15 @@ internal class ScriptedPatientCare(
         locationId: String,
         from: CalendarDate,
         to: CalendarDate,
-    ): CareResult<List<Slot>> = answer(DirectoryScript.slots(doctorId, from, to).filterNot { isBooked(doctorId, it) })
+    ): CareResult<List<Slot>> =
+        answer(DirectoryScript.slots(doctorId, from, to, TODAY, NOW).filterNot { isBooked(doctorId, it) })
+
+    override suspend fun closedDays(
+        doctorId: String,
+        locationId: String,
+        from: CalendarDate,
+        to: CalendarDate,
+    ): CareResult<List<ClosedDay>> = answer(DirectoryScript.closedDays(from, to))
 
     override suspend fun book(doctorId: String, locationId: String, slot: Slot, clientId: String): BookingResult {
         latency()
@@ -107,6 +128,8 @@ internal class ScriptedPatientCare(
                     minutes = slot.minutes,
                     status = AppointmentStatus.REQUESTED,
                     place = DirectoryScript.placeOf(doctorId),
+                    locationId = locationId,
+                    changeCutoffMinutes = DirectoryScript.changeCutoffMinutes(doctorId),
                 )
                 booked[clientId] = appointment
                 BookingResult.Booked(appointment)
@@ -114,8 +137,65 @@ internal class ScriptedPatientCare(
         }
     }
 
-    private fun isBooked(doctorId: String, slot: Slot): Boolean =
-        booked.values.any { it.doctor.id == doctorId && it.date == slot.date && it.start == slot.start }
+    override suspend fun reschedule(
+        appointment: PatientAppointment,
+        slot: Slot,
+        reason: ChangeReason,
+        clientId: String,
+    ): ChangeResult {
+        refusal()?.let { return it }
+        moved[clientId]?.let { return ChangeResult.Moved(it) }
+        return when {
+            closedWindow(appointment) -> ChangeResult.Failed(ChangeFailure.WindowClosed)
+            DirectoryScript.takenOnArrival(
+                appointment.doctor.id,
+                slot,
+                TODAY,
+            ) ||
+                isBooked(appointment.doctor.id, slot) ->
+                ChangeResult.Failed(ChangeFailure.SlotTaken)
+            else -> {
+                // The original keeps its hour until the doctor confirms the new one (spec f3).
+                val next = appointment.copy(
+                    id = "m-$clientId",
+                    date = slot.date,
+                    start = slot.start,
+                    minutes = slot.minutes,
+                    status = AppointmentStatus.REQUESTED,
+                )
+                moved[clientId] = next
+                ChangeResult.Moved(next)
+            }
+        }
+    }
+
+    override suspend fun cancel(appointment: PatientAppointment, reason: ChangeReason): ChangeResult {
+        refusal()?.let { return it }
+        if (closedWindow(appointment)) return ChangeResult.Failed(ChangeFailure.WindowClosed)
+        cancelled += appointment.id
+        return ChangeResult.Done
+    }
+
+    override suspend fun withdraw(appointment: PatientAppointment): ChangeResult {
+        refusal()?.let { return it }
+        cancelled += appointment.id
+        return ChangeResult.Done
+    }
+
+    /** The write's own wait, and the failure switch read as a write's failure. */
+    private suspend fun refusal(): ChangeResult? {
+        latency()
+        return failure?.let {
+            ChangeResult.Failed(if (it == CareFailure.Offline) ChangeFailure.Offline else ChangeFailure.Unavailable)
+        }
+    }
+
+    private fun closedWindow(appointment: PatientAppointment): Boolean =
+        TODAY.daysUntil(appointment.date) * PatientAppointment.DAY_MINUTES +
+            appointment.start.minuteOfDay - NOW.minuteOfDay < appointment.changeCutoffMinutes
+
+    private fun isBooked(doctorId: String, slot: Slot): Boolean = (booked.values + moved.values)
+        .any { it.doctor.id == doctorId && it.date == slot.date && it.start == slot.start && it.id !in cancelled }
 
     private suspend fun <T> answer(value: T): CareResult<T> {
         latency()
@@ -126,6 +206,7 @@ internal class ScriptedPatientCare(
         const val LATENCY_MILLIS = 400L
 
         val TODAY = CalendarDate(2026, 9, 16)
+        val NOW = ClockTime(9, 41)
 
         val RENDON = CareDoctor("p-rendon", "Dra.", "Mariana", "Rendón", "Medicina Familiar")
         val PINTO = CareDoctor("p-pinto", "Dr.", "Víctor", "Pinto", "Dermatología")
@@ -144,6 +225,7 @@ internal class ScriptedPatientCare(
                 30,
                 AppointmentStatus.COMPLETED,
                 APOQUINDO,
+                locationId = "l-p-fuentes",
             ),
             PatientAppointment(
                 "a-rendon-0916",
@@ -153,6 +235,8 @@ internal class ScriptedPatientCare(
                 30,
                 AppointmentStatus.CONFIRMED,
                 LYON,
+                locationId = DirectoryScript.locationOf("p-rendon"),
+                changeCutoffMinutes = DirectoryScript.changeCutoffMinutes("p-rendon"),
             ),
             PatientAppointment(
                 "a-pinto-0921",
@@ -162,6 +246,7 @@ internal class ScriptedPatientCare(
                 30,
                 AppointmentStatus.REQUESTED,
                 ALCANTARA,
+                locationId = DirectoryScript.locationOf("p-pinto"),
             ),
         )
 

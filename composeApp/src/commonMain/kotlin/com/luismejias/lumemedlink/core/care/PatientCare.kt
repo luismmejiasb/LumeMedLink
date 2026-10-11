@@ -62,7 +62,11 @@ internal data class CarePlace(val address: String, val detail: String) {
  */
 internal enum class AppointmentStatus { REQUESTED, CONFIRMED, COMPLETED, CANCELLED, OTHER }
 
-/** One appointment. Never its clinical reason — there is none to carry (§1.0, ADR-0001). */
+/**
+ * One appointment. Never its clinical reason — there is none to carry (§1.0, ADR-0001). [changeCutoffMinutes] is how
+ * long before it the doctor still lets the patient change or cancel it — set per doctor in LumeMed (spec f2), and the
+ * `cancelCutoffHours` the author approved for the contract (request 0008); minutes, because the design's is 30.
+ */
 internal data class PatientAppointment(
     val id: String,
     val doctor: CareDoctor,
@@ -71,8 +75,14 @@ internal data class PatientAppointment(
     val minutes: Int,
     val status: AppointmentStatus,
     val place: CarePlace,
+    val locationId: String = "",
+    val changeCutoffMinutes: Int = DAY_MINUTES,
 ) {
     override fun toString(): String = "PatientAppointment(id=$id, status=$status)"
+
+    internal companion object {
+        const val DAY_MINUTES = 24 * 60
+    }
 }
 
 /** "¿Cómo fue tu atención?" (p1, f5): an attended appointment not yet rated. No contract (request 0008 §4). */
@@ -128,4 +138,24 @@ internal interface PatientCareGateway {
 
     /** Whether something waits behind the bell (p1). No contract (request 0008 §5). */
     suspend fun hasUnreadNotices(): CareResult<Boolean>
+
+    /** The clinic's wall clock now: with [today], what a change window is measured against. */
+    fun now(): ClockTime
+
+    /**
+     * Moves [appointment] to [slot] — the contract's ONE atomic operation, never a cancel plus a booking (T7).
+     * [clientId] is this move's key, reused by every retry of it, so a dropped answer never makes a third write.
+     */
+    suspend fun reschedule(
+        appointment: PatientAppointment,
+        slot: Slot,
+        reason: ChangeReason,
+        clientId: String,
+    ): ChangeResult
+
+    /** Cancels a confirmed appointment; the contract requires a reason. */
+    suspend fun cancel(appointment: PatientAppointment, reason: ChangeReason): ChangeResult
+
+    /** Withdraws a request the practice has not answered: the contract's own verb, allowed at any time (spec f2). */
+    suspend fun withdraw(appointment: PatientAppointment): ChangeResult
 }

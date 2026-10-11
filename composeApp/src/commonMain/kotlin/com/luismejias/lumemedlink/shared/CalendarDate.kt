@@ -72,10 +72,14 @@ internal data class ClockTime(val hour: Int, val minute: Int) : Comparable<Clock
     /** "09:00": 24-hour, as Chile writes it and as the design draws it. */
     val display: String get() = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
 
+    /** Minutes since midnight: what two clock times on one wall calendar subtract. */
+    val minuteOfDay: Int get() = hour * MINUTES_PER_HOUR + minute
+
     override fun compareTo(other: ClockTime): Int = compareValuesBy(this, other, ClockTime::hour, ClockTime::minute)
 
     private companion object {
         const val LAST_HOUR = 23
         const val LAST_MINUTE = 59
+        const val MINUTES_PER_HOUR = 60
     }
 }

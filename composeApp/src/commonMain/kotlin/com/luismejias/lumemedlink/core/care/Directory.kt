@@ -79,4 +79,12 @@ internal interface DirectoryGateway {
 
     /** [clientId] names THIS booking: a retry with it answers the same appointment, never a second one. */
     suspend fun book(doctorId: String, locationId: String, slot: Slot, clientId: String): BookingResult
+
+    /** The days between [from] and [to] the doctor does not attend at [locationId], and why (f3). */
+    suspend fun closedDays(
+        doctorId: String,
+        locationId: String,
+        from: CalendarDate,
+        to: CalendarDate,
+    ): CareResult<List<ClosedDay>>
 }
