@@ -200,4 +200,109 @@
     <!-- Home placeholder (session) -->
     <string name="home_title">Inicio</string>
     <string name="home_sign_out">Cerrar sesión</string>
+    <!-- The patient's main app (ADR-0046): the design handoff's copy, 2-App-principal. -->
+    <string name="tab_home">Inicio</string>
+    <string name="tab_search">Buscar</string>
+    <string name="tab_appointments">Citas</string>
+    <string name="tab_doctors">Mis médicos</string>
+    <string name="tab_settings">Ajustes</string>
+    <plurals name="tab_pending_badge">
+        <item quantity="one">%1$d cita por confirmar</item>
+        <item quantity="other">%1$d citas por confirmar</item>
+    </plurals>
+    <string name="care_loading">Cargando…</string>
+    <string name="care_offline_title">Sin conexión</string>
+    <string name="care_offline_body">Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="care_unavailable_title">No pudimos cargar esto</string>
+    <string name="care_unavailable_body">Inténtalo de nuevo en un momento.</string>
+    <string-array name="weekdays_short">
+        <item>lun</item><item>mar</item><item>mié</item><item>jue</item><item>vie</item><item>sáb</item><item>dom</item>
+    </string-array>
+    <string-array name="weekdays_long">
+        <item>Lunes</item><item>Martes</item><item>Miércoles</item><item>Jueves</item><item>Viernes</item><item>Sábado</item><item>Domingo</item>
+    </string-array>
+    <string-array name="months_short">
+        <item>ene</item><item>feb</item><item>mar</item><item>abr</item><item>may</item><item>jun</item><item>jul</item><item>ago</item><item>sep</item><item>oct</item><item>nov</item><item>dic</item>
+    </string-array>
+    <string-array name="months_long">
+        <item>enero</item><item>febrero</item><item>marzo</item><item>abril</item><item>mayo</item><item>junio</item><item>julio</item><item>agosto</item><item>septiembre</item><item>octubre</item><item>noviembre</item><item>diciembre</item>
+    </string-array>
+    <string name="date_long">%1$s %2$d de %3$s</string>
+    <string name="date_short">%1$s %2$d %3$s</string>
+    <string name="date_weekday_day">%1$s %2$d</string>
+    <string name="date_day_month">%1$d %2$s</string>
+    <string name="date_today">Hoy</string>
+    <string name="date_tomorrow">Mañana</string>
+    <string name="appointment_minutes">%1$d min</string>
+    <string name="status_confirmed">Confirmada</string>
+    <string name="status_requested">Por confirmar</string>
+    <string name="status_completed">Atendida</string>
+    <string name="status_cancelled">Cancelada</string>
+    <string name="home_greeting">Hola, %1$s</string>
+    <string name="home_notices">Notificaciones</string>
+    <string name="home_notices_unread">Notificaciones, hay novedades</string>
+    <string name="home_profile">Tu perfil</string>
+    <string name="home_next">Próxima cita</string>
+    <string name="home_next_today">Próxima cita · hoy</string>
+    <string name="home_directions">Cómo llegar</string>
+    <string name="home_change_or_cancel">Cambiar o cancelar</string>
+    <string name="home_waiting">Esperando confirmación</string>
+    <string name="home_rate_title">¿Cómo fue tu atención?</string>
+    <string name="home_empty_title">No tienes citas agendadas</string>
+    <string name="home_empty_body">Busca un médico por especialidad y comuna.</string>
+    <string name="search_intro">Elige especialidad y comuna para ver los médicos con horas disponibles.</string>
+    <string name="search_specialty">Especialidad</string>
+    <string name="search_commune">Comuna</string>
+    <string name="search_choose">Elegir</string>
+    <string name="search_required_note">Los dos son obligatorios. «Buscar médicos» se activa al completar ambos.</string>
+    <string name="search_action">Buscar médicos</string>
+    <string name="search_recent">Búsquedas recientes</string>
+    <string name="search_by_name_title">¿Ya sabes a quién buscas?</string>
+    <string name="search_by_name_body">Busca al médico por nombre</string>
+    <string name="appointments_title">Mis citas</string>
+    <string name="appointments_upcoming">Próximas · %1$d</string>
+    <string name="appointments_upcoming_plain">Próximas</string>
+    <string name="appointments_past">Pasadas</string>
+    <string name="appointments_change">Cambiar</string>
+    <string name="appointments_cancel">Cancelar</string>
+    <string name="appointments_requested_note">El médico confirma cada reserva. Te avisaremos apenas lo haga.</string>
+    <string name="appointments_window">Puedes cambiar o cancelar hasta %1$d h antes. Después, comunícate con la consulta.</string>
+    <string name="appointments_empty_upcoming">Aún no tienes citas próximas</string>
+    <string name="appointments_empty_past">Aún no tienes citas pasadas</string>
+    <string name="doctors_search_prompt">Buscar entre tus médicos</string>
+    <string name="doctors_search_clear">Borrar búsqueda</string>
+    <plurals name="doctors_attentions">
+        <item quantity="one">%1$d atención</item>
+        <item quantity="other">%1$d atenciones</item>
+    </plurals>
+    <string name="doctors_call">Llamar</string>
+    <string name="doctors_mail">Correo</string>
+    <string name="doctors_private">No comparte su contacto. Agenda desde la app.</string>
+    <string name="doctors_footer">Aquí aparecen los médicos que te han atendido. Cada médico decide si comparte su contacto.</string>
+    <string name="doctors_no_match">Ningún médico coincide con tu búsqueda</string>
+    <string name="doctors_empty_title">Todavía no te ha atendido nadie</string>
+    <string name="doctors_empty_body">Los médicos aparecen aquí después de tu primera atención. Cada uno decide si comparte su contacto.</string>
+    <string name="settings_title">Configuración</string>
+    <string name="settings_verified">Cuenta verificada</string>
+    <string name="settings_rut">RUT</string>
+    <string name="settings_phone">Teléfono</string>
+    <string name="settings_email">Correo</string>
+    <string name="settings_edit_phone">Editar teléfono</string>
+    <string name="settings_edit_email">Editar correo</string>
+    <string name="settings_rut_locked">El RUT no se edita</string>
+    <string name="settings_correction">Solicitar corrección de un dato</string>
+    <string name="settings_reminders">Recordatorios</string>
+    <string name="settings_reminders_two">%1$d h y %2$d h antes</string>
+    <string name="settings_reminders_one">%1$d h antes</string>
+    <string name="settings_reminders_none">Desactivados</string>
+    <string name="settings_ratings">Mis valoraciones</string>
+    <plurals name="settings_ratings_sent">
+        <item quantity="one">%1$d enviada</item>
+        <item quantity="other">%1$d enviadas</item>
+    </plurals>
+    <string name="settings_complaints">Reclamos</string>
+    <string name="settings_complaints_body">Ingresa o sigue un reclamo</string>
+    <string name="settings_sign_out">Cerrar sesión</string>
+    <string name="appointments_empty_upcoming_body">Cuando agendes, las verás aquí con su fecha, hora y dirección.</string>
+    <string name="search_doctor">Buscar médico</string>
 </resources>

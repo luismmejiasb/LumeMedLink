@@ -150,7 +150,7 @@ internal fun LockedOutScreen(model: SignInModel, clock: Clock, onRecover: () -> 
     val state by model.state.collectAsState()
     val seconds = secondsUntil(state.lockedUntilEpochMillis, clock) ?: 0L
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = {
             ResultActions(
                 primary = stringResource(Res.string.locked_recover),
@@ -174,7 +174,7 @@ internal fun LockedOutScreen(model: SignInModel, clock: Clock, onRecover: () -> 
 internal fun QuickSignInScreen(model: QuickSignInModel, retryEpoch: Int) {
     val state by model.state.collectAsState()
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = {
             AccessPrimaryButton(
                 title = stringResource(if (state.offline) Res.string.common_retry else Res.string.quick_activate),
@@ -206,7 +206,7 @@ internal fun QuickSignInScreen(model: QuickSignInModel, retryEpoch: Int) {
 @Composable
 internal fun QuickSignInUnavailableScreen(onOpenSettings: () -> Unit, onRestart: () -> Unit) {
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = {
             ResultActions(
                 primary = stringResource(Res.string.quick_unavailable_settings),

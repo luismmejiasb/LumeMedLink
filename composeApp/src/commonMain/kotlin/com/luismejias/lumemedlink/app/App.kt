@@ -22,6 +22,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.lume.uicomposer.foundations.LumeBrand
 import cl.lume.uicomposer.foundations.LumeTheme
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
+import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
@@ -41,7 +42,9 @@ import com.luismejias.lumemedlink.core.session.rememberSecureStore
 import com.luismejias.lumemedlink.core.session.rememberUnlockGate
 import com.luismejias.lumemedlink.features.auth.flow.AccessFlowViewModel
 import com.luismejias.lumemedlink.features.auth.flow.AccessHost
+import com.luismejias.lumemedlink.features.auth.flow.AccessRole
 import com.luismejias.lumemedlink.features.auth.unlock.UnlockScreen
+import com.luismejias.lumemedlink.features.patient.tabs.PatientMainHost
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -84,6 +87,10 @@ public fun App() {
         val scripted = ScriptedAccessGateway(SystemClock)
         AccessFlowViewModel(patients = scripted, doctors = scripted, clock = SystemClock)
     }
+    // The patient's main app (ADR-0046), against the SCRIPT of the design; its ViewModels live in a store of
+    // their own that a sign-out empties.
+    val patientScope = viewModel { SessionScope() }
+    val patientCare = remember { ScriptedPatientCare() }
     val secureStore = rememberSecureStore()
     val unlockGate = rememberUnlockGate(secureStore) ?: AbsentUnlockGate
     val sessionManager = remember(secureStore) {
@@ -200,6 +207,7 @@ public fun App() {
         shell.hasSession = false
         shell.reauthenticating.value = false
         access.restart()
+        patientScope.reset()
         locked = true
     }
 
@@ -222,13 +230,22 @@ public fun App() {
                             }
                         },
                 ) {
-                    // No session can begin from the access flow yet (ADR-0044): it ends in the pending main app.
+                    // No session can begin from the access flow yet (ADR-0044): a patient lands in the scripted
+                    // main app (ADR-0046), a doctor in the pending one.
                     val accessFlow = @Composable { onCancel: (() -> Unit)? ->
                         val role = accessFinished
-                        if (role != null) {
-                            PendingMainScreen(role = role, onRestart = access::restart)
-                        } else {
-                            AccessHost(viewModel = access, onCancel = onCancel)
+                        when (role) {
+                            AccessRole.PATIENT -> InSessionScope(patientScope) {
+                                PatientMainHost(
+                                    care = patientCare,
+                                    onSignOut = {
+                                        patientScope.reset()
+                                        access.restart()
+                                    },
+                                )
+                            }
+                            AccessRole.DOCTOR -> PendingMainScreen(role = role, onRestart = access::restart)
+                            null -> AccessHost(viewModel = access, onCancel = onCancel)
                         }
                     }
                     when (resolveDestination(hasSession, locked)) {

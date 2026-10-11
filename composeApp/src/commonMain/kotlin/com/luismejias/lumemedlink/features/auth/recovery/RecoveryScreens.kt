@@ -178,7 +178,7 @@ internal fun NewPasswordScreen(model: NewPasswordModel, retryEpoch: Int, onBack:
 @Composable
 internal fun RecoveryDoneScreen(onSignIn: () -> Unit) {
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = { ResultActions(primary = stringResource(Res.string.recovery_done_action), onPrimary = onSignIn) },
     ) {
         AccessHeader(

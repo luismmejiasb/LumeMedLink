@@ -1,0 +1,76 @@
+# Encargo al backend — lo que le falta al contrato para la app principal del paciente
+
+> **Cómo usar este documento:** es el prompt completo para el agente de `lumemed-cloud-platform`. Viene de la
+> decisión del autor del 2026-10-11: LumeMedLink construye la app principal del paciente con la forma del paquete
+> de diseño contra un guion local, y lo que el contrato no publica se pide aquí (ADR-0046 de LumeMedLink). Leído
+> contra el contrato 0.96.0.
+
+---
+
+## PROMPT
+
+Eres el agente de desarrollo de `lumemed-cloud-platform`. LumeMedLink ya dibuja las cinco pestañas del paciente
+(Inicio, Buscar, Mis citas, Mis médicos, Configuración) contra un guion. Casi todo lo que muestran existe en tu
+contrato; esto es lo que falta, con la pantalla que lo pide. **Nada de esto es contenido clínico** (ADR-0001 de
+LumeMedLink): ni motivo de consulta, ni diagnóstico, ni documento.
+
+### 1 · Un perfil del titular, no uno por clínica
+
+`GET /v1/patient/profiles` devuelve un perfil **por clínica** y ninguno trae el RUT. Configuración muestra
+nombre, RUT (no editable), teléfono, correo y «Cuenta verificada» **una vez**. ¿Cuál es la fuente de verdad del
+titular y cómo se lee? Si la respuesta es «el perfil vive en cada clínica», dinos cuál mostrar y cómo se edita
+el teléfono o el correo (¿en todas?, ¿la corrección la aprueba cada clínica, como dice el diseño?).
+
+### 2 · Dónde es la cita
+
+`PatientAppointmentDto` trae `clinicName` y un `locationLabel`. Inicio dibuja dos líneas: la dirección
+(«Av. Providencia 1208, oficina 503») y el centro con la comuna («Centro Médico Lyon · Providencia, Santiago»), y
+ofrece «Cómo llegar». Pedimos la dirección estructurada del lugar de atención (calle, número, unidad, comuna).
+Coordenadas sólo si las decides tú: «Cómo llegar» puede abrir el mapa con la dirección. Recuerda la regla de
+LumeMedLink: una coordenada no es excusa para un mapa de pacientes.
+
+### 3 · Quién atendió, para unir citas y contactos
+
+`PatientAppointmentDto` no trae `professionalId` ni la especialidad del profesional (trae `specialtyCode`, que sí
+sirve). Mis médicos muestra «6 atenciones» por médico, y desde una cita se reserva otra vez con el mismo médico o
+se le valora. Pedimos `professionalId` en la cita (el mismo id opaco del directorio y de
+`professional-contacts`), y `specialtyCode` en `SharedProfessionalContact`.
+
+Y una precisión: ¿`/v1/patient/professional-contacts` lista **a todos** los profesionales que atendieron al
+paciente, con `phone`/`email` nulos cuando no comparten, o sólo a los que comparten? El diseño muestra también a
+los que no comparten («No comparte su contacto. Agenda desde la app.»).
+
+### 4 · Valoraciones
+
+No existen. El diseño: tras una cita atendida, Inicio pregunta «¿Cómo fue tu atención?» con 1–5 estrellas y
+opciones por puntaje (f5a–f5d); Configuración muestra «Mis valoraciones · 3 enviadas». El supuesto pendiente del
+paquete es que **son públicas en el perfil del médico**. Pedimos: las citas atendidas por valorar, enviar una
+valoración (idempotente, con `clientId` como las reservas) y listar las propias. Ojo con lo que el texto libre
+puede contener: un comentario es contenido del paciente y puede traer información clínica — necesita tu
+política antes que un endpoint.
+
+### 5 · Avisos
+
+Inicio tiene una campana con un punto de «hay novedades». No existe un buzón del paciente. ¿Habrá uno (la
+confirmación de una reserva, un cambio del médico)? Si no, quitamos la campana. Cualquier aviso respeta la regla
+de LumeMedLink: push sin contenido, el contenido se busca autenticado.
+
+### 6 · Recordatorios y la ventana para cambiar
+
+Configuración muestra «Recordatorios · 24 h y 2 h antes» y Mis citas «Puedes cambiar o cancelar hasta 24 h
+antes». La ventana existe del lado del profesional (`booking-policy`); pedimos que el paciente pueda leerla por
+cita o por profesional. Los recordatorios: ¿los envía la plataforma y el paciente elige cuándo
+(`notification-opt-outs` sólo apaga canales)?
+
+### 7 · Búsquedas recientes
+
+Buscar muestra las dos últimas búsquedas (especialidad + comuna). Guardarlas en el teléfono es dato personal en
+disco; preferimos no hacerlo. ¿Las guardas tú, o las quitamos?
+
+### 8 · Lo que ya está y usamos tal cual
+
+Directorio (`/v1/directory/professionals/search` + `availability` + `closed-periods`), reservar con `clientId`,
+cancelar, retirar, reagendar como operación atómica, el vocabulario abierto de `status` (`REQUESTED` se dibuja
+«Por confirmar»), y los catálogos de especialidades y comunas. Una pregunta de borde: reservar exige estar
+enrolado en esa clínica, y el diseño deja buscar y reservar con cualquier médico de la plataforma. Es la misma
+decisión abierta del modelo de acceso del paciente (ADR-0044 de LumeMedLink).

@@ -195,4 +195,109 @@
     <!-- Home placeholder (session) -->
     <string name="home_title">Home</string>
     <string name="home_sign_out">Sign out</string>
+    <!-- The patient's main app (ADR-0046). -->
+    <string name="tab_home">Home</string>
+    <string name="tab_search">Search</string>
+    <string name="tab_appointments">Visits</string>
+    <string name="tab_doctors">My doctors</string>
+    <string name="tab_settings">Settings</string>
+    <plurals name="tab_pending_badge">
+        <item quantity="one">%1$d appointment to be confirmed</item>
+        <item quantity="other">%1$d appointments to be confirmed</item>
+    </plurals>
+    <string name="care_loading">Loading…</string>
+    <string name="care_offline_title">No connection</string>
+    <string name="care_offline_body">Check your connection and try again.</string>
+    <string name="care_unavailable_title">We couldn’t load this</string>
+    <string name="care_unavailable_body">Try again in a moment.</string>
+    <string-array name="weekdays_short">
+        <item>Mon</item><item>Tue</item><item>Wed</item><item>Thu</item><item>Fri</item><item>Sat</item><item>Sun</item>
+    </string-array>
+    <string-array name="weekdays_long">
+        <item>Monday</item><item>Tuesday</item><item>Wednesday</item><item>Thursday</item><item>Friday</item><item>Saturday</item><item>Sunday</item>
+    </string-array>
+    <string-array name="months_short">
+        <item>Jan</item><item>Feb</item><item>Mar</item><item>Apr</item><item>May</item><item>Jun</item><item>Jul</item><item>Aug</item><item>Sep</item><item>Oct</item><item>Nov</item><item>Dec</item>
+    </string-array>
+    <string-array name="months_long">
+        <item>January</item><item>February</item><item>March</item><item>April</item><item>May</item><item>June</item><item>July</item><item>August</item><item>September</item><item>October</item><item>November</item><item>December</item>
+    </string-array>
+    <string name="date_long">%1$s, %3$s %2$d</string>
+    <string name="date_short">%1$s, %3$s %2$d</string>
+    <string name="date_weekday_day">%1$s %2$d</string>
+    <string name="date_day_month">%2$s %1$d</string>
+    <string name="date_today">Today</string>
+    <string name="date_tomorrow">Tomorrow</string>
+    <string name="appointment_minutes">%1$d min</string>
+    <string name="status_confirmed">Confirmed</string>
+    <string name="status_requested">To be confirmed</string>
+    <string name="status_completed">Attended</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="home_greeting">Hi, %1$s</string>
+    <string name="home_notices">Notifications</string>
+    <string name="home_notices_unread">Notifications, something new</string>
+    <string name="home_profile">Your profile</string>
+    <string name="home_next">Next appointment</string>
+    <string name="home_next_today">Next appointment · today</string>
+    <string name="home_directions">Directions</string>
+    <string name="home_change_or_cancel">Change or cancel</string>
+    <string name="home_waiting">Waiting for confirmation</string>
+    <string name="home_rate_title">How was your visit?</string>
+    <string name="home_empty_title">You have no appointments booked</string>
+    <string name="home_empty_body">Find a doctor by specialty and commune.</string>
+    <string name="search_intro">Choose a specialty and a commune to see doctors with open times.</string>
+    <string name="search_specialty">Specialty</string>
+    <string name="search_commune">Commune</string>
+    <string name="search_choose">Choose</string>
+    <string name="search_required_note">Both are required. “Search doctors” turns on once both are set.</string>
+    <string name="search_action">Search doctors</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_by_name_title">Already know who you’re looking for?</string>
+    <string name="search_by_name_body">Search for a doctor by name</string>
+    <string name="appointments_title">My appointments</string>
+    <string name="appointments_upcoming">Upcoming · %1$d</string>
+    <string name="appointments_upcoming_plain">Upcoming</string>
+    <string name="appointments_past">Past</string>
+    <string name="appointments_change">Change</string>
+    <string name="appointments_cancel">Cancel</string>
+    <string name="appointments_requested_note">The doctor confirms every booking. We’ll let you know as soon as they do.</string>
+    <string name="appointments_window">You can change or cancel up to %1$d h before. After that, contact the practice.</string>
+    <string name="appointments_empty_upcoming">You have no upcoming appointments yet</string>
+    <string name="appointments_empty_past">You have no past appointments yet</string>
+    <string name="doctors_search_prompt">Search your doctors</string>
+    <string name="doctors_search_clear">Clear search</string>
+    <plurals name="doctors_attentions">
+        <item quantity="one">%1$d visit</item>
+        <item quantity="other">%1$d visits</item>
+    </plurals>
+    <string name="doctors_call">Call</string>
+    <string name="doctors_mail">Email</string>
+    <string name="doctors_private">Doesn’t share their contact. Book through the app.</string>
+    <string name="doctors_footer">The doctors who have seen you appear here. Each doctor decides whether to share their contact.</string>
+    <string name="doctors_no_match">No doctor matches your search</string>
+    <string name="doctors_empty_title">No one has seen you yet</string>
+    <string name="doctors_empty_body">Doctors appear here after your first visit. Each one decides whether to share their contact.</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_verified">Verified account</string>
+    <string name="settings_rut">RUT</string>
+    <string name="settings_phone">Phone</string>
+    <string name="settings_email">Email</string>
+    <string name="settings_edit_phone">Edit phone</string>
+    <string name="settings_edit_email">Edit email</string>
+    <string name="settings_rut_locked">The RUT can’t be edited</string>
+    <string name="settings_correction">Request a correction</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_two">%1$d h and %2$d h before</string>
+    <string name="settings_reminders_one">%1$d h before</string>
+    <string name="settings_reminders_none">Off</string>
+    <string name="settings_ratings">My ratings</string>
+    <plurals name="settings_ratings_sent">
+        <item quantity="one">%1$d sent</item>
+        <item quantity="other">%1$d sent</item>
+    </plurals>
+    <string name="settings_complaints">Complaints</string>
+    <string name="settings_complaints_body">File or follow up on a complaint</string>
+    <string name="settings_sign_out">Sign out</string>
+    <string name="appointments_empty_upcoming_body">Once you book, you’ll see them here with their date, time and address.</string>
+    <string name="search_doctor">Find a doctor</string>
 </resources>

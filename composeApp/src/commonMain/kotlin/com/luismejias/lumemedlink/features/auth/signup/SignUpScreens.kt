@@ -337,7 +337,7 @@ internal fun SignUpCodeScreen(model: SignUpCodeModel, clock: Clock, retryEpoch: 
 @Composable
 internal fun SignUpCodeExpiredScreen(model: SignUpCodeModel, retryEpoch: Int, onBack: (() -> Unit)?) {
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = {
             LumeStack(spacing = { small }) {
                 AccessPrimaryButton(
@@ -372,7 +372,7 @@ internal fun SignUpCodeExpiredScreen(model: SignUpCodeModel, retryEpoch: Int, on
 @Composable
 internal fun SignUpDoneScreen(account: AccountSummary?, onContinue: () -> Unit) {
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = { ResultActions(primary = stringResource(Res.string.common_continue), onPrimary = onContinue) },
     ) {
         LumeStack(spacing = { large }) {

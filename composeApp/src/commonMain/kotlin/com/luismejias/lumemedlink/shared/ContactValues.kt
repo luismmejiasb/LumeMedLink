@@ -11,6 +11,9 @@ internal class ChileanMobile private constructor(val e164: String) {
     /** "+56 9 •••• 4321": the last four digits only, for "Te enviamos un código al …" (2c). */
     val masked: String get() = "+56 9 •••• ${e164.takeLast(MASK_TAIL)}"
 
+    /** "+56 9 8765 4321": the whole number, for the owner's own profile (p7). */
+    val display: String get() = "+56 9 ${e164.takeLast(SUBSCRIBER_DIGITS).chunked(MASK_TAIL).joinToString(" ")}"
+
     override fun equals(other: Any?): Boolean = other is ChileanMobile && other.e164 == e164
 
     override fun hashCode(): Int = e164.hashCode()

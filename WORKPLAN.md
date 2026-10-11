@@ -75,7 +75,7 @@
   exista código de sesión de paciente: MFA (el backend decidió TOTP obligatoria también para
   pacientes), recuperación y enrolamiento mediado por la clínica. Es el punto 3 de ADR-0006, lo
   único que sigue vigente de ella, y no se descubre dentro de una slice de feature.
-- S2.2+ · Perfil del paciente y sus citas, contra el contrato ya publicado.
+- S2.2+ · Perfil del paciente y sus citas, contra el contrato ya publicado. *(2026-10-11: la UI de las cinco pestañas existe contra un guion, ADR-0046, tarea `0030`; el pedido `0008` lista lo que falta del contrato.)*
   - **Reservar trae un 409 que sólo este cliente puede explicar** *(recibido del backend el
     2026-09-21, contrato 0.50.0, su ADR-0051)*. Una paciente puede reservar con varios médicos pero
     **nunca dos a la misma hora**, y el servidor lo rechaza **sin poder decir dónde está el choque**:

@@ -207,7 +207,7 @@ internal fun DoctorConfirmScreen(model: DoctorLinkModel, retryEpoch: Int, onBack
 @Composable
 internal fun DoctorUnverifiedScreen(onUnderstood: () -> Unit) {
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = { ResultActions(primary = stringResource(Res.string.common_understood), onPrimary = onUnderstood) },
     ) {
         AccessHeader(
@@ -225,7 +225,7 @@ internal fun DoctorLinkedScreen(model: DoctorLinkModel) {
     val state by model.confirmState.collectAsState()
     val name = state.doctor?.displayName.orEmpty()
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = { ResultActions(primary = stringResource(Res.string.doctor_linked_start), onPrimary = model::start) },
     ) {
         LumeStack(spacing = { large }) {

@@ -97,8 +97,8 @@ internal fun AccessHeader(icon: LumeIcon, title: String, body: String?, tone: Ac
             size = LumeIconTileSize.Large,
             emphasis = when (tone) {
                 AccessTone.ACCENT -> LumeIconTileEmphasis.Tint
-                AccessTone.SUCCESS -> LumeIconTileEmphasis.Colored(LumeTileTint.Jade)
-                AccessTone.WAIT -> LumeIconTileEmphasis.Colored(LumeTileTint.Amber)
+                AccessTone.SUCCESS -> LumeIconTileEmphasis.Washed(LumeTileTint.Jade)
+                AccessTone.WAIT -> LumeIconTileEmphasis.Washed(LumeTileTint.Amber)
             },
         )
         LumeText(text = title, style = LumeTextStyle.HeadingLarge, alignment = LumeTextAlignment.Center)

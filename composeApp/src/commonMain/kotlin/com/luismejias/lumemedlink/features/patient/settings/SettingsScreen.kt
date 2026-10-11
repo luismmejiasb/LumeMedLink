@@ -1,0 +1,167 @@
+package com.luismejias.lumemedlink.features.patient.settings
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import cl.lume.uicomposer.components.LumeAvatar
+import cl.lume.uicomposer.components.LumeAvatarSize
+import cl.lume.uicomposer.components.LumeCard
+import cl.lume.uicomposer.components.LumeContainer
+import cl.lume.uicomposer.components.LumeContainerScroll
+import cl.lume.uicomposer.components.LumeList
+import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListRow
+import cl.lume.uicomposer.components.LumeListRowRole
+import cl.lume.uicomposer.components.LumeReadOnlyField
+import cl.lume.uicomposer.components.LumeReadOnlyFieldAction
+import cl.lume.uicomposer.components.LumeStack
+import cl.lume.uicomposer.components.LumeStackAlignment
+import cl.lume.uicomposer.components.LumeTag
+import cl.lume.uicomposer.components.LumeTagStyle
+import cl.lume.uicomposer.components.LumeText
+import cl.lume.uicomposer.components.LumeTextStyle
+import cl.lume.uicomposer.foundations.LumeIcon
+import cl.lume.uicomposer.tokens.LumeTileTint
+import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.settings_complaints
+import com.luismejias.lumemedlink.resources.settings_complaints_body
+import com.luismejias.lumemedlink.resources.settings_correction
+import com.luismejias.lumemedlink.resources.settings_edit_email
+import com.luismejias.lumemedlink.resources.settings_edit_phone
+import com.luismejias.lumemedlink.resources.settings_email
+import com.luismejias.lumemedlink.resources.settings_phone
+import com.luismejias.lumemedlink.resources.settings_ratings
+import com.luismejias.lumemedlink.resources.settings_ratings_sent
+import com.luismejias.lumemedlink.resources.settings_reminders
+import com.luismejias.lumemedlink.resources.settings_reminders_none
+import com.luismejias.lumemedlink.resources.settings_reminders_one
+import com.luismejias.lumemedlink.resources.settings_reminders_two
+import com.luismejias.lumemedlink.resources.settings_rut
+import com.luismejias.lumemedlink.resources.settings_sign_out
+import com.luismejias.lumemedlink.resources.settings_title
+import com.luismejias.lumemedlink.resources.settings_verified
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
+
+/** The rows under the profile, in the design's order. */
+internal enum class SettingsEntry { CORRECTION, REMINDERS, RATINGS, COMPLAINTS, SIGN_OUT }
+
+/**
+ * Configuración (p7). The RUT is never edited here — it is the identifier (the handoff's inherited rule); a
+ * wrong one goes through "Solicitar corrección de un dato", which the doctor or their secretary approves.
+ * PROVISIONAL (ADR-0046): the camera badge on the avatar waits for the photo flow (k1–k4).
+ */
+@Composable
+internal fun SettingsScreen(
+    model: SettingsViewModel,
+    onEditPhone: () -> Unit,
+    onEditEmail: () -> Unit,
+    onEntry: (SettingsEntry) -> Unit,
+) {
+    val load by model.state.collectAsState()
+    CareLoadView(load, onRetry = model::refresh) { content ->
+        val profile = content.profile
+        LumeContainer(title = stringResource(Res.string.settings_title), scroll = LumeContainerScroll.Scrollable) {
+            LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
+                LumeStack(
+                    modifier = Modifier.fillMaxWidth(),
+                    alignment = LumeStackAlignment.Center,
+                    spacing = { small },
+                ) {
+                    LumeAvatar(
+                        initials = profile.initials,
+                        size = LumeAvatarSize.Large,
+                        contentDescription = "${profile.givenNames} ${profile.familyNames}",
+                    )
+                    LumeText(text = "${profile.givenNames} ${profile.familyNames}", style = LumeTextStyle.HeadingMedium)
+                    if (profile.verified) {
+                        LumeTag(text = stringResource(Res.string.settings_verified), style = LumeTagStyle.Success)
+                    }
+                }
+                LumeCard(modifier = Modifier.fillMaxWidth()) {
+                    LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
+                        LumeReadOnlyField(
+                            value = profile.rut.display,
+                            placeholder = "",
+                            title = stringResource(Res.string.settings_rut),
+                        )
+                        LumeReadOnlyField(
+                            value = profile.mobile.display,
+                            placeholder = "",
+                            title = stringResource(Res.string.settings_phone),
+                            action = LumeReadOnlyFieldAction(
+                                LumeIcon.Edit,
+                                stringResource(Res.string.settings_edit_phone),
+                                onEditPhone,
+                            ),
+                        )
+                        LumeReadOnlyField(
+                            value = profile.email.value,
+                            placeholder = "",
+                            title = stringResource(Res.string.settings_email),
+                            action = LumeReadOnlyFieldAction(
+                                LumeIcon.Edit,
+                                stringResource(Res.string.settings_edit_email),
+                                onEditEmail,
+                            ),
+                        )
+                    }
+                }
+                LumeList(items = listOf(SettingsEntry.CORRECTION), key = { it }, scrolls = false, onRowTap = onEntry) {
+                    LumeListRow(
+                        title = stringResource(Res.string.settings_correction),
+                        leading = LumeListAccessory.Tile(LumeIcon.Flag, LumeTileTint.Amber),
+                        disclosure = true,
+                    )
+                }
+                LumeList(
+                    items = listOf(SettingsEntry.REMINDERS, SettingsEntry.RATINGS, SettingsEntry.COMPLAINTS),
+                    key = { it },
+                    scrolls = false,
+                    onRowTap = onEntry,
+                ) { entry ->
+                    when (entry) {
+                        SettingsEntry.REMINDERS -> LumeListRow(
+                            title = stringResource(Res.string.settings_reminders),
+                            description = remindersText(content.remindersHoursBefore),
+                            leading = LumeListAccessory.Tile(LumeIcon.Bell, LumeTileTint.Violet),
+                            disclosure = true,
+                        )
+                        SettingsEntry.RATINGS -> LumeListRow(
+                            title = stringResource(Res.string.settings_ratings),
+                            description = pluralStringResource(
+                                Res.plurals.settings_ratings_sent,
+                                content.sentRatings,
+                                content.sentRatings,
+                            ),
+                            leading = LumeListAccessory.Tile(LumeIcon.Star, LumeTileTint.Gold),
+                            disclosure = true,
+                        )
+                        else -> LumeListRow(
+                            title = stringResource(Res.string.settings_complaints),
+                            description = stringResource(Res.string.settings_complaints_body),
+                            leading = LumeListAccessory.Tile(LumeIcon.Flag, LumeTileTint.Rose),
+                            disclosure = true,
+                        )
+                    }
+                }
+                LumeList(items = listOf(SettingsEntry.SIGN_OUT), key = { it }, scrolls = false, onRowTap = onEntry) {
+                    LumeListRow(
+                        title = stringResource(Res.string.settings_sign_out),
+                        role = LumeListRowRole.Destructive,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun remindersText(hours: List<Int>): String = when (hours.size) {
+    0 -> stringResource(Res.string.settings_reminders_none)
+    1 -> stringResource(Res.string.settings_reminders_one, hours[0])
+    else -> stringResource(Res.string.settings_reminders_two, hours[0], hours[1])
+}

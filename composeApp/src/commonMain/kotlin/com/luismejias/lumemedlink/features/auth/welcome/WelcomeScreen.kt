@@ -40,7 +40,7 @@ private const val WELCOME_CARDS = 3
 @Composable
 internal fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit, onDoctor: () -> Unit) {
     LumeContainer(
-        alignment = LumeContainerAlignment.Center,
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = {
             LumeStack(spacing = { small }) {
                 LumeButton(

@@ -1,0 +1,139 @@
+package com.luismejias.lumemedlink.features.patient.doctors
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import cl.lume.uicomposer.components.LumeButton
+import cl.lume.uicomposer.components.LumeButtonContent
+import cl.lume.uicomposer.components.LumeButtonEmphasis
+import cl.lume.uicomposer.components.LumeButtonSize
+import cl.lume.uicomposer.components.LumeCallout
+import cl.lume.uicomposer.components.LumeCard
+import cl.lume.uicomposer.components.LumeCardStyle
+import cl.lume.uicomposer.components.LumeContainer
+import cl.lume.uicomposer.components.LumeContainerScroll
+import cl.lume.uicomposer.components.LumeEmptyState
+import cl.lume.uicomposer.components.LumeList
+import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListRow
+import cl.lume.uicomposer.components.LumeListStyle
+import cl.lume.uicomposer.components.LumeStack
+import cl.lume.uicomposer.components.LumeStackAlignment
+import cl.lume.uicomposer.components.LumeText
+import cl.lume.uicomposer.components.LumeTextColor
+import cl.lume.uicomposer.foundations.LumeIcon
+import com.luismejias.lumemedlink.core.care.MyDoctor
+import com.luismejias.lumemedlink.core.input.SensitiveFieldPurpose
+import com.luismejias.lumemedlink.core.input.SensitiveTextField
+import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
+import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.doctors_attentions
+import com.luismejias.lumemedlink.resources.doctors_call
+import com.luismejias.lumemedlink.resources.doctors_empty_body
+import com.luismejias.lumemedlink.resources.doctors_empty_title
+import com.luismejias.lumemedlink.resources.doctors_footer
+import com.luismejias.lumemedlink.resources.doctors_mail
+import com.luismejias.lumemedlink.resources.doctors_no_match
+import com.luismejias.lumemedlink.resources.doctors_private
+import com.luismejias.lumemedlink.resources.doctors_search_prompt
+import com.luismejias.lumemedlink.resources.search_doctor
+import com.luismejias.lumemedlink.resources.tab_doctors
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
+
+/**
+ * Mis médicos (p6, e9). The filter is a field of the hardened primitive (ADR-0013), not the kit's search
+ * field: the search field takes no text case, and a typed name must not enter the keyboard's dictionary.
+ * Calling hands the number to the phone's dialer — what the doctor chose to share, nothing more. PROVISIONAL
+ * (ADR-0046): the design's "Correo" button waits for the author (ADR-0007 closes the mail intent on Android), so
+ * the address is shown, not acted on.
+ */
+@Composable
+internal fun MyDoctorsScreen(
+    model: MyDoctorsViewModel,
+    onOpen: (MyDoctor) -> Unit,
+    onCall: (String) -> Unit,
+    onSearch: () -> Unit,
+) {
+    val load by model.state.collectAsState()
+    CareLoadView(load, onRetry = model::refresh) { content ->
+        LumeContainer(title = stringResource(Res.string.tab_doctors), scroll = LumeContainerScroll.Scrollable) {
+            LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
+                if (content.all.isEmpty()) {
+                    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Absent) {
+                        LumeEmptyState(
+                            icon = LumeIcon.Doctors,
+                            title = stringResource(Res.string.doctors_empty_title),
+                            message = stringResource(Res.string.doctors_empty_body),
+                            action = LumeButtonContent.Title(stringResource(Res.string.search_doctor)),
+                            onAction = onSearch,
+                        )
+                    }
+                } else {
+                    SensitiveTextField(
+                        value = content.query,
+                        onValueChange = model::queryChanged,
+                        purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+                        label = stringResource(Res.string.doctors_search_prompt),
+                        placeholder = stringResource(Res.string.doctors_search_prompt),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (content.shown.isEmpty()) {
+                        LumeCallout(text = stringResource(Res.string.doctors_no_match))
+                    }
+                    content.shown.forEach { entry -> DoctorCard(entry, onOpen, onCall) }
+                }
+                LumeText(text = stringResource(Res.string.doctors_footer), color = LumeTextColor.Secondary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DoctorCard(entry: MyDoctor, onOpen: (MyDoctor) -> Unit, onCall: (String) -> Unit) {
+    LumeCard(modifier = Modifier.fillMaxWidth()) {
+        LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
+            LumeList(
+                items = listOf(entry),
+                key = { it.doctor.id },
+                style = LumeListStyle.Embedded,
+                onRowTap = onOpen,
+            ) {
+                LumeListRow(
+                    title = it.doctor.displayName,
+                    description = "${it.doctor.specialty} · " +
+                        pluralStringResource(Res.plurals.doctors_attentions, it.attentions, it.attentions),
+                    leading = doctorMarker(it.doctor),
+                    disclosure = true,
+                )
+            }
+            if (entry.sharesContact) {
+                entry.phone?.let { phone ->
+                    LumeButton(
+                        content = LumeButtonContent.LeadingIcon(
+                            LumeIcon.Phone,
+                            stringResource(Res.string.doctors_call),
+                        ),
+                        emphasis = LumeButtonEmphasis.OutlineNeutral,
+                        size = LumeButtonSize.Small,
+                        onClick = { onCall(phone) },
+                    )
+                }
+                entry.email?.let { email ->
+                    LumeListRow(
+                        title = email,
+                        leading = LumeListAccessory.Icon(LumeIcon.Mail, stringResource(Res.string.doctors_mail)),
+                    )
+                }
+            } else {
+                LumeListRow(
+                    title = stringResource(Res.string.doctors_private),
+                    leading = LumeListAccessory.Icon(LumeIcon.Lock, ""),
+                )
+            }
+        }
+    }
+}
