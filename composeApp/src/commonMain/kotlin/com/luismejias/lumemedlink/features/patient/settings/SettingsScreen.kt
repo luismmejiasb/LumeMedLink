@@ -95,7 +95,7 @@ internal fun SettingsScreen(
                     key = { it },
                     scrolls = false,
                     onRowTap = onEntry,
-                    chrome = LumeListChrome.Open,
+                    chrome = LumeListChrome.OpenRuled,
                 ) {
                     LumeListRow(
                         textStyle = LumeListRowTextStyle.Strong,
@@ -109,7 +109,7 @@ internal fun SettingsScreen(
                     key = { it },
                     scrolls = false,
                     onRowTap = onEntry,
-                    chrome = LumeListChrome.Open,
+                    chrome = LumeListChrome.OpenRuled,
                 ) { entry ->
                     when (entry) {
                         SettingsEntry.REMINDERS -> LumeListRow(
@@ -144,7 +144,7 @@ internal fun SettingsScreen(
                     key = { it },
                     scrolls = false,
                     onRowTap = onEntry,
-                    chrome = LumeListChrome.Open,
+                    chrome = LumeListChrome.OpenRuled,
                 ) {
                     LumeListRow(
                         title = stringResource(Res.string.settings_sign_out),
@@ -169,7 +169,7 @@ private enum class ProfileField { RUT, PHONE, EMAIL }
 /** p7's identity card: each datum's name small over its value, the RUT locked, the contact pencils to edit. */
 @Composable
 private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEditEmail: () -> Unit) {
-    LumeList(items = ProfileField.entries, key = { it }, scrolls = false, chrome = LumeListChrome.Open) { field ->
+    LumeList(items = ProfileField.entries, key = { it }, scrolls = false, chrome = LumeListChrome.OpenRuled) { field ->
         when (field) {
             ProfileField.RUT -> LumeListRow(
                 title = stringResource(Res.string.settings_rut),

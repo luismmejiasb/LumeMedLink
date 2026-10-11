@@ -17,7 +17,6 @@ import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeDivider
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeList
-import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeListStyle
@@ -168,10 +167,7 @@ private fun DoctorEntry(
                 }
             }
         } else {
-            LumeListRow(
-                title = stringResource(Res.string.doctors_private),
-                leading = LumeListAccessory.Icon(LumeIcon.Lock, ""),
-            )
+            LumeCallout(text = stringResource(Res.string.doctors_private), icon = LumeIcon.Lock)
         }
     }
 }
