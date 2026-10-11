@@ -14,6 +14,7 @@ import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
+import cl.lume.uicomposer.components.LumeDivider
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
@@ -27,6 +28,7 @@ import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
+import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.input.SensitiveSearchField
@@ -94,9 +96,23 @@ internal fun MyDoctorsScreen(
                     if (content.shown.isEmpty()) {
                         LumeCallout(text = stringResource(Res.string.doctors_no_match))
                     }
-                    content.shown.forEach { entry -> DoctorCard(entry, onOpen, onCall, onMail) }
+                    if (content.shown.isNotEmpty()) {
+                        // p6 draws every doctor in one card, a line between each.
+                        LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
+                            LumeStack(alignment = LumeStackAlignment.Fill, spacing = { medium }) {
+                                content.shown.forEachIndexed { index, entry ->
+                                    if (index > 0) LumeDivider()
+                                    DoctorEntry(entry, onOpen, onCall, onMail)
+                                }
+                            }
+                        }
+                    }
                 }
-                LumeText(text = stringResource(Res.string.doctors_footer), color = LumeTextColor.Secondary)
+                LumeText(
+                    text = stringResource(Res.string.doctors_footer),
+                    style = LumeTextStyle.TextSmall,
+                    color = LumeTextColor.Secondary,
+                )
                 TabBarClearance()
             }
         }
@@ -104,60 +120,58 @@ internal fun MyDoctorsScreen(
 }
 
 @Composable
-private fun DoctorCard(
+private fun DoctorEntry(
     entry: MyDoctor,
     onOpen: (MyDoctor) -> Unit,
     onCall: (String) -> Unit,
     onMail: (String) -> Unit,
 ) {
-    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
-        LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
-            LumeList(
-                items = listOf(entry),
-                key = { it.doctor.id },
-                style = LumeListStyle.Embedded,
-                onRowTap = onOpen,
-            ) {
-                LumeListRow(
-                    textStyle = LumeListRowTextStyle.Strong,
-                    title = it.doctor.displayName,
-                    description = "${it.doctor.specialty} · " +
-                        pluralStringResource(Res.plurals.doctors_attentions, it.attentions, it.attentions),
-                    leading = doctorMarker(it.doctor),
-                    disclosure = true,
-                )
-            }
-            if (entry.sharesContact) {
-                LumeStack(axis = LumeStackAxis.Horizontal, spacing = { small }) {
-                    entry.phone?.let { phone ->
-                        LumeButton(
-                            content = LumeButtonContent.LeadingIcon(
-                                LumeIcon.Phone,
-                                stringResource(Res.string.doctors_call),
-                            ),
-                            emphasis = LumeButtonEmphasis.OutlineNeutral,
-                            size = LumeButtonSize.Card,
-                            onClick = { onCall(phone) },
-                        )
-                    }
-                    entry.email?.let { email ->
-                        LumeButton(
-                            content = LumeButtonContent.LeadingIcon(
-                                LumeIcon.Mail,
-                                stringResource(Res.string.doctors_mail),
-                            ),
-                            emphasis = LumeButtonEmphasis.OutlineNeutral,
-                            size = LumeButtonSize.Card,
-                            onClick = { onMail(email) },
-                        )
-                    }
+    LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
+        LumeList(
+            items = listOf(entry),
+            key = { it.doctor.id },
+            style = LumeListStyle.Embedded,
+            onRowTap = onOpen,
+        ) {
+            LumeListRow(
+                textStyle = LumeListRowTextStyle.Strong,
+                title = it.doctor.displayName,
+                description = "${it.doctor.specialty} · " +
+                    pluralStringResource(Res.plurals.doctors_attentions, it.attentions, it.attentions),
+                leading = doctorMarker(it.doctor),
+                disclosure = true,
+            )
+        }
+        if (entry.sharesContact) {
+            LumeStack(axis = LumeStackAxis.Horizontal, spacing = { small }) {
+                entry.phone?.let { phone ->
+                    LumeButton(
+                        content = LumeButtonContent.LeadingIcon(
+                            LumeIcon.Phone,
+                            stringResource(Res.string.doctors_call),
+                        ),
+                        emphasis = LumeButtonEmphasis.OutlineNeutral,
+                        size = LumeButtonSize.Card,
+                        onClick = { onCall(phone) },
+                    )
                 }
-            } else {
-                LumeListRow(
-                    title = stringResource(Res.string.doctors_private),
-                    leading = LumeListAccessory.Icon(LumeIcon.Lock, ""),
-                )
+                entry.email?.let { email ->
+                    LumeButton(
+                        content = LumeButtonContent.LeadingIcon(
+                            LumeIcon.Mail,
+                            stringResource(Res.string.doctors_mail),
+                        ),
+                        emphasis = LumeButtonEmphasis.OutlineNeutral,
+                        size = LumeButtonSize.Card,
+                        onClick = { onMail(email) },
+                    )
+                }
             }
+        } else {
+            LumeListRow(
+                title = stringResource(Res.string.doctors_private),
+                leading = LumeListAccessory.Icon(LumeIcon.Lock, ""),
+            )
         }
     }
 }
