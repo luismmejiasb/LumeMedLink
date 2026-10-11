@@ -25,6 +25,9 @@ import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeListStyle
 import cl.lume.uicomposer.components.LumeNavBar
+import cl.lume.uicomposer.components.LumeNavBarAction
+import cl.lume.uicomposer.components.LumeNavBarActionEmphasis
+import cl.lume.uicomposer.components.LumeNavBarTitleStyle
 import cl.lume.uicomposer.components.LumeSegmentedControl
 import cl.lume.uicomposer.components.LumeSegmentedSelection
 import cl.lume.uicomposer.components.LumeStack
@@ -56,6 +59,7 @@ import com.luismejias.lumemedlink.resources.appointments_title
 import com.luismejias.lumemedlink.resources.appointments_upcoming
 import com.luismejias.lumemedlink.resources.appointments_upcoming_plain
 import com.luismejias.lumemedlink.resources.appointments_window
+import com.luismejias.lumemedlink.resources.schedule_title
 import com.luismejias.lumemedlink.resources.search_doctor
 import com.luismejias.lumemedlink.shared.CalendarDate
 import org.jetbrains.compose.resources.stringResource
@@ -77,7 +81,20 @@ internal fun AppointmentsScreen(
     CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
-            topBar = { LumeNavBar(title = stringResource(Res.string.appointments_title)) },
+            topBar = {
+                LumeNavBar(
+                    title = stringResource(Res.string.appointments_title),
+                    titleStyle = LumeNavBarTitleStyle.Root,
+                    actions = listOf(
+                        LumeNavBarAction.Glyph(
+                            LumeIcon.Calendar,
+                            stringResource(Res.string.schedule_title),
+                            LumeNavBarActionEmphasis.Accent,
+                            onClick = onSearch,
+                        ),
+                    ),
+                )
+            },
         ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
                 val upcomingLabel = if (content.upcoming.isEmpty()) {

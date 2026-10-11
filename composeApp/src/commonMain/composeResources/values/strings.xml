@@ -248,6 +248,9 @@
     <string name="home_change_or_cancel">Cambiar o cancelar</string>
     <string name="home_waiting">Esperando confirmación</string>
     <string name="home_rate_title">¿Cómo fue tu atención?</string>
+    <string name="rate_label">Tu valoración</string>
+    <string name="rate_none">Sin valorar</string>
+    <string name="rate_value">%1$d de 5</string>
     <string name="home_empty_title">No tienes citas agendadas</string>
     <string name="home_empty_body">Busca un médico por especialidad y comuna.</string>
     <string name="search_intro">Elige especialidad y comuna para ver los médicos con horas disponibles.</string>

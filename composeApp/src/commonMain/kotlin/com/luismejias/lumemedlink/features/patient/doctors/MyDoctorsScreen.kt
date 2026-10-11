@@ -21,6 +21,7 @@ import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeListStyle
 import cl.lume.uicomposer.components.LumeNavBar
+import cl.lume.uicomposer.components.LumeNavBarTitleStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
@@ -67,7 +68,9 @@ internal fun MyDoctorsScreen(
     CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
-            topBar = { LumeNavBar(title = stringResource(Res.string.tab_doctors)) },
+            topBar = {
+                LumeNavBar(title = stringResource(Res.string.tab_doctors), titleStyle = LumeNavBarTitleStyle.Root)
+            },
         ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
                 if (content.all.isEmpty()) {

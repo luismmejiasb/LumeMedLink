@@ -16,6 +16,7 @@ import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowRole
 import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeNavBar
+import cl.lume.uicomposer.components.LumeNavBarTitleStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeTag
@@ -68,7 +69,9 @@ internal fun SettingsScreen(
         val profile = content.profile
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
-            topBar = { LumeNavBar(title = stringResource(Res.string.settings_title)) },
+            topBar = {
+                LumeNavBar(title = stringResource(Res.string.settings_title), titleStyle = LumeNavBarTitleStyle.Root)
+            },
         ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
                 LumeStack(

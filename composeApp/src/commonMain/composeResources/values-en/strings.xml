@@ -243,6 +243,9 @@
     <string name="home_change_or_cancel">Change or cancel</string>
     <string name="home_waiting">Waiting for confirmation</string>
     <string name="home_rate_title">How was your visit?</string>
+    <string name="rate_label">Your rating</string>
+    <string name="rate_none">Not rated</string>
+    <string name="rate_value">%1$d of 5</string>
     <string name="home_empty_title">You have no appointments booked</string>
     <string name="home_empty_body">Find a doctor by specialty and commune.</string>
     <string name="search_intro">Choose a specialty and a commune to see doctors with open times.</string>

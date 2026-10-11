@@ -26,6 +26,8 @@ import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
+import cl.lume.uicomposer.components.LumeRatingInput
+import cl.lume.uicomposer.components.LumeRatingInputSize
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
@@ -33,6 +35,7 @@ import cl.lume.uicomposer.components.LumeStackStyle
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
+import cl.lume.uicomposer.components.LumeTextWeight
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.PatientAppointment
@@ -41,7 +44,6 @@ import com.luismejias.lumemedlink.features.patient.parts.AppointmentStatusTag
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
 import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
 import com.luismejias.lumemedlink.features.patient.parts.dayMonthText
-import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
 import com.luismejias.lumemedlink.features.patient.parts.longDateText
 import com.luismejias.lumemedlink.features.patient.parts.relativeDayText
 import com.luismejias.lumemedlink.features.patient.parts.shortDateText
@@ -58,6 +60,9 @@ import com.luismejias.lumemedlink.resources.home_next
 import com.luismejias.lumemedlink.resources.home_next_today
 import com.luismejias.lumemedlink.resources.home_rate_title
 import com.luismejias.lumemedlink.resources.home_waiting
+import com.luismejias.lumemedlink.resources.rate_label
+import com.luismejias.lumemedlink.resources.rate_none
+import com.luismejias.lumemedlink.resources.rate_value
 import com.luismejias.lumemedlink.resources.search_doctor
 import org.jetbrains.compose.resources.stringResource
 
@@ -71,7 +76,7 @@ internal fun HomeScreen(
     onDirections: (PatientAppointment) -> Unit,
     onChangeOrCancel: (PatientAppointment) -> Unit,
     onOpenAppointment: (PatientAppointment) -> Unit,
-    onRate: (RatingPrompt) -> Unit,
+    onRate: (RatingPrompt, Int) -> Unit,
     onSearch: () -> Unit,
 ) {
     val load by model.state.collectAsState()
@@ -122,20 +127,7 @@ internal fun HomeScreen(
                         )
                     }
                 }
-                home.rating?.let { rating ->
-                    LumeList(chrome = LumeListChrome.Open, items = listOf(rating), key = {
-                        it.appointmentId
-                    }, scrolls = false, onRowTap = onRate) {
-                        LumeListRow(
-                            textStyle = LumeListRowTextStyle.Strong,
-                            title = stringResource(Res.string.home_rate_title),
-                            description = "${it.doctor.displayName} · ${dayMonthText(it.date)}",
-                            leading = doctorMarker(it.doctor),
-                            trailing = LumeListAccessory.Icon(LumeIcon.Star, ""),
-                            disclosure = true,
-                        )
-                    }
-                }
+                home.rating?.let { RatingCard(it, onRate) }
                 TabBarClearance()
             }
         }
@@ -222,3 +214,36 @@ private fun NextAppointmentCard(
         }
     }
 }
+
+/** «¿Cómo fue tu atención?»: the doctor, the visit, and the stars as a shortcut into rating it (f5). */
+@Composable
+private fun RatingCard(rating: RatingPrompt, onRate: (RatingPrompt, Int) -> Unit) {
+    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
+        LumeStack(axis = LumeStackAxis.Horizontal, alignment = LumeStackAlignment.Center) {
+            LumeAvatar(
+                initials = rating.doctor.initials,
+                tint = LumeTileTint.deterministic(rating.doctor.id),
+                contentDescription = rating.doctor.displayName,
+            )
+            LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
+                LumeText(text = stringResource(Res.string.home_rate_title), weight = LumeTextWeight.Strong)
+                LumeText(
+                    text = "${rating.doctor.displayName} · ${dayMonthText(rating.date)}",
+                    style = LumeTextStyle.TextSmall,
+                    color = LumeTextColor.Secondary,
+                )
+                val spoken = listOf(stringResource(Res.string.rate_none)) +
+                    (1..MAX_STARS).map { stringResource(Res.string.rate_value, it) }
+                LumeRatingInput(
+                    value = 0,
+                    onValueChange = { onRate(rating, it) },
+                    contentDescription = stringResource(Res.string.rate_label),
+                    valueDescription = { spoken.getOrElse(it) { spoken.first() } },
+                    size = LumeRatingInputSize.Compact,
+                )
+            }
+        }
+    }
+}
+
+private const val MAX_STARS = 5

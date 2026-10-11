@@ -17,6 +17,7 @@ import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeListTileEmphasis
 import cl.lume.uicomposer.components.LumeNavBar
+import cl.lume.uicomposer.components.LumeNavBarTitleStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeText
@@ -51,7 +52,9 @@ internal fun SearchScreen(
     val criteria by model.criteria.collectAsState()
     LumeContainer(
         scroll = LumeContainerScroll.Scrollable,
-        topBar = { LumeNavBar(title = stringResource(Res.string.tab_search)) },
+        topBar = {
+            LumeNavBar(title = stringResource(Res.string.tab_search), titleStyle = LumeNavBarTitleStyle.Root)
+        },
     ) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
             LumeText(text = stringResource(Res.string.search_intro), color = LumeTextColor.Secondary)
