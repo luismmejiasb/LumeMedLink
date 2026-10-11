@@ -23,6 +23,7 @@ import cl.lume.uicomposer.components.LumeListStyle
 import cl.lume.uicomposer.components.LumeNavBar
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
+import cl.lume.uicomposer.components.LumeStackAxis
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -59,6 +60,7 @@ internal fun MyDoctorsScreen(
     model: MyDoctorsViewModel,
     onOpen: (MyDoctor) -> Unit,
     onCall: (String) -> Unit,
+    onMail: (String) -> Unit,
     onSearch: () -> Unit,
 ) {
     val load by model.state.collectAsState()
@@ -89,7 +91,7 @@ internal fun MyDoctorsScreen(
                     if (content.shown.isEmpty()) {
                         LumeCallout(text = stringResource(Res.string.doctors_no_match))
                     }
-                    content.shown.forEach { entry -> DoctorCard(entry, onOpen, onCall) }
+                    content.shown.forEach { entry -> DoctorCard(entry, onOpen, onCall, onMail) }
                 }
                 LumeText(text = stringResource(Res.string.doctors_footer), color = LumeTextColor.Secondary)
                 TabBarClearance()
@@ -99,7 +101,12 @@ internal fun MyDoctorsScreen(
 }
 
 @Composable
-private fun DoctorCard(entry: MyDoctor, onOpen: (MyDoctor) -> Unit, onCall: (String) -> Unit) {
+private fun DoctorCard(
+    entry: MyDoctor,
+    onOpen: (MyDoctor) -> Unit,
+    onCall: (String) -> Unit,
+    onMail: (String) -> Unit,
+) {
     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
             LumeList(
@@ -118,27 +125,32 @@ private fun DoctorCard(entry: MyDoctor, onOpen: (MyDoctor) -> Unit, onCall: (Str
                 )
             }
             if (entry.sharesContact) {
-                entry.phone?.let { phone ->
-                    LumeButton(
-                        content = LumeButtonContent.LeadingIcon(
-                            LumeIcon.Phone,
-                            stringResource(Res.string.doctors_call),
-                        ),
-                        emphasis = LumeButtonEmphasis.OutlineNeutral,
-                        size = LumeButtonSize.Small,
-                        onClick = { onCall(phone) },
-                    )
-                }
-                entry.email?.let { email ->
-                    LumeListRow(
-                        textStyle = LumeListRowTextStyle.Strong,
-                        title = email,
-                        leading = LumeListAccessory.Icon(LumeIcon.Mail, stringResource(Res.string.doctors_mail)),
-                    )
+                LumeStack(axis = LumeStackAxis.Horizontal, spacing = { small }) {
+                    entry.phone?.let { phone ->
+                        LumeButton(
+                            content = LumeButtonContent.LeadingIcon(
+                                LumeIcon.Phone,
+                                stringResource(Res.string.doctors_call),
+                            ),
+                            emphasis = LumeButtonEmphasis.OutlineNeutral,
+                            size = LumeButtonSize.Small,
+                            onClick = { onCall(phone) },
+                        )
+                    }
+                    entry.email?.let { email ->
+                        LumeButton(
+                            content = LumeButtonContent.LeadingIcon(
+                                LumeIcon.Mail,
+                                stringResource(Res.string.doctors_mail),
+                            ),
+                            emphasis = LumeButtonEmphasis.OutlineNeutral,
+                            size = LumeButtonSize.Small,
+                            onClick = { onMail(email) },
+                        )
+                    }
                 }
             } else {
                 LumeListRow(
-                    textStyle = LumeListRowTextStyle.Strong,
                     title = stringResource(Res.string.doctors_private),
                     leading = LumeListAccessory.Icon(LumeIcon.Lock, ""),
                 )

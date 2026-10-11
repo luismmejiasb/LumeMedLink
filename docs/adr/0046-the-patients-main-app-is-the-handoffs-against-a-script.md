@@ -47,10 +47,8 @@ Two contract facts shape the screens and are not the design's:
    accent card and Inicio uses it.
 3. **Rating stars are a list row** («¿Cómo fue tu atención?» with a star) until the kit has a rating control;
    the rating flow (f5) needs one. Showing a rating is the kit's `LumeRating` since 2026-10-11; choosing one is not.
-4. **«Correo» in Mis médicos shows the address and does nothing**: handing it to the mail app is Android's send
-   intent, one of the doors ADR-0007 closes without exceptions (`check-forbidden-patterns` P2). Opening that door
-   for an address with no attachment is the author's call. «Llamar» opens the dialer with the number; it does not
-   place the call.
+4. ~~«Correo» in Mis médicos shows the address and does nothing~~ — closed 2026-10-11 by ADR-0047: it opens the mail
+   app with the address and nothing else. «Llamar» opens the dialer with the number; it does not place the call.
 5. ~~Mis médicos' filter is a field of the hardened primitive, not the kit's search field~~ — closed 2026-10-11: the
    kit's search field types verbatim and now marks its value Personal (ADR-0042), so `core/input` draws it as
    `SensitiveSearchField` for Mis médicos, e0 and e3.

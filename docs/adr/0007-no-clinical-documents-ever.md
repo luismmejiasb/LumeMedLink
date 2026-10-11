@@ -1,6 +1,7 @@
 # ADR-0007 — This app never displays or transports clinical documents
 
-- **Status:** Accepted · 2026-08-17
+- **Status:** Accepted · 2026-08-17 · amended narrowly by ADR-0047 (2026-10-11): the mail app may be opened with an
+  address and nothing else.
 - **Related:** ADR-0035 de LumeMed (nothing signs electronically); `ADR-0019 del backend` (amended);
   trampa T1; ADR-0001 (the boundary this sharpens).
 

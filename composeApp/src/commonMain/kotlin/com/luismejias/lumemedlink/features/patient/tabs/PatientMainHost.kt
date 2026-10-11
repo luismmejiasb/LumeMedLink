@@ -128,6 +128,7 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
                     model = doctors,
                     onOpen = {},
                     onCall = contact::dial,
+                    onMail = contact::mail,
                     onSearch = { tabs.show(PatientTab.SEARCH) },
                 )
                 PatientTab.SETTINGS -> SettingsScreen(

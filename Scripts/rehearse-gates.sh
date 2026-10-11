@@ -336,6 +336,37 @@ d.mkdir(parents=True, exist_ok=True)
     "fun stash(c: Context, t: String) {\n"
     "    c.getSharedPreferences(\"s\", Context.MODE_PRIVATE).edit().putString(\"t\", t).apply()\n}\n")
 '
+# ── P2 · ADR-0047 opened one mailto line; everything around it must stay red ─────────────────────
+bait "a share sheet in a feature" check-forbidden-patterns.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device"
+(d / "Share.kt").write_text(
+    "package com.luismejias.lumemedlink.core.device\n\nimport android.content.Intent\n\n"
+    "internal fun share() = Intent(Intent.ACTION_SEND)\n")
+'
+bait "the mailto line copied outside its one file" check-forbidden-patterns.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device"
+(d / "Mail.kt").write_text(
+    "package com.luismejias.lumemedlink.core.device\n\nimport android.content.Intent\nimport android.net.Uri\n\n"
+    "internal fun mailTo(a: String) = Intent(Intent.ACTION_SENDTO, Uri.fromParts(\"mailto\", a, null))\n")
+'
+bait "an attachment put on the mail intent" check-forbidden-patterns.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceContact.android.kt"
+s = p.read_text()
+p.write_text(s.replace("Uri.fromParts(\"mailto\", plain, null))", "Uri.fromParts(\"mailto\", plain, null)).putExtra(Intent.EXTRA_STREAM, Uri.EMPTY)", 1))
+'
+bait "a second mail door in the same file" check-forbidden-patterns.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceContact.android.kt"
+p.write_text(p.read_text() + "\nprivate fun again(c: Context, a: String) =\n    c.startActivity(Intent(Intent.ACTION_SENDTO, Uri.fromParts(\"mailto\", a, null)))\n")
+'
+bait "a plain send intent in the mail door" check-forbidden-patterns.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceContact.android.kt"
+p.write_text(p.read_text() + "\nprivate fun send() = Intent(Intent.ACTION_SEND)\n")
+'
 bait "a session token to logcat from inside core/, via an import" check-logging.sh '
 import sys, pathlib
 d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/session"

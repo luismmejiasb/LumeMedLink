@@ -58,6 +58,26 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 - **Disponibilidad en p4**: una fila con su valor que abre su propia lista, como el diseño.
 - **Pedido `0008`**: pasado a la sesión del backend.
 
+## La respuesta del backend al pedido `0008` (2026-10-11)
+
+Está en `../lumemed-cloud-platform/tareas/PENDING/0121-lo-que-le-falta-al-contrato-para-la-app-del-paciente.md`.
+El contrato sigue en 0.96.0. Esto choca con lo que dibuja el guion y espera al autor:
+
+- **§8, cómo entra el paciente**: el backend cerró el autoservicio el 2026-09-16 (ADR-0035 del backend): buscar es
+  abierto, pero reservar exige un vínculo activo con la consulta. ADR-0044 de este repo da el acceso por abierto, y
+  cambiarlo exige una ADR que derogue SD-1 del backend. Es la decisión pendiente sobre el modelo de acceso del paciente.
+- **§6, recordatorios**: la plataforma no manda recordatorios y el paciente no elige tiempos, así que «24 h y 2 h
+  antes» de Configuración no existe. Además, la ventana de cambio (`cancelCutoffHours`) no viene en la cita, aunque la
+  descripción del contrato diga que sí: es un defecto del backend.
+- **§7, búsquedas recientes**: el backend propone no guardarlas ni en el teléfono ni allá, porque especialidad más
+  comuna dice algo de la salud de quien busca. p2 las dibuja.
+- **§4 y §5, valoraciones y buzón**: esperan al autor; sin buzón, la campana no tiene qué mostrar.
+- **Propuesto como aditivo**, pendiente del autor: `professionalId` en la cita, `specialtyCode` en el contacto, la
+  dirección del lugar en la cita y `cancelCutoffHours`. Sin coordenadas: el backend no geocodifica.
+
+El backend pide no presentar como reales las formas que todavía no existen. El guion es provisional (ADR-0046), pero
+recordatorios y búsquedas recientes muestran algo que la plataforma no hará: el autor decide si se quitan.
+
 ## Igualar el kit al diseño (pedido del autor, 2026-10-11)
 
 El autor vio la app lejos del diseño, sobre todo en Agendar y en la barra de pestañas, y pidió que el kit respete

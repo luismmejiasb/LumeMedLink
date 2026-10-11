@@ -11,7 +11,8 @@
 # What it hunts:
 #   P1  no_globalscope — total, no exceptions, core/ included (§6).
 #   P2  no_document_delivery — ADR-0007: share sheets / exporters have no legitimate clinical use
-#       in this app. Total, no exceptions: FileProvider, ACTION_SEND*, UIActivityViewController.
+#       in this app: FileProvider, ACTION_SEND*, UIActivityViewController. ONE exception, ADR-0047: the
+#       mail app opened with an address and nothing else, in one line of one file.
 #   P3  secrets_gate, call-shaped half — plain-storage CALLS outside core/ (§8.4, ADR-0005). The
 #       import-shaped half lives in detekt's ForbiddenImport.
 #
@@ -45,11 +46,34 @@ fi
 # named the two obvious APIs; a document leaves an app through many more doors, and ADR-0007 is not
 # about share sheets — it is about this app never being the thing that delivers a document with
 # legal value, because doing so reopens Ley 19.799 for the whole family.
-hits=$(grep -rnE 'FileProvider|ACTION_SEND|ACTION_VIEW|ACTION_CREATE_DOCUMENT|UIActivityViewController|UIDocumentInteractionController|UIDocumentPickerViewController|ShareCompat|MediaStore|PrintManager|UIPrintInteractionController|createPrintDocumentAdapter|Intent\.createChooser|startActivityForResult' $SRC 2>/dev/null || true)
+#
+# ADR-0047 opens one door: `Intent.ACTION_SENDTO` with `Uri.fromParts("mailto", …, null)`, written exactly so, in
+# core/device's Android contact and nowhere else. Only that line is exempt; any other send intent, anywhere, stays red.
+MAIL_DOOR="composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceContact.android.kt"
+MAIL_LINE='Intent\(Intent\.ACTION_SENDTO, Uri\.fromParts\("mailto", [A-Za-z]+, null\)\)'
+hits=$(grep -rnE 'FileProvider|ACTION_SEND|ACTION_VIEW|ACTION_CREATE_DOCUMENT|UIActivityViewController|UIDocumentInteractionController|UIDocumentPickerViewController|ShareCompat|MediaStore|PrintManager|UIPrintInteractionController|createPrintDocumentAdapter|Intent\.createChooser|startActivityForResult' $SRC 2>/dev/null \
+    | grep -vE "^$MAIL_DOOR:[0-9]+:[^/]*$MAIL_LINE" || true)
 if [ -n "$hits" ]; then
     fail "P2 document delivery surface" \
-         "This app never shows, prints, exports nor transports a document (ADR-0007). Sending a prescription from here reopens Ley 19.799 for the whole family (backend trap T1)." \
+         "This app never shows, prints, exports nor transports a document (ADR-0007). Sending a prescription from here reopens Ley 19.799 for the whole family (backend trap T1). The one exception is ADR-0047's mailto line." \
          "$hits"
+fi
+
+# The door stays one door: a single mailto intent, and nothing put on any intent in that file — no extra, type, clip,
+# stream or data change that could carry an attachment or a body (ADR-0047).
+if [ -f "$MAIL_DOOR" ]; then
+    doors=$(grep -cE "$MAIL_LINE" "$MAIL_DOOR" || true)
+    if [ "$doors" -gt 1 ]; then
+        fail "P2 more than one mail door" \
+             "ADR-0047 allows one mailto intent, in one line." \
+             "$(grep -nE "$MAIL_LINE" "$MAIL_DOOR")"
+    fi
+    loaded=$(grep -nE 'putExtra|putExtras|EXTRA_|setType|setDataAndType|setClipData|ClipData|setData\(|\.data = |\.type = |\.clipData' "$MAIL_DOOR" || true)
+    if [ -n "$loaded" ]; then
+        fail "P2 something put on the mail intent" \
+             "The mail app gets an address and nothing else: no attachment, subject, body or stream (ADR-0047)." \
+             "$loaded"
+    fi
 fi
 
 # The ONE directory that is exempt, anchored. `grep -v '/core/'` exempted ANY path containing a
