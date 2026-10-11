@@ -51,14 +51,6 @@ internal class ScriptedPatientCare(
         },
     )
 
-    override suspend fun recentSearches(): CareResult<List<RecentSearch>> = answer(
-        if (world == CareWorld.DESIGN) {
-            listOf(RecentSearch("Medicina general", "Providencia"), RecentSearch("Dermatología", "Las Condes"))
-        } else {
-            emptyList()
-        },
-    )
-
     override suspend fun policy(): CareResult<CarePolicy> =
         answer(CarePolicy(changeWindowHours = 24, remindersHoursBefore = listOf(24, 2)))
 

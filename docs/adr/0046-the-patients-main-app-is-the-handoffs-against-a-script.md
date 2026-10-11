@@ -67,6 +67,9 @@ Two contract facts shape the screens and are not the design's:
 9. **Rating, its count and the number of visits** in p3 come from the script (request `0008` §4); filtering and
    sorting run over what the search returned.
 
+10. **p2 has no recent searches** (the author's call, 2026-10-11, on the backend's answer to request `0008` §7): a
+    specialty with a commune says something about the searcher's health, and nothing keeps it.
+
 ## Consequences
 
 - The flows behind the tab roots (search to booking, detail, change, cancel, rating, photo, the doctor's three

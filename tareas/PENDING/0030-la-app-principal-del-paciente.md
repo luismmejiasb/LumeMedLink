@@ -75,8 +75,11 @@ El contrato sigue en 0.96.0. Esto choca con lo que dibuja el guion y espera al a
 - **Propuesto como aditivo**, pendiente del autor: `professionalId` en la cita, `specialtyCode` en el contacto, la
   dirección del lugar en la cita y `cancelCutoffHours`. Sin coordenadas: el backend no geocodifica.
 
-El backend pide no presentar como reales las formas que todavía no existen. El guion es provisional (ADR-0046), pero
-recordatorios y búsquedas recientes muestran algo que la plataforma no hará: el autor decide si se quitan.
+El backend pide no presentar como reales las formas que todavía no existen. **El autor decidió** (2026-10-11): no se
+le hacen más pedidos al backend por ahora, porque está ocupado con LumeMed. Todo sigue siendo maqueta fiel al diseño;
+los recordatorios y el acceso quedan como los dibuja el diseño, con el choque anotado. Las búsquedas recientes se
+quitaron, y los cuatro aditivos quedan aprobados para comunicarlos cuando el backend vuelva a tomar pedidos (ver el
+pedido `0008`, sección final).
 
 ## Igualar el kit al diseño (pedido del autor, 2026-10-11)
 

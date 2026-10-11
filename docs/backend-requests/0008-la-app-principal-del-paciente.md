@@ -74,3 +74,22 @@ cancelar, retirar, reagendar como operación atómica, el vocabulario abierto de
 «Por confirmar»), y los catálogos de especialidades y comunas. Una pregunta de borde: reservar exige estar
 enrolado en esa clínica, y el diseño deja buscar y reservar con cualquier médico de la plataforma. Es la misma
 decisión abierta del modelo de acceso del paciente (ADR-0044 de LumeMedLink).
+
+## Respuesta del backend y decisiones del autor (2026-10-11)
+
+El backend respondió punto por punto en su tarea `0121` (`../lumemed-cloud-platform/tareas/PENDING/0121-lo-que-le-falta-al-contrato-para-la-app-del-paciente.md`).
+El contrato sigue en 0.96.0.
+
+Lo que decidió el autor sobre esa respuesta:
+
+- **No se le hacen más pedidos al backend desde este repo por ahora**: está ocupado con LumeMed. Todo el lado paciente
+  sigue siendo maqueta fiel al diseño contra el guion (ADR-0046), y lo que choque con la plataforma queda anotado aquí
+  para cuando el backend tenga tiempo.
+- **§8, modelo de acceso**: el guion sigue como lo dibuja el diseño (ADR-0044). Que reservar exija vínculo con la
+  consulta (ADR-0035 del backend) queda para cuando se conecte de verdad.
+- **§6, recordatorios**: Configuración sigue el diseño al pie de la letra con el guion. Queda anotado que la plataforma
+  no manda recordatorios ni deja elegir horarios.
+- **§7, búsquedas recientes**: se quitan. No se guardan ni en el teléfono ni en el servidor, como propuso el backend.
+- **Aditivos propuestos por el backend**: el autor aprueba los cuatro (`professionalId` en la cita, la dirección del
+  lugar en la cita, `cancelCutoffHours` en la cita y `specialtyCode` en el contacto compartido). Se le comunican al
+  backend cuando vuelva a tomar pedidos de este repo.

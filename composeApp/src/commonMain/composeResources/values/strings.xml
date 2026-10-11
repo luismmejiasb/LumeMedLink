@@ -256,7 +256,6 @@
     <string name="search_choose">Elegir</string>
     <string name="search_required_note">Los dos son obligatorios. «Buscar médicos» se activa al completar ambos.</string>
     <string name="search_action">Buscar médicos</string>
-    <string name="search_recent">Búsquedas recientes</string>
     <string name="search_by_name_title">¿Ya sabes a quién buscas?</string>
     <string name="search_by_name_body">Busca al médico por nombre</string>
     <string name="appointments_title">Mis citas</string>

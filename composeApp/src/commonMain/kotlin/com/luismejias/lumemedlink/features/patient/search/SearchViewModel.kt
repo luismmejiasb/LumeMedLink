@@ -7,12 +7,8 @@ import com.luismejias.lumemedlink.core.care.Commune
 import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
-import com.luismejias.lumemedlink.core.care.RecentSearch
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.care.Specialty
-import com.luismejias.lumemedlink.features.patient.parts.CareLoad
-import com.luismejias.lumemedlink.features.patient.parts.markLoading
-import com.luismejias.lumemedlink.features.patient.parts.toLoad
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,9 +22,6 @@ internal class SearchViewModel(private val care: PatientCareGateway, private val
     ViewModel() {
     val flow = SearchFlow()
 
-    private val recentLoad = MutableStateFlow<CareLoad<List<RecentSearch>>>(CareLoad.Loading)
-    val recent: StateFlow<CareLoad<List<RecentSearch>>> = recentLoad.asStateFlow()
-
     private val chosen = MutableStateFlow(SearchCriteria())
     val criteria: StateFlow<SearchCriteria> = chosen.asStateFlow()
 
@@ -39,19 +32,6 @@ internal class SearchViewModel(private val care: PatientCareGateway, private val
     val results = ResultsModel(directory, care::today)
     val schedule = ScheduleModel(directory, care::appointments, care::today)
     val booking = BookingModel(directory)
-
-    init {
-        refresh()
-    }
-
-    fun refresh() {
-        viewModelScope.launch { load() }
-    }
-
-    suspend fun load() {
-        recentLoad.markLoading()
-        recentLoad.value = care.recentSearches().toLoad { it }
-    }
 
     /** Runs a step of the flow in this ViewModel's scope — a screen never owns the work it starts. */
     fun launch(step: suspend SearchViewModel.() -> Unit) {
@@ -93,16 +73,6 @@ internal class SearchViewModel(private val care: PatientCareGateway, private val
         results.clear()
         if (flow.top != SearchRoute.RESULTS) flow.push(SearchRoute.RESULTS)
         results.load(chosen.value)
-    }
-
-    /** A recent search fills both choices from the catalogs, then searches. Names that no longer exist are skipped. */
-    suspend fun recentChosen(search: RecentSearch) {
-        val specialty = (directory.specialties() as? CareResult.Ok)?.value?.firstOrNull { it.name == search.specialty }
-            ?: return
-        val commune = (directory.communes(specialty.code) as? CareResult.Ok)?.value
-            ?.firstOrNull { it.name == search.commune } ?: return
-        chosen.value = SearchCriteria(specialty, commune)
-        search()
     }
 
     /** e5: «Las Condes · 3 médicos» searches the same specialty there. */

@@ -9,7 +9,6 @@ import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
-import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
@@ -24,15 +23,12 @@ import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
-import com.luismejias.lumemedlink.core.care.RecentSearch
-import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.search_action
 import com.luismejias.lumemedlink.resources.search_choose
 import com.luismejias.lumemedlink.resources.search_commune
 import com.luismejias.lumemedlink.resources.search_intro
-import com.luismejias.lumemedlink.resources.search_recent
 import com.luismejias.lumemedlink.resources.search_required_note
 import com.luismejias.lumemedlink.resources.search_specialty
 import com.luismejias.lumemedlink.resources.tab_search
@@ -42,8 +38,8 @@ private enum class Criterion { SPECIALTY, COMMUNE }
 
 /**
  * Buscar (p2). «¿Ya sabes a quién buscas?» waits: the design has no screen for a search by name (the contract
- * does take a `name`). The recent searches are the only read; a failure to load them hides the section rather than the
- * form — searching does not depend on them.
+ * does take a `name`). No recent searches, by the author's call (2026-10-11): a specialty with a commune says something
+ * about the searcher's health, and nothing keeps it — not the phone, not the server.
  */
 @Composable
 internal fun SearchScreen(
@@ -53,7 +49,6 @@ internal fun SearchScreen(
     onSearch: () -> Unit,
 ) {
     val criteria by model.criteria.collectAsState()
-    val recent by model.recent.collectAsState()
     LumeContainer(
         scroll = LumeContainerScroll.Scrollable,
         topBar = { LumeNavBar(title = stringResource(Res.string.tab_search)) },
@@ -98,26 +93,6 @@ internal fun SearchScreen(
                 state = if (criteria.complete) LumeFieldState.Enabled else LumeFieldState.Disabled,
                 onClick = onSearch,
             )
-            val searches = (recent as? CareLoad.Ready)?.content.orEmpty()
-            if (searches.isNotEmpty()) {
-                LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
-                    LumeEyebrow(title = stringResource(Res.string.search_recent))
-                    LumeList(
-                        chrome = LumeListChrome.Open,
-                        items = searches,
-                        key = { "${it.specialty}/${it.commune}" },
-                        scrolls = false,
-                        onRowTap = { search: RecentSearch -> model.launch { recentChosen(search) } },
-                    ) { search ->
-                        LumeListRow(
-                            title = search.specialty,
-                            description = search.commune,
-                            disclosure = true,
-                            textStyle = LumeListRowTextStyle.Strong,
-                        )
-                    }
-                }
-            }
             TabBarClearance()
         }
     }

@@ -104,11 +104,6 @@ internal data class PatientProfile(
     override fun toString(): String = "PatientProfile(redacted)"
 }
 
-/** A recent search (p2): a specialty and a commune, by the reference catalogs' codes and names. */
-internal data class RecentSearch(val specialty: String, val commune: String) {
-    override fun toString(): String = "RecentSearch(redacted)"
-}
-
 /** How far ahead a patient may still change or cancel ("hasta 24 h antes", p5): the practice's rule. */
 internal data class CarePolicy(val changeWindowHours: Int, val remindersHoursBefore: List<Int>)
 
@@ -125,8 +120,6 @@ internal interface PatientCareGateway {
     suspend fun ratingPrompts(): CareResult<List<RatingPrompt>>
 
     suspend fun myDoctors(): CareResult<List<MyDoctor>>
-
-    suspend fun recentSearches(): CareResult<List<RecentSearch>>
 
     suspend fun policy(): CareResult<CarePolicy>
 

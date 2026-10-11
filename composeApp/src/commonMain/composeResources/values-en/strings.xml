@@ -251,7 +251,6 @@
     <string name="search_choose">Choose</string>
     <string name="search_required_note">Both are required. “Search doctors” turns on once both are set.</string>
     <string name="search_action">Search doctors</string>
-    <string name="search_recent">Recent searches</string>
     <string name="search_by_name_title">Already know who you’re looking for?</string>
     <string name="search_by_name_body">Search for a doctor by name</string>
     <string name="appointments_title">My appointments</string>
