@@ -13,6 +13,7 @@ import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeChip
+import cl.lume.uicomposer.components.LumeDivider
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeEqualRow
 import cl.lume.uicomposer.components.LumeEyebrow
@@ -30,13 +31,15 @@ import cl.lume.uicomposer.components.LumeStackAxis
 import cl.lume.uicomposer.components.LumeStackStyle
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
+import cl.lume.uicomposer.components.LumeTextStyle
+import cl.lume.uicomposer.components.LumeTextWeight
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.features.patient.parts.DoctorIdentity
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
 import com.luismejias.lumemedlink.features.patient.parts.capitalized
-import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
 import com.luismejias.lumemedlink.features.patient.parts.relativeDayText
 import com.luismejias.lumemedlink.features.patient.parts.shortDateText
 import com.luismejias.lumemedlink.resources.Res
@@ -107,12 +110,20 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
     PushedScreen(title = stringResource(Res.string.results_title), onBack = onBack) {
         val specialty = criteria.specialty?.name.orEmpty()
         val commune = criteria.commune?.name.orEmpty()
-        LumeList(items = listOf(Unit), key = { it }, scrolls = false, onRowTap = { onBack() }) {
-            LumeListRow(
-                title = specialty,
-                description = stringResource(Res.string.results_in, commune),
-                trailing = LumeListAccessory.Value(stringResource(Res.string.results_change)),
-            )
+        LumeCard(modifier = Modifier.fillMaxWidth()) {
+            LumeList(
+                items = listOf(Unit),
+                key = { it },
+                style = LumeListStyle.Embedded,
+                scrolls = false,
+                onRowTap = { onBack() },
+            ) {
+                LumeListRow(
+                    title = specialty,
+                    description = stringResource(Res.string.results_in, commune),
+                    trailing = LumeListAccessory.Value(stringResource(Res.string.results_change)),
+                )
+            }
         }
         CareLoadView(
             load,
@@ -213,23 +224,8 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
 private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook: () -> Unit) {
     LumeCard(modifier = Modifier.fillMaxWidth()) {
         LumeStack(alignment = LumeStackAlignment.Fill, spacing = { small }) {
-            LumeList(
-                items = listOf(entry),
-                key = { it.doctor.id },
-                style = LumeListStyle.Embedded,
-                onRowTap = { onBook() },
-            ) {
-                LumeListRow(
-                    title = it.doctor.displayName,
-                    description = it.doctor.specialty + "\n" + (
-                        it.rating?.let { rating ->
-                            "★ " +
-                                stringResource(Res.string.results_rating, rating.decimal(), it.ratingCount, it.commune)
-                        } ?: it.commune
-                        ),
-                    leading = doctorMarker(it.doctor),
-                )
-            }
+            DoctorIdentity(entry.doctor, entry.doctor.specialty, ratingLine(entry))
+            LumeDivider()
             LumeStack(
                 axis = LumeStackAxis.Horizontal,
                 style = LumeStackStyle.Fixed,
@@ -237,12 +233,17 @@ private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook
                 spacing = { medium },
             ) {
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
-                    LumeText(text = stringResource(Res.string.results_next), color = LumeTextColor.Secondary)
+                    LumeText(
+                        text = stringResource(Res.string.results_next),
+                        style = LumeTextStyle.Caption,
+                        color = LumeTextColor.Secondary,
+                    )
                     LumeText(
                         text = entry.nextSlot?.let {
                             slotText(it, today)
                         } ?: stringResource(Res.string.results_no_slot),
                         color = LumeTextColor.Accent,
+                        weight = LumeTextWeight.Strong,
                     )
                 }
                 LumeButton(
@@ -255,6 +256,15 @@ private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook
         }
     }
 }
+
+/**
+ * "★ 4,9 (128) · Providencia", or only the commune when nobody has rated yet. PROVISIONAL: the kit's rating, which
+ * draws the star filled and the value stressed, is on its way (task 0030).
+ */
+@Composable
+internal fun ratingLine(entry: DirectoryDoctor): String = entry.rating?.let { rating ->
+    "★ " + stringResource(Res.string.results_rating, rating.decimal(), entry.ratingCount, entry.commune)
+} ?: entry.commune
 
 /** "4,9": one decimal, Chile's comma. The value is the server's; only its writing is the app's. */
 private fun Double.decimal(): String {

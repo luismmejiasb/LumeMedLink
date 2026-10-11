@@ -14,7 +14,6 @@ import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonFeedback
 import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCalloutBox
-import cl.lume.uicomposer.components.LumeCalloutStyle
 import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeEqualRow
@@ -28,6 +27,8 @@ import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
 import cl.lume.uicomposer.components.LumeStackStyle
+import cl.lume.uicomposer.components.LumeText
+import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeToggleGroup
 import cl.lume.uicomposer.components.LumeToggleGroupLayout
 import cl.lume.uicomposer.components.LumeToggleGroupSelection
@@ -36,12 +37,13 @@ import cl.lume.uicomposer.tokens.LumeStatusStyle
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.BookingFailure
 import com.luismejias.lumemedlink.core.care.DirectoryDoctor
+import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.features.patient.parts.DoctorIdentity
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
 import com.luismejias.lumemedlink.features.patient.parts.capitalized
-import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
 import com.luismejias.lumemedlink.features.patient.parts.longDateText
 import com.luismejias.lumemedlink.features.patient.parts.longWeekdayDayText
 import com.luismejias.lumemedlink.features.patient.parts.weekdayDayText
@@ -86,12 +88,8 @@ import org.jetbrains.compose.resources.stringResource
 /** The doctor at the head of a1 and a2. */
 @Composable
 private fun DoctorHeader(entry: DirectoryDoctor) {
-    LumeList(items = listOf(entry), key = { it.doctor.id }, scrolls = false) {
-        LumeListRow(
-            title = it.doctor.displayName,
-            description = "${it.doctor.specialty} · ${it.commune}",
-            leading = doctorMarker(it.doctor),
-        )
+    LumeCard(modifier = Modifier.fillMaxWidth()) {
+        DoctorIdentity(entry.doctor, entry.doctor.specialty, ratingLine(entry))
     }
 }
 
@@ -148,17 +146,24 @@ internal fun ScheduleScreen(model: SearchViewModel, onBack: () -> Unit) {
                 LumeEyebrow(stringResource(Res.string.schedule_morning, longWeekdayDayText(day)))
                 SlotGrid(content.morning, selection)
             }
+            Clashes(content.morningClashes)
             if (content.afternoon.isNotEmpty()) {
                 LumeEyebrow(stringResource(Res.string.schedule_afternoon))
                 SlotGrid(content.afternoon, selection)
             }
-            content.clashes.forEach { clash ->
-                LumeCalloutBox(
-                    text = stringResource(Res.string.schedule_clash, clash.start.display, clash.doctor.displayName),
-                    style = LumeCalloutStyle.Warning,
-                ) {}
-            }
+            Clashes(content.afternoonClashes)
         }
+    }
+}
+
+/** «A las 09:00 ya tienes cita con el Dr. Pinto», under the half of the day the hour belongs to. */
+@Composable
+private fun Clashes(clashes: List<PatientAppointment>) {
+    clashes.forEach { clash ->
+        LumeText(
+            text = stringResource(Res.string.schedule_clash, clash.start.display, clash.doctor.displayName),
+            color = LumeTextColor.Warning,
+        )
     }
 }
 

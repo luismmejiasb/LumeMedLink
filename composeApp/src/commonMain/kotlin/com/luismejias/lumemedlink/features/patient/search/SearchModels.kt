@@ -190,6 +190,10 @@ internal data class ScheduleContent(
     /** The patient's appointments on the day shown — why an hour they might expect is missing. */
     val clashes: List<PatientAppointment> get() = own.filter { it.date == day }
 
+    val morningClashes: List<PatientAppointment> get() = clashes.filter { it.start < NOON }
+
+    val afternoonClashes: List<PatientAppointment> get() = clashes.filter { it.start >= NOON }
+
     override fun toString(): String = "ScheduleContent(slots=${slots.size}, chosen=${slot != null})"
 }
 

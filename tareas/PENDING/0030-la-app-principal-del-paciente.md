@@ -47,7 +47,7 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 
 - **El encabezado con acciones** (campana y perfil en Inicio, calendario en Mis citas): `LumeNavBar` no tiene
   ranura a la derecha a propósito. ¿Se agrega al kit o se mueven?
-- **La tarjeta de la próxima cita rellena del acento**: hoy es la tarjeta de acento del kit (un lavado).
+- ~~**La tarjeta de la próxima cita rellena del acento**~~: autorizada el 2026-10-11 (ver abajo).
 - **Un control de estrellas** en el kit, para valorar.
 - **«Correo» en Mis médicos**: abrir la app de correo es el intent de envío de Android, que ADR-0007 cierra sin
   excepciones. ¿Se abre una excepción para una dirección sin adjunto?
@@ -55,6 +55,16 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 - **El diseño c1 muestra «Motivo que escribiste»** (texto clínico): el autor ya quitó el motivo y esta app no lo tiene
   (ADR-0001); el paquete de diseño debería corregirse.
 - **e8 dibuja una tercera pestaña «Canceladas»** en Mis citas que p5 no tiene: ¿cuál manda?
+
+## Igualar el kit al diseño (pedido del autor, 2026-10-11)
+
+El autor vio la app lejos del diseño, sobre todo en Agendar y en la barra de pestañas, y pidió que el kit respete
+distribución, espacio y aspecto de cada componente. Autorizó cuatro piezas nuevas: los días y horas de a1 (franja de
+días y grilla de 3 columnas con hora tomada y «Tu cita»), el selector compacto de mes y año, la valoración visible y
+la tarjeta de acento rellena. La barra de pestañas pasa a ser la flotante del diseño, con el disco elevado y la
+transición del gif. El diff medido (fondo de página, título centrado, pesos, reparto 42/58 de la barra de acción,
+callout lavado, alerta centrada, chips de acento, filas etiqueta-sobre-valor) se le pasó a la sesión del kit. La app,
+por su lado, usa `LumeAvatar` para los médicos y saca las listas de una fila que duplican la sangría.
 
 ## Qué NO hacer
 

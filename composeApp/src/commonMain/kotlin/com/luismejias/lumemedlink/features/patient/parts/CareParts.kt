@@ -4,14 +4,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeActivityIndicator
+import cl.lume.uicomposer.components.LumeAvatar
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeStack
+import cl.lume.uicomposer.components.LumeStackAlignment
+import cl.lume.uicomposer.components.LumeStackAxis
 import cl.lume.uicomposer.components.LumeTag
 import cl.lume.uicomposer.components.LumeTagStyle
+import cl.lume.uicomposer.components.LumeText
+import cl.lume.uicomposer.components.LumeTextColor
+import cl.lume.uicomposer.components.LumeTextStyle
+import cl.lume.uicomposer.components.LumeTextWeight
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
@@ -183,6 +190,25 @@ internal fun AppointmentStatusTag(status: AppointmentStatus) {
  */
 internal fun doctorMarker(doctor: CareDoctor): LumeListAccessory =
     LumeListAccessory.Tile(LumeIcon.PersonFill, LumeTileTint.deterministic(doctor.id), doctor.displayName)
+
+/**
+ * A doctor as the design heads a card with them (p3, a1, a2): the initials on their stable colour, the name
+ * stressed, and each of [details] as a quieter line under it.
+ */
+@Composable
+internal fun DoctorIdentity(doctor: CareDoctor, vararg details: String) {
+    LumeStack(axis = LumeStackAxis.Horizontal, alignment = LumeStackAlignment.Center) {
+        LumeAvatar(
+            initials = doctor.initials,
+            tint = LumeTileTint.deterministic(doctor.id),
+            contentDescription = doctor.displayName,
+        )
+        LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
+            LumeText(text = doctor.displayName, weight = LumeTextWeight.Strong)
+            details.forEach { LumeText(text = it, style = LumeTextStyle.TextSmall, color = LumeTextColor.Secondary) }
+        }
+    }
+}
 
 /** First letter up, for a short date that opens a line: "Lun 21 sep · 09:00". */
 internal fun String.capitalized(): String = replaceFirstChar { it.titlecase() }
