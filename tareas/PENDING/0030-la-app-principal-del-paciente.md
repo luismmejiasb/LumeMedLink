@@ -57,6 +57,7 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 - **Canceladas**: Mis citas lleva tres pestañas (Próximas, Pasadas, Canceladas), como e8 y la spec de a4.
 - **Disponibilidad en p4**: una fila con su valor que abre su propia lista, como el diseño.
 - **Pedido `0008`**: pasado a la sesión del backend.
+- **«Llamar» y «Correo» en Mis médicos** van bajo el avatar, en el borde izquierdo de la tarjeta, no bajo el nombre como dibuja p6.
 - **Marca en la cabecera de Inicio**: el kit agrega un lugar opcional a la izquierda de la barra con título grande para el ícono y el nombre de la app. Hasta que llegue el logotipo en SVG, va el escudo del kit con el nombre en texto.
 
 ## La respuesta del backend al pedido `0008` (2026-10-11)
