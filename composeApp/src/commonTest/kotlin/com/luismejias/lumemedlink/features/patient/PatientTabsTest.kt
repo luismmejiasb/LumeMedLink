@@ -13,6 +13,7 @@ import com.luismejias.lumemedlink.features.patient.home.HomeContent
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
+import com.luismejias.lumemedlink.features.patient.parts.cancelled
 import com.luismejias.lumemedlink.features.patient.parts.past
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
 import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
@@ -131,7 +132,8 @@ class PatientTabsTest {
             at("yesterday", -1, AppointmentStatus.CONFIRMED),
         )
         assertEquals(listOf("confirmed", "requested"), all.upcoming(today).map { it.id })
-        assertEquals(listOf("cancelled-ahead", "attended-today", "yesterday"), all.past(today).map { it.id })
+        assertEquals(listOf("attended-today", "yesterday"), all.past(today).map { it.id })
+        assertEquals(listOf("cancelled-ahead"), all.cancelled().map { it.id }, "Canceladas is its own tab (e8)")
         assertEquals(listOf("requested"), all.awaitingConfirmation(today).map { it.id })
     }
 

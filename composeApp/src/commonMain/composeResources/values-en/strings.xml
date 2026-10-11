@@ -258,14 +258,16 @@
     <string name="appointments_upcoming">Upcoming · %1$d</string>
     <string name="appointments_upcoming_plain">Upcoming</string>
     <string name="appointments_past">Past</string>
+    <string name="appointments_cancelled">Cancelled</string>
     <string name="appointments_change">Change</string>
     <string name="appointments_cancel">Cancel</string>
     <string name="appointments_requested_note">The doctor confirms every booking. We’ll let you know as soon as they do.</string>
     <string name="appointments_window">You can change or cancel up to **%1$d h before**. After that, contact the practice.</string>
     <string name="appointments_empty_upcoming">You have no upcoming appointments yet</string>
     <string name="appointments_empty_past">You have no past appointments yet</string>
+    <string name="appointments_empty_cancelled">You have no cancelled appointments</string>
     <string name="doctors_search_prompt">Search your doctors</string>
-    <string name="doctors_search_clear">Clear search</string>
+    <string name="common_search_clear">Clear search</string>
     <plurals name="doctors_attentions">
         <item quantity="one">%1$d visit</item>
         <item quantity="other">%1$d visits</item>
@@ -348,6 +350,7 @@
     <string name="sort_best">Best rated</string>
     <string name="sort_attended">Most visits</string>
     <string name="filters_attention">Availability</string>
+    <string name="filters_availability">Availability</string>
     <string name="window_any">Any day</string>
     <string name="window_week">This week</string>
     <string name="filters_four_stars">Only 4 stars or more</string>

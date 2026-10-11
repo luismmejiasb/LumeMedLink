@@ -44,7 +44,9 @@ import com.luismejias.lumemedlink.features.patient.parts.statusLabel
 import com.luismejias.lumemedlink.features.patient.parts.strongRuns
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.appointments_cancel
+import com.luismejias.lumemedlink.resources.appointments_cancelled
 import com.luismejias.lumemedlink.resources.appointments_change
+import com.luismejias.lumemedlink.resources.appointments_empty_cancelled
 import com.luismejias.lumemedlink.resources.appointments_empty_past
 import com.luismejias.lumemedlink.resources.appointments_empty_upcoming
 import com.luismejias.lumemedlink.resources.appointments_empty_upcoming_body
@@ -84,6 +86,7 @@ internal fun AppointmentsScreen(
                     stringResource(Res.string.appointments_upcoming, content.upcoming.size)
                 }
                 val pastLabel = stringResource(Res.string.appointments_past)
+                val cancelledLabel = stringResource(Res.string.appointments_cancelled)
                 LumeSegmentedControl(
                     items = AppointmentsSegment.entries,
                     selection = LumeSegmentedSelection.Exclusive(segment, model::segmentChosen),
@@ -91,19 +94,24 @@ internal fun AppointmentsScreen(
                         when (it) {
                             AppointmentsSegment.UPCOMING -> upcomingLabel
                             AppointmentsSegment.PAST -> pastLabel
+                            AppointmentsSegment.CANCELLED -> cancelledLabel
                         }
                     },
                 )
-                val shown = if (segment == AppointmentsSegment.UPCOMING) content.upcoming else content.past
+                val shown = when (segment) {
+                    AppointmentsSegment.UPCOMING -> content.upcoming
+                    AppointmentsSegment.PAST -> content.past
+                    AppointmentsSegment.CANCELLED -> content.cancelled
+                }
                 if (shown.isEmpty()) {
                     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Absent) {
                         LumeEmptyState(
                             icon = LumeIcon.Calendar,
                             title = stringResource(
-                                if (segment == AppointmentsSegment.UPCOMING) {
-                                    Res.string.appointments_empty_upcoming
-                                } else {
-                                    Res.string.appointments_empty_past
+                                when (segment) {
+                                    AppointmentsSegment.UPCOMING -> Res.string.appointments_empty_upcoming
+                                    AppointmentsSegment.PAST -> Res.string.appointments_empty_past
+                                    AppointmentsSegment.CANCELLED -> Res.string.appointments_empty_cancelled
                                 },
                             ),
                             message = if (segment == AppointmentsSegment.UPCOMING) {

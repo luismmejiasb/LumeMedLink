@@ -11,6 +11,7 @@ import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
 import cl.lume.uicomposer.components.LumePasswordField
 import cl.lume.uicomposer.components.LumeRevealLabels
+import cl.lume.uicomposer.components.LumeSearchField
 import cl.lume.uicomposer.components.LumeTextCase
 import cl.lume.uicomposer.components.LumeTextField
 
@@ -183,4 +184,35 @@ internal fun SensitiveTextField(
             onSubmit = onSubmit,
         )
     }
+}
+
+/**
+ * What a search over personal data asks of the kit's search field: its value hidden like any other field here
+ * (ADR-0042). The rest of ADR-0013's hardening is the kit's own on that field — no capitals, no corrections —
+ * so this is the one decision left to make, and a test keeps it.
+ */
+internal val SEARCH_FIELD_SENSITIVITY: LumeFieldSensitivity = LumeFieldSensitivity.Personal
+
+/**
+ * A search over the patient's own list or a catalog (Mis médicos, e0, e3): the kit's search field, with its
+ * magnifier and its prompt inside and no visible title, as the handoff draws it. It lives here because a screen never
+ * calls a kit input (`Scripts/check-input-surfaces.sh`): what is typed is still a name, and the keyboard must not
+ * learn it.
+ */
+@Composable
+internal fun SensitiveSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    prompt: String,
+    clearLabel: String,
+    modifier: Modifier = Modifier,
+) {
+    LumeSearchField(
+        query = query,
+        onQueryChange = onQueryChange,
+        prompt = prompt,
+        clearContentDescription = clearLabel,
+        modifier = modifier,
+        sensitivity = SEARCH_FIELD_SENSITIVITY,
+    )
 }

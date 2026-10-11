@@ -263,14 +263,16 @@
     <string name="appointments_upcoming">Próximas · %1$d</string>
     <string name="appointments_upcoming_plain">Próximas</string>
     <string name="appointments_past">Pasadas</string>
+    <string name="appointments_cancelled">Canceladas</string>
     <string name="appointments_change">Cambiar</string>
     <string name="appointments_cancel">Cancelar</string>
     <string name="appointments_requested_note">El médico confirma cada reserva. Te avisaremos apenas lo haga.</string>
     <string name="appointments_window">Puedes cambiar o cancelar hasta **%1$d h antes**. Después, comunícate con la consulta.</string>
     <string name="appointments_empty_upcoming">Aún no tienes citas próximas</string>
     <string name="appointments_empty_past">Aún no tienes citas pasadas</string>
+    <string name="appointments_empty_cancelled">No tienes citas canceladas</string>
     <string name="doctors_search_prompt">Buscar entre tus médicos</string>
-    <string name="doctors_search_clear">Borrar búsqueda</string>
+    <string name="common_search_clear">Borrar búsqueda</string>
     <plurals name="doctors_attentions">
         <item quantity="one">%1$d atención</item>
         <item quantity="other">%1$d atenciones</item>
@@ -353,6 +355,7 @@
     <string name="sort_best">Mejor valorados</string>
     <string name="sort_attended">Más atenciones</string>
     <string name="filters_attention">Atención</string>
+    <string name="filters_availability">Disponibilidad</string>
     <string name="window_any">Cualquier día</string>
     <string name="window_week">Esta semana</string>
     <string name="filters_four_stars">Solo 4 estrellas o más</string>

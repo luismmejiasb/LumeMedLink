@@ -16,12 +16,12 @@ import cl.lume.uicomposer.components.LumeListSection
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.Commune
 import com.luismejias.lumemedlink.core.care.Specialty
-import com.luismejias.lumemedlink.core.input.SensitiveFieldPurpose
-import com.luismejias.lumemedlink.core.input.SensitiveTextField
+import com.luismejias.lumemedlink.core.input.SensitiveSearchField
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
 import com.luismejias.lumemedlink.features.patient.parts.folded
 import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.common_search_clear
 import com.luismejias.lumemedlink.resources.search_chosen
 import com.luismejias.lumemedlink.resources.search_commune
 import com.luismejias.lumemedlink.resources.search_commune_note
@@ -51,12 +51,11 @@ internal fun SpecialtyScreen(model: SearchViewModel, onBack: () -> Unit) {
     val criteria by model.criteria.collectAsState()
     PushedScreen(title = stringResource(Res.string.search_specialty), onBack = onBack) {
         CareLoadView(load, onRetry = { model.launch { specialties.load() } }) { content ->
-            SensitiveTextField(
-                value = content.query,
-                onValueChange = model.specialties::queryChanged,
-                purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                label = stringResource(Res.string.search_specialty_prompt),
-                placeholder = stringResource(Res.string.search_specialty_prompt),
+            SensitiveSearchField(
+                query = content.query,
+                onQueryChange = model.specialties::queryChanged,
+                prompt = stringResource(Res.string.search_specialty_prompt),
+                clearLabel = stringResource(Res.string.common_search_clear),
                 modifier = Modifier.fillMaxWidth(),
             )
             val matches = content.matches
@@ -108,12 +107,11 @@ internal fun CommuneScreen(model: SearchViewModel, onBack: () -> Unit) {
     val criteria by model.criteria.collectAsState()
     PushedScreen(title = stringResource(Res.string.search_commune), onBack = onBack) {
         CareLoadView(load, onRetry = { model.launch { communes.load() } }) { content ->
-            SensitiveTextField(
-                value = content.query,
-                onValueChange = model.communes::queryChanged,
-                purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                label = stringResource(Res.string.search_commune_prompt),
-                placeholder = stringResource(Res.string.search_commune_prompt),
+            SensitiveSearchField(
+                query = content.query,
+                onQueryChange = model.communes::queryChanged,
+                prompt = stringResource(Res.string.search_commune_prompt),
+                clearLabel = stringResource(Res.string.common_search_clear),
                 modifier = Modifier.fillMaxWidth(),
             )
             val matches = content.matches

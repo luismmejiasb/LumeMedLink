@@ -51,8 +51,9 @@ Two contract facts shape the screens and are not the design's:
    intent, one of the doors ADR-0007 closes without exceptions (`check-forbidden-patterns` P2). Opening that door
    for an address with no attachment is the author's call. «Llamar» opens the dialer with the number; it does not
    place the call.
-5. **Mis médicos' filter is a field of the hardened primitive**, not the kit's search field: `LumeSearchField`
-   takes no text case, and a typed name must not enter the keyboard's dictionary (ADR-0013).
+5. ~~Mis médicos' filter is a field of the hardened primitive, not the kit's search field~~ — closed 2026-10-11: the
+   kit's search field types verbatim and now marks its value Personal (ADR-0042), so `core/input` draws it as
+   `SensitiveSearchField` for Mis médicos, e0 and e3.
 6. **The avatar's camera badge in Configuración waits for the photo flow** (k1–k4), which has no contract: the
    profile has no photo field.
 

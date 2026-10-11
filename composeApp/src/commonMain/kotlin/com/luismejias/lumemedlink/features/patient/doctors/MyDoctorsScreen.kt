@@ -27,12 +27,12 @@ import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.MyDoctor
-import com.luismejias.lumemedlink.core.input.SensitiveFieldPurpose
-import com.luismejias.lumemedlink.core.input.SensitiveTextField
+import com.luismejias.lumemedlink.core.input.SensitiveSearchField
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
 import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
 import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
 import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.common_search_clear
 import com.luismejias.lumemedlink.resources.doctors_attentions
 import com.luismejias.lumemedlink.resources.doctors_call
 import com.luismejias.lumemedlink.resources.doctors_empty_body
@@ -79,12 +79,11 @@ internal fun MyDoctorsScreen(
                         )
                     }
                 } else {
-                    SensitiveTextField(
-                        value = content.query,
-                        onValueChange = model::queryChanged,
-                        purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                        label = stringResource(Res.string.doctors_search_prompt),
-                        placeholder = stringResource(Res.string.doctors_search_prompt),
+                    SensitiveSearchField(
+                        query = content.query,
+                        onQueryChange = model::queryChanged,
+                        prompt = stringResource(Res.string.doctors_search_prompt),
+                        clearLabel = stringResource(Res.string.common_search_clear),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     if (content.shown.isEmpty()) {

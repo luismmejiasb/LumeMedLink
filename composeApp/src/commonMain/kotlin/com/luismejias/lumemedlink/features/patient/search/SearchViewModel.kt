@@ -118,6 +118,15 @@ internal class SearchViewModel(private val care: PatientCareGateway, private val
         flow.push(SearchRoute.FILTERS)
     }
 
+    /** p4's «Disponibilidad» opens its own list, as Especialidad does (spec p4). */
+    fun openAvailability() = flow.push(SearchRoute.AVAILABILITY)
+
+    /** A choice in that list edits p4's draft and returns to it. */
+    fun availabilityChosen(window: AvailabilityWindow) {
+        results.draftChanged(results.draft.value.copy(window = window))
+        flow.back()
+    }
+
     fun filtersApplied() {
         results.applyDraft()
         flow.back()

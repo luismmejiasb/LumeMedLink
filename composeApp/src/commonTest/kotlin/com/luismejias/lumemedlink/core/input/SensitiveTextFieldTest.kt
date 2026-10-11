@@ -83,4 +83,9 @@ class SensitiveTextFieldTest {
             )
         }
     }
+
+    @Test
+    fun aSearchHidesItsValueLikeEveryOtherField() {
+        assertEquals(LumeFieldSensitivity.Personal, SEARCH_FIELD_SENSITIVITY)
+    }
 }

@@ -27,8 +27,6 @@ import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListSection
 import cl.lume.uicomposer.components.LumeListSelection
 import cl.lume.uicomposer.components.LumeRating
-import cl.lume.uicomposer.components.LumeSegmentedControl
-import cl.lume.uicomposer.components.LumeSegmentedSelection
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
@@ -49,6 +47,7 @@ import com.luismejias.lumemedlink.features.patient.parts.shortDateText
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.filters_apply
 import com.luismejias.lumemedlink.resources.filters_attention
+import com.luismejias.lumemedlink.resources.filters_availability
 import com.luismejias.lumemedlink.resources.filters_clear
 import com.luismejias.lumemedlink.resources.filters_four_stars
 import com.luismejias.lumemedlink.resources.filters_sort
@@ -337,15 +336,20 @@ internal fun FiltersScreen(model: SearchViewModel, onBack: () -> Unit) {
             LumeListRow(title = stringResource(sort.label))
         }
         LumeEyebrow(stringResource(Res.string.filters_attention))
-        val anyLabel = stringResource(Res.string.window_any)
-        val weekLabel = stringResource(Res.string.window_week)
-        LumeSegmentedControl(
-            items = AvailabilityWindow.entries,
-            selection = LumeSegmentedSelection.Exclusive(draft.window) {
-                model.results.draftChanged(draft.copy(window = it))
-            },
-            label = { if (it == AvailabilityWindow.ANY) anyLabel else weekLabel },
-        )
+        val windowLabel = stringResource(draft.window.label)
+        LumeList(
+            items = listOf(Unit),
+            key = { it },
+            scrolls = false,
+            onRowTap = { model.openAvailability() },
+            chrome = LumeListChrome.Open,
+        ) {
+            LumeListRow(
+                title = stringResource(Res.string.filters_availability),
+                trailing = LumeListAccessory.Value(windowLabel),
+                disclosure = true,
+            )
+        }
         val starsLabel = stringResource(Res.string.filters_four_stars)
         LumeList(items = listOf(Unit), key = { it }, scrolls = false, chrome = LumeListChrome.Open) {
             LumeListRow(
@@ -356,6 +360,29 @@ internal fun FiltersScreen(model: SearchViewModel, onBack: () -> Unit) {
                     contentDescription = starsLabel,
                 ),
             )
+        }
+    }
+}
+
+private val AvailabilityWindow.label: StringResource
+    get() = when (this) {
+        AvailabilityWindow.ANY -> Res.string.window_any
+        AvailabilityWindow.THIS_WEEK -> Res.string.window_week
+    }
+
+/** p4's «Disponibilidad», opened as its own list (spec p4): one choice, which returns to the filters. */
+@Composable
+internal fun AvailabilityScreen(model: SearchViewModel, onBack: () -> Unit) {
+    val draft by model.results.draft.collectAsState()
+    PushedScreen(title = stringResource(Res.string.filters_availability), onBack = onBack) {
+        LumeList(
+            items = AvailabilityWindow.entries,
+            key = { it },
+            scrolls = false,
+            selection = LumeListSelection.Single(draft.window) { window -> window?.let(model::availabilityChosen) },
+            chrome = LumeListChrome.Open,
+        ) { window ->
+            LumeListRow(title = stringResource(window.label))
         }
     }
 }

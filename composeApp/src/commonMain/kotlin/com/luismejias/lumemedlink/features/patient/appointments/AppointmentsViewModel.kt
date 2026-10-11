@@ -7,6 +7,7 @@ import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.parts.allOf
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
+import com.luismejias.lumemedlink.features.patient.parts.cancelled
 import com.luismejias.lumemedlink.features.patient.parts.markLoading
 import com.luismejias.lumemedlink.features.patient.parts.ok
 import com.luismejias.lumemedlink.features.patient.parts.past
@@ -17,20 +18,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-internal enum class AppointmentsSegment { UPCOMING, PAST }
+internal enum class AppointmentsSegment { UPCOMING, PAST, CANCELLED }
 
 /** What Mis citas draws (p5, e8). */
 internal data class AppointmentsContent(
     val today: CalendarDate,
     val upcoming: List<PatientAppointment>,
     val past: List<PatientAppointment>,
+    val cancelled: List<PatientAppointment>,
     /** "Puedes cambiar o cancelar hasta 24 h antes": the practice's window. */
     val changeWindowHours: Int,
 ) {
     /** The tab's badge: requests still waiting for the practice. */
     val awaiting: Int get() = upcoming.awaitingConfirmation(today).size
 
-    override fun toString(): String = "AppointmentsContent(upcoming=${upcoming.size}, past=${past.size})"
+    override fun toString(): String =
+        "AppointmentsContent(upcoming=${upcoming.size}, past=${past.size}, cancelled=${cancelled.size})"
 }
 
 /** Mis citas' owner (ADR-0045). Its count also feeds the tab bar's badge. */
@@ -63,6 +66,7 @@ internal class AppointmentsViewModel(private val care: PatientCareGateway) : Vie
                 today = today,
                 upcoming = appointments.ok.upcoming(today),
                 past = appointments.ok.past(today),
+                cancelled = appointments.ok.cancelled(),
                 changeWindowHours = policy.ok.changeWindowHours,
             )
         }

@@ -62,6 +62,7 @@ internal fun SearchHost(
             SearchRoute.COMMUNE -> CommuneScreen(model, back)
             SearchRoute.RESULTS -> ResultsScreen(model, back)
             SearchRoute.FILTERS -> FiltersScreen(model, back)
+            SearchRoute.AVAILABILITY -> AvailabilityScreen(model, back)
             SearchRoute.SCHEDULE -> ScheduleScreen(model, back)
             SearchRoute.CONFIRM -> ConfirmScreen(
                 model = model,

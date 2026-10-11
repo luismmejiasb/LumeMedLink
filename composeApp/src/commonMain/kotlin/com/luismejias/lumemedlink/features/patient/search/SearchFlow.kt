@@ -11,12 +11,13 @@ internal enum class SearchRoute {
     COMMUNE,
     RESULTS,
     FILTERS,
+    AVAILABILITY,
     SCHEDULE,
     CONFIRM,
     ;
 
-    /** Whether the tab bar shows under it: not under a screen with its own pinned actions (p4, a1, a2). */
-    val showsTabBar: Boolean get() = this !in setOf(FILTERS, SCHEDULE, CONFIRM)
+    /** Whether the tab bar shows under it: not under p4 and its list, nor under pinned actions (a1, a2). */
+    val showsTabBar: Boolean get() = this !in setOf(FILTERS, AVAILABILITY, SCHEDULE, CONFIRM)
 }
 
 internal enum class SearchMove { FORWARD, BACK }

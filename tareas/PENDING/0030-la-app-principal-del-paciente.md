@@ -43,18 +43,20 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 - Todos los gates, y `Scripts/rehearse-gates.sh` en verde.
 - Capturas en el simulador de iOS con el recorrido de `tmp/tour/` (Android deja la captura negra: `FLAG_SECURE`).
 
-## Lo que espera al autor
+## Lo que decidió el autor (2026-10-11)
 
-- **El encabezado con acciones** (campana y perfil en Inicio, calendario en Mis citas): `LumeNavBar` no tiene
-  ranura a la derecha a propósito. ¿Se agrega al kit o se mueven?
-- ~~**La tarjeta de la próxima cita rellena del acento**~~: autorizada el 2026-10-11 (ver abajo).
-- **Un control de estrellas** en el kit, para valorar.
-- **«Correo» en Mis médicos**: abrir la app de correo es el intent de envío de Android, que ADR-0007 cierra sin
-  excepciones. ¿Se abre una excepción para una dirección sin adjunto?
-- **Un avatar como accesorio de fila** del kit, para las iniciales del médico (hoy: tile de persona con color estable).
-- **El diseño c1 muestra «Motivo que escribiste»** (texto clínico): el autor ya quitó el motivo y esta app no lo tiene
-  (ADR-0001); el paquete de diseño debería corregirse.
-- **e8 dibuja una tercera pestaña «Canceladas»** en Mis citas que p5 no tiene: ¿cuál manda?
+- **Encabezado con acciones** (campana y perfil en Inicio, calendario en Mis citas): el kit agrega hasta dos botones
+  redondos opcionales a la derecha de la barra con título grande. La barra con volver sigue sin ellos.
+- **Título raíz** de las pestañas en 30 bold, con un rol tipográfico nuevo del kit.
+- **Control de estrellas** en el kit, para valorar (f5, c3).
+- **«Correo» en Mis médicos**: excepción acotada a ADR-0007, sólo `mailto:` con la dirección (sin adjunto, asunto ni
+  cuerpo), escrita en una ADR y con el gate P2 permitiendo esa única forma.
+- **Avatar como accesorio de fila**: lo entregó el kit y está cableado.
+- **c1 «Motivo que escribiste»**: c1 y c2 se construyen sin ese bloque. **Para el paquete de diseño**: el motivo
+  clínico no existe en esta app (ADR-0001); c1/c2 deberían corregirse.
+- **Canceladas**: Mis citas lleva tres pestañas (Próximas, Pasadas, Canceladas), como e8 y la spec de a4.
+- **Disponibilidad en p4**: una fila con su valor que abre su propia lista, como el diseño.
+- **Pedido `0008`**: pasado a la sesión del backend.
 
 ## Igualar el kit al diseño (pedido del autor, 2026-10-11)
 
