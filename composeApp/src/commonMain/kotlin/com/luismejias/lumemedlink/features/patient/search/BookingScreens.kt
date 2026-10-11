@@ -12,19 +12,21 @@ import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonFeedback
+import cl.lume.uicomposer.components.LumeButtonSize
 import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCalloutBox
 import cl.lume.uicomposer.components.LumeCard
+import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeEmptyState
-import cl.lume.uicomposer.components.LumeEqualRow
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListChrome
+import cl.lume.uicomposer.components.LumeListIconInk
 import cl.lume.uicomposer.components.LumeListRow
-import cl.lume.uicomposer.components.LumeListStyle
+import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeStack
-import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
 import cl.lume.uicomposer.components.LumeStackStyle
 import cl.lume.uicomposer.components.LumeText
@@ -88,7 +90,7 @@ import org.jetbrains.compose.resources.stringResource
 /** The doctor at the head of a1 and a2. */
 @Composable
 private fun DoctorHeader(entry: DirectoryDoctor) {
-    LumeCard(modifier = Modifier.fillMaxWidth()) {
+    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
         DoctorIdentity(entry.doctor, entry.doctor.specialty, ratingLine(entry))
     }
 }
@@ -106,15 +108,17 @@ internal fun ScheduleScreen(model: SearchViewModel, onBack: () -> Unit) {
         title = stringResource(Res.string.schedule_title),
         onBack = onBack,
         action = {
-            LumeEqualRow {
+            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Paired) {
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.schedule_cancel)),
                     emphasis = LumeButtonEmphasis.OutlineNeutral,
+                    size = LumeButtonSize.Large,
                     width = LumeButtonWidth.Fill,
                     onClick = onBack,
                 )
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.schedule_continue)),
+                    size = LumeButtonSize.Large,
                     width = LumeButtonWidth.Fill,
                     state = if (ready?.slot != null) LumeFieldState.Enabled else LumeFieldState.Disabled,
                     onClick = { ready?.slot?.let { model.confirm(ready.doctor, it) } },
@@ -198,46 +202,42 @@ internal fun ConfirmScreen(
         title = stringResource(Res.string.confirm_title),
         onBack = onBack,
         action = {
-            LumeStack(alignment = LumeStackAlignment.Fill, spacing = { small }) {
-                LumeAsyncButton(
-                    content = LumeButtonContent.Title(stringResource(Res.string.confirm_action)),
-                    width = LumeButtonWidth.Fill,
-                    feedback = LumeButtonFeedback(loading = stringResource(Res.string.confirm_running)),
-                    run = model.booking::book,
-                )
+            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Paired) {
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.confirm_back)),
                     emphasis = LumeButtonEmphasis.OutlineNeutral,
+                    size = LumeButtonSize.Large,
                     width = LumeButtonWidth.Fill,
                     onClick = onBack,
+                )
+                LumeAsyncButton(
+                    content = LumeButtonContent.Title(stringResource(Res.string.confirm_action)),
+                    size = LumeButtonSize.Large,
+                    width = LumeButtonWidth.Fill,
+                    feedback = LumeButtonFeedback(loading = stringResource(Res.string.confirm_running)),
+                    run = model.booking::book,
                 )
             }
         },
     ) {
         DoctorHeader(doctor)
-        LumeCard(modifier = Modifier.fillMaxWidth()) {
-            LumeList(
-                items = listOf(0, 1, 2),
-                key = { it },
-                style = LumeListStyle.Embedded,
-            ) { row ->
-                when (row) {
-                    0 -> LumeListRow(
-                        title = stringResource(Res.string.confirm_when_value, date, slot.start.display),
-                        description = stringResource(Res.string.confirm_when),
-                        leading = LumeListAccessory.Icon(LumeIcon.Calendar, ""),
-                    )
-                    1 -> LumeListRow(
-                        title = stringResource(Res.string.confirm_duration_value, slot.minutes),
-                        description = stringResource(Res.string.confirm_duration),
-                        leading = LumeListAccessory.Icon(LumeIcon.Clock, ""),
-                    )
-                    else -> LumeListRow(
-                        title = doctor.place.address,
-                        description = "${stringResource(Res.string.confirm_place)} · ${doctor.place.detail}",
-                        leading = LumeListAccessory.Icon(LumeIcon.Pin, ""),
-                    )
-                }
+        LumeList(items = listOf(0, 1, 2), key = { it }, scrolls = false, chrome = LumeListChrome.Open) { row ->
+            when (row) {
+                0 -> DetailRow(
+                    LumeIcon.Calendar,
+                    stringResource(Res.string.confirm_when),
+                    stringResource(Res.string.confirm_when_value, date, slot.start.display),
+                )
+                1 -> DetailRow(
+                    LumeIcon.Clock,
+                    stringResource(Res.string.confirm_duration),
+                    stringResource(Res.string.confirm_duration_value, slot.minutes),
+                )
+                else -> DetailRow(
+                    LumeIcon.Pin,
+                    stringResource(Res.string.confirm_place),
+                    "${doctor.place.address}\n${doctor.place.detail}",
+                )
             }
         }
         LumeCalloutBox(text = stringResource(Res.string.confirm_note, doctor.doctor.displayName)) {}
@@ -263,6 +263,17 @@ internal fun ConfirmScreen(
         }
         is BookingOutcome.Refused -> RefusalAlert(outcome.failure, slot, doctor, model)
     }
+}
+
+/** One line of a2's summary: the label small over the value, the glyph in the accent. */
+@Composable
+private fun DetailRow(icon: LumeIcon, label: String, value: String) {
+    LumeListRow(
+        title = label,
+        description = value,
+        leading = LumeListAccessory.Icon(icon, "", ink = LumeListIconInk.Accent),
+        textStyle = LumeListRowTextStyle.LabelOverValue,
+    )
 }
 
 @Composable

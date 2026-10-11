@@ -10,6 +10,7 @@ import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListSection
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -79,10 +80,13 @@ internal fun SpecialtyScreen(model: SearchViewModel, onBack: () -> Unit) {
                 )
                 content.searching -> {
                     LumeEyebrow(pluralStringResource(Res.plurals.search_results_count, matches.size, matches.size))
-                    LumeList(items = matches, key = { it.code }, scrolls = false, onRowTap = pick, rowContent = row)
+                    LumeList(chrome = LumeListChrome.Open, items = matches, key = {
+                        it.code
+                    }, scrolls = false, onRowTap = pick, rowContent = row)
                     LumeCallout(text = stringResource(Res.string.search_synonyms_note))
                 }
                 else -> LumeList(
+                    chrome = LumeListChrome.Open,
                     sections = LETTER_GROUPS.mapNotNull { letters ->
                         val inGroup = matches.filter { it.name.folded().first() in letters }
                         if (inGroup.isEmpty()) null else LumeListSection(letters, inGroup, title = letters.title())
@@ -118,6 +122,7 @@ internal fun CommuneScreen(model: SearchViewModel, onBack: () -> Unit) {
                 LumeCallout(text = stringResource(Res.string.search_none_match))
             } else {
                 LumeList(
+                    chrome = LumeListChrome.Open,
                     sections = matches.groupBy { it.region }.map { (region, inRegion) ->
                         LumeListSection(region, inRegion, title = region)
                     },

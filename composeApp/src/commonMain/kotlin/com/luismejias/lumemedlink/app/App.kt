@@ -15,12 +15,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.lume.uicomposer.foundations.LumeBrand
 import cl.lume.uicomposer.foundations.LumeTheme
+import cl.lume.uicomposer.tokens.LumeCanvas
+import cl.lume.uicomposer.tokens.LumeNeutrals
+import cl.lume.uicomposer.tokens.LumeRadius
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
@@ -52,7 +56,16 @@ import kotlinx.coroutines.launch
  * The design's accent (the handoff's README): the kit derives every other tone from it (ADR-0033, ADR-0044
  * deviation 7). One line, here, so no screen can draw in another brand.
  */
-private val LumeMedLinkBrand = LumeBrand(seed = Color(0xFF3E63DD))
+/**
+ * The handoff's blue on the house greys: a grey page under white cards, and 14 dp corners on buttons and fields
+ * (README «Sistema visual»).
+ */
+private val LumeMedLinkBrand = LumeBrand(
+    seed = Color(0xFF3E63DD),
+    neutrals = LumeNeutrals.Slate,
+    radius = LumeRadius(medium = 14.dp),
+    canvas = LumeCanvas.Grouped,
+)
 
 /**
  * Stand-in when the platform cannot host a biometric gate. It reports [UnlockOutcome.Unavailable],

@@ -20,6 +20,7 @@ import cl.lume.uicomposer.components.LumeEqualRow
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListRow
+import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeListStyle
 import cl.lume.uicomposer.components.LumeSegmentedControl
 import cl.lume.uicomposer.components.LumeSegmentedSelection
@@ -138,7 +139,7 @@ private fun AppointmentCard(
     onChange: (PatientAppointment) -> Unit,
     onCancel: (PatientAppointment) -> Unit,
 ) {
-    LumeCard(modifier = Modifier.fillMaxWidth()) {
+    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
             LumeList(
                 items = listOf(appointment),
@@ -147,6 +148,7 @@ private fun AppointmentCard(
                 onRowTap = onOpen,
             ) {
                 LumeListRow(
+                    textStyle = LumeListRowTextStyle.Strong,
                     title = it.doctor.displayName,
                     description = it.doctor.specialty,
                     leading = doctorMarker(it.doctor),
@@ -158,6 +160,7 @@ private fun AppointmentCard(
             val date = shortDateText(appointment.date)
             LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
                 LumeListRow(
+                    textStyle = LumeListRowTextStyle.Strong,
                     title = listOfNotNull(
                         relative,
                         if (relative == null) date.capitalized() else date,

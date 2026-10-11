@@ -12,17 +12,18 @@ import cl.lume.uicomposer.components.LumeButtonSize
 import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeCard
+import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeChip
 import cl.lume.uicomposer.components.LumeDivider
 import cl.lume.uicomposer.components.LumeEmptyState
-import cl.lume.uicomposer.components.LumeEqualRow
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListSection
-import cl.lume.uicomposer.components.LumeListStyle
+import cl.lume.uicomposer.components.LumeListSelection
 import cl.lume.uicomposer.components.LumeSegmentedControl
 import cl.lume.uicomposer.components.LumeSegmentedSelection
 import cl.lume.uicomposer.components.LumeStack
@@ -69,7 +70,6 @@ import com.luismejias.lumemedlink.resources.results_sorted_attended
 import com.luismejias.lumemedlink.resources.results_sorted_best
 import com.luismejias.lumemedlink.resources.results_sorted_soonest
 import com.luismejias.lumemedlink.resources.results_title
-import com.luismejias.lumemedlink.resources.search_chosen
 import com.luismejias.lumemedlink.resources.sort_attended
 import com.luismejias.lumemedlink.resources.sort_best
 import com.luismejias.lumemedlink.resources.sort_soonest
@@ -110,18 +110,20 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
     PushedScreen(title = stringResource(Res.string.results_title), onBack = onBack) {
         val specialty = criteria.specialty?.name.orEmpty()
         val commune = criteria.commune?.name.orEmpty()
-        LumeCard(modifier = Modifier.fillMaxWidth()) {
-            LumeList(
-                items = listOf(Unit),
-                key = { it },
-                style = LumeListStyle.Embedded,
-                scrolls = false,
-                onRowTap = { onBack() },
-            ) {
-                LumeListRow(
-                    title = specialty,
-                    description = stringResource(Res.string.results_in, commune),
-                    trailing = LumeListAccessory.Value(stringResource(Res.string.results_change)),
+        LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
+            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Spread) {
+                LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
+                    LumeText(text = specialty, weight = LumeTextWeight.Strong)
+                    LumeText(
+                        text = stringResource(Res.string.results_in, commune),
+                        style = LumeTextStyle.TextSmall,
+                        color = LumeTextColor.Secondary,
+                    )
+                }
+                LumeButton(
+                    content = LumeButtonContent.Title(stringResource(Res.string.results_change)),
+                    emphasis = LumeButtonEmphasis.Plain,
+                    onClick = onBack,
                 )
             }
         }
@@ -140,6 +142,7 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
                 )
                 if (content.nearby.isNotEmpty()) {
                     LumeList(
+                        chrome = LumeListChrome.Open,
                         sections = listOf(
                             LumeListSection(
                                 "nearby",
@@ -222,16 +225,11 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
 
 @Composable
 private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook: () -> Unit) {
-    LumeCard(modifier = Modifier.fillMaxWidth()) {
-        LumeStack(alignment = LumeStackAlignment.Fill, spacing = { small }) {
+    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
+        LumeStack(alignment = LumeStackAlignment.Fill, spacing = { medium }) {
             DoctorIdentity(entry.doctor, entry.doctor.specialty, ratingLine(entry))
             LumeDivider()
-            LumeStack(
-                axis = LumeStackAxis.Horizontal,
-                style = LumeStackStyle.Fixed,
-                alignment = LumeStackAlignment.Center,
-                spacing = { medium },
-            ) {
+            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Spread) {
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
                     LumeText(
                         text = stringResource(Res.string.results_next),
@@ -248,7 +246,7 @@ private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook
                 }
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.results_book)),
-                    width = LumeButtonWidth.Fill,
+                    size = LumeButtonSize.Small,
                     state = if (entry.nextSlot != null) LumeFieldState.Enabled else LumeFieldState.Disabled,
                     onClick = onBook,
                 )
@@ -282,21 +280,22 @@ private const val TENTHS_INT = 10
 @Composable
 internal fun FiltersScreen(model: SearchViewModel, onBack: () -> Unit) {
     val draft by model.results.draft.collectAsState()
-    val chosenLabel = stringResource(Res.string.search_chosen)
     val count = model.results.draftCount()
     PushedScreen(
         title = stringResource(Res.string.results_filters),
         onBack = onBack,
         action = {
-            LumeEqualRow {
+            LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Paired) {
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.filters_clear)),
                     emphasis = LumeButtonEmphasis.OutlineNeutral,
+                    size = LumeButtonSize.Large,
                     width = LumeButtonWidth.Fill,
                     onClick = { model.results.draftChanged(SearchFilters()) },
                 )
                 LumeButton(
                     content = LumeButtonContent.Title(pluralStringResource(Res.plurals.filters_apply, count, count)),
+                    size = LumeButtonSize.Large,
                     width = LumeButtonWidth.Fill,
                     onClick = model::filtersApplied,
                 )
@@ -309,18 +308,12 @@ internal fun FiltersScreen(model: SearchViewModel, onBack: () -> Unit) {
             ),
             key = { it },
             scrolls = false,
-            onRowTap = { sort: SearchSort -> model.results.draftChanged(draft.copy(sort = sort)) },
+            selection = LumeListSelection.Single(draft.sort) { sort ->
+                sort?.let { model.results.draftChanged(draft.copy(sort = it)) }
+            },
+            chrome = LumeListChrome.Open,
         ) { sort ->
-            LumeListRow(
-                title = stringResource(sort.label),
-                trailing = if (sort ==
-                    draft.sort
-                ) {
-                    LumeListAccessory.Icon(LumeIcon.Check, chosenLabel)
-                } else {
-                    LumeListAccessory.None
-                },
-            )
+            LumeListRow(title = stringResource(sort.label))
         }
         LumeEyebrow(stringResource(Res.string.filters_attention))
         val anyLabel = stringResource(Res.string.window_any)
@@ -333,7 +326,7 @@ internal fun FiltersScreen(model: SearchViewModel, onBack: () -> Unit) {
             label = { if (it == AvailabilityWindow.ANY) anyLabel else weekLabel },
         )
         val starsLabel = stringResource(Res.string.filters_four_stars)
-        LumeList(items = listOf(Unit), key = { it }, scrolls = false) {
+        LumeList(items = listOf(Unit), key = { it }, scrolls = false, chrome = LumeListChrome.Open) {
             LumeListRow(
                 title = starsLabel,
                 trailing = LumeListAccessory.Toggle(

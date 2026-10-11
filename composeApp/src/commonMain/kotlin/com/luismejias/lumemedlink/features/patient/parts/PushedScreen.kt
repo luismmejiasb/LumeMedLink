@@ -6,6 +6,7 @@ import cl.lume.uicomposer.components.LumeContainerActionStyle
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeNavBar
 import cl.lume.uicomposer.components.LumeNavBarBack
+import cl.lume.uicomposer.components.LumeNavBarTitleStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import com.luismejias.lumemedlink.resources.Res
@@ -26,7 +27,11 @@ internal fun PushedScreen(
 ) {
     LumeContainer(scroll = scroll, actionStyle = LumeContainerActionStyle.Bar, action = action) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
-            LumeNavBar(title = title, back = LumeNavBarBack(stringResource(Res.string.common_back), onBack))
+            LumeNavBar(
+                title = title,
+                back = LumeNavBarBack(stringResource(Res.string.common_back), onBack),
+                titleStyle = LumeNavBarTitleStyle.Inline,
+            )
             content()
         }
     }

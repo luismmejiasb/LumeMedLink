@@ -21,7 +21,9 @@ import cl.lume.uicomposer.components.LumeIconTileEmphasis
 import cl.lume.uicomposer.components.LumeIconTileSize
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
+import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
@@ -97,12 +99,14 @@ internal fun HomeScreen(
                 }
                 if (home.waiting.isNotEmpty()) {
                     LumeList(
+                        chrome = LumeListChrome.Open,
                         items = home.waiting,
                         key = { it.id },
                         scrolls = false,
                         onRowTap = onOpenAppointment,
                     ) { waiting ->
                         LumeListRow(
+                            textStyle = LumeListRowTextStyle.Strong,
                             title = stringResource(Res.string.home_waiting),
                             description = listOf(
                                 waiting.doctor.displayName,
@@ -116,8 +120,11 @@ internal fun HomeScreen(
                     }
                 }
                 home.rating?.let { rating ->
-                    LumeList(items = listOf(rating), key = { it.appointmentId }, scrolls = false, onRowTap = onRate) {
+                    LumeList(chrome = LumeListChrome.Open, items = listOf(rating), key = {
+                        it.appointmentId
+                    }, scrolls = false, onRowTap = onRate) {
                         LumeListRow(
+                            textStyle = LumeListRowTextStyle.Strong,
                             title = stringResource(Res.string.home_rate_title),
                             description = "${it.doctor.displayName} · ${dayMonthText(it.date)}",
                             leading = doctorMarker(it.doctor),
@@ -171,6 +178,7 @@ private fun NextAppointmentCard(
             }
             LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
                 LumeListRow(
+                    textStyle = LumeListRowTextStyle.Strong,
                     title = listOf(
                         relative ?: shortDateText(next.date),
                         next.start.display,
@@ -180,6 +188,7 @@ private fun NextAppointmentCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 LumeListRow(
+                    textStyle = LumeListRowTextStyle.Strong,
                     title = next.place.address,
                     description = next.place.detail,
                     leading = LumeListAccessory.Icon(LumeIcon.Pin, ""),

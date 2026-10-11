@@ -7,15 +7,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeAvatar
 import cl.lume.uicomposer.components.LumeAvatarSize
-import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowRole
-import cl.lume.uicomposer.components.LumeReadOnlyField
-import cl.lume.uicomposer.components.LumeReadOnlyFieldAction
+import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeTag
@@ -24,6 +23,7 @@ import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
+import com.luismejias.lumemedlink.core.care.PatientProfile
 import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.settings_complaints
@@ -81,37 +81,16 @@ internal fun SettingsScreen(
                         LumeTag(text = stringResource(Res.string.settings_verified), style = LumeTagStyle.Success)
                     }
                 }
-                LumeCard(modifier = Modifier.fillMaxWidth()) {
-                    LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
-                        LumeReadOnlyField(
-                            value = profile.rut.display,
-                            placeholder = "",
-                            title = stringResource(Res.string.settings_rut),
-                        )
-                        LumeReadOnlyField(
-                            value = profile.mobile.display,
-                            placeholder = "",
-                            title = stringResource(Res.string.settings_phone),
-                            action = LumeReadOnlyFieldAction(
-                                LumeIcon.Edit,
-                                stringResource(Res.string.settings_edit_phone),
-                                onEditPhone,
-                            ),
-                        )
-                        LumeReadOnlyField(
-                            value = profile.email.value,
-                            placeholder = "",
-                            title = stringResource(Res.string.settings_email),
-                            action = LumeReadOnlyFieldAction(
-                                LumeIcon.Edit,
-                                stringResource(Res.string.settings_edit_email),
-                                onEditEmail,
-                            ),
-                        )
-                    }
-                }
-                LumeList(items = listOf(SettingsEntry.CORRECTION), key = { it }, scrolls = false, onRowTap = onEntry) {
+                ProfileFields(profile, onEditPhone, onEditEmail)
+                LumeList(
+                    items = listOf(SettingsEntry.CORRECTION),
+                    key = { it },
+                    scrolls = false,
+                    onRowTap = onEntry,
+                    chrome = LumeListChrome.Open,
+                ) {
                     LumeListRow(
+                        textStyle = LumeListRowTextStyle.Strong,
                         title = stringResource(Res.string.settings_correction),
                         leading = LumeListAccessory.Tile(LumeIcon.Flag, LumeTileTint.Amber),
                         disclosure = true,
@@ -122,15 +101,18 @@ internal fun SettingsScreen(
                     key = { it },
                     scrolls = false,
                     onRowTap = onEntry,
+                    chrome = LumeListChrome.Open,
                 ) { entry ->
                     when (entry) {
                         SettingsEntry.REMINDERS -> LumeListRow(
+                            textStyle = LumeListRowTextStyle.Strong,
                             title = stringResource(Res.string.settings_reminders),
                             description = remindersText(content.remindersHoursBefore),
                             leading = LumeListAccessory.Tile(LumeIcon.Bell, LumeTileTint.Violet),
                             disclosure = true,
                         )
                         SettingsEntry.RATINGS -> LumeListRow(
+                            textStyle = LumeListRowTextStyle.Strong,
                             title = stringResource(Res.string.settings_ratings),
                             description = pluralStringResource(
                                 Res.plurals.settings_ratings_sent,
@@ -141,6 +123,7 @@ internal fun SettingsScreen(
                             disclosure = true,
                         )
                         else -> LumeListRow(
+                            textStyle = LumeListRowTextStyle.Strong,
                             title = stringResource(Res.string.settings_complaints),
                             description = stringResource(Res.string.settings_complaints_body),
                             leading = LumeListAccessory.Tile(LumeIcon.Flag, LumeTileTint.Rose),
@@ -148,7 +131,13 @@ internal fun SettingsScreen(
                         )
                     }
                 }
-                LumeList(items = listOf(SettingsEntry.SIGN_OUT), key = { it }, scrolls = false, onRowTap = onEntry) {
+                LumeList(
+                    items = listOf(SettingsEntry.SIGN_OUT),
+                    key = { it },
+                    scrolls = false,
+                    onRowTap = onEntry,
+                    chrome = LumeListChrome.Open,
+                ) {
                     LumeListRow(
                         title = stringResource(Res.string.settings_sign_out),
                         role = LumeListRowRole.Destructive,
@@ -164,4 +153,41 @@ private fun remindersText(hours: List<Int>): String = when (hours.size) {
     0 -> stringResource(Res.string.settings_reminders_none)
     1 -> stringResource(Res.string.settings_reminders_one, hours[0])
     else -> stringResource(Res.string.settings_reminders_two, hours[0], hours[1])
+}
+
+private enum class ProfileField { RUT, PHONE, EMAIL }
+
+/** p7's identity card: each datum's name small over its value, the RUT locked, the contact pencils to edit. */
+@Composable
+private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEditEmail: () -> Unit) {
+    LumeList(items = ProfileField.entries, key = { it }, scrolls = false, chrome = LumeListChrome.Open) { field ->
+        when (field) {
+            ProfileField.RUT -> LumeListRow(
+                title = stringResource(Res.string.settings_rut),
+                description = profile.rut.display,
+                trailing = LumeListAccessory.Icon(LumeIcon.Lock, ""),
+                textStyle = LumeListRowTextStyle.LabelOverValue,
+            )
+            ProfileField.PHONE -> LumeListRow(
+                title = stringResource(Res.string.settings_phone),
+                description = profile.mobile.display,
+                trailing = LumeListAccessory.Button(
+                    LumeIcon.Edit,
+                    stringResource(Res.string.settings_edit_phone),
+                    onEditPhone,
+                ),
+                textStyle = LumeListRowTextStyle.LabelOverValue,
+            )
+            ProfileField.EMAIL -> LumeListRow(
+                title = stringResource(Res.string.settings_email),
+                description = profile.email.value,
+                trailing = LumeListAccessory.Button(
+                    LumeIcon.Edit,
+                    stringResource(Res.string.settings_edit_email),
+                    onEditEmail,
+                ),
+                textStyle = LumeListRowTextStyle.LabelOverValue,
+            )
+        }
+    }
 }

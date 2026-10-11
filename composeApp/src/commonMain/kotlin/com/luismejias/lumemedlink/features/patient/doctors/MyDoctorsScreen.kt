@@ -18,6 +18,7 @@ import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListRow
+import cl.lume.uicomposer.components.LumeListRowTextStyle
 import cl.lume.uicomposer.components.LumeListStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
@@ -94,7 +95,7 @@ internal fun MyDoctorsScreen(
 
 @Composable
 private fun DoctorCard(entry: MyDoctor, onOpen: (MyDoctor) -> Unit, onCall: (String) -> Unit) {
-    LumeCard(modifier = Modifier.fillMaxWidth()) {
+    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
             LumeList(
                 items = listOf(entry),
@@ -103,6 +104,7 @@ private fun DoctorCard(entry: MyDoctor, onOpen: (MyDoctor) -> Unit, onCall: (Str
                 onRowTap = onOpen,
             ) {
                 LumeListRow(
+                    textStyle = LumeListRowTextStyle.Strong,
                     title = it.doctor.displayName,
                     description = "${it.doctor.specialty} · " +
                         pluralStringResource(Res.plurals.doctors_attentions, it.attentions, it.attentions),
@@ -124,12 +126,14 @@ private fun DoctorCard(entry: MyDoctor, onOpen: (MyDoctor) -> Unit, onCall: (Str
                 }
                 entry.email?.let { email ->
                     LumeListRow(
+                        textStyle = LumeListRowTextStyle.Strong,
                         title = email,
                         leading = LumeListAccessory.Icon(LumeIcon.Mail, stringResource(Res.string.doctors_mail)),
                     )
                 }
             } else {
                 LumeListRow(
+                    textStyle = LumeListRowTextStyle.Strong,
                     title = stringResource(Res.string.doctors_private),
                     leading = LumeListAccessory.Icon(LumeIcon.Lock, ""),
                 )

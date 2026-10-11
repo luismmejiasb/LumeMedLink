@@ -13,6 +13,7 @@ import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
@@ -54,6 +55,7 @@ internal fun SearchScreen(
             LumeText(text = stringResource(Res.string.search_intro), color = LumeTextColor.Secondary)
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
                 LumeList(
+                    chrome = LumeListChrome.Open,
                     items = Criterion.entries,
                     key = { it },
                     scrolls = false,
@@ -89,6 +91,7 @@ internal fun SearchScreen(
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
                     LumeEyebrow(title = stringResource(Res.string.search_recent))
                     LumeList(
+                        chrome = LumeListChrome.Open,
                         items = searches,
                         key = { "${it.specialty}/${it.commune}" },
                         scrolls = false,
