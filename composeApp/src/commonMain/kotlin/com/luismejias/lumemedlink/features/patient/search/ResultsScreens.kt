@@ -173,16 +173,15 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
                 return@CareLoadView
             }
             LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Overflow, spacing = { small }) {
-                val filtersTitle = stringResource(Res.string.results_filters)
+                val filtersTitle = if (filters.activeCount == 0) {
+                    stringResource(Res.string.results_filters)
+                } else {
+                    stringResource(Res.string.results_filters_count, filters.activeCount)
+                }
                 LumeFilterChip(
                     title = filtersTitle,
                     isSelected = filters.activeCount > 0,
-                    contentDescription = if (filters.activeCount == 0) {
-                        filtersTitle
-                    } else {
-                        stringResource(Res.string.results_filters_count, filters.activeCount)
-                    },
-                    count = filters.activeCount.takeIf { it > 0 }?.toString(),
+                    contentDescription = filtersTitle,
                     icon = LumeIcon.Sliders,
                     onClick = model::openFilters,
                 )

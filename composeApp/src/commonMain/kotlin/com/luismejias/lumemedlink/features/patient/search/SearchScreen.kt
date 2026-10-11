@@ -16,6 +16,7 @@ import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
+import cl.lume.uicomposer.components.LumeListTileEmphasis
 import cl.lume.uicomposer.components.LumeNavBar
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
@@ -80,7 +81,11 @@ internal fun SearchScreen(
                     LumeListRow(
                         title = stringResource(label),
                         description = value ?: stringResource(Res.string.search_choose),
-                        leading = LumeListAccessory.Tile(icon, LumeTileTint.Azure),
+                        leading = LumeListAccessory.Tile(
+                            icon,
+                            LumeTileTint.Azure,
+                            emphasis = LumeListTileEmphasis.Washed,
+                        ),
                         disclosure = true,
                         textStyle = LumeListRowTextStyle.LabelOverValue,
                     )
