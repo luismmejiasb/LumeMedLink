@@ -60,6 +60,21 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 - **«Llamar» y «Correo» en Mis médicos** van bajo el avatar, en el borde izquierdo de la tarjeta, no bajo el nombre como dibuja p6.
 - **Marca en la cabecera de Inicio**: el kit agrega un lugar opcional a la izquierda de la barra con título grande para el ícono y el nombre de la app. Hasta que llegue el logotipo en SVG, va el escudo del kit con el nombre en texto.
 
+## «Tu próxima cita» (f1–f4): lo que decidió el autor (2026-10-11)
+
+- **Kit**: se autorizan la hoja inferior (f1, f2), los días con conteo y feriado (f3), la lista de opciones con radio
+  (f4), el texto tachado, el enlace dentro de un aviso y el aviso oscuro con título y cuerpo (e10).
+- **Mapas**: excepción acotada a ADR-0007, como la del correo. Un enlace de mapas con la dirección de la consulta y
+  nada más, en un solo archivo de `core/device`, con su ADR y sus cebos. Nunca la dirección del paciente.
+- **Copiar dirección**: se permite, sólo la dirección de la consulta y marcada sensible (Android 13+ con
+  `EXTRA_IS_SENSITIVE`; iOS local y con vencimiento), con su ADR y su excepción en el gate.
+- **Motivos de cancelación**: sin «Ya me siento mejor», que es información de salud. Quedan tres, cada uno mapeado al
+  contrato.
+- **Plazo de cambio**: por médico, en cada cita (el `cancelCutoffHours` aprobado). En el guion, Rendón tiene 30 min (f2)
+  y Pinto 24 h. El aviso de Mis citas habla del plazo de cada cita.
+- **Íconos de las apps de mapas**: el real en Android y un glifo del kit en iOS, que no deja leer los íconos de otras
+  apps.
+
 ## La respuesta del backend al pedido `0008` (2026-10-11)
 
 Está en `../lumemed-cloud-platform/tareas/PENDING/0121-lo-que-le-falta-al-contrato-para-la-app-del-paciente.md`.
