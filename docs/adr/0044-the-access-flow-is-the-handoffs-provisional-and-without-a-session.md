@@ -1,0 +1,67 @@
+# ADR-0044 — The access flow is the design handoff's, provisional, and begins no session
+
+- **Status**: Accepted (2026-10-11) — the author's answers of this date, in session.
+- **Supersedes**: ADR-0043 (the sign-in flow copied from LumeMed).
+- **Related**: ADR-0001, 0002, 0003, 0006, 0013, 0033, 0037, 0045; task `0029`; the handoff in
+  `tareas/PENDING/Handoff/` (`03-Specs/1-Auth.md`); `ADR-0031 del backend` (T5), its tasks `0117`–`0120`.
+
+## Context
+
+The author delivered a design handoff for the whole app. Its access flow is not LumeMed's: a patient
+**creates an account alone** with RUT, password and an SMS-verified mobile, recovers the password by SMS, and
+a doctor has no account here — they **link** the LumeMed one with an eight-character code. None of that is in
+the backend's contract (verified against `packages/contracts/openapi.json`, 2026-10-11):
+
+- the patient tier enrols only through a code the practice issues (T5, `ADR-0031 del backend`); there is no
+  self-signup, no SMS, no password recovery — a lost factor is re-enrolled in person — and TOTP is mandatory
+  on every request;
+- there is no doctor-linking operation, and the non-clinical doctor audience is unbuilt (its task `0117`).
+
+The author chose to build the design's screens now, against local mocks with the design's shape, and to decide
+the patient access model later (2026-10-11).
+
+## Decision
+
+1. **`features/auth/` draws the handoff's access screens**, patient and doctor, on LumeUIComposer (ADR-0033),
+   with the copy and client-side validations of `03-Specs/1-Auth.md`, every user-facing string localized
+   (ADR-0045).
+2. **The seams have the design's shape and say so**: `core/auth/AccessGateway.kt` —
+   `PatientAccessGateway` and `DoctorLinkGateway` — marked PROVISIONAL. Every rule the design names
+   (attempts, lockout, code lifetime, resend interval, neutral recovery answer) is the server's; the app
+   shows what it answers.
+3. **What is wired is a scripted gateway** with synthetic fixtures that reach every edge state, chosen in
+   `App()`. Its fixtures are listed in task `0029`.
+4. **No session begins.** No call returns tokens, nothing is written to the secure store,
+   `establishSession` is not called. The flow ends in a placeholder for the main app. ADR-0003 and the
+   successor ADR-0006 point 3 demands stay untouched — that ADR is still owed before any patient session code.
+5. **LumeMed's TOTP and challenge screens leave the flow** (the design has none); git keeps them. The lock
+   screen (`unlock/`) stays: it belongs to the session, not to the access flow.
+
+## Deviations from the handoff, each with its reason
+
+1. **No «Ahora no» on 1c and no «Seguir con contraseña» on 1c-e1**: no Lume app runs without biometric
+   re-entry (ADR-0037 amended; the author confirmed it on 2026-10-11). 1c-e1 offers the phone's settings or
+   «Volver al inicio».
+2. **No «¿Ya no tienes ese teléfono? Contáctanos» on 3a**: there is no support channel; a link to nowhere is
+   worse than none (ADR-0043's fourth deviation, kept).
+3. **The QR scanner on 4a and its camera-permission state 4a-e2 wait**: a camera needs a dependency ADR, and
+   the obvious decoder (ML Kit) is GMS, on the denylist. 4a takes the typed code only, and 4a-e1's «Escanear de
+   nuevo» reads «Escribir otro código».
+4. **The welcome carousel on 1a is the kit's** `LumeCarousel`, requested and authorized on 2026-10-11 and
+   delivered the same day: this app writes no UI of its own.
+5. **The step progress is `LumeStepIndicator`** with its labels, not the design's segmented bars.
+6. **The wordmark is pending its SVG**; until then the name is drawn as kit text.
+7. **The accent is the kit's derivation of `#3E63DD`** (`LumeBrand(seed = …)`); its strong and light tones are
+   computed, not the design's literal hexes.
+8. **Phone and tablet**: the handoff says both; ADR-0002 keeps v1 phone-first, portrait.
+9. **The design's example RUTs fail módulo 11** («18.456.789-2», «12.987.654-3»): the script uses valid synthetic
+   ones, and a field shows the design's error for the design's own example.
+
+## Consequences
+
+- When the access model is decided, either the seams become the backend's (and this ADR is superseded), or
+  the backend reopens T5 (and the backend's ADR-0031 is). Building on the design's shape is a bet the author
+  made knowingly.
+- The password rules shown live are the design's. Wired to an IdP, they must equal its policy or go.
+- The scripted gateway is not a mock *of the backend* — it is a mock of a contract that does not exist. It must
+  never be mistaken for one: its name, its KDoc and this ADR say so.

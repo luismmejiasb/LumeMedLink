@@ -1,0 +1,266 @@
+package com.luismejias.lumemedlink.features.auth
+
+import com.luismejias.lumemedlink.core.auth.AccessScript
+import com.luismejias.lumemedlink.core.auth.ManualClock
+import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
+import com.luismejias.lumemedlink.core.session.LockOutcome
+import com.luismejias.lumemedlink.core.session.SessionEndReason
+import com.luismejias.lumemedlink.features.auth.flow.AccessAttempt
+import com.luismejias.lumemedlink.features.auth.flow.AccessFlowModel
+import com.luismejias.lumemedlink.features.auth.flow.AccessRole
+import com.luismejias.lumemedlink.features.auth.flow.AccessRoute
+import com.luismejias.lumemedlink.features.auth.flow.AccessText
+import com.luismejias.lumemedlink.features.auth.flow.OfflineOutcome
+import com.luismejias.lumemedlink.features.auth.flow.StepOutcome
+import com.luismejias.lumemedlink.features.auth.shared.PasswordRules
+import com.luismejias.lumemedlink.features.auth.unlock.stepOutcomeFor
+import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.unlock_attempts_left
+import com.luismejias.lumemedlink.resources.unlock_try_again
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+// Synthetic only (§9): RUTs valid by módulo 11 that belong to nobody known; the script's own codes.
+private const val RUT = "18.456.789-K"
+
+/** The access flow end to end against the script, with a hand-moved clock and no latency. */
+class AccessFlowTest {
+    private val clock = ManualClock()
+    private val gateway = ScriptedAccessGateway(clock, latency = {})
+    private val attempt = AccessAttempt(gateway, gateway)
+    private val flow = attempt.flow
+
+    private fun path(vararg routes: AccessRoute) = assertEquals(routes.toList(), flow.routes.value)
+
+    @Test
+    fun theBackPolicyIsTheDesignsAndNeverLeavesTheStart() {
+        val model = AccessFlowModel()
+        assertFalse(model.back())
+        model.push(AccessRoute.SIGN_IN)
+        model.push(AccessRoute.QUICK_SIGN_IN)
+        assertFalse(model.back(), "the password behind 1c is spent")
+        assertEquals(AccessRoute.QUICK_SIGN_IN, model.top)
+    }
+
+    @Test
+    fun signingInGoesToQuickSignInAndThenIn() = runTest {
+        flow.push(AccessRoute.SIGN_IN)
+        attempt.signIn.rutChanged(RUT)
+        attempt.signIn.passwordChanged(AccessScript.PASSWORD)
+        assertEquals(StepOutcome.Advanced, attempt.signIn.submit())
+        path(AccessRoute.WELCOME, AccessRoute.SIGN_IN, AccessRoute.QUICK_SIGN_IN)
+        assertEquals("", attempt.signIn.state.value.password, "the password leaves memory once used")
+
+        assertEquals(StepOutcome.Advanced, attempt.quickSignIn.activate())
+        assertEquals(AccessRole.PATIENT, flow.finished.value)
+    }
+
+    @Test
+    fun aWrongPasswordStaysOnTheScreenAndTheFifthLocks() = runTest {
+        flow.push(AccessRoute.SIGN_IN)
+        attempt.signIn.rutChanged(RUT)
+        repeat(4) { i ->
+            attempt.signIn.passwordChanged("nope")
+            attempt.signIn.submit()
+            assertEquals(4 - i, attempt.signIn.state.value.wrongAttemptsLeft)
+        }
+        attempt.signIn.passwordChanged("nope")
+        attempt.signIn.submit()
+        assertEquals(AccessRoute.LOCKED_OUT, flow.top)
+        assertEquals(clock.now + AccessScript.LOCKOUT_MILLIS, attempt.signIn.state.value.lockedUntilEpochMillis)
+        assertTrue(flow.backTo(AccessRoute.SIGN_IN))
+    }
+
+    @Test
+    fun noNetworkKeepsWhatWasTypedAndShowsTheBanner() = runTest {
+        flow.push(AccessRoute.SIGN_IN)
+        attempt.signIn.rutChanged(AccessScript.OFFLINE_RUT)
+        attempt.signIn.passwordChanged("anything")
+        assertEquals(OfflineOutcome, attempt.signIn.submit())
+        val state = attempt.signIn.state.value
+        assertTrue(state.offline)
+        assertEquals("anything", state.password)
+        assertEquals(AccessRoute.SIGN_IN, flow.top)
+        attempt.signIn.rutChanged("11.111.111-1")
+        assertTrue(attempt.signIn.state.value.offline, "a reformatted RUT keeps the banner")
+    }
+
+    @Test
+    fun aPhoneWithoutBiometricsIsSentToItsSettingsNotIn() = runTest {
+        flow.push(AccessRoute.SIGN_IN)
+        attempt.signIn.rutChanged(AccessScript.NO_BIOMETRICS_RUT)
+        attempt.signIn.passwordChanged(AccessScript.PASSWORD)
+        attempt.signIn.submit()
+        attempt.quickSignIn.activate()
+        assertEquals(AccessRoute.QUICK_SIGN_IN_UNAVAILABLE, flow.top)
+        assertNull(flow.finished.value)
+    }
+
+    @Test
+    fun creatingAnAccountRunsTheThreeStepsAndGreetsByName() = runTest {
+        flow.push(AccessRoute.SIGN_UP_PROFILE)
+        val profile = attempt.signUpProfile
+        profile.rutChanged(RUT)
+        profile.givenNamesChanged("Camila")
+        profile.familyNamesChanged("Soto")
+        profile.mobileChanged("9 8765 4321")
+        profile.emailChanged("camila.soto@correo.cl")
+        assertEquals(StepOutcome.Advanced, profile.submit())
+
+        val credentials = attempt.signUpCredentials
+        credentials.passwordChanged("Synthetic1")
+        credentials.repeatedChanged("Synthetic1")
+        assertTrue(credentials.state.value.consentRequired, "the consents are marked once the rest is ready")
+        credentials.termsChanged(true)
+        credentials.dataUseChanged(true)
+        assertEquals(StepOutcome.Advanced, credentials.submit())
+        assertEquals("+56 9 •••• 4321", attempt.signUpCode.state.value.maskedMobile)
+
+        attempt.signUpCode.codeChanged("000000")
+        attempt.signUpCode.submit()
+        assertEquals(2, attempt.signUpCode.state.value.entry.wrongAttemptsLeft)
+        attempt.signUpCode.codeChanged(AccessScript.SMS_CODE)
+        assertEquals(StepOutcome.Advanced, attempt.signUpCode.submit())
+        path(AccessRoute.SIGN_UP_DONE)
+        assertEquals("Camila", attempt.createdAccount.value?.givenNames)
+    }
+
+    @Test
+    fun stepOneShowsItsErrorsOnlyAfterTryingAndATakenRutOffersTheWayIn() = runTest {
+        val profile = attempt.signUpProfile
+        profile.rutChanged("18.456.789-5")
+        profile.mobileChanged("+56 9 8765 43")
+        profile.emailChanged("camila.soto@correo")
+        assertFalse(profile.state.value.rutInvalid, "no red before the first try")
+        profile.givenNamesChanged("Camila")
+        profile.familyNamesChanged("Soto")
+        profile.submit()
+        val judged = profile.state.value
+        assertTrue(judged.rutInvalid && judged.mobileInvalid && judged.emailInvalid)
+        assertFalse(judged.canSubmit)
+
+        profile.rutChanged(AccessScript.TAKEN_RUT)
+        profile.mobileChanged("+56 9 8765 4321")
+        profile.emailChanged("camila.soto@correo.cl")
+        profile.submit()
+        assertTrue(profile.state.value.rutTaken)
+        // The field reformats the RUT it holds; that is not a new RUT, and the refusal stays.
+        profile.rutChanged("22.222.222-2")
+        assertTrue(profile.state.value.rutTaken)
+        profile.rutChanged(RUT)
+        assertFalse(profile.state.value.rutTaken)
+    }
+
+    @Test
+    fun anExpiredCodeOffersANewOneOrAnotherPhone() = runTest {
+        flow.push(AccessRoute.SIGN_UP_PROFILE)
+        attempt.signUpProfile.apply {
+            rutChanged(RUT)
+            givenNamesChanged("Camila")
+            familyNamesChanged("Soto")
+            mobileChanged("987654321")
+            emailChanged("camila.soto@correo.cl")
+            submit()
+        }
+        attempt.signUpCredentials.apply {
+            passwordChanged("Synthetic1")
+            repeatedChanged("Synthetic1")
+            termsChanged(true)
+            dataUseChanged(true)
+            submit()
+        }
+        clock.now += AccessScript.CODE_LIFETIME_MILLIS
+        attempt.signUpCode.codeChanged(AccessScript.SMS_CODE)
+        attempt.signUpCode.submit()
+        assertEquals(AccessRoute.SIGN_UP_CODE_EXPIRED, flow.top)
+        attempt.signUpCode.resend()
+        assertEquals(AccessRoute.SIGN_UP_CODE, flow.top)
+        flow.push(AccessRoute.SIGN_UP_CODE_EXPIRED)
+        attempt.signUpCode.changePhone()
+        assertEquals(AccessRoute.SIGN_UP_PROFILE, flow.top)
+    }
+
+    @Test
+    fun recoveryEndsAtSignInAndCannotReuseTheOldPassword() = runTest {
+        flow.push(AccessRoute.SIGN_IN)
+        flow.push(AccessRoute.RECOVERY_RUT)
+        attempt.recoveryRut.rutChanged(RUT)
+        assertEquals(StepOutcome.Advanced, attempt.recoveryRut.submit())
+        attempt.recoveryCode.codeChanged(AccessScript.SMS_CODE)
+        assertEquals(StepOutcome.Advanced, attempt.recoveryCode.submit())
+
+        attempt.newPassword.passwordChanged(AccessScript.PASSWORD)
+        attempt.newPassword.repeatedChanged(AccessScript.PASSWORD)
+        attempt.newPassword.submit()
+        assertTrue(attempt.newPassword.state.value.reused)
+        attempt.newPassword.passwordChanged("Distinta123")
+        attempt.newPassword.repeatedChanged("Distinta123")
+        assertEquals(StepOutcome.Advanced, attempt.newPassword.submit())
+        path(AccessRoute.RECOVERY_DONE)
+    }
+
+    @Test
+    fun aDoctorLinksWithTheCodeAndAnUnverifiedOneWaits() = runTest {
+        flow.push(AccessRoute.DOCTOR_CODE)
+        attempt.doctor.codeChanged("k7q2 · m9xa")
+        assertEquals(StepOutcome.Advanced, attempt.doctor.lookUp())
+        assertEquals(AccessScript.DOCTOR_NAME, attempt.doctor.confirmState.value.doctor?.displayName)
+        attempt.doctor.confirmLink()
+        path(AccessRoute.DOCTOR_LINKED)
+        attempt.doctor.start()
+        assertEquals(AccessRole.DOCTOR, flow.finished.value)
+
+        val second = AccessAttempt(gateway, gateway)
+        second.flow.push(AccessRoute.DOCTOR_CODE)
+        second.doctor.codeChanged(AccessScript.UNVERIFIED_LINK_CODE)
+        second.doctor.lookUp()
+        second.doctor.confirmLink()
+        assertEquals(listOf(AccessRoute.DOCTOR_UNVERIFIED), second.flow.routes.value)
+    }
+
+    @Test
+    fun aSpentLinkingCodeIsItsOwnScreenAndGoesBackEmpty() = runTest {
+        flow.push(AccessRoute.DOCTOR_CODE)
+        attempt.doctor.codeChanged("ZZZZ9999")
+        attempt.doctor.lookUp()
+        assertEquals(AccessRoute.DOCTOR_CODE_SPENT, flow.top)
+        attempt.doctor.typeAnother()
+        assertEquals(AccessRoute.DOCTOR_CODE, flow.top)
+        assertEquals("", attempt.doctor.codeState.value.typed)
+    }
+
+    @Test
+    fun theDesignsPasswordRules() {
+        assertTrue(PasswordRules.of("Synthetic1").allMet)
+        assertFalse(PasswordRules.of("synthetic1").allMet)
+        assertFalse(PasswordRules.of("Short1").allMet)
+        assertFalse(PasswordRules.of("NoDigitsHere").allMet)
+    }
+
+    @Test
+    fun aLockOutcomeReadsOnTheButton() {
+        assertEquals(StepOutcome.Advanced, stepOutcomeFor(LockOutcome.Unlocked))
+        assertEquals(
+            StepOutcome.Rejected(AccessText.Counted(Res.plurals.unlock_attempts_left, 2)),
+            stepOutcomeFor(LockOutcome.StillLocked(2)),
+        )
+        assertEquals(
+            StepOutcome.Retry(AccessText.Plain(Res.string.unlock_try_again)),
+            stepOutcomeFor(LockOutcome.StillLocked(null)),
+        )
+        assertEquals(StepOutcome.Blocked, stepOutcomeFor(LockOutcome.SessionEnded(SessionEndReason.TOO_MANY_ATTEMPTS)))
+    }
+
+    @Test
+    fun nothingTypedIsPrinted() {
+        attempt.signIn.rutChanged(RUT)
+        attempt.signIn.passwordChanged("Synthetic1")
+        attempt.signUpProfile.emailChanged("camila.soto@correo.cl")
+        val printed = listOf(attempt.signIn.state.value.toString(), attempt.signUpProfile.state.value.toString())
+        assertTrue(printed.none { "456" in it || "Synthetic1" in it || "camila" in it }, printed.toString())
+    }
+}

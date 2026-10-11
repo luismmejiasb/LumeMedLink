@@ -1,6 +1,6 @@
 # ADR-0043 — The sign-in flow is LumeMed's, with its deviations written down
 
-- **Status**: Accepted (2026-10-07) — the author asked for LumeMed's auth flow to be copied, design and screen flow.
+- **Status**: **Superseded · 2026-10-11 by ADR-0044** (the design handoff's access flow). Accepted 2026-10-07 — the author asked for LumeMed's auth flow to be copied, design and screen flow.
 - **Related**: LumeMed's ADR-0007, 0013, 0014, 0022, 0024, 0032 (the flow being copied); this repo's ADR-0003,
   0013, 0024, 0033, 0037, 0040, 0041, 0042; task `0028`.
 

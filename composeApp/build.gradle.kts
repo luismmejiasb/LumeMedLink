@@ -64,6 +64,7 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(libs.jetbrains.lifecycle.viewmodel.compose)
             // The design system (ADR-0033): every screen draws with LumeTheme's tokens and the kit's
@@ -108,12 +109,20 @@ kotlin {
     }
 }
 
+// Every user-facing string is a resource (ADR-0045): `Res` is internal and lives in the app's own package,
+// so `explicitApi()` does not demand it be public and nothing outside this module can read it.
+compose.resources {
+    publicResClass = false
+    packageOfResClass = "com.luismejias.lumemedlink.resources"
+    generateResClass = always
+}
+
 // UPSTREAM BUG WORKAROUND, scoped to one task and stated rather than hidden: Compose
 // Multiplatform 1.11.1 registers a resource-copy task for the AGP KMP *deviceTest* variant
 // without configuring its output directory, so merely configuring that task graph fails
-// ("property 'outputDirectory' doesn't have a configured value"). This module declares NO Compose
-// resources at all, so the task has nothing to copy. Disabled for the deviceTest variant only —
-// the main and host-test variants keep theirs. Revisit when CMP is bumped.
+// ("property 'outputDirectory' doesn't have a configured value"). The device tests read no string
+// resource — they assert keystore properties — so the copy is not needed there. Disabled for the
+// deviceTest variant only; the main and host-test variants keep theirs. Revisit when CMP is bumped.
 tasks.matching { it.name == "copyAndroidDeviceTestComposeResourcesToAndroidAssets" }
     .configureEach { enabled = false }
 

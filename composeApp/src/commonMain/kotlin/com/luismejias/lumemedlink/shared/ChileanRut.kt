@@ -12,6 +12,9 @@ internal class ChileanRut private constructor(val body: String, val checkDigit: 
     /** The canonical form the backend receives: body, hyphen, check digit, no dots. */
     val canonical: String get() = "$body-$checkDigit"
 
+    /** The form a person reads: "12.345.678-9". For the screen only — it is still personal data. */
+    val display: String get() = "${body.reversed().chunked(3).joinToString(".").reversed()}-$checkDigit"
+
     override fun equals(other: Any?): Boolean = other is ChileanRut && other.canonical == canonical
 
     override fun hashCode(): Int = canonical.hashCode()

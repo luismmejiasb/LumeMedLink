@@ -12,13 +12,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.lume.uicomposer.foundations.LumeBrand
 import cl.lume.uicomposer.foundations.LumeTheme
+import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
 import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
@@ -28,18 +31,25 @@ import com.luismejias.lumemedlink.core.security.emittingIn
 import com.luismejias.lumemedlink.core.session.FailedAttemptLedger
 import com.luismejias.lumemedlink.core.session.SessionLock
 import com.luismejias.lumemedlink.core.session.SessionManager
+import com.luismejias.lumemedlink.core.session.SystemClock
 import com.luismejias.lumemedlink.core.session.TokenStore
 import com.luismejias.lumemedlink.core.session.UnlockGate
 import com.luismejias.lumemedlink.core.session.UnlockOutcome
-import com.luismejias.lumemedlink.core.session.establishSession
 import com.luismejias.lumemedlink.core.session.performLogout
 import com.luismejias.lumemedlink.core.session.platformInstallSentinel
 import com.luismejias.lumemedlink.core.session.rememberSecureStore
 import com.luismejias.lumemedlink.core.session.rememberUnlockGate
-import com.luismejias.lumemedlink.features.auth.flow.AuthFlowHost
+import com.luismejias.lumemedlink.features.auth.flow.AccessFlowViewModel
+import com.luismejias.lumemedlink.features.auth.flow.AccessHost
 import com.luismejias.lumemedlink.features.auth.unlock.UnlockScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/**
+ * The design's accent (the handoff's README): the kit derives every other tone from it (ADR-0033, ADR-0044
+ * deviation 7). One line, here, so no screen can draw in another brand.
+ */
+private val LumeMedLinkBrand = LumeBrand(seed = Color(0xFF3E63DD))
 
 /**
  * Stand-in when the platform cannot host a biometric gate. It reports [UnlockOutcome.Unavailable],
@@ -68,6 +78,12 @@ private object AbsentUnlockGate : UnlockGate {
 public fun App() {
     // What must outlive a rotation lives here; what holds the Activity does not (task 0009, ADR-0039).
     val shell = viewModel { ShellViewModel() }
+    // The access flow (ADR-0044) runs against the SCRIPT of a contract that does not exist yet — chosen here and
+    // only here (ADR-0045), and it begins no session.
+    val access = viewModel {
+        val scripted = ScriptedAccessGateway(SystemClock)
+        AccessFlowViewModel(patients = scripted, doctors = scripted, clock = SystemClock)
+    }
     val secureStore = rememberSecureStore()
     val unlockGate = rememberUnlockGate(secureStore) ?: AbsentUnlockGate
     val sessionManager = remember(secureStore) {
@@ -97,14 +113,9 @@ public fun App() {
     }
 
     var hasSession by remember { mutableStateOf(shell.hasSession ?: false) }
-    val authSession by shell.auth.collectAsState()
     val reauthenticating by shell.reauthenticating.collectAsState()
-    // A flow that restarts — an alert that ends the attempt, a finished password reset — starts from
-    // empty forms, as LumeMed wipes on leave.
-    val authRestarts by authSession.flow.restarts.collectAsState()
-    LaunchedEffect(authRestarts) {
-        if (authRestarts > 0) shell.freshAuth()
-    }
+    val accessAttempt by access.attempt.collectAsState()
+    val accessFinished by accessAttempt.flow.finished.collectAsState()
     var locked by remember { mutableStateOf(sessionLock.isLocked()) }
     var returns by remember { mutableStateOf(0) }
 
@@ -188,11 +199,11 @@ public fun App() {
         hasSession = false
         shell.hasSession = false
         shell.reauthenticating.value = false
-        shell.freshAuth()
+        access.restart()
         locked = true
     }
 
-    LumeTheme {
+    LumeTheme(brand = LumeMedLinkBrand) {
         FieldClipboardPolicy {
             PrivacyScreenScaffold {
                 Box(
@@ -211,31 +222,22 @@ public fun App() {
                             }
                         },
                 ) {
-                    val authFlow = @Composable { onCancel: (() -> Unit)? ->
-                        AuthFlowHost(
-                            session = authSession,
-                            // The ONE way a session begins (ADR-0037): erase what was there, make the
-                            // biometric material, then write. Handed to the feature per call.
-                            establish = { tokens ->
-                                establishSession(tokens, sessionManager, secureStore, unlockGate, sessionLock)
-                            },
-                            onEstablished = {
-                                hasSession = true
-                                shell.hasSession = true
-                                locked = sessionLock.isLocked()
-                                shell.reauthenticating.value = false
-                                shell.freshAuth()
-                            },
-                            onCancel = onCancel,
-                        )
+                    // No session can begin from the access flow yet (ADR-0044): it ends in the pending main app.
+                    val accessFlow = @Composable { onCancel: (() -> Unit)? ->
+                        val role = accessFinished
+                        if (role != null) {
+                            PendingMainScreen(role = role, onRestart = access::restart)
+                        } else {
+                            AccessHost(viewModel = access, onCancel = onCancel)
+                        }
                     }
                     when (resolveDestination(hasSession, locked)) {
-                        AppDestination.Login -> authFlow(null)
+                        AppDestination.Login -> accessFlow(null)
 
                         AppDestination.Locked -> if (reauthenticating) {
-                            authFlow {
+                            accessFlow {
                                 shell.reauthenticating.value = false
-                                shell.freshAuth()
+                                access.restart()
                             }
                         } else {
                             UnlockScreen(
@@ -247,7 +249,7 @@ public fun App() {
                                 onSessionEnded = { scope.launch { endSession() } },
                                 // A new sign-in replaces this session; establishSession erases it first.
                                 onUsePassword = {
-                                    shell.freshAuth()
+                                    access.restart()
                                     shell.reauthenticating.value = true
                                 },
                                 onChangeAccount = { scope.launch { endSession() } },

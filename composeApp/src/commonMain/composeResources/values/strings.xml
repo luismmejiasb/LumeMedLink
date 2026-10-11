@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Every user-facing string of the app (ADR-0045). Spanish is the base: the fallback for any locale without
+  its own folder. The access flow's copy is the design handoff's, literal (tareas/PENDING/Handoff,
+  03-Specs/1-Auth.md); where the platform differs, "Face ID" becomes "Face ID o huella".
+  Placeholders are positional so a translation can reorder them.
+-->
+<resources>
+    <!-- Shared -->
+    <string name="app_name">LumeMedLink</string>
+    <string name="common_back">Volver</string>
+    <string name="common_continue">Continuar</string>
+    <string name="common_retry">Reintentar</string>
+    <string name="common_close">Cerrar</string>
+    <string name="common_understood">Entendido</string>
+    <string name="common_done">Listo</string>
+    <string name="common_failed_short">No se pudo</string>
+    <string name="common_loading">Un momento…</string>
+    <string name="common_requirement_met">requisito cumplido</string>
+    <string name="common_requirement_unmet">requisito no cumplido</string>
+
+    <!-- Fields -->
+    <string name="field_rut">RUT</string>
+    <string name="field_rut_placeholder">12.345.678-9</string>
+    <string name="field_rut_invalid">El RUT no es válido. Revisa el dígito verificador.</string>
+    <string name="field_given_names">Nombres</string>
+    <string name="field_family_names">Apellidos</string>
+    <string name="field_name_required">Completa este campo.</string>
+    <string name="field_mobile">Teléfono celular</string>
+    <string name="field_mobile_placeholder">+56 9 1234 5678</string>
+    <string name="field_mobile_invalid">Ingresa un celular de 9 dígitos.</string>
+    <string name="field_email">Correo</string>
+    <string name="field_email_placeholder">nombre@dominio.cl</string>
+    <string name="field_email_invalid">Revisa el formato del correo.</string>
+    <string name="field_password">Contraseña</string>
+    <string name="field_password_placeholder">Tu contraseña</string>
+    <string name="field_password_show">Mostrar</string>
+    <string name="field_password_hide">Ocultar</string>
+    <string name="field_password_repeat">Repetir contraseña</string>
+    <string name="field_password_new">Contraseña nueva</string>
+    <string name="field_passwords_differ">Las contraseñas no coinciden.</string>
+    <string name="field_code">Código de verificación</string>
+    <string name="field_code_clear">Borrar código</string>
+    <string name="password_rule_length">Al menos 8 caracteres</string>
+    <string name="password_rule_case">Una mayúscula y una minúscula</string>
+    <string name="password_rule_digit">Un número</string>
+
+    <!-- Connection and server -->
+    <string name="offline_title">Sin conexión a internet</string>
+    <string name="offline_body">Revisa tu Wi-Fi o datos móviles. Lo que escribiste no se pierde.</string>
+    <string name="unavailable_title">Estamos con problemas</string>
+    <string name="unavailable_body">Intenta en unos minutos.</string>
+
+    <!-- 1a · Welcome -->
+    <string name="welcome_create_account">Crear cuenta</string>
+    <string name="welcome_have_account">Ya tengo cuenta</string>
+    <string name="welcome_doctor_link">¿Eres médico? Vincula tu cuenta LumeMed</string>
+    <string name="welcome_card_change_title">Cambia o cancela</string>
+    <string name="welcome_card_change_body">Sin llamar, desde la app.</string>
+    <string name="welcome_card_rate_title">Valora tu atención</string>
+    <string name="welcome_card_rate_body">Tu opinión ayuda a otros pacientes.</string>
+    <string name="welcome_card_search_title">Busca a tu médico</string>
+    <string name="welcome_card_search_body">Por especialidad, comuna o nombre.</string>
+    <string name="welcome_card_page">Página %1$d de %2$d</string>
+
+    <!-- 1b · Sign in -->
+    <string name="sign_in_forgot">¿Olvidaste tu contraseña?</string>
+    <string name="sign_in_action">Ingresar</string>
+    <string name="sign_in_running">Ingresando…</string>
+    <string name="sign_in_no_account">¿No tienes cuenta?</string>
+    <string name="sign_in_create">Créala</string>
+    <string name="sign_in_wrong_title">RUT o contraseña incorrectos</string>
+    <plurals name="sign_in_wrong_attempts">
+        <item quantity="one">Te queda %1$d intento antes de un bloqueo de 15 minutos.</item>
+        <item quantity="other">Te quedan %1$d intentos antes de un bloqueo de 15 minutos.</item>
+    </plurals>
+    <string name="sign_in_check_password">Revisa tu contraseña.</string>
+
+    <!-- 1b-e2 · Locked out -->
+    <string name="locked_title">Cuenta bloqueada por seguridad</string>
+    <string name="locked_body">Hubo 5 intentos fallidos. Podrás volver a intentarlo en %1$s.</string>
+    <string name="locked_recover">Recuperar contraseña</string>
+
+    <!-- 1c · Quick sign-in -->
+    <string name="quick_title">Ingresa más rápido</string>
+    <string name="quick_body">La próxima vez usa Face ID o tu huella en vez de la contraseña. Puedes cambiarlo en Ajustes.</string>
+    <string name="quick_privacy">Tu rostro o huella nunca salen del teléfono. La app solo recibe la confirmación.</string>
+    <string name="quick_activate">Activar ingreso rápido</string>
+    <string name="quick_activating">Activando…</string>
+
+    <!-- 1c-e1 · Quick sign-in unavailable -->
+    <string name="quick_unavailable_title">Face ID o huella no están configurados</string>
+    <string name="quick_unavailable_body">Configura Face ID o huella en los ajustes del teléfono para usar LumeMedLink.</string>
+    <string name="quick_unavailable_settings">Abrir ajustes del teléfono</string>
+    <string name="quick_unavailable_restart">Volver al inicio</string>
+
+    <!-- 2 · Create account -->
+    <string name="sign_up_step_data">Tus datos</string>
+    <string name="sign_up_step_password">Contraseña</string>
+    <string name="sign_up_step_phone">Verificar teléfono</string>
+    <string name="sign_up_step_of">Paso %1$d de %2$d · %3$s</string>
+    <string name="sign_up_data_title">Tus datos</string>
+    <string name="sign_up_data_body">Tu RUT es tu identificador. El correo y el teléfono son solo para contactarte.</string>
+    <string name="sign_up_rut_taken">Ya existe una cuenta con este RUT.</string>
+    <string name="sign_up_rut_taken_title">¿Es tuya?</string>
+    <string name="sign_up_rut_taken_body">Ingresa con tu contraseña o recupérala. Si no creaste esta cuenta, avísanos.</string>
+    <string name="sign_up_password_title">Crea tu contraseña</string>
+    <string name="sign_up_password_body">La usarás junto a tu RUT para ingresar.</string>
+    <string name="sign_up_terms_title">Términos de uso</string>
+    <string name="sign_up_terms_statement">Acepto los términos de uso</string>
+    <string name="sign_up_data_use_title">Ley 21.719</string>
+    <string name="sign_up_data_use_statement">Autorizo el uso de mis datos de contacto según la Ley 21.719</string>
+    <string name="sign_up_required">obligatorio</string>
+    <string name="sign_up_code_title">Verifica tu teléfono</string>
+    <string name="sign_up_code_body">Te enviamos un código de 6 dígitos al %1$s.</string>
+    <string name="sign_up_code_resend_in">¿No te llegó? Reenviar en %1$s</string>
+    <string name="sign_up_code_resend">¿No te llegó? Reenviar</string>
+    <plurals name="code_wrong_attempts">
+        <item quantity="one">Código incorrecto. Te queda %1$d intento.</item>
+        <item quantity="other">Código incorrecto. Te quedan %1$d intentos.</item>
+    </plurals>
+    <string name="sign_up_create">Crear cuenta</string>
+    <string name="sign_up_creating">Creando tu cuenta…</string>
+    <string name="code_expired_title">El código venció</string>
+    <string name="code_expired_body">Los códigos duran 10 minutos. Pide uno nuevo: llega en segundos.</string>
+    <string name="code_expired_resend">Enviar un código nuevo</string>
+    <string name="code_expired_change_phone">Cambiar el teléfono</string>
+    <string name="sign_up_done_title">¡Listo, %1$s!</string>
+    <string name="sign_up_done_body">Tu cuenta está creada y tu teléfono verificado.</string>
+    <string name="sign_up_done_verified">Verificada</string>
+
+    <!-- 3 · Recover password -->
+    <string name="recovery_title">Recupera tu contraseña</string>
+    <string name="recovery_body">Ingresa tu RUT y te enviaremos un código al teléfono registrado.</string>
+    <string name="recovery_send">Enviar código</string>
+    <string name="recovery_sending">Enviando…</string>
+    <string name="recovery_code_title">Revisa tu teléfono</string>
+    <string name="recovery_code_body">Si el RUT tiene una cuenta, enviamos un código de 6 dígitos al teléfono registrado.</string>
+    <string name="recovery_code_expires_in">Vence en %1$s</string>
+    <string name="recovery_verifying">Verificando…</string>
+    <string name="recovery_new_title">Nueva contraseña</string>
+    <string name="recovery_new_body">Debe ser distinta a la anterior.</string>
+    <string name="recovery_new_reused">Debe ser distinta a la anterior.</string>
+    <string name="recovery_save">Guardar contraseña</string>
+    <string name="recovery_saving">Guardando…</string>
+    <string name="recovery_done_title">Contraseña actualizada</string>
+    <string name="recovery_done_body">Cerramos las sesiones abiertas en otros dispositivos. Ingresa con tu nueva contraseña.</string>
+    <string name="recovery_done_action">Ir a ingresar</string>
+
+    <!-- 4 · Doctor link -->
+    <string name="doctor_link_title">Vincula tu cuenta de médico</string>
+    <string name="doctor_link_body">En LumeMed, abre Configuración › LumeMedLink y muestra el código.</string>
+    <string name="doctor_link_field">Código de vinculación</string>
+    <string name="doctor_link_placeholder">K7Q2M9XA</string>
+    <string name="doctor_link_action">Vincular</string>
+    <string name="doctor_link_running">Buscando tu cuenta…</string>
+    <string name="doctor_spent_title">Este código ya no sirve</string>
+    <string name="doctor_spent_body">Venció o ya se usó. Cada código dura 10 minutos y sirve una sola vez.</string>
+    <string name="doctor_spent_hint">Genera un código nuevo en LumeMed › Configuración › LumeMedLink.</string>
+    <string name="doctor_spent_retry">Escribir otro código</string>
+    <string name="doctor_confirm_title">¿Eres tú?</string>
+    <string name="doctor_confirm_body">Confirma que esta es tu cuenta de LumeMed antes de vincularla.</string>
+    <string name="doctor_confirm_rut">RUT %1$s</string>
+    <string name="doctor_confirm_verified">Prestador verificado en LumeMed</string>
+    <string name="doctor_confirm_scope">Aquí verás tu perfil público, tu agenda en forma simple y tus pacientes como contactos. Nunca datos clínicos: eso sigue solo en LumeMed.</string>
+    <string name="doctor_confirm_yes">Sí, soy yo</string>
+    <string name="doctor_confirm_linking">Vinculando…</string>
+    <string name="doctor_confirm_no">No soy yo</string>
+    <string name="doctor_unverified_title">Tu cuenta aún está en verificación</string>
+    <string name="doctor_unverified_body">LumeMed está validando tu registro de prestador. Te avisaremos cuando puedas vincularla.</string>
+    <string name="doctor_linked_title">Cuenta vinculada</string>
+    <string name="doctor_linked_body">%1$s, ya puedes gestionar tu perfil y ver tu agenda desde el teléfono.</string>
+    <string name="doctor_linked_profile">Tu perfil público</string>
+    <string name="doctor_linked_profile_body">Foto, especialidad y contacto</string>
+    <string name="doctor_linked_agenda">Tu agenda simple</string>
+    <string name="doctor_linked_agenda_body">Citas del día y la semana</string>
+    <string name="doctor_linked_patients">Tus pacientes</string>
+    <string name="doctor_linked_patients_body">Como lista de contactos</string>
+    <string name="doctor_linked_start">Empezar</string>
+
+    <!-- Main app, pending -->
+    <string name="pending_patient_title">App del paciente</string>
+    <string name="pending_doctor_title">Vista del médico</string>
+    <string name="pending_body">Esta parte de la app todavía no está construida.</string>
+    <string name="pending_restart">Volver al inicio</string>
+
+    <!-- Lock screen (session) -->
+    <string name="unlock_title">Hola de nuevo</string>
+    <string name="unlock_body">Usa tu huella o tu rostro para volver a entrar.</string>
+    <string name="unlock_action">Ingresar</string>
+    <string name="unlock_use_password">Usar contraseña</string>
+    <string name="unlock_not_you">¿No eres tú?</string>
+    <string name="unlock_change_account">Cambiar de cuenta</string>
+    <string name="unlock_try_again">Inténtalo de nuevo.</string>
+    <plurals name="unlock_attempts_left">
+        <item quantity="one">Te queda %1$d intento.</item>
+        <item quantity="other">Te quedan %1$d intentos.</item>
+    </plurals>
+
+    <!-- Home placeholder (session) -->
+    <string name="home_title">Inicio</string>
+    <string name="home_sign_out">Cerrar sesión</string>
+</resources>

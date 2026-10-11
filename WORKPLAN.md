@@ -43,6 +43,9 @@
   con placeholder sin estilo.
   **2026-10-07:** la UI está construida, copiada del flujo de LumeMed (ADR-0043), sobre un gateway sin conectar;
   conectarlo es la tarea `0028`, en FREEZE hasta que haya backend desplegado.
+  **2026-10-11:** el autor entregó el paquete de diseño y su acceso reemplaza al de LumeMed (ADR-0044): las
+  pantallas del paquete contra un guion con la forma del diseño, sin sesión, todo texto localizado (ADR-0045).
+  La tarea es la `0029`; qué modelo de acceso del paciente gana sigue abierto (PROGRESS, decisiones abiertas).
 - **S1.2 · Checklist de plataforma del §8.** FLAG_SECURE + cover iOS, `allowBackup=false` +
   `dataExtractionRules`, networkSecurityConfig, ATS. Verificado en device, no sólo declarado.
 - **S1.3 · Agenda (lectura).** Las citas del médico. Sin motivo clínico en ningún DTO (ADR-0001 se

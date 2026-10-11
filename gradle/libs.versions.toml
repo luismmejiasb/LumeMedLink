@@ -52,6 +52,10 @@ androidx-test-core = { module = "androidx.test:core", version = "1.7.0" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+# Localized strings (ADR-0045): every user-facing text is a resource, Spanish base + English. Not a new
+# artifact — LumeUIComposer already brings it in, same group and version; declared because this module now
+# owns resources of its own.
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 # The design system (ADR-0033). NO VERSION, on purpose: settings.gradle.kts substitutes this
 # coordinate with the sibling checkout (a composite build) until the kit's first tag, and a version
 # here would be a number nothing resolves against.

@@ -17,9 +17,19 @@ import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.session.LockOutcome
-import com.luismejias.lumemedlink.features.auth.flow.AuthCopy
-import com.luismejias.lumemedlink.features.auth.flow.AuthPrimaryButton
+import com.luismejias.lumemedlink.features.auth.flow.AccessPrimaryButton
+import com.luismejias.lumemedlink.features.auth.flow.AccessText
 import com.luismejias.lumemedlink.features.auth.flow.StepOutcome
+import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.unlock_action
+import com.luismejias.lumemedlink.resources.unlock_attempts_left
+import com.luismejias.lumemedlink.resources.unlock_body
+import com.luismejias.lumemedlink.resources.unlock_change_account
+import com.luismejias.lumemedlink.resources.unlock_not_you
+import com.luismejias.lumemedlink.resources.unlock_title
+import com.luismejias.lumemedlink.resources.unlock_try_again
+import com.luismejias.lumemedlink.resources.unlock_use_password
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * What a lock outcome means on this screen. Pulled out so a test can reach it: the attempts left are the
@@ -28,8 +38,8 @@ import com.luismejias.lumemedlink.features.auth.flow.StepOutcome
 internal fun stepOutcomeFor(outcome: LockOutcome): StepOutcome = when (outcome) {
     LockOutcome.Unlocked -> StepOutcome.Advanced
     is LockOutcome.StillLocked -> when (val left = outcome.remainingAttempts) {
-        null -> StepOutcome.Retry(AuthCopy.UNLOCK_TRY_AGAIN)
-        else -> StepOutcome.Rejected(AuthCopy.attemptsLeft(left))
+        null -> StepOutcome.Retry(AccessText.Plain(Res.string.unlock_try_again))
+        else -> StepOutcome.Rejected(AccessText.Counted(Res.plurals.unlock_attempts_left, left))
     }
     // The shell ends the session; the button only needs to stop.
     is LockOutcome.SessionEnded -> StepOutcome.Blocked
@@ -58,20 +68,20 @@ internal fun UnlockScreen(
             LumeStack(spacing = { large }) {
                 LumeStack(spacing = { small }) {
                     LumeText(
-                        text = AuthCopy.UNLOCK_TITLE,
+                        text = stringResource(Res.string.unlock_title),
                         style = LumeTextStyle.HeadingLarge,
                         alignment = LumeTextAlignment.Center,
                     )
                     LumeText(
-                        text = AuthCopy.UNLOCK_BODY,
+                        text = stringResource(Res.string.unlock_body),
                         color = LumeTextColor.Secondary,
                         alignment = LumeTextAlignment.Center,
                     )
                 }
                 LumeIconTile(icon = LumeIcon.Shield, size = LumeIconTileSize.Large)
-                AuthPrimaryButton(
-                    title = AuthCopy.UNLOCK_ACTION,
-                    loadingMessage = AuthCopy.UNLOCK_ACTION,
+                AccessPrimaryButton(
+                    title = stringResource(Res.string.unlock_action),
+                    loadingMessage = stringResource(Res.string.unlock_action),
                     enabled = true,
                     retryEpoch = retryEpoch,
                     run = {
@@ -84,15 +94,15 @@ internal fun UnlockScreen(
                         stepOutcomeFor(outcome)
                     },
                 )
-                LumeLink(title = AuthCopy.UNLOCK_USE_PASSWORD, onClick = onUsePassword)
+                LumeLink(title = stringResource(Res.string.unlock_use_password), onClick = onUsePassword)
                 LumeStack(spacing = { xSmall }) {
                     LumeText(
-                        text = AuthCopy.UNLOCK_NOT_YOU,
+                        text = stringResource(Res.string.unlock_not_you),
                         style = LumeTextStyle.Caption,
                         color = LumeTextColor.Secondary,
                     )
                     LumeLink(
-                        title = AuthCopy.UNLOCK_CHANGE_ACCOUNT,
+                        title = stringResource(Res.string.unlock_change_account),
                         size = LumeLinkSize.Caption,
                         onClick = onChangeAccount,
                     )
