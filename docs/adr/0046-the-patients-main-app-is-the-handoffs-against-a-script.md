@@ -43,10 +43,10 @@ Two contract facts shape the screens and are not the design's:
 1. **No bell and no profile disc in Inicio's header, no calendar disc in Mis citas'**: `LumeNavBar` has no
    trailing slot, deliberately (phone-first), and this app writes no UI of its own. The author decides whether
    the kit grows one or the design moves them.
-2. **The «Próxima cita» card is the kit's accent card** — a tinted wash with an accent line — where the design
-   fills it with the accent and white text. A filled accent card would be a kit addition.
+2. ~~The «Próxima cita» card is the kit's accent card~~ — closed 2026-10-11: the author authorised the kit's solid
+   accent card and Inicio uses it.
 3. **Rating stars are a list row** («¿Cómo fue tu atención?» with a star) until the kit has a rating control;
-   the rating flow (f5) needs one.
+   the rating flow (f5) needs one. Showing a rating is the kit's `LumeRating` since 2026-10-11; choosing one is not.
 4. **«Correo» in Mis médicos shows the address and does nothing**: handing it to the mail app is Android's send
    intent, one of the doors ADR-0007 closes without exceptions (`check-forbidden-patterns` P2). Opening that door
    for an address with no attachment is the author's call. «Llamar» opens the dialer with the number; it does not
@@ -61,9 +61,10 @@ Two contract facts shape the screens and are not the design's:
    and a2: the contract has no coverage on a professional and books without one. «Motivo de la consulta» in a2:
    removed by the author, and a clinical reason has no place here (ADR-0001). «¿Ya sabes a quién buscas?» in p2:
    the design has no screen for a search by name, though the contract takes a `name`.
-8. **a1 draws only free hours.** Availability returns no taken ones, so the design's struck-out hours are not
-   drawn; an hour the patient already holds elsewhere is left out with a line naming the clash. The days are the
-   kit's chips over the next month, without the month and year menus.
+8. **a1 draws no taken hours.** Availability returns only free ones, so the design's struck-out hours are not
+   drawn. Since 2026-10-11 the rest is the design's, from the kit: the month and year menus, the day strip with the
+   days without hours refused, and an hour the patient already holds drawn as «Tu cita» with a line naming the
+   clash.
 9. **Rating, its count and the number of visits** in p3 come from the script (request `0008` §4); filtering and
    sorting run over what the search returned.
 

@@ -66,6 +66,11 @@ transición del gif. El diff medido (fondo de página, título centrado, pesos, 
 callout lavado, alerta centrada, chips de acento, filas etiqueta-sobre-valor) se le pasó a la sesión del kit. La app,
 por su lado, usa `LumeAvatar` para los médicos y saca las listas de una fila que duplican la sangría.
 
+Ese mismo día el kit entregó los ocho lotes, más el avatar de fila (también autorizado por el autor), y la app los
+cableó. Lo que queda abierto: el título raíz en 30 bold (el kit usa 28 semibold; un rol tipográfico nuevo espera al
+autor), y los detalles que se le devolvieron al kit tras la captura (tinta blanca dentro de la tarjeta sólida, ancho
+de los días, el punto medio del chip de filtros, el campo de búsqueda sin título y el tile lavado de p2).
+
 ## Qué NO hacer
 
 - No guardar en el teléfono las búsquedas recientes ni nada leído: online-only (§0), y el pedido `0008` pregunta
