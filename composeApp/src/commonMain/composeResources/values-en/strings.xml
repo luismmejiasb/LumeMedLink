@@ -235,7 +235,7 @@
     <string name="status_cancelled">Cancelled</string>
     <string name="home_greeting">Hi, %1$s</string>
     <string name="home_notices">Notifications</string>
-    <string name="home_notices_unread">Notifications, something new</string>
+    <string name="home_notices_new">New updates</string>
     <string name="home_profile">Your profile</string>
     <string name="home_next">Next appointment</string>
     <string name="home_next_today">Next appointment · today</string>
@@ -257,7 +257,6 @@
     <string name="search_by_name_title">Already know who you’re looking for?</string>
     <string name="search_by_name_body">Search for a doctor by name</string>
     <string name="appointments_title">My appointments</string>
-    <string name="appointments_upcoming">Upcoming · %1$d</string>
     <string name="appointments_upcoming_plain">Upcoming</string>
     <string name="appointments_past">Past</string>
     <string name="appointments_cancelled">Cancelled</string>

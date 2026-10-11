@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The handoff's app mark (02-Assets/marca/lumemedlink-icon.svg), as a vector every target reads. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="132dp"
+    android:height="132dp"
+    android:viewportWidth="132"
+    android:viewportHeight="132">
+    <path
+        android:fillColor="#3E63DD"
+        android:pathData="M30,0 H102 A30,30 0 0 1 132,30 V102 A30,30 0 0 1 102,132 H30 A30,30 0 0 1 0,102 V30 A30,30 0 0 1 30,0 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66,20 L104,35 V69 C104,94 87,110 66,116 C45,110 28,94 28,69 V35 Z" />
+    <path
+        android:fillColor="#3E63DD"
+        android:pathData="M53,42 L57,42 A4,4 0 0 1 61,46 L61,74 A4,4 0 0 0 65,78 L85,78 A4,4 0 0 1 89,82 L89,86 A4,4 0 0 1 85,90 L53,90 A4,4 0 0 1 49,86 L49,46 A4,4 0 0 1 53,42 Z" />
+    <path
+        android:fillColor="#91A8F2"
+        android:pathData="M73,48 H77 A3,3 0 0 1 80,51 V69 A3,3 0 0 1 77,72 H73 A3,3 0 0 1 70,69 V51 A3,3 0 0 1 73,48 Z" />
+    <path
+        android:fillColor="#91A8F2"
+        android:pathData="M66,55 H84 A3,3 0 0 1 87,58 V62 A3,3 0 0 1 84,65 H66 A3,3 0 0 1 63,62 V58 A3,3 0 0 1 66,55 Z" />
+</vector>

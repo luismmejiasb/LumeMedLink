@@ -240,7 +240,7 @@
     <string name="status_cancelled">Cancelada</string>
     <string name="home_greeting">Hola, %1$s</string>
     <string name="home_notices">Notificaciones</string>
-    <string name="home_notices_unread">Notificaciones, hay novedades</string>
+    <string name="home_notices_new">Hay novedades</string>
     <string name="home_profile">Tu perfil</string>
     <string name="home_next">Próxima cita</string>
     <string name="home_next_today">Próxima cita · hoy</string>
@@ -262,7 +262,6 @@
     <string name="search_by_name_title">¿Ya sabes a quién buscas?</string>
     <string name="search_by_name_body">Busca al médico por nombre</string>
     <string name="appointments_title">Mis citas</string>
-    <string name="appointments_upcoming">Próximas · %1$d</string>
     <string name="appointments_upcoming_plain">Próximas</string>
     <string name="appointments_past">Pasadas</string>
     <string name="appointments_cancelled">Canceladas</string>

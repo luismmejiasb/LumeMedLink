@@ -18,14 +18,13 @@ import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeEyebrow
-import cl.lume.uicomposer.components.LumeIconTile
-import cl.lume.uicomposer.components.LumeIconTileEmphasis
-import cl.lume.uicomposer.components.LumeIconTileSize
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
+import cl.lume.uicomposer.components.LumeNavBar
+import cl.lume.uicomposer.components.LumeNavBarAction
 import cl.lume.uicomposer.components.LumeRatingInput
 import cl.lume.uicomposer.components.LumeRatingInputSize
 import cl.lume.uicomposer.components.LumeStack
@@ -58,17 +57,22 @@ import com.luismejias.lumemedlink.resources.home_empty_title
 import com.luismejias.lumemedlink.resources.home_greeting
 import com.luismejias.lumemedlink.resources.home_next
 import com.luismejias.lumemedlink.resources.home_next_today
+import com.luismejias.lumemedlink.resources.home_notices
+import com.luismejias.lumemedlink.resources.home_notices_new
+import com.luismejias.lumemedlink.resources.home_profile
 import com.luismejias.lumemedlink.resources.home_rate_title
 import com.luismejias.lumemedlink.resources.home_waiting
+import com.luismejias.lumemedlink.resources.lumemedlink_icon
 import com.luismejias.lumemedlink.resources.rate_label
 import com.luismejias.lumemedlink.resources.rate_none
 import com.luismejias.lumemedlink.resources.rate_value
 import com.luismejias.lumemedlink.resources.search_doctor
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Inicio (p1, e7). PROVISIONAL deviation (ADR-0046): the bell and the profile disc of the design's header wait
- * for the kit (LumeNavBar has no trailing slot, on purpose). The hero card is the kit's solid accent card.
+ * Inicio (p1, e7). The header is the kit's brand bar with the bell and the profile disc; the hero card is the kit's
+ * solid accent card.
  */
 @Composable
 internal fun HomeScreen(
@@ -78,12 +82,16 @@ internal fun HomeScreen(
     onOpenAppointment: (PatientAppointment) -> Unit,
     onRate: (RatingPrompt, Int) -> Unit,
     onSearch: () -> Unit,
+    onNotices: () -> Unit,
+    onProfile: () -> Unit,
 ) {
     val load by model.state.collectAsState()
     CareLoadView(load, onRetry = model::refresh, standalone = true) { home ->
-        LumeContainer(scroll = LumeContainerScroll.Scrollable) {
+        LumeContainer(
+            scroll = LumeContainerScroll.Scrollable,
+            topBar = { HomeBar(home, onNotices, onProfile) },
+        ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
-                HomeBrand()
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
                     LumeText(text = longDateText(home.today), color = LumeTextColor.Secondary)
                     LumeText(
@@ -134,13 +142,27 @@ internal fun HomeScreen(
     }
 }
 
-/** PROVISIONAL (ADR-0044, deviation 6): the kit's shield and the name, until the wordmark's SVG. */
+/**
+ * p1's header: the app's mark and name, then the bell and the patient's initials. PROVISIONAL (ADR-0044, deviation 6):
+ * the name is the kit's text in one colour until the handoff's whole logotype arrives as artwork.
+ */
 @Composable
-private fun HomeBrand() {
-    LumeStack(axis = LumeStackAxis.Horizontal, alignment = LumeStackAlignment.Center, spacing = { small }) {
-        LumeIconTile(icon = LumeIcon.Shield, emphasis = LumeIconTileEmphasis.Solid, size = LumeIconTileSize.Card)
-        LumeText(text = stringResource(Res.string.app_name), style = LumeTextStyle.HeadingSmall)
-    }
+private fun HomeBar(home: HomeContent, onNotices: () -> Unit, onProfile: () -> Unit) {
+    val name = stringResource(Res.string.app_name)
+    LumeNavBar(
+        brand = painterResource(Res.drawable.lumemedlink_icon),
+        brandDescription = name,
+        brandName = name,
+        actions = listOf(
+            LumeNavBarAction.Glyph(
+                LumeIcon.Bell,
+                stringResource(Res.string.home_notices),
+                unread = if (home.unreadNotices) stringResource(Res.string.home_notices_new) else null,
+                onClick = onNotices,
+            ),
+            LumeNavBarAction.Initials(home.initials, stringResource(Res.string.home_profile), onClick = onProfile),
+        ),
+    )
 }
 
 @Composable

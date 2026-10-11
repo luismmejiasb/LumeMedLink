@@ -115,6 +115,8 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
                     onOpenAppointment = {},
                     onRate = { _, _ -> },
                     onSearch = { tabs.show(PatientTab.SEARCH) },
+                    onNotices = {},
+                    onProfile = { tabs.show(PatientTab.SETTINGS) },
                 )
                 PatientTab.SEARCH -> SearchHost(search, onBooked)
                 PatientTab.APPOINTMENTS -> AppointmentsScreen(

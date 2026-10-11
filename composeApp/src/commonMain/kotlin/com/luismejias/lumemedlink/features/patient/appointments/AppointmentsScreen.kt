@@ -56,7 +56,6 @@ import com.luismejias.lumemedlink.resources.appointments_empty_upcoming_body
 import com.luismejias.lumemedlink.resources.appointments_past
 import com.luismejias.lumemedlink.resources.appointments_requested_note
 import com.luismejias.lumemedlink.resources.appointments_title
-import com.luismejias.lumemedlink.resources.appointments_upcoming
 import com.luismejias.lumemedlink.resources.appointments_upcoming_plain
 import com.luismejias.lumemedlink.resources.appointments_window
 import com.luismejias.lumemedlink.resources.schedule_title
@@ -97,11 +96,8 @@ internal fun AppointmentsScreen(
             },
         ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
-                val upcomingLabel = if (content.upcoming.isEmpty()) {
-                    stringResource(Res.string.appointments_upcoming_plain)
-                } else {
-                    stringResource(Res.string.appointments_upcoming, content.upcoming.size)
-                }
+                // Three tabs leave no room for a count (e8 draws «Próximas» bare); the tab bar's badge carries it.
+                val upcomingLabel = stringResource(Res.string.appointments_upcoming_plain)
                 val pastLabel = stringResource(Res.string.appointments_past)
                 val cancelledLabel = stringResource(Res.string.appointments_cancelled)
                 LumeSegmentedControl(

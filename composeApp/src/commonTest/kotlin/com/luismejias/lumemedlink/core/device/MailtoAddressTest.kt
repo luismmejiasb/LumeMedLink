@@ -15,7 +15,7 @@ class MailtoAddressTest {
     fun nothingThatOpensAQueryAFragmentOrASecondRecipientPasses() {
         listOf(
             "consulta@lyon.example?subject=hola",
-            "consulta@lyon.example?attach=/sdcard/receta.pdf",
+            "consulta@lyon.example?attach=/sdcard/archivo.pdf",
             "consulta@lyon.example&body=x",
             "consulta@lyon.example#x",
             "consulta@lyon.example,otro@x.example",
