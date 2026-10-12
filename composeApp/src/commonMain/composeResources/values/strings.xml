@@ -31,7 +31,7 @@
     <string name="field_second_name">Segundo nombre</string>
     <string name="field_first_surname">Primer apellido</string>
     <string name="field_second_surname">Segundo apellido</string>
-    <string name="field_optional">opcional</string>
+    <string name="field_optional">Opcional</string>
     <string name="field_name_required">Completa este campo.</string>
     <string name="field_mobile">Teléfono celular</string>
     <string name="field_mobile_placeholder">+56 9 1234 5678</string>

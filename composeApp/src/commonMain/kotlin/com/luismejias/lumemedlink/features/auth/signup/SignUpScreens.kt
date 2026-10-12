@@ -195,7 +195,7 @@ internal fun SignUpProfileScreen(
                     }
                 }
             } else {
-                // The names in four, the second of each optional (the author, 2026-10-12).
+                // The names in four, the second of each optional and saying so inside (the author, 2026-10-12).
                 val optional = stringResource(Res.string.field_optional)
                 LumeEqualRow {
                     SensitiveTextField(
@@ -212,8 +212,7 @@ internal fun SignUpProfileScreen(
                         onValueChange = model::secondNameChanged,
                         purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                         label = stringResource(Res.string.field_second_name),
-                        placeholder = "",
-                        labelNote = optional,
+                        placeholder = optional,
                         submit = LumeFieldSubmit.Next,
                     )
                 }
@@ -232,8 +231,7 @@ internal fun SignUpProfileScreen(
                         onValueChange = model::secondSurnameChanged,
                         purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                         label = stringResource(Res.string.field_second_surname),
-                        placeholder = "",
-                        labelNote = optional,
+                        placeholder = optional,
                         submit = LumeFieldSubmit.Next,
                     )
                 }
