@@ -123,8 +123,9 @@ internal enum class RatingAspect {
 
 /**
  * A rating the patient sends (f5). [other] is «Otro»'s short title (40 characters at most) and [comment]
- * «Cuéntanos más»: the patient's words, published without their name. PROVISIONAL (ADR-0046): the author chose the design's free text
- * for this mock; the contract the backend decided carries stars and closed reasons only (request 0008).
+ * «Cuéntanos más»: the patient's words, published without their name. PROVISIONAL (ADR-0046): the author chose the
+ * design's free text for this mock; the contract the backend decided carries stars and closed reasons only (request
+ * 0008).
  */
 internal data class RatingDraft(
     val stars: Int,
