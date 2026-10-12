@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeBrandInk
 import cl.lume.uicomposer.components.LumeBrandJoiner
 import cl.lume.uicomposer.components.LumeBrandLockup
+import cl.lume.uicomposer.components.LumeBrandLockupSize
 import cl.lume.uicomposer.components.LumeBrandRun
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
@@ -91,7 +92,7 @@ internal fun AccessBack(onBack: (() -> Unit)?) {
  * «Link», as the handoff draws it (02-Assets/marca). A reader hears the name once.
  */
 @Composable
-internal fun AccessBrand() {
+internal fun AccessBrand(size: LumeBrandLockupSize = LumeBrandLockupSize.Regular) {
     LumeBrandLockup(
         mark = painterResource(Res.drawable.lumemedlink_icon),
         wordmark = listOf(
@@ -102,6 +103,7 @@ internal fun AccessBrand() {
         joiner = LumeBrandJoiner(painterResource(Res.drawable.simbolo_enlace), after = 1),
         contentDescription = stringResource(Res.string.app_name),
         modifier = Modifier.fillMaxWidth(),
+        size = size,
     )
 }
 

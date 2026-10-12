@@ -33,6 +33,7 @@ import com.luismejias.lumemedlink.core.input.OneTimeCodeField
 import com.luismejias.lumemedlink.core.input.SensitiveFieldFormat
 import com.luismejias.lumemedlink.core.input.SensitiveFieldPurpose
 import com.luismejias.lumemedlink.core.input.SensitiveTextField
+import com.luismejias.lumemedlink.core.screen.richRuns
 import com.luismejias.lumemedlink.core.session.Clock
 import com.luismejias.lumemedlink.features.auth.flow.AccessBack
 import com.luismejias.lumemedlink.features.auth.flow.AccessHeader
@@ -80,7 +81,6 @@ import com.luismejias.lumemedlink.resources.sign_up_creating
 import com.luismejias.lumemedlink.resources.sign_up_data_body
 import com.luismejias.lumemedlink.resources.sign_up_data_title
 import com.luismejias.lumemedlink.resources.sign_up_data_use_statement
-import com.luismejias.lumemedlink.resources.sign_up_data_use_title
 import com.luismejias.lumemedlink.resources.sign_up_done_body
 import com.luismejias.lumemedlink.resources.sign_up_done_title
 import com.luismejias.lumemedlink.resources.sign_up_done_verified
@@ -95,7 +95,6 @@ import com.luismejias.lumemedlink.resources.sign_up_step_of
 import com.luismejias.lumemedlink.resources.sign_up_step_password
 import com.luismejias.lumemedlink.resources.sign_up_step_phone
 import com.luismejias.lumemedlink.resources.sign_up_terms_statement
-import com.luismejias.lumemedlink.resources.sign_up_terms_title
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -263,19 +262,21 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
                 onRepeated = model::repeatedChanged,
                 passwordLabel = stringResource(Res.string.field_password),
             )
+            // One line each, the link inside, as 2b draws it. The links open nothing yet: there is no terms document
+            // to open (ADR-0044, deviation 12).
             LumeConsentRow(
                 granted = state.acceptedTerms,
                 onGrantedChange = model::termsChanged,
-                title = stringResource(Res.string.sign_up_terms_title),
-                statement = stringResource(Res.string.sign_up_terms_statement),
-                requirement = required.takeIf { state.consentRequired && !state.acceptedTerms },
+                text = stringResource(Res.string.sign_up_terms_statement).richRuns(onLink = {}),
+                requirement = required,
+                missing = state.consentRequired && !state.acceptedTerms,
             )
             LumeConsentRow(
                 granted = state.acceptedDataUse,
                 onGrantedChange = model::dataUseChanged,
-                title = stringResource(Res.string.sign_up_data_use_title),
-                statement = stringResource(Res.string.sign_up_data_use_statement),
-                requirement = required.takeIf { state.consentRequired && !state.acceptedDataUse },
+                text = stringResource(Res.string.sign_up_data_use_statement).richRuns(onLink = {}),
+                requirement = required,
+                missing = state.consentRequired && !state.acceptedDataUse,
             )
         }
     }

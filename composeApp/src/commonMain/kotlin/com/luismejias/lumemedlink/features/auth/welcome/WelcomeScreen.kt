@@ -3,6 +3,7 @@ package com.luismejias.lumemedlink.features.auth.welcome
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import cl.lume.uicomposer.components.LumeBrandLockupSize
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
@@ -12,6 +13,8 @@ import cl.lume.uicomposer.components.LumeCarouselItem
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeLink
+import cl.lume.uicomposer.components.LumeLinkSize
+import cl.lume.uicomposer.components.LumeLinkTone
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -55,14 +58,20 @@ internal fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit, on
                     onClick = onSignIn,
                 )
                 LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Center) {
-                    LumeLink(title = stringResource(Res.string.welcome_doctor_link), onClick = onDoctor)
+                    LumeLink(
+                        title = stringResource(Res.string.welcome_doctor_link),
+                        size = LumeLinkSize.Small,
+                        tone = LumeLinkTone.Quiet,
+                        icon = LumeIcon.Stethoscope,
+                        onClick = onDoctor,
+                    )
                 }
             }
         },
     ) {
         val pageOf = pageDescriber(count = WELCOME_CARDS)
         LumeStack(spacing = { xLarge }) {
-            AccessBrand()
+            AccessBrand(size = LumeBrandLockupSize.Large)
             LumeCarousel(
                 items = listOf(
                     LumeCarouselItem(

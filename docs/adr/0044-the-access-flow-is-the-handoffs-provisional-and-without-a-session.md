@@ -61,6 +61,8 @@ the patient access model later (2026-10-11).
 11. **One screen the design does not draw: «Tu cuenta aún no está enlazada a tu consulta»**, in 4b-e1's shape. The
     backend answers `not_provisioned` to a doctor's account no practice has linked (its ADR-0090), and the author asked
     for the state in the mock (2026-10-12). The script reaches it with the code `S1NENL4C`.
+12. **2b's links open nothing yet**: «términos de uso» and «Ley 21.719» are drawn as links, as the design does, but there
+    is no terms document to open; they wait for it (legal). They stay links in 2b-e1 too, by the kit's author's call.
 
 ## Consequences
 
