@@ -77,6 +77,11 @@ Two contract facts shape the screens and are not the design's:
 13. **One calendar for every screen.** f3 and a1 mark the 17th without attention and the 18th and 19th as holidays;
     p3's sample («Mañana · 09:00», «Vie 18 · 15:30») contradicts them, so p3's next hours follow the calendar.
 14. **f4 offers three reasons, not four**: «Ya me siento mejor» is health information (ADR-0001; the author's call).
+15. **m1 says first visit or follow-up; the contract does not.** `listAgendaCards` (contract 0.103.0, request `0002`)
+    carries the channel, so a teleconsult is known, but not whether a visit is the first one. The script keeps the
+    design's three kinds.
+16. **f2's change window is in minutes; the contract's is in hours.** `cancelCutoffHours` (contract 0.102.0, request
+    `0008`) cannot say the design's «hasta 30 min antes». The script keeps minutes.
 
 ## Consequences
 

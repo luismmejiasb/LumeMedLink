@@ -72,3 +72,36 @@ la decisión quede visible en vez de heredada.
 
 Nada clínico, ni siquiera «por si acaso». Ni documentos (ADR-0007 nuestra). Ni el lado paciente,
 que tiene su propia fase.
+
+## Respuesta del backend (2026-10-12)
+
+El backend respondió en su nota `0051` (`../lumemed-cloud-platform/docs/backend-responses/0051-the-non-clinical-projection.md`),
+contrato `0.103.0` y `0.103.1`, tarea `0117`, `ADR-0089` del backend.
+
+- **El token de LumeMedLink ya no es clínico** (la mitad médica de nuestra ADR-0036). Hasta el 2026-10-12 un médico que
+  entraba por esta app recibía un token de clínico completo. Ahora el tenant de IdP de LumeMedLink alcanza sólo `/v1/me`,
+  la MFA, los dispositivos y las dos rutas de abajo; el resto responde `404`. En desarrollo, `POST /dev/token` con
+  `client: 'LINK_CLINICIAN'`.
+- **`listPatientContactCards`**: nombre, teléfono, correo y previsión, como lista cerrada. Sin ningún campo clínico, ni
+  siquiera nulo, y sin dirección.
+- **`listAgendaCards`**: la fila de la agenda sin lo que es del registro del acto, con los filtros `status` y `channel`.
+  Trae el nombre de pila y la inicial del apellido; el nombre completo se cruza por `patientId` con los contactos.
+- **T11**: los contactos conservan a la paciente con restricción de tratamiento; la agenda la excluye. Las dos rutas
+  tienen su excusa en `UNENFORCEABLE_PATIENT_ROUTES`.
+- **Sin sandbox, sin foto, sin dirección.**
+- **Abierto para el autor**: un mismo médico es probablemente otro usuario en el tenant de LumeMedLink, y cómo se enlaza
+  o se aprovisiona esa cuenta no está decidido (mientras tanto `/v1/me` puede responder `not_provisioned`). Y si el
+  clasificador debe cerrar ante un tenant que no reconoce.
+
+Choque con la maqueta (m1, ADR-0046 desviación 15): la tarjeta de agenda no trae si la visita es primera o control; sólo
+el canal dice si es teleconsulta.
+
+## Lo que decidió el autor sobre lo abierto (2026-10-12)
+
+- **La cuenta del médico se vincula desde LumeMed.** Con su sesión y su segundo factor en LumeMed, el médico genera un
+  código de un solo uso que crea su usuario en el tenant de LumeMedLink, unido al mismo profesional. No se unen cuentas
+  por coincidir el correo: un correo compartido o reasignado bastaría para tomar una cuenta de médico.
+- **Un tenant que el clasificador no reconoce se rechaza.** Un error de configuración deja a alguien afuera, jamás le da
+  un alcance que no debía tener.
+
+Sin comunicar al backend todavía: el autor decide cuándo (ver «No se le hacen más pedidos», 2026-10-11, en el pedido 0008).

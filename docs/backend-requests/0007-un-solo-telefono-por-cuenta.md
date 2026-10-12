@@ -39,3 +39,9 @@ de LumeMedLink); a la sustitución, **borra todo** y le dice a la persona qué p
 Que el dueño apruebe el teléfono nuevo antes de cerrar el otro: el autor eligió cerrar primero y avisar.
 
 Responde con el contrato (rutas, el `type` exacto, y si el aviso sale de ti o de Identity Platform).
+
+## Estado (2026-10-12)
+
+El backend enmendó su `ADR-0037` para este pedido: el teléfono se enrola solo y uno nuevo reemplaza al anterior con
+`session_superseded`. Se construye cuando el autor decida cómo se enlaza la cuenta del médico entre el tenant de LumeMed y
+el de LumeMedLink (pedido `0002`, respuesta del 2026-10-12).

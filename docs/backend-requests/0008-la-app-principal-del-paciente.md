@@ -106,3 +106,19 @@ Lo que decidió el autor sobre esa respuesta:
 - Recordatorios fijos a 24 h y 2 h antes, sólo con el consentimiento dado; el paciente no elige los tiempos.
 - Búsquedas recientes en ninguna parte (ya quitadas).
 - El pedido `0005` (geocodificación) se descartó por ahora: esta app no tiene autocompletado de direcciones construido.
+
+## Lo construido por el backend (2026-10-12, contrato 0.102.0 y 0.102.1)
+
+Nota `0050` del backend (`../lumemed-cloud-platform/docs/backend-responses/0050-what-the-patient-app-screens-draw.md`).
+
+- **La tarjeta de cita** trae `professionalId`, `locationAddress` (calle, número, `unit`, comuna y región; `null` salvo una
+  hora `IN_PERSON` en un lugar) y `cancelCutoffHours` (`0` es hasta el inicio; `null` cancela como `0` y no deja mover).
+- **El perfil** trae `rut`, de sólo lectura y por clínica.
+- **Mis médicos** lista a todo profesional que atendió, con `specialtyCode` y `phone`/`email` nulos si no comparte. Es un
+  cambio de sentido: «está en la lista» ya no significa «comparte algo». La maqueta ya mira los dos canales.
+- **Recordatorios** a 24 h y 2 h: trabajo de operador, sin cambio de contrato, sólo con el consentimiento
+  `appointment-reminders` vigente. La línea de Configuración puede quedarse.
+- Siguen pendientes las valoraciones públicas (sólo el promedio) y el buzón.
+
+Choque con la maqueta (ADR-0046 desviación 16): el plazo del contrato va en horas y el diseño dibuja «hasta 30 min antes»
+para un médico. El guion lo guarda en minutos; al conectar, 30 minutos no tiene cómo decirse.
