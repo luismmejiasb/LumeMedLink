@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeActivityIndicator
 import cl.lume.uicomposer.components.LumeButtonContent
+import cl.lume.uicomposer.components.LumeCallout
+import cl.lume.uicomposer.components.LumeCalloutSurface
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeEmptyState
@@ -21,6 +23,7 @@ import com.luismejias.lumemedlink.resources.care_offline_title
 import com.luismejias.lumemedlink.resources.care_unavailable_body
 import com.luismejias.lumemedlink.resources.care_unavailable_title
 import com.luismejias.lumemedlink.resources.common_retry
+import com.luismejias.lumemedlink.resources.offline_title
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -73,6 +76,14 @@ internal fun <T> CareLoadView(
             CareLoad.Loading -> LumeActivityIndicator(contentDescription = stringResource(Res.string.care_loading))
             is CareLoad.Failed -> {
                 val offline = load.failure == CareFailure.Offline
+                // e6: the dark band first, then the state — a reader hears the band as it appears.
+                if (offline) {
+                    LumeCallout(
+                        stringResource(Res.string.offline_title),
+                        surface = LumeCalloutSurface.Inverted,
+                        icon = LumeIcon.Wifi,
+                    )
+                }
                 LumeEmptyState(
                     look = LumeEmptyStateLook.Tiled(LumeEmptyStateTone.Error),
                     icon = if (offline) LumeIcon.Wifi else LumeIcon.Alert,
