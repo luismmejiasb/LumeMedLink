@@ -60,5 +60,5 @@ con la opción de agregar valores, que eligió el autor. Los tres nombres aterri
 correcto, porque la ruta no tiene clave de reintento.
 
 En este repo, `PlatformSecurityEventKind` ganó los tres valores y `toPlatformKind` ya no deja ningún tipo sin nombre.
-El lock reporta ahora un cambio de enrolamiento biométrico, que antes callaba. Los dos eventos de red **todavía no tienen
-emisor**: nacen en el stack, y cablearlos es trabajo propio de este repo, sin pedido pendiente.
+El lock reporta ahora un cambio de enrolamiento biométrico, que antes callaba. Los dos eventos de red los emite el stack
+desde el mismo día (`lumeHttpClient`, emisor obligatorio): el origen rechazado y el 2xx que llega como HTML.

@@ -1,5 +1,6 @@
 package com.luismejias.lumemedlink.core.networking
 
+import com.luismejias.lumemedlink.core.security.SecurityEventKind
 import com.luismejias.lumemedlink.shared.AppError
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -65,7 +66,7 @@ class LumeHttpStackTest {
     fun httpBaseUrlRefusesToBuild() {
         val engine = MockEngine { respond("never reached") }
         assertFailsWith<IllegalArgumentException> {
-            lumeHttpClient("http://api.test.lume", engine, RecordingLogSink())
+            lumeHttpClient("http://api.test.lume", engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
         }
     }
 
@@ -80,7 +81,7 @@ class LumeHttpStackTest {
                 headers = headersOf(HttpHeaders.Location, "https://evil.test/elsewhere"),
             )
         }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         val error = stackError { client.get("/v1/agenda") }
 
@@ -95,7 +96,7 @@ class LumeHttpStackTest {
     fun status401MapsToAuthExpiredAndSignalsTheProvider() = runTest {
         val engine = MockEngine { respond("", HttpStatusCode.Unauthorized) }
         val provider = FakeTokenProvider("tok-101")
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), provider)
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), provider, securityEvents = NO_SECURITY_EVENTS)
 
         val error = stackError { client.get("/v1/me") }
 
@@ -119,7 +120,7 @@ class LumeHttpStackTest {
                 """.trimIndent(),
             )
         }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         val exception = assertFailsWith<AppErrorException> { client.post("/v1/profile") }
 
@@ -133,7 +134,7 @@ class LumeHttpStackTest {
     @Test
     fun status404MapsToNotFound() = runTest {
         val engine = MockEngine { respond("", HttpStatusCode.NotFound) }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         assertIs<AppError.NotFound>(stackError { client.get("/v1/patients/absent") })
     }
@@ -141,7 +142,7 @@ class LumeHttpStackTest {
     @Test
     fun status500MapsToRetryable() = runTest {
         val engine = MockEngine { respond("", HttpStatusCode.InternalServerError) }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         val error = stackError { client.get("/v1/agenda") }
 
@@ -154,7 +155,7 @@ class LumeHttpStackTest {
         val engine = MockEngine {
             respondProblemJson(HttpStatusCode.UnprocessableEntity, body = "{not json at all")
         }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         val error = assertIs<AppError.Validation>(stackError { client.get("/v1/profile") })
         assertNull(error.problemType)
@@ -165,7 +166,7 @@ class LumeHttpStackTest {
     @Test
     fun getRetriesAreBounded() = runTest {
         val engine = MockEngine { respond("", HttpStatusCode.InternalServerError) }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         assertIs<AppError.Retryable>(stackError { client.get("/v1/agenda") })
         assertEquals(3, engine.requestHistory.size, "1 call + 2 bounded retries, never more")
@@ -178,7 +179,7 @@ class LumeHttpStackTest {
             calls += 1
             if (calls < 3) respond("", HttpStatusCode.InternalServerError) else respond("ok")
         }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         val body = client.get("/v1/agenda").bodyAsText()
 
@@ -189,7 +190,7 @@ class LumeHttpStackTest {
     @Test
     fun postNeverRetries() = runTest {
         val engine = MockEngine { respond("", HttpStatusCode.InternalServerError) }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         assertIs<AppError.Retryable>(stackError { client.post("/v1/profile") })
         assertEquals(1, engine.requestHistory.size, "a non-idempotent call must never be retried")
@@ -202,7 +203,8 @@ class LumeHttpStackTest {
         val secretToken = "tok-secret-abc123"
         val engine = MockEngine { respond("ok") }
         val sink = RecordingLogSink()
-        val client = lumeHttpClient(BASE_URL, engine, sink, FakeTokenProvider(secretToken))
+        val client =
+            lumeHttpClient(BASE_URL, engine, sink, FakeTokenProvider(secretToken), securityEvents = NO_SECURITY_EVENTS)
 
         client.get("/v1/agenda?rut=11111111-1&from=2026-01-01")
 
@@ -223,7 +225,14 @@ class LumeHttpStackTest {
     @Test
     fun anonymousClientSendsNoAuthorizationHeader() = runTest {
         val engine = MockEngine { respond("ok") }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), tokenProvider = null)
+        val client =
+            lumeHttpClient(
+                BASE_URL,
+                engine,
+                RecordingLogSink(),
+                tokenProvider = null,
+                securityEvents = NO_SECURITY_EVENTS,
+            )
 
         client.get("/v1/app-availability")
 
@@ -233,7 +242,7 @@ class LumeHttpStackTest {
     @Test
     fun everyRequestCarriesAFreshRid() = runTest {
         val engine = MockEngine { respond("ok") }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         client.get("/v1/a")
         client.get("/v1/b")
@@ -262,7 +271,7 @@ class LumeHttpStackTest {
     @Test
     fun aCancelledCallerSeesRetryableNotCancellation() = runTest {
         val engine = MockEngine { awaitCancellation() }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
         var sawError: AppError? = null
         var carriedOn = false
 
@@ -305,7 +314,7 @@ class LumeHttpStackOriginTest {
         val engine = MockEngine { respond("ok") }
         val provider = FakeTokenProvider("tok-secret-abc123")
         val sink = RecordingLogSink()
-        val client = lumeHttpClient(BASE_URL, engine, sink, provider)
+        val client = lumeHttpClient(BASE_URL, engine, sink, provider, securityEvents = NO_SECURITY_EVENTS)
 
         assertIs<AppError.Blocked>(stackError { client.get("//evil.test/steal") })
 
@@ -315,7 +324,14 @@ class LumeHttpStackOriginTest {
     @Test
     fun anAbsoluteUrlToAnotherHostIsRefused() = runTest {
         val engine = MockEngine { respond("ok") }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), FakeTokenProvider("tok-secret"))
+        val client =
+            lumeHttpClient(
+                BASE_URL,
+                engine,
+                RecordingLogSink(),
+                FakeTokenProvider("tok-secret"),
+                securityEvents = NO_SECURITY_EVENTS,
+            )
 
         assertIs<AppError.Blocked>(stackError { client.get("https://evil.test/x") })
         assertTrue(engine.requestHistory.isEmpty())
@@ -324,7 +340,7 @@ class LumeHttpStackOriginTest {
     @Test
     fun theSameHostOnAnotherPortIsAnotherOrigin() = runTest {
         val engine = MockEngine { respond("ok") }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         assertIs<AppError.Blocked>(stackError { client.get("https://api.test.lume:8443/x") })
         assertTrue(engine.requestHistory.isEmpty())
@@ -333,7 +349,7 @@ class LumeHttpStackOriginTest {
     @Test
     fun theRefusalMessageNamesNoHost() = runTest {
         val engine = MockEngine { respond("ok") }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         val thrown = assertFailsWith<AppErrorException> { client.get("https://evil.test/x") }
 
@@ -345,7 +361,7 @@ class LumeHttpStackOriginTest {
     @Test
     fun ordinaryRelativePathsStillWork() = runTest {
         val engine = MockEngine { respond("ok") }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         client.get("/v1/me")
 
@@ -358,7 +374,7 @@ class LumeHttpStackOriginTest {
         // full URL with its query, which a generic catch or a crash reporter would receive.
         val leaky = "https://api.test.lume/v1/patients/11111111-1?rut=11111111-1&name=Sintetica"
         val engine = MockEngine { throw IOException("connect failed for $leaky") }
-        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
 
         val thrown = assertFailsWith<AppErrorException> {
             client.get("/v1/patients/11111111-1?rut=11111111-1&name=Sintetica")
@@ -378,11 +394,50 @@ class LumeHttpStackOriginTest {
         // now asserted rather than described.
         val engine = MockEngine { respond("", HttpStatusCode.InternalServerError) }
         val sink = RecordingLogSink()
-        val client = lumeHttpClient(BASE_URL, engine, sink)
+        val client = lumeHttpClient(BASE_URL, engine, sink, securityEvents = NO_SECURITY_EVENTS)
 
         assertFailsWith<AppErrorException> { client.get("/v1/agenda") }
 
         assertEquals(3, sink.entries.size, "1 call + 2 bounded retries, each logged")
         assertEquals(1, sink.entries.map { it.rid }.toSet().size, "retries share the logical rid")
+    }
+
+    // ── two refusals are security events (§8.16, contract 0.101.0) ──────────────────────────────
+
+    @Test
+    fun aRefusedOriginIsToldToTheSecurityChannel() = runTest {
+        val events = RecordedSecurityEvents()
+        val client = lumeHttpClient(BASE_URL, MockEngine { respond("ok") }, RecordingLogSink(), securityEvents = events)
+
+        stackError { client.get("https://evil.test/x") }
+
+        assertEquals(listOf(SecurityEventKind.NETWORK_ORIGIN_REFUSED), events.kinds)
+    }
+
+    @Test
+    fun aSuccessThatArrivesAsHtmlIsToldToTheSecurityChannel() = runTest {
+        val events = RecordedSecurityEvents()
+        val engine = MockEngine {
+            respond("<html>hotel wifi</html>", headers = headersOf(HttpHeaders.ContentType, "text/html"))
+        }
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = events)
+
+        assertIs<AppError.Unexpected>(stackError { client.get("/v1/me") })
+
+        assertEquals(listOf(SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED), events.kinds)
+    }
+
+    @Test
+    fun anOrdinaryAnswerAndAnHttpErrorAreNotSecurityEvents() = runTest {
+        val events = RecordedSecurityEvents()
+        val engine = MockEngine { request ->
+            if (request.url.encodedPath.endsWith("missing")) respond("", HttpStatusCode.NotFound) else respond("ok")
+        }
+        val client = lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = events)
+
+        client.get("/v1/me")
+        stackError { client.get("/v1/missing") }
+
+        assertTrue(events.kinds.isEmpty(), "a 404 is the server's answer, not an attack: ${events.kinds}")
     }
 }

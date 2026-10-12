@@ -47,7 +47,7 @@ class StackLeakRegressionTest {
             delay(60_000)
             respond("never")
         }
-        val client = lumeHttpClient(BASE, engine, Sink())
+        val client = lumeHttpClient(BASE, engine, Sink(), securityEvents = NO_SECURITY_EVENTS)
 
         val thrown = runCatching {
             client.get("/v1/orgs/clinica-alemana/patients/11111111-1/appointments?rut=11111111-1") {
@@ -72,7 +72,7 @@ class StackLeakRegressionTest {
             attempts += 1
             throw IOException("connect failed")
         }
-        val client = lumeHttpClient(BASE, engine, Sink())
+        val client = lumeHttpClient(BASE, engine, Sink(), securityEvents = NO_SECURITY_EVENTS)
 
         runCatching { client.get("/v1/agenda") }
 
@@ -85,7 +85,7 @@ class StackLeakRegressionTest {
         // `clinica-alemana` matches it exactly — so an org identifier landed in every log line.
         val engine = MockEngine { respond("ok") }
         val sink = Sink()
-        val client = lumeHttpClient(BASE, engine, sink)
+        val client = lumeHttpClient(BASE, engine, sink, securityEvents = NO_SECURITY_EVENTS)
 
         client.get("/v1/orgs/clinica-alemana/appointments")
 
@@ -101,7 +101,7 @@ class StackLeakRegressionTest {
         // a caller cannot distinguish from a programming error.
         val engine = MockEngine { respond("ok") }
         val sink = Sink()
-        val client = lumeHttpClient(BASE, engine, sink)
+        val client = lumeHttpClient(BASE, engine, sink, securityEvents = NO_SECURITY_EVENTS)
 
         val thrown = runCatching { client.get("//evil.test/steal") }.exceptionOrNull() ?: fail("expected refusal")
 
@@ -123,7 +123,7 @@ class StackLeakRegressionTest {
                 headers = io.ktor.http.headersOf(io.ktor.http.HttpHeaders.ContentType, "text/html"),
             )
         }
-        val client = lumeHttpClient(BASE, engine, Sink())
+        val client = lumeHttpClient(BASE, engine, Sink(), securityEvents = NO_SECURITY_EVENTS)
 
         val thrown = runCatching {
             client.get("/v1/orgs/clinica-alemana/patients/11111111-1/appointments?rut=11111111-1")

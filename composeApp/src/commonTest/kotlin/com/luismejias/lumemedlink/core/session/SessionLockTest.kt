@@ -174,8 +174,8 @@ class SessionLockSecurityEventsTest {
     @Test
     fun everyKindBornInTheLockHasAnEmitterThere() {
         // Every kind is heard by the platform since contract 0.101.0. The two network kinds are born in
-        // the stack, not here, and have NO emitter yet — declared, not hidden. SECURE_STORE_UNREADABLE is
-        // ALSO emitted by the launch probe (app/SessionProbe.kt), which has its own test.
+        // the stack, not here: lumeHttpClient emits them, and LumeHttpStackTest keeps it. SECURE_STORE_UNREADABLE
+        // is ALSO emitted by the launch probe (app/SessionProbe.kt), which has its own test.
         val emitted = SessionEndReason.entries.map { it.securityEvent() }.toSet() +
             SecurityEventKind.SESSION_UNLOCK_FAILED
         val bornInTheNetworkStack = setOf(

@@ -1,5 +1,8 @@
 package com.luismejias.lumemedlink.core.networking
 
+import com.luismejias.lumemedlink.core.security.SECURITY_CHANNEL_TRANSPORT
+import com.luismejias.lumemedlink.core.security.SecurityEventEmitter
+import com.luismejias.lumemedlink.core.security.SecurityEventKind
 import com.luismejias.lumemedlink.shared.AppError
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
@@ -73,6 +76,12 @@ private val contractJson = Json { ignoreUnknownKeys = true }
  * (`UnwiredRefreshClient` makes no call), and the slice that wires F10 is exactly where it would.
  * The refresh call authenticates with the refresh token in its own body; it needs no bearer.
  *
+ * **Two of its refusals are security events** (§8.16, contract 0.101.0): an origin it will not send to, and a 2xx that
+ * arrived as HTML. Both are told to [securityEvents] as they happen — required, never defaulted, because a default of
+ * "nothing" is how a channel looks wired and never carries a thing (task 0018). The security channel's own client is
+ * the one exception, and it says so by passing [SECURITY_CHANNEL_TRANSPORT]: behind a captive portal, every report
+ * would otherwise be an interstitial that reports itself, for ever.
+ *
  * @param engine injected so production wires [platformHttpEngine] and tests wire MockEngine.
  */
 internal fun lumeHttpClient(
@@ -80,6 +89,7 @@ internal fun lumeHttpClient(
     engine: HttpClientEngine,
     logSink: NetworkLogSink,
     tokenProvider: TokenProvider? = null,
+    securityEvents: SecurityEventEmitter,
 ): HttpClient {
     require(baseUrl.startsWith("https://")) {
         "LumeHttpStack is https-only and fails closed: refused to build over '$baseUrl' (ADR-0004)."
@@ -116,7 +126,7 @@ internal fun lumeHttpClient(
 
         defaultRequest { url(baseUrl) }
 
-        install(lumeStackGuard(allowedOrigin, logSink, tokenProvider))
+        install(lumeStackGuard(allowedOrigin, logSink, tokenProvider, securityEvents))
 
         HttpResponseValidator {
             validateResponse { response ->
@@ -130,6 +140,7 @@ internal fun lumeHttpClient(
                 // stage, whose message embeds the full URL with its query — outside every net this
                 // stack installs, because that exception is raised at the call site.
                 if (response.contentType()?.match(ContentType.Text.Html) == true) {
+                    securityEvents.emit(SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED)
                     throw AppErrorException(AppError.Unexpected(status = response.status.value, problemType = null))
                 }
             }
@@ -155,114 +166,119 @@ internal fun lumeHttpClient(
  * the redacted log line — method/path/status/rid and NOTHING else (§8.1). EVERY attempt of a
  * retried call is logged, not only the final one; retries share the logical request's rid.
  */
-private fun lumeStackGuard(allowedOrigin: Origin, logSink: NetworkLogSink, tokenProvider: TokenProvider?) =
-    createClientPlugin("LumeStackGuard") {
-        // Transport and timeout failures are mapped HERE, and their original is dropped on the
-        // floor — message and cause chain both. Ktor's own message is
-        // `Request timeout has expired [url=https://…/patients/11111111-1?rut=11111111-1…]`: the
-        // full URL WITH its query, which is precisely what the redacted log line exists to keep
-        // out of a crash report or a generic catch (§8.1). Mapping only the HTTP statuses, as this
-        // stack did before ADR-0016, left that door open.
-        //
-        // The catch is deliberately broad: the goal is that NO engine exception escapes carrying a
-        // URL, and an exhaustive list of engine exception types is a list that goes stale. Errors
-        // still propagate (Exception, not Throwable) and cancellation is re-thrown untouched, since
-        // swallowing it would break structured concurrency (§6).
-        // SwallowedException is suppressed with its premise inverted: the rule protects you from
-        // losing an original exception, and here losing it is the requirement — the original is
-        // what carries the URL and its query. Chaining it as `cause` would defeat the whole fix.
-        @Suppress("TooGenericExceptionCaught", "SwallowedException")
-        on(Send) { request ->
-            try {
-                proceed(request)
-            } catch (timeout: HttpRequestTimeoutException) {
-                // BEFORE the CancellationException branch, and that order is the whole fix:
-                // HttpRequestTimeoutException IS a CancellationException, so rethrowing
-                // cancellation untouched let Ktor's message — which embeds the full URL with its
-                // query — reach the caller. This was ADR-0016's own headline case, still open
-                // after its fix, because the test that "covered" it threw from the engine instead
-                // of letting a real timeout fire.
-                throw AppErrorException(AppError.Retryable(status = null))
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (alreadyMapped: AppErrorException) {
-                throw alreadyMapped
-            } catch (transport: Exception) {
-                // CHARACTERISED, NOT FIXED — and the difference is written here because a confident
-                // comment about a fix that does not fire is worse than no comment at all.
-                //
-                // When the CALLER's scope dies mid-request, Ktor surfaces the engine's failure
-                // wrapped, the CancellationException branch above never sees it, and the caller
-                // receives an `AppError` for an event that is not a failure at all — measured as
-                // `Unexpected`, and the first draft of this comment said `Retryable`, which is
-                // exactly why the behaviour is pinned by a test instead of described here. An
-                // `ensureActive()` here does NOT help: this hook does not run in the caller's job,
-                // so it has nothing cancelled to observe. That was tried, and it was measured not
-                // to fire (ADR-0026); the measurement is the only reason this comment is honest,
-                // because the first two runs of that experiment were green and red for the wrong
-                // reason — a `--tests` filter that matched no test at all.
-                //
-                // The guard therefore belongs to the CALLER, where the job actually is, and it is
-                // not left to memory: `Scripts/check-cancellation-guard.sh` requires every broad
-                // catch in this codebase to call `currentCoroutineContext().ensureActive()`.
-                // `LumeHttpStackTest.aCancelledCallerSeesRetryable` pins this behaviour so that a
-                // future change to it is a decision rather than a surprise.
-                throw AppErrorException(AppError.Retryable(status = null))
-            }
+private fun lumeStackGuard(
+    allowedOrigin: Origin,
+    logSink: NetworkLogSink,
+    tokenProvider: TokenProvider?,
+    securityEvents: SecurityEventEmitter,
+) = createClientPlugin("LumeStackGuard") {
+    // Transport and timeout failures are mapped HERE, and their original is dropped on the
+    // floor — message and cause chain both. Ktor's own message is
+    // `Request timeout has expired [url=https://…/patients/11111111-1?rut=11111111-1…]`: the
+    // full URL WITH its query, which is precisely what the redacted log line exists to keep
+    // out of a crash report or a generic catch (§8.1). Mapping only the HTTP statuses, as this
+    // stack did before ADR-0016, left that door open.
+    //
+    // The catch is deliberately broad: the goal is that NO engine exception escapes carrying a
+    // URL, and an exhaustive list of engine exception types is a list that goes stale. Errors
+    // still propagate (Exception, not Throwable) and cancellation is re-thrown untouched, since
+    // swallowing it would break structured concurrency (§6).
+    // SwallowedException is suppressed with its premise inverted: the rule protects you from
+    // losing an original exception, and here losing it is the requirement — the original is
+    // what carries the URL and its query. Chaining it as `cause` would defeat the whole fix.
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
+    on(Send) { request ->
+        try {
+            proceed(request)
+        } catch (timeout: HttpRequestTimeoutException) {
+            // BEFORE the CancellationException branch, and that order is the whole fix:
+            // HttpRequestTimeoutException IS a CancellationException, so rethrowing
+            // cancellation untouched let Ktor's message — which embeds the full URL with its
+            // query — reach the caller. This was ADR-0016's own headline case, still open
+            // after its fix, because the test that "covered" it threw from the engine instead
+            // of letting a real timeout fire.
+            throw AppErrorException(AppError.Retryable(status = null))
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (alreadyMapped: AppErrorException) {
+            throw alreadyMapped
+        } catch (transport: Exception) {
+            // CHARACTERISED, NOT FIXED — and the difference is written here because a confident
+            // comment about a fix that does not fire is worse than no comment at all.
+            //
+            // When the CALLER's scope dies mid-request, Ktor surfaces the engine's failure
+            // wrapped, the CancellationException branch above never sees it, and the caller
+            // receives an `AppError` for an event that is not a failure at all — measured as
+            // `Unexpected`, and the first draft of this comment said `Retryable`, which is
+            // exactly why the behaviour is pinned by a test instead of described here. An
+            // `ensureActive()` here does NOT help: this hook does not run in the caller's job,
+            // so it has nothing cancelled to observe. That was tried, and it was measured not
+            // to fire (ADR-0026); the measurement is the only reason this comment is honest,
+            // because the first two runs of that experiment were green and red for the wrong
+            // reason — a `--tests` filter that matched no test at all.
+            //
+            // The guard therefore belongs to the CALLER, where the job actually is, and it is
+            // not left to memory: `Scripts/check-cancellation-guard.sh` requires every broad
+            // catch in this codebase to call `currentCoroutineContext().ensureActive()`.
+            // `LumeHttpStackTest.aCancelledCallerSeesRetryable` pins this behaviour so that a
+            // future change to it is a decision rather than a surprise.
+            throw AppErrorException(AppError.Retryable(status = null))
         }
+    }
 
-        onRequest { request, _ ->
-            check(request.url.protocol == URLProtocol.HTTPS) {
-                "LumeHttpStack is https-only and fails closed: refused ${request.url.protocol.name}://"
-            }
-            // The ORIGIN, not just the scheme. The message names no host: an error string is a
-            // side channel like any other, and this one would be read by whoever triggered it.
-            if (Origin(request.url.protocol.name, request.url.host, request.url.port) != allowedOrigin) {
-                // Loud, and in the taxonomy. A silent refusal was worse than it looks: a caller
-                // could not tell "the stack blocked this" from a programming error, and nothing
-                // recorded that the app had tried to talk somewhere it must not — which is a
-                // defect or an attack, never a normal condition. The entry carries no host.
-                logSink.log(
-                    NetworkLogEntry.of(
-                        method = request.method.value,
-                        rawPath = request.url.encodedPathSegments.joinToString("/"),
-                        status = null,
-                        rid = request.headers[RID_HEADER] ?: "-",
-                    ),
-                )
-                throw AppErrorException(AppError.Blocked)
-            }
-            if (request.headers[RID_HEADER] == null) {
-                request.headers.append(RID_HEADER, newRid())
-            }
-            tokenProvider?.token()?.let { token ->
-                request.headers.append(HttpHeaders.Authorization, "Bearer $token")
-            }
+    onRequest { request, _ ->
+        check(request.url.protocol == URLProtocol.HTTPS) {
+            "LumeHttpStack is https-only and fails closed: refused ${request.url.protocol.name}://"
         }
-        onResponse { response ->
-            val request = response.request
-            // A 401 only means THIS token was rejected if the request carried one. Before
-            // 2026-09-21 any 401 flipped the flag — including on a call made while logged out, or
-            // one the provider declined to sign — and the next `token()` then spent a refresh on a
-            // token nothing had rejected. Harmless today because nothing is wired; not harmless in
-            // a shell where a 401 on an unauthenticated probe would burn the refresh token's
-            // rotation for free (audit).
-            if (response.status.value == 401 && request.headers.contains(HttpHeaders.Authorization)) {
-                tokenProvider?.tokenWasRejected()
-            }
+        // The ORIGIN, not just the scheme. The message names no host: an error string is a
+        // side channel like any other, and this one would be read by whoever triggered it.
+        if (Origin(request.url.protocol.name, request.url.host, request.url.port) != allowedOrigin) {
+            // Loud, and in the taxonomy. A silent refusal was worse than it looks: a caller
+            // could not tell "the stack blocked this" from a programming error, and nothing
+            // recorded that the app had tried to talk somewhere it must not — which is a
+            // defect or an attack, never a normal condition. The entry carries no host.
             logSink.log(
                 NetworkLogEntry.of(
                     method = request.method.value,
-                    // encodedPath only — the query never reaches a log line — and `of` additionally
-                    // redacts identifier-shaped segments, because this app's routes carry the
-                    // patient id IN the path (§8.1, ADR-0016).
-                    rawPath = request.url.encodedPath,
-                    status = response.status.value,
+                    rawPath = request.url.encodedPathSegments.joinToString("/"),
+                    status = null,
                     rid = request.headers[RID_HEADER] ?: "-",
                 ),
             )
+            securityEvents.emit(SecurityEventKind.NETWORK_ORIGIN_REFUSED)
+            throw AppErrorException(AppError.Blocked)
+        }
+        if (request.headers[RID_HEADER] == null) {
+            request.headers.append(RID_HEADER, newRid())
+        }
+        tokenProvider?.token()?.let { token ->
+            request.headers.append(HttpHeaders.Authorization, "Bearer $token")
         }
     }
+    onResponse { response ->
+        val request = response.request
+        // A 401 only means THIS token was rejected if the request carried one. Before
+        // 2026-09-21 any 401 flipped the flag — including on a call made while logged out, or
+        // one the provider declined to sign — and the next `token()` then spent a refresh on a
+        // token nothing had rejected. Harmless today because nothing is wired; not harmless in
+        // a shell where a 401 on an unauthenticated probe would burn the refresh token's
+        // rotation for free (audit).
+        if (response.status.value == 401 && request.headers.contains(HttpHeaders.Authorization)) {
+            tokenProvider?.tokenWasRejected()
+        }
+        logSink.log(
+            NetworkLogEntry.of(
+                method = request.method.value,
+                // encodedPath only — the query never reaches a log line — and `of` additionally
+                // redacts identifier-shaped segments, because this app's routes carry the
+                // patient id IN the path (§8.1, ADR-0016).
+                rawPath = request.url.encodedPath,
+                status = response.status.value,
+                rid = request.headers[RID_HEADER] ?: "-",
+            ),
+        )
+    }
+}
 
 // Correlation id, not a secret: plain Random is the point (cheap, per-request), crypto-strength
 // randomness buys nothing here.

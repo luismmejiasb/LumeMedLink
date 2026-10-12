@@ -53,7 +53,12 @@ private class ContractDouble(private val reply: (HttpRequestData) -> Pair<HttpSt
             val (status, body) = reply(request)
             respond(content = body, status = status)
         }
-        return lumeHttpClient(baseUrl = BASE_URL, engine = engine, logSink = logSink)
+        return lumeHttpClient(
+            baseUrl = BASE_URL,
+            engine = engine,
+            logSink = logSink,
+            securityEvents = SECURITY_CHANNEL_TRANSPORT,
+        )
     }
 }
 
@@ -84,7 +89,7 @@ class HttpSecurityEventReporterTest {
     @Test
     fun aDeadNetworkIsNotTheCallersProblem() = runTest {
         val engine = MockEngine { throw IOException("no route to host") }
-        val client = lumeHttpClient(BASE_URL, engine, SilentLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, SilentLogSink(), securityEvents = SECURITY_CHANNEL_TRANSPORT)
 
         // No assertion needed beyond "this line returns". Every caller of this channel is in the
         // middle of applying a protection (locking a session, refusing an origin, wiping a store);
@@ -171,7 +176,7 @@ class HttpSecurityEventReporterTest {
     @Test
     fun aCancelledCallerDoesNotCarryOn() = runTest {
         val engine = MockEngine { awaitCancellation() }
-        val client = lumeHttpClient(BASE_URL, engine, SilentLogSink())
+        val client = lumeHttpClient(BASE_URL, engine, SilentLogSink(), securityEvents = SECURITY_CHANNEL_TRANSPORT)
         var reachedTheNextLine = false
 
         val job = launch {
