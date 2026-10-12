@@ -60,16 +60,19 @@ import com.luismejias.lumemedlink.resources.field_code_clear
 import com.luismejias.lumemedlink.resources.field_email
 import com.luismejias.lumemedlink.resources.field_email_invalid
 import com.luismejias.lumemedlink.resources.field_email_placeholder
-import com.luismejias.lumemedlink.resources.field_family_names
-import com.luismejias.lumemedlink.resources.field_given_names
+import com.luismejias.lumemedlink.resources.field_first_name
+import com.luismejias.lumemedlink.resources.field_first_surname
 import com.luismejias.lumemedlink.resources.field_mobile
 import com.luismejias.lumemedlink.resources.field_mobile_invalid
 import com.luismejias.lumemedlink.resources.field_mobile_placeholder
 import com.luismejias.lumemedlink.resources.field_name_required
+import com.luismejias.lumemedlink.resources.field_optional
 import com.luismejias.lumemedlink.resources.field_password
 import com.luismejias.lumemedlink.resources.field_rut
 import com.luismejias.lumemedlink.resources.field_rut_invalid
 import com.luismejias.lumemedlink.resources.field_rut_placeholder
+import com.luismejias.lumemedlink.resources.field_second_name
+import com.luismejias.lumemedlink.resources.field_second_surname
 import com.luismejias.lumemedlink.resources.locked_recover
 import com.luismejias.lumemedlink.resources.sign_in_action
 import com.luismejias.lumemedlink.resources.sign_up_code_body
@@ -186,23 +189,45 @@ internal fun SignUpProfileScreen(
                     }
                 }
             } else {
+                // The names in four, the second of each optional (the author, 2026-10-12).
+                val optional = stringResource(Res.string.field_optional)
                 LumeEqualRow {
                     SensitiveTextField(
-                        value = state.givenNames,
-                        onValueChange = model::givenNamesChanged,
+                        value = state.firstName,
+                        onValueChange = model::firstNameChanged,
                         purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                        label = stringResource(Res.string.field_given_names),
+                        label = stringResource(Res.string.field_first_name),
                         placeholder = "",
-                        validation = errorOr(state.givenNamesMissing, Res.string.field_name_required),
+                        validation = errorOr(state.firstNameMissing, Res.string.field_name_required),
                         submit = LumeFieldSubmit.Next,
                     )
                     SensitiveTextField(
-                        value = state.familyNames,
-                        onValueChange = model::familyNamesChanged,
+                        value = state.secondName,
+                        onValueChange = model::secondNameChanged,
                         purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                        label = stringResource(Res.string.field_family_names),
+                        label = stringResource(Res.string.field_second_name),
                         placeholder = "",
-                        validation = errorOr(state.familyNamesMissing, Res.string.field_name_required),
+                        labelNote = optional,
+                        submit = LumeFieldSubmit.Next,
+                    )
+                }
+                LumeEqualRow {
+                    SensitiveTextField(
+                        value = state.firstSurname,
+                        onValueChange = model::firstSurnameChanged,
+                        purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+                        label = stringResource(Res.string.field_first_surname),
+                        placeholder = "",
+                        validation = errorOr(state.firstSurnameMissing, Res.string.field_name_required),
+                        submit = LumeFieldSubmit.Next,
+                    )
+                    SensitiveTextField(
+                        value = state.secondSurname,
+                        onValueChange = model::secondSurnameChanged,
+                        purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+                        label = stringResource(Res.string.field_second_surname),
+                        placeholder = "",
+                        labelNote = optional,
                         submit = LumeFieldSubmit.Next,
                     )
                 }

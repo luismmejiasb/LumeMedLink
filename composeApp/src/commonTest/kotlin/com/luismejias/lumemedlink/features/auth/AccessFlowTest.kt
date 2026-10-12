@@ -13,6 +13,7 @@ import com.luismejias.lumemedlink.features.auth.flow.AccessText
 import com.luismejias.lumemedlink.features.auth.flow.OfflineOutcome
 import com.luismejias.lumemedlink.features.auth.flow.StepOutcome
 import com.luismejias.lumemedlink.features.auth.shared.PasswordRules
+import com.luismejias.lumemedlink.features.auth.signup.SignUpProfileState
 import com.luismejias.lumemedlink.features.auth.unlock.stepOutcomeFor
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.unlock_attempts_left
@@ -105,8 +106,8 @@ class AccessFlowTest {
         flow.push(AccessRoute.SIGN_UP_PROFILE)
         val profile = attempt.signUpProfile
         profile.rutChanged(RUT)
-        profile.givenNamesChanged("Camila")
-        profile.familyNamesChanged("Soto")
+        profile.firstNameChanged("Camila")
+        profile.firstSurnameChanged("Soto")
         profile.mobileChanged("9 8765 4321")
         profile.emailChanged("camila.soto@correo.cl")
         assertEquals(StepOutcome.Advanced, profile.submit())
@@ -136,8 +137,8 @@ class AccessFlowTest {
         profile.mobileChanged("+56 9 8765 43")
         profile.emailChanged("camila.soto@correo")
         assertFalse(profile.state.value.rutInvalid, "no red before the first try")
-        profile.givenNamesChanged("Camila")
-        profile.familyNamesChanged("Soto")
+        profile.firstNameChanged("Camila")
+        profile.firstSurnameChanged("Soto")
         profile.submit()
         val judged = profile.state.value
         assertTrue(judged.rutInvalid && judged.mobileInvalid && judged.emailInvalid)
@@ -160,8 +161,8 @@ class AccessFlowTest {
         flow.push(AccessRoute.SIGN_UP_PROFILE)
         attempt.signUpProfile.apply {
             rutChanged(RUT)
-            givenNamesChanged("Camila")
-            familyNamesChanged("Soto")
+            firstNameChanged("Camila")
+            firstSurnameChanged("Soto")
             mobileChanged("987654321")
             emailChanged("camila.soto@correo.cl")
             submit()
@@ -271,5 +272,31 @@ class AccessFlowTest {
         attempt.signUpProfile.emailChanged("camila.soto@correo.cl")
         val printed = listOf(attempt.signIn.state.value.toString(), attempt.signUpProfile.state.value.toString())
         assertTrue(printed.none { "456" in it || "Synthetic1" in it || "camila" in it }, printed.toString())
+    }
+
+    @Test
+    fun theSecondNameAndSurnameAreOptionalAndTravelTrimmedWhenGiven() {
+        val without = SignUpProfileState(
+            rut = "18.456.789-K",
+            firstName = "Camila",
+            firstSurname = "Soto",
+            mobile = "+56 9 8765 4321",
+            email = "camila.soto@correo.cl",
+        )
+        assertTrue(without.canSubmit, "a person with one name and one surname can sign up")
+        assertNull(without.profile?.secondName)
+        assertNull(without.profile?.secondSurname)
+
+        val with = without.copy(secondName = " Andrea ", secondSurname = "Pérez ")
+        assertEquals("Andrea", with.profile?.secondName)
+        assertEquals("Pérez", with.profile?.secondSurname)
+    }
+
+    @Test
+    fun theFirstNameAndSurnameAreStillRequired() {
+        val judged = SignUpProfileState(rut = "18.456.789-K", judged = true)
+        assertTrue(judged.firstNameMissing)
+        assertTrue(judged.firstSurnameMissing)
+        assertFalse(judged.canSubmit)
     }
 }

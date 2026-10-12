@@ -142,6 +142,8 @@ internal fun SensitiveTextField(
     revealLook: LumeRevealLook = LumeRevealLook.Glyph,
     /** A password being CREATED: the platform offers a strong one instead of saving a half-typed secret. */
     newCredential: Boolean = false,
+    /** A quiet word beside the label, as «opcional» (2a); the text field only. */
+    labelNote: String? = null,
     onSubmit: (() -> Unit)? = null,
 ) {
     val request = kitFieldRequestFor(purpose, format)
@@ -183,6 +185,7 @@ internal fun SensitiveTextField(
             modifier = modifier,
             keyboard = request.keyboard,
             textCase = request.textCase,
+            labelNote = labelNote,
             sensitivity = request.sensitivity,
             state = state,
             validation = validation,

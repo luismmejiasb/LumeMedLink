@@ -27,8 +27,10 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 internal data class SignUpProfileState(
     val rut: String = "",
-    val givenNames: String = "",
-    val familyNames: String = "",
+    val firstName: String = "",
+    val secondName: String = "",
+    val firstSurname: String = "",
+    val secondSurname: String = "",
     val mobile: String = "",
     val email: String = "",
     val judged: Boolean = false,
@@ -40,16 +42,16 @@ internal data class SignUpProfileState(
 
     /** 2a's ✓: a RUT that passes módulo 11 and is not taken — said as soon as it is typed, not on submit. */
     val rutValid: Boolean get() = !rutTaken && ChileanRut.parse(rut) != null
-    val givenNamesMissing: Boolean get() = judged && givenNames.isBlank()
-    val familyNamesMissing: Boolean get() = judged && familyNames.isBlank()
+    val firstNameMissing: Boolean get() = judged && firstName.isBlank()
+    val firstSurnameMissing: Boolean get() = judged && firstSurname.isBlank()
     val mobileInvalid: Boolean get() = judged && ChileanMobile.parse(mobile) == null
     val emailInvalid: Boolean get() = judged && EmailAddress.parse(email) == null
 
     private val anyError: Boolean
-        get() = rutInvalid || givenNamesMissing || familyNamesMissing || mobileInvalid || emailInvalid || rutTaken
+        get() = rutInvalid || firstNameMissing || firstSurnameMissing || mobileInvalid || emailInvalid || rutTaken
 
     val canSubmit: Boolean get() = !anyError &&
-        listOf(rut, givenNames, familyNames, mobile, email).all { it.isNotBlank() }
+        listOf(rut, firstName, firstSurname, mobile, email).all { it.isNotBlank() }
 
     /** The typed values as the gateway takes them, or `null` while one is not valid. */
     val profile: SignUpProfile?
@@ -57,8 +59,16 @@ internal data class SignUpProfileState(
             val parsedRut = ChileanRut.parse(rut) ?: return null
             val parsedMobile = ChileanMobile.parse(mobile) ?: return null
             val parsedEmail = EmailAddress.parse(email) ?: return null
-            if (givenNames.isBlank() || familyNames.isBlank()) return null
-            return SignUpProfile(parsedRut, givenNames.trim(), familyNames.trim(), parsedMobile, parsedEmail)
+            if (firstName.isBlank() || firstSurname.isBlank()) return null
+            return SignUpProfile(
+                rut = parsedRut,
+                firstName = firstName.trim(),
+                secondName = secondName.trim().ifEmpty { null },
+                firstSurname = firstSurname.trim(),
+                secondSurname = secondSurname.trim().ifEmpty { null },
+                mobile = parsedMobile,
+                email = parsedEmail,
+            )
         }
 
     override fun toString(): String = "SignUpProfileState(redacted)"
@@ -76,9 +86,13 @@ internal class SignUpProfileModel(private val gateway: PatientAccessGateway, pri
         copy(rut = value, rutTaken = rutTaken && sameRut(value, rut))
     }
 
-    fun givenNamesChanged(value: String) = edit { copy(givenNames = value) }
+    fun firstNameChanged(value: String) = edit { copy(firstName = value) }
 
-    fun familyNamesChanged(value: String) = edit { copy(familyNames = value) }
+    fun secondNameChanged(value: String) = edit { copy(secondName = value) }
+
+    fun firstSurnameChanged(value: String) = edit { copy(firstSurname = value) }
+
+    fun secondSurnameChanged(value: String) = edit { copy(secondSurname = value) }
 
     fun mobileChanged(value: String) = edit { copy(mobile = value) }
 

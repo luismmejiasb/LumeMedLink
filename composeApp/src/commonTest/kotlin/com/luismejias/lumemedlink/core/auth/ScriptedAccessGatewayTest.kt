@@ -19,8 +19,10 @@ private fun rut(typed: String) = requireNotNull(ChileanRut.parse(typed))
 
 private fun profile(rutTyped: String = "18.456.789-K") = SignUpProfile(
     rut = rut(rutTyped),
-    givenNames = "Camila",
-    familyNames = "Soto",
+    firstName = "Camila",
+    secondName = null,
+    firstSurname = "Soto",
+    secondSurname = null,
     mobile = requireNotNull(ChileanMobile.parse("+56 9 8765 4321")),
     email = requireNotNull(EmailAddress.parse("camila.soto@correo.cl")),
 )

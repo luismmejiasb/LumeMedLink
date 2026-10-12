@@ -63,6 +63,9 @@ the patient access model later (2026-10-11).
     for the state in the mock (2026-10-12). The script reaches it with the code `S1NENL4C`.
 12. **2b's links open nothing yet**: «términos de uso» and «Ley 21.719» are drawn as links, as the design does, but there
     is no terms document to open; they wait for it (legal). They stay links in 2b-e1 too, by the kit's author's call.
+13. **2a asks for the names in four fields** — first and second name, first and second surname, in two rows — where the
+    design has «Nombres» and «Apellidos». The second of each is optional. The app still shows the first name and the
+    first surname («Camila Soto», «CS»). The author's call, 2026-10-12.
 
 ## Consequences
 

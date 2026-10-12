@@ -108,7 +108,7 @@ internal class ScriptedAccessGateway(
             null -> {
                 val profile = pendingSignUp ?: return@scripted fail(AccessFailure.Unavailable)
                 signedIn = profile.rut
-                AccessResult.Ok(AccountSummary(profile.givenNames, profile.familyNames, profile.rut))
+                AccessResult.Ok(AccountSummary(profile.firstName, profile.firstSurname, profile.rut))
             }
             else -> fail(verdict)
         }

@@ -66,11 +66,16 @@ internal sealed interface AccessResult<out T> {
  */
 internal data class CodeDispatch(val expiresAtEpochMillis: Long, val resendAvailableAtEpochMillis: Long)
 
-/** Step 1 of creating an account (2a). */
+/**
+ * Step 1 of creating an account (2a). The names in four, as the author asked (2026-10-12): the second name and the
+ * second surname are optional — not everyone has them.
+ */
 internal class SignUpProfile(
     val rut: ChileanRut,
-    val givenNames: String,
-    val familyNames: String,
+    val firstName: String,
+    val secondName: String?,
+    val firstSurname: String,
+    val secondSurname: String?,
     val mobile: ChileanMobile,
     val email: EmailAddress,
 ) {
@@ -83,7 +88,7 @@ internal class SignUpCredentials(val password: String, val acceptedTerms: Boolea
     override fun toString(): String = "SignUpCredentials(redacted)"
 }
 
-/** Who the new account belongs to, for "¡Listo, Camila!" (2d). */
+/** Who the new account belongs to, for "¡Listo, Camila!" (2d): the first name and the first surname. */
 internal class AccountSummary(val givenNames: String, val familyNames: String, val rut: ChileanRut) {
     override fun toString(): String = "AccountSummary(redacted)"
 }

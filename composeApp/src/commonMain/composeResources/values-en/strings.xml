@@ -18,8 +18,11 @@
     <string name="field_rut">RUT</string>
     <string name="field_rut_placeholder">12.345.678-9</string>
     <string name="field_rut_invalid">This RUT isn’t valid. Check the verification digit.</string>
-    <string name="field_given_names">First names</string>
-    <string name="field_family_names">Last names</string>
+    <string name="field_first_name">First name</string>
+    <string name="field_second_name">Middle name</string>
+    <string name="field_first_surname">First surname</string>
+    <string name="field_second_surname">Second surname</string>
+    <string name="field_optional">optional</string>
     <string name="field_name_required">Fill in this field.</string>
     <string name="field_mobile">Mobile phone</string>
     <string name="field_mobile_placeholder">+56 9 1234 5678</string>

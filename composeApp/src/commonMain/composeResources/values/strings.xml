@@ -27,8 +27,11 @@
     <string name="field_rut">RUT</string>
     <string name="field_rut_placeholder">12.345.678-9</string>
     <string name="field_rut_invalid">El RUT no es válido. Revisa el dígito verificador.</string>
-    <string name="field_given_names">Nombres</string>
-    <string name="field_family_names">Apellidos</string>
+    <string name="field_first_name">Primer nombre</string>
+    <string name="field_second_name">Segundo nombre</string>
+    <string name="field_first_surname">Primer apellido</string>
+    <string name="field_second_surname">Segundo apellido</string>
+    <string name="field_optional">opcional</string>
     <string name="field_name_required">Completa este campo.</string>
     <string name="field_mobile">Teléfono celular</string>
     <string name="field_mobile_placeholder">+56 9 1234 5678</string>
