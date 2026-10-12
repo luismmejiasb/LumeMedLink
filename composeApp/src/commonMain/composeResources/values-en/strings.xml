@@ -460,4 +460,17 @@
         <item quantity="one">%1$d time left on %2$s.</item>
         <item quantity="other">%1$d times left on %2$s.</item>
     </plurals>
+    <string name="detail_title">Appointment details</string>
+    <string name="detail_contact">Practice contact</string>
+    <string name="detail_cancel">Cancel appointment</string>
+    <string name="detail_withdraw">Cancel request</string>
+    <string name="detail_change">Change time</string>
+    <string name="detail_book_again">Book again</string>
+    <string name="detail_pending">%1$s **hasn’t confirmed** this request yet. We’ll let you know as soon as they do; the time is held for you.</string>
+    <string name="detail_arrive">Arrive **10 minutes early**. You can change or cancel up to **%1$s before**.</string>
+    <string name="detail_arrive_late">Arrive **10 minutes early**. The time to change or cancel has passed: contact the practice.</string>
+    <string name="detail_rating">Your rating</string>
+    <string name="detail_rating_sent">Sent on %1$s</string>
+    <string name="detail_clinical">The clinical detail of the visit **isn’t in LumeMedLink**: your doctor handles it.</string>
+    <string name="detail_time_range">%1$s – %2$s</string>
 </resources>

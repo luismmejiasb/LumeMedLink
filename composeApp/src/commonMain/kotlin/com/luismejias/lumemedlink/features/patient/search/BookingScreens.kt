@@ -127,13 +127,13 @@ internal fun ScheduleScreen(model: SearchViewModel, onBack: () -> Unit) {
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.schedule_cancel)),
                     emphasis = LumeButtonEmphasis.OutlineNeutral,
-                    size = LumeButtonSize.Large,
+                    size = LumeButtonSize.Bar,
                     width = LumeButtonWidth.Fill,
                     onClick = onBack,
                 )
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.schedule_continue)),
-                    size = LumeButtonSize.Large,
+                    size = LumeButtonSize.Bar,
                     width = LumeButtonWidth.Fill,
                     state = if (ready?.slot != null) LumeFieldState.Enabled else LumeFieldState.Disabled,
                     onClick = { ready?.slot?.let { model.confirm(ready.doctor, it) } },
@@ -267,13 +267,13 @@ internal fun ConfirmScreen(
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.confirm_back)),
                     emphasis = LumeButtonEmphasis.OutlineNeutral,
-                    size = LumeButtonSize.Large,
+                    size = LumeButtonSize.Bar,
                     width = LumeButtonWidth.Fill,
                     onClick = onBack,
                 )
                 LumeAsyncButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.confirm_action)),
-                    size = LumeButtonSize.Large,
+                    size = LumeButtonSize.Bar,
                     width = LumeButtonWidth.Fill,
                     feedback = LumeButtonFeedback(loading = stringResource(Res.string.confirm_running)),
                     run = model.booking::book,

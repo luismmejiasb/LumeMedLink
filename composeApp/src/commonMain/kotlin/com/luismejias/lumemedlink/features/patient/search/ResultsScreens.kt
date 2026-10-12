@@ -309,13 +309,13 @@ internal fun FiltersScreen(model: SearchViewModel, onBack: () -> Unit) {
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.filters_clear)),
                     emphasis = LumeButtonEmphasis.OutlineNeutral,
-                    size = LumeButtonSize.Large,
+                    size = LumeButtonSize.Bar,
                     width = LumeButtonWidth.Fill,
                     onClick = { model.results.draftChanged(SearchFilters()) },
                 )
                 LumeButton(
                     content = LumeButtonContent.Title(pluralStringResource(Res.plurals.filters_apply, count, count)),
-                    size = LumeButtonSize.Large,
+                    size = LumeButtonSize.Bar,
                     width = LumeButtonWidth.Fill,
                     onClick = model::filtersApplied,
                 )

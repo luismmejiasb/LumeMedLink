@@ -465,4 +465,17 @@
         <item quantity="one">Queda %1$d hora el %2$s.</item>
         <item quantity="other">Quedan %1$d horas el %2$s.</item>
     </plurals>
+    <string name="detail_title">Detalle de la cita</string>
+    <string name="detail_contact">Contacto de la consulta</string>
+    <string name="detail_cancel">Cancelar cita</string>
+    <string name="detail_withdraw">Cancelar reserva</string>
+    <string name="detail_change">Cambiar hora</string>
+    <string name="detail_book_again">Agendar de nuevo</string>
+    <string name="detail_pending">%1$s **aún no confirma** esta reserva. Te avisaremos apenas lo haga; la hora queda guardada para ti.</string>
+    <string name="detail_arrive">Llega **10 minutos antes**. Puedes cambiar o cancelar hasta **%1$s antes**.</string>
+    <string name="detail_arrive_late">Llega **10 minutos antes**. Ya pasó el plazo para cambiar o cancelar: comunícate con la consulta.</string>
+    <string name="detail_rating">Tu valoración</string>
+    <string name="detail_rating_sent">Enviada el %1$s</string>
+    <string name="detail_clinical">El detalle clínico de la atención **no está en LumeMedLink**: lo maneja tu médico.</string>
+    <string name="detail_time_range">%1$s – %2$s</string>
 </resources>

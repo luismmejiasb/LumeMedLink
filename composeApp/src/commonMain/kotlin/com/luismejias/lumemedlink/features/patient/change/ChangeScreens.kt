@@ -289,7 +289,7 @@ private fun MoveActions(ready: RescheduleContent?, model: ChangeViewModel) {
         LumeButton(
             content = LumeButtonContent.Title(stringResource(Res.string.reschedule_keep)),
             emphasis = LumeButtonEmphasis.OutlineNeutral,
-            size = LumeButtonSize.Large,
+            size = LumeButtonSize.Bar,
             width = LumeButtonWidth.Fill,
             onClick = model::back,
         )
@@ -301,7 +301,7 @@ private fun MoveActions(ready: RescheduleContent?, model: ChangeViewModel) {
                     stringResource(Res.string.reschedule_to, weekdayDayText(slot.date), slot.start.display)
                 },
             ),
-            size = LumeButtonSize.Large,
+            size = LumeButtonSize.Bar,
             width = LumeButtonWidth.Fill,
             state = if (slot != null) LumeFieldState.Enabled else LumeFieldState.Disabled,
             run = model.reschedule::submit,
@@ -331,14 +331,14 @@ internal fun CancelScreen(model: ChangeViewModel, today: CalendarDate) {
                 LumeButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.cancel_back)),
                     emphasis = LumeButtonEmphasis.OutlineNeutral,
-                    size = LumeButtonSize.Large,
+                    size = LumeButtonSize.Bar,
                     width = LumeButtonWidth.Fill,
                     onClick = model::back,
                 )
                 LumeAsyncButton(
                     content = LumeButtonContent.Title(stringResource(Res.string.cancel_confirm)),
                     role = LumeButtonRole.Destructive,
-                    size = LumeButtonSize.Large,
+                    size = LumeButtonSize.Bar,
                     width = LumeButtonWidth.Fill,
                     run = model.cancel::submit,
                 )

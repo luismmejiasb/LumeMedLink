@@ -33,6 +33,7 @@ import com.luismejias.lumemedlink.core.device.rememberDirections
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsScreen
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsSegment
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
+import com.luismejias.lumemedlink.features.patient.change.AppointmentDetailScreen
 import com.luismejias.lumemedlink.features.patient.change.CancelScreen
 import com.luismejias.lumemedlink.features.patient.change.ChangeDone
 import com.luismejias.lumemedlink.features.patient.change.ChangeRoute
@@ -151,13 +152,28 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
         // The bar floats over the content, which scrolls under it: each screen leaves the kit's clearance at its end.
         CompositionLocalProvider(LocalTabBarClearance provides if (showsTabBar) LumeFloatingTabBarClearance else 0.dp) {
             when {
+                changeRoute == ChangeRoute.DETAIL -> AppointmentDetailScreen(
+                    model = change,
+                    today = care.today(),
+                    onDirections = openDirections,
+                    onCall = contact::dial,
+                    onBookAgain = { appointment ->
+                        change.launch {
+                            doctorToBookAgain(appointment)?.let { doctor ->
+                                back()
+                                tabs.show(PatientTab.SEARCH)
+                                search.launch { schedule(doctor) }
+                            }
+                        }
+                    },
+                )
                 changeRoute == ChangeRoute.RESCHEDULE -> RescheduleScreen(change, toasts, care.today())
                 changeRoute == ChangeRoute.CANCEL -> CancelScreen(change, care.today())
                 selected == PatientTab.HOME -> HomeScreen(
                     model = home,
                     onDirections = openDirections,
                     onChangeOrCancel = { appointment -> change.launch { openOptions(appointment) } },
-                    onOpenAppointment = {},
+                    onOpenAppointment = { appointment -> change.launch { openDetail(appointment) } },
                     onRate = { _, _ -> },
                     onSearch = { tabs.show(PatientTab.SEARCH) },
                     onNotices = {},
@@ -166,7 +182,7 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
                 selected == PatientTab.SEARCH -> SearchHost(search, onBooked)
                 selected == PatientTab.APPOINTMENTS -> AppointmentsScreen(
                     model = appointments,
-                    onOpen = {},
+                    onOpen = { appointment -> change.launch { openDetail(appointment) } },
                     onChange = { appointment -> change.launch { changeTime(appointment) } },
                     onCancel = change::cancelAppointment,
                     onSearch = { tabs.show(PatientTab.SEARCH) },

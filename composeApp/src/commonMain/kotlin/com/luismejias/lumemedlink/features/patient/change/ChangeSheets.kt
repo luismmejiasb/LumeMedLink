@@ -12,6 +12,7 @@ import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListChrome
+import cl.lume.uicomposer.components.LumeListIconInk
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowRole
 import cl.lume.uicomposer.components.LumeListRowTextStyle
@@ -108,25 +109,24 @@ internal fun DirectionsSheet(
             }
         }
         val copyLabel = stringResource(Res.string.directions_copy)
-        LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
-            LumeList(
-                items = listOf(Unit),
-                key = { it },
-                scrolls = false,
-                background = Color.Transparent,
-                chrome = LumeListChrome.Open,
-                onRowTap = {
-                    clipboard.copy(address.replace('\n', ' '))
-                    onDismiss()
-                    onCopied()
-                },
-            ) {
-                LumeListRow(
-                    title = copyLabel,
-                    leading = LumeListAccessory.Icon(LumeIcon.Copy, ""),
-                    role = LumeListRowRole.Normal,
-                )
-            }
+        // Its own open card, as f1 draws it: the list is the card, so no LumeCard around it.
+        LumeList(
+            items = listOf(Unit),
+            key = { it },
+            scrolls = false,
+            background = Color.Transparent,
+            chrome = LumeListChrome.Open,
+            onRowTap = {
+                clipboard.copy(address.replace('\n', ' '))
+                onDismiss()
+                onCopied()
+            },
+        ) {
+            LumeListRow(
+                title = copyLabel,
+                leading = LumeListAccessory.Icon(LumeIcon.Copy, "", ink = LumeListIconInk.Accent),
+                role = LumeListRowRole.Action,
+            )
         }
     }
 }

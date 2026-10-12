@@ -81,7 +81,13 @@ ADR-0049. Pendiente del kit: el texto de la barra de f3, la nota del día en dos
 - **Íconos de las apps de mapas**: el real en Android y un glifo del kit en iOS, que no deja leer los íconos de otras
   apps.
 
-## Detalle de una cita (c1–c3): lo que decidió el autor (2026-10-11)
+## Detalle de una cita (c1–c3) — HECHO contra el guion, 2026-10-11
+
+Se abre desde Mis citas y desde «Esperando confirmación» en Inicio, y desde él se cambia, se cancela, se llega o se
+llama. La cita atendida muestra la valoración enviada y «Agendar de nuevo», que abre a1 con el mismo médico. El diseño
+fecha c3 «Martes 2 de septiembre», pero el 2 de septiembre de 2026 es miércoles: manda el calendario.
+
+### Lo que decidió el autor (2026-10-11)
 
 - **c3 muestra la valoración con su comentario**, como el diseño. El comentario lo escribe el paciente. El backend
   había propuesto valoraciones sin texto libre (tarea `0121` del backend, §4), y el autor eligió el diseño.
