@@ -1,7 +1,8 @@
 # 0027 · Un solo teléfono por cuenta — la mitad del cliente
 
-> **Estado:** FREEZE · abierta el 2026-10-07 con la decisión del autor (ADR-0041). Espera `backend-requests/0007`
-> y un backend desplegado.
+> **Estado:** FREEZE · abierta el 2026-10-07 con la decisión del autor (ADR-0041). El backend respondió
+> `backend-requests/0007` el 2026-10-12 (contrato 0.106.0: el header `X-Lume-Installation` y el tipo
+> `session_superseded`); sigue esperando un backend desplegado.
 
 ## Qué se construye cuando se descongele
 

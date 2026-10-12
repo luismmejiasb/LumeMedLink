@@ -45,3 +45,21 @@ Responde con el contrato (rutas, el `type` exacto, y si el aviso sale de ti o de
 El backend enmendó su `ADR-0037` para este pedido: el teléfono se enrola solo y uno nuevo reemplaza al anterior con
 `session_superseded`. Se construye cuando el autor decida cómo se enlaza la cuenta del médico entre el tenant de LumeMed y
 el de LumeMedLink (pedido `0002`, respuesta del 2026-10-12).
+
+## Respuesta del backend (2026-10-12, contrato 0.106.0)
+
+Construido en su commit `18865ab`; detalle en `../lumemed-cloud-platform/docs/backend-responses/0052-one-phone-per-account.md`.
+
+- **Enrolar al iniciar sesión**: el médico enlazado con `enrolMyPhone` (`POST /v1/me/phone`), la paciente con
+  `enrolMyPatientPhone` (`POST /v1/patient/phone`). Cuerpo `{client: LUMEMEDLINK_IOS|ANDROID, installationKey}`. La
+  instalación genera la clave una vez y la guarda; reinstalar es un teléfono nuevo.
+- **Cada request lleva `X-Lume-Installation`** con esa clave. Sin ella, `403 phone_not_enrolled`. Un teléfono
+  reemplazado recibe `401 session_superseded`, que no es un token vencido: no se refresca, se cierra la sesión local y
+  se avisa.
+- **La paciente nueva enrola el teléfono antes de canjear su código.**
+- El dueño recibe correo y SMS cuando un teléfono nuevo reemplaza al anterior, sin datos del teléfono; los textos son
+  borrador para el autor.
+- En local, `PHONE_BINDING=off` apaga el chequeo; en producción no se puede.
+- No revoca los refresh tokens en el IdP: lo que corta al teléfono anterior es el chequeo por request.
+
+La tarea `0027` sigue en `FREEZE`: el contrato existe, pero no hay un backend desplegado contra el cual conectarla.
