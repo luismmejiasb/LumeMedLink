@@ -81,6 +81,14 @@ ADR-0049. Pendiente del kit: el texto de la barra de f3, la nota del día en dos
 - **Íconos de las apps de mapas**: el real en Android y un glifo del kit en iOS, que no deja leer los íconos de otras
   apps.
 
+## Detalle de una cita (c1–c3): lo que decidió el autor (2026-10-11)
+
+- **c3 muestra la valoración con su comentario**, como el diseño. El comentario lo escribe el paciente. El backend
+  había propuesto valoraciones sin texto libre (tarea `0121` del backend, §4), y el autor eligió el diseño.
+- **Kit**: un espacio opcional bajo el texto de una fila, para «Cómo llegar» y «Llamar» en c1/c2. Mis médicos sigue con
+  los botones bajo el avatar. Y las estrellas sólo para ver, en c3.
+- Sin motivo (c2) y sin previsión (c1–c3), por las decisiones anteriores.
+
 ## La respuesta del backend al pedido `0008` (2026-10-11)
 
 Está en `../lumemed-cloud-platform/tareas/PENDING/0121-lo-que-le-falta-al-contrato-para-la-app-del-paciente.md`.
