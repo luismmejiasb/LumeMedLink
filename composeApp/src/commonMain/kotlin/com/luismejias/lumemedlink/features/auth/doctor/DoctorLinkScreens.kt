@@ -1,8 +1,10 @@
 package com.luismejias.lumemedlink.features.auth.doctor
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeAvatar
 import cl.lume.uicomposer.components.LumeAvatarSize
 import cl.lume.uicomposer.components.LumeButton
@@ -18,6 +20,8 @@ import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListRow
+import cl.lume.uicomposer.components.LumeListRowTextStyle
+import cl.lume.uicomposer.components.LumeListTileEmphasis
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeTag
@@ -69,6 +73,7 @@ import com.luismejias.lumemedlink.resources.doctor_spent_retry
 import com.luismejias.lumemedlink.resources.doctor_spent_title
 import com.luismejias.lumemedlink.resources.doctor_unverified_body
 import com.luismejias.lumemedlink.resources.doctor_unverified_title
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 /** 4a — the typed code only; the QR viewfinder and its camera state wait for their ADR (ADR-0044, deviation 3). */
@@ -235,24 +240,25 @@ internal fun DoctorLinkedScreen(model: DoctorLinkModel) {
                 body = stringResource(Res.string.doctor_linked_body, name),
                 tone = AccessTone.SUCCESS,
             )
-            LumeCard {
-                LumeListRow(
-                    title = stringResource(Res.string.doctor_linked_profile),
-                    description = stringResource(Res.string.doctor_linked_profile_body),
-                    leading = LumeListAccessory.Tile(LumeIcon.Stethoscope, LumeTileTint.Azure),
-                )
-                LumeListRow(
-                    title = stringResource(Res.string.doctor_linked_agenda),
-                    description = stringResource(Res.string.doctor_linked_agenda_body),
-                    leading = LumeListAccessory.Tile(LumeIcon.Clock, LumeTileTint.Azure),
-                )
-                LumeListRow(
-                    title = stringResource(Res.string.doctor_linked_patients),
-                    description = stringResource(Res.string.doctor_linked_patients_body),
-                    leading = LumeListAccessory.Tile(LumeIcon.Mobile, LumeTileTint.Azure),
-                )
+            // Three cards, one per thing the doctor will find, as 4c draws them.
+            LumeStack(spacing = { small }) {
+                LinkedRow(Res.string.doctor_linked_profile, Res.string.doctor_linked_profile_body, LumeIcon.Stethoscope)
+                LinkedRow(Res.string.doctor_linked_agenda, Res.string.doctor_linked_agenda_body, LumeIcon.Clock)
+                LinkedRow(Res.string.doctor_linked_patients, Res.string.doctor_linked_patients_body, LumeIcon.Mobile)
             }
         }
+    }
+}
+
+@Composable
+private fun LinkedRow(title: StringResource, body: StringResource, icon: LumeIcon) {
+    LumeCard(modifier = Modifier.fillMaxWidth()) {
+        LumeListRow(
+            title = stringResource(title),
+            description = stringResource(body),
+            leading = LumeListAccessory.Tile(icon, LumeTileTint.Azure, emphasis = LumeListTileEmphasis.Washed),
+            textStyle = LumeListRowTextStyle.Strong,
+        )
     }
 }
 

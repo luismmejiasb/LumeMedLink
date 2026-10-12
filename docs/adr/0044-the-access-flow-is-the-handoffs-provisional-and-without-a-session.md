@@ -56,6 +56,8 @@ the patient access model later (2026-10-11).
 8. **Phone and tablet**: the handoff says both; ADR-0002 keeps v1 phone-first, portrait.
 9. **The design's example RUTs fail módulo 11** («18.456.789-2», «12.987.654-3»): the script uses valid synthetic
    ones, and a field shows the design's error for the design's own example.
+10. **The 6-digit code input is the kit's** (2c, 3b): a label, a clear button and smaller boxes, where the design has
+    bigger bare boxes that turn red on a wrong code. The author left it as the kit draws it (2026-10-12).
 
 ## Consequences
 

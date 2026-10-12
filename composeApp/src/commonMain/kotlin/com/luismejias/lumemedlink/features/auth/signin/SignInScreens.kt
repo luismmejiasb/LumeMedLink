@@ -80,7 +80,22 @@ internal fun SignInScreen(
 ) {
     val state by model.state.collectAsState()
     val wrong = state.wrongAttemptsLeft
-    LumeContainer(scroll = LumeContainerScroll.Scrollable) {
+    LumeContainer(
+        scroll = LumeContainerScroll.Scrollable,
+        // «¿No tienes cuenta? Créala» rests at the foot of the screen, as 1b draws it.
+        action = {
+            LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Center) {
+                LumeStack(
+                    axis = LumeStackAxis.Horizontal,
+                    alignment = LumeStackAlignment.Center,
+                    spacing = { xSmall },
+                ) {
+                    LumeText(text = stringResource(Res.string.sign_in_no_account), color = LumeTextColor.Secondary)
+                    LumeLink(title = stringResource(Res.string.sign_in_create), onClick = onCreateAccount)
+                }
+            }
+        },
+    ) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
             AccessBack(onBack)
             OfflineBanner(state.offline)
@@ -136,10 +151,6 @@ internal fun SignInScreen(
                 retryEpoch = retryEpoch,
                 run = model::submit,
             )
-            LumeStack(modifier = Modifier.fillMaxWidth(), axis = LumeStackAxis.Horizontal, spacing = { xSmall }) {
-                LumeText(text = stringResource(Res.string.sign_in_no_account), color = LumeTextColor.Secondary)
-                LumeLink(title = stringResource(Res.string.sign_in_create), onClick = onCreateAccount)
-            }
         }
     }
 }
