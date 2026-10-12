@@ -169,3 +169,15 @@ de los días, el punto medio del chip de filtros, el campo de búsqueda sin tít
 - No componer reagendar con cancelar + reservar (T7).
 - No mostrar el motivo de una cita: no existe en esta app (ADR-0001).
 - No escribir UI propia: lo que falte en LumeUIComposer se recomienda y espera la autorización del autor.
+
+## Valorar y la foto, contra el diseño: lo que decidió el autor (2026-10-12)
+
+- **El avatar del médico lleva su color** en la hoja de valorar, como en Inicio, Mis médicos y el detalle; el índigo de
+  f5 es sólo el del ejemplo.
+- **Se le piden tres cosas al kit**:
+  - un aviso lavado con una acción de texto a la derecha, para «Hacer un reclamo» (pieza nueva, autorizada);
+  - sus campos dentro de una hoja en blanco, y «Cuéntanos más» de unas tres líneas (paridad);
+  - el modo «tal cual» en el campo de varias líneas, para que el teclado no aprenda lo que escribe el paciente
+    (seguridad, ADR-0013).
+
+  Hasta que lleguen, el enlace va después de la frase y el campo de varias líneas conserva las correcciones del teclado.
