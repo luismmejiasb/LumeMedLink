@@ -99,6 +99,7 @@
     <string name="sign_up_step_password">Password</string>
     <string name="sign_up_step_phone">Verify phone</string>
     <string name="sign_up_step_of">Step %1$d of %2$d · %3$s</string>
+    <string name="sign_up_step_next">Next: %1$s</string>
     <string name="sign_up_data_title">Your details</string>
     <string name="sign_up_data_body">Your RUT is your identifier. Email and phone are only to contact you.</string>
     <string name="sign_up_rut_taken">An account with this RUT already exists.</string>

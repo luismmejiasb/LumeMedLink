@@ -21,6 +21,7 @@ import cl.lume.uicomposer.components.LumeLink
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
+import cl.lume.uicomposer.components.LumeStepCaption
 import cl.lume.uicomposer.components.LumeStepIndicator
 import cl.lume.uicomposer.components.LumeTag
 import cl.lume.uicomposer.components.LumeTagStyle
@@ -94,6 +95,7 @@ import com.luismejias.lumemedlink.resources.sign_up_rut_taken
 import com.luismejias.lumemedlink.resources.sign_up_rut_taken_body
 import com.luismejias.lumemedlink.resources.sign_up_rut_taken_title
 import com.luismejias.lumemedlink.resources.sign_up_step_data
+import com.luismejias.lumemedlink.resources.sign_up_step_next
 import com.luismejias.lumemedlink.resources.sign_up_step_of
 import com.luismejias.lumemedlink.resources.sign_up_step_password
 import com.luismejias.lumemedlink.resources.sign_up_step_phone
@@ -113,10 +115,14 @@ private val STEPS =
 @Composable
 private fun SignUpSteps(current: Int) {
     val caption = stringResource(Res.string.sign_up_step_of, current + 1, STEPS.size, stringResource(STEPS[current]))
-    LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
-        LumeStepIndicator(current = current, count = STEPS.size, contentDescription = caption)
-        LumeText(text = caption, style = LumeTextStyle.Caption, color = LumeTextColor.Accent)
-    }
+    val next = STEPS.getOrNull(current + 1)?.let { stringResource(Res.string.sign_up_step_next, stringResource(it)) }
+    // The design's segmented bars, the step on the left and what follows on the right (ADR-0044 deviation 5, closed).
+    LumeStepIndicator(
+        current = current,
+        count = STEPS.size,
+        contentDescription = listOfNotNull(caption, next).joinToString(". "),
+        caption = LumeStepCaption(caption, next = next),
+    )
 }
 
 @Composable

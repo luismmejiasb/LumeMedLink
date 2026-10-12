@@ -49,7 +49,7 @@ the patient access model later (2026-10-11).
    nuevo» reads «Escribir otro código».
 4. **The welcome carousel on 1a is the kit's** `LumeCarousel`, requested and authorized on 2026-10-11 and
    delivered the same day: this app writes no UI of its own.
-5. **The step progress is `LumeStepIndicator`** with its labels, not the design's segmented bars.
+5. **~~The step progress is `LumeStepIndicator`~~ — closed 2026-10-12**: the kit draws the design's segmented bars, the step on the left and «Sigue: …» on the right (the author asked for it as drawn).
 6. **~~The wordmark is pending its SVG~~ — closed 2026-10-12**: the kit's brand lockup draws the app icon and the name in its three inks with the link symbol, from the handoff's assets. The kit's face sets the name about 8 % wider than the design's.
 7. **The accent is the kit's derivation of `#3E63DD`** (`LumeBrand(seed = …)`); its strong and light tones are
    computed, not the design's literal hexes.

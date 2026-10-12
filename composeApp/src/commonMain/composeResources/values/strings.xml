@@ -108,6 +108,7 @@
     <string name="sign_up_step_password">Contraseña</string>
     <string name="sign_up_step_phone">Verificar teléfono</string>
     <string name="sign_up_step_of">Paso %1$d de %2$d · %3$s</string>
+    <string name="sign_up_step_next">Sigue: %1$s</string>
     <string name="sign_up_data_title">Tus datos</string>
     <string name="sign_up_data_body">Tu RUT es tu identificador. El correo y el teléfono son solo para contactarte.</string>
     <string name="sign_up_rut_taken">Ya existe una cuenta con este RUT.</string>
