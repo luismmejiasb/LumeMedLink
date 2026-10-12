@@ -23,6 +23,11 @@ kotlin {
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk = libs.versions.androidMinSdk.get().toInt()
 
+        // The app's strings (ADR-0045) reach the APK only with Android resources on: the AGP KMP library plugin turns
+        // them off by default, and Compose Multiplatform then leaves its copy into the Android assets unconfigured.
+        // Without this the app crashed at its first string on Android while every test stayed green.
+        androidResources { enable = true }
+
         // Without this, `commonTest` compiles for iOS and is silently skipped on Android.
         withHostTest {}
 
