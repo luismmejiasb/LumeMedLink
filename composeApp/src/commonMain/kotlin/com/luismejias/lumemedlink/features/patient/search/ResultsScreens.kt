@@ -38,12 +38,12 @@ import cl.lume.uicomposer.components.LumeTextWeight
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import com.luismejias.lumemedlink.core.care.Slot
-import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.core.screen.CareLoadView
+import com.luismejias.lumemedlink.core.screen.capitalized
+import com.luismejias.lumemedlink.core.screen.relativeDayText
+import com.luismejias.lumemedlink.core.screen.shortDateText
 import com.luismejias.lumemedlink.features.patient.parts.DoctorIdentity
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
-import com.luismejias.lumemedlink.features.patient.parts.capitalized
-import com.luismejias.lumemedlink.features.patient.parts.relativeDayText
-import com.luismejias.lumemedlink.features.patient.parts.shortDateText
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.filters_apply
 import com.luismejias.lumemedlink.resources.filters_attention

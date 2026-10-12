@@ -8,6 +8,7 @@ import com.luismejias.lumemedlink.core.care.ChangeResult
 import com.luismejias.lumemedlink.core.care.ClosedKind
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
+import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.features.patient.change.CancelChoice
 import com.luismejias.lumemedlink.features.patient.change.CancelOutcome
 import com.luismejias.lumemedlink.features.patient.change.ChangeDone
@@ -17,7 +18,6 @@ import com.luismejias.lumemedlink.features.patient.change.ChangeViewModel
 import com.luismejias.lumemedlink.features.patient.change.MoveOutcome
 import com.luismejias.lumemedlink.features.patient.change.MoveTile
 import com.luismejias.lumemedlink.features.patient.change.changeOptionsFor
-import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
 import kotlinx.coroutines.Dispatchers

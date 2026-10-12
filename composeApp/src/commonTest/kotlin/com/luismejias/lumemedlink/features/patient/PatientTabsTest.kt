@@ -7,11 +7,11 @@ import com.luismejias.lumemedlink.core.care.CarePlace
 import com.luismejias.lumemedlink.core.care.CareWorld
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
+import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeContent
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
-import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
 import com.luismejias.lumemedlink.features.patient.parts.cancelled
 import com.luismejias.lumemedlink.features.patient.parts.past

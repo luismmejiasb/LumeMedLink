@@ -24,7 +24,7 @@ import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
-import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
+import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.search_action
 import com.luismejias.lumemedlink.resources.search_choose

@@ -26,8 +26,8 @@ import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.PatientProfile
-import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
-import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
+import com.luismejias.lumemedlink.core.screen.CareLoadView
+import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.settings_complaints
 import com.luismejias.lumemedlink.resources.settings_complaints_body

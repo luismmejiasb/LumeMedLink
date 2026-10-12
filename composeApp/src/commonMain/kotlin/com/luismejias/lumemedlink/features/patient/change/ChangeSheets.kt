@@ -28,11 +28,11 @@ import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.device.AddressClipboard
 import com.luismejias.lumemedlink.core.device.Directions
 import com.luismejias.lumemedlink.core.device.MapApp
+import com.luismejias.lumemedlink.core.screen.capitalized
+import com.luismejias.lumemedlink.core.screen.relativeDayText
+import com.luismejias.lumemedlink.core.screen.richRuns
+import com.luismejias.lumemedlink.core.screen.shortDateText
 import com.luismejias.lumemedlink.features.patient.parts.DoctorIdentity
-import com.luismejias.lumemedlink.features.patient.parts.capitalized
-import com.luismejias.lumemedlink.features.patient.parts.relativeDayText
-import com.luismejias.lumemedlink.features.patient.parts.richRuns
-import com.luismejias.lumemedlink.features.patient.parts.shortDateText
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.directions_close
 import com.luismejias.lumemedlink.resources.directions_copy

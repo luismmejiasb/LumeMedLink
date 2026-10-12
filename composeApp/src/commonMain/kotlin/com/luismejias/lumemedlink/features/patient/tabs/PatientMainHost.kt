@@ -30,6 +30,8 @@ import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberDirections
+import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsScreen
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsSegment
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
@@ -46,8 +48,6 @@ import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsScreen
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeScreen
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
-import com.luismejias.lumemedlink.features.patient.parts.CareLoad
-import com.luismejias.lumemedlink.features.patient.parts.LocalTabBarClearance
 import com.luismejias.lumemedlink.features.patient.search.SearchHost
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
 import com.luismejias.lumemedlink.features.patient.settings.SettingsEntry

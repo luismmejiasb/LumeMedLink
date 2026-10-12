@@ -5,7 +5,7 @@ import com.luismejias.lumemedlink.core.care.BookingFailure
 import com.luismejias.lumemedlink.core.care.CareFailure
 import com.luismejias.lumemedlink.core.care.DirectoryScript
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
-import com.luismejias.lumemedlink.features.patient.parts.CareLoad
+import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.features.patient.search.BookingOutcome
 import com.luismejias.lumemedlink.features.patient.search.HourTile
 import com.luismejias.lumemedlink.features.patient.search.SearchFilters

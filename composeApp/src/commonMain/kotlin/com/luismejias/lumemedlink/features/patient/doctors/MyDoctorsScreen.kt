@@ -31,8 +31,8 @@ import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.input.SensitiveSearchField
-import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
-import com.luismejias.lumemedlink.features.patient.parts.TabBarClearance
+import com.luismejias.lumemedlink.core.screen.CareLoadView
+import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_search_clear

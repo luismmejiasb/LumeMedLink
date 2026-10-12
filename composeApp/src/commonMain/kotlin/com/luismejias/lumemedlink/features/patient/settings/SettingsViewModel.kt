@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
-import com.luismejias.lumemedlink.features.patient.parts.CareLoad
-import com.luismejias.lumemedlink.features.patient.parts.allOf
-import com.luismejias.lumemedlink.features.patient.parts.markLoading
-import com.luismejias.lumemedlink.features.patient.parts.ok
+import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.allOf
+import com.luismejias.lumemedlink.core.screen.markLoading
+import com.luismejias.lumemedlink.core.screen.ok
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -9,6 +9,7 @@ import cl.lume.uicomposer.components.LumeNavBarBack
 import cl.lume.uicomposer.components.LumeNavBarTitleStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
+import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_back
 import org.jetbrains.compose.resources.stringResource

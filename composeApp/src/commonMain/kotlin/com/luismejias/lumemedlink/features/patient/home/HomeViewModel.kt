@@ -6,11 +6,11 @@ import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.RatingPrompt
-import com.luismejias.lumemedlink.features.patient.parts.CareLoad
-import com.luismejias.lumemedlink.features.patient.parts.allOf
+import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.allOf
+import com.luismejias.lumemedlink.core.screen.markLoading
+import com.luismejias.lumemedlink.core.screen.ok
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
-import com.luismejias.lumemedlink.features.patient.parts.markLoading
-import com.luismejias.lumemedlink.features.patient.parts.ok
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
 import com.luismejias.lumemedlink.shared.CalendarDate
 import kotlinx.coroutines.flow.MutableStateFlow

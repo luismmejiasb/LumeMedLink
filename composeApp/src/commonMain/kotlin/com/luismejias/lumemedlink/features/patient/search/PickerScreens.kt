@@ -17,9 +17,9 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.Commune
 import com.luismejias.lumemedlink.core.care.Specialty
 import com.luismejias.lumemedlink.core.input.SensitiveSearchField
-import com.luismejias.lumemedlink.features.patient.parts.CareLoadView
+import com.luismejias.lumemedlink.core.screen.CareLoadView
+import com.luismejias.lumemedlink.core.screen.folded
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
-import com.luismejias.lumemedlink.features.patient.parts.folded
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_search_clear
 import com.luismejias.lumemedlink.resources.search_chosen

@@ -1,4 +1,4 @@
-package com.luismejias.lumemedlink.features.patient.parts
+package com.luismejias.lumemedlink.core.screen
 
 import cl.lume.uicomposer.components.LumeTextRun
 
