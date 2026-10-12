@@ -2,6 +2,7 @@ package com.luismejias.lumemedlink.features.doctor.tabs
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -15,11 +16,17 @@ import cl.lume.uicomposer.components.LumeFloatingTabBarClearance
 import cl.lume.uicomposer.components.LumeTabBar
 import cl.lume.uicomposer.components.LumeTabBarItem
 import cl.lume.uicomposer.components.LumeTabBarStyle
+import cl.lume.uicomposer.components.LumeToastAppearance
+import cl.lume.uicomposer.components.LumeToastHost
+import cl.lume.uicomposer.components.rememberLumeToastHostState
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.DoctorCareGateway
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
+import com.luismejias.lumemedlink.core.device.rememberPhotoPicker
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
+import com.luismejias.lumemedlink.core.screen.ProfilePhotoFlow
+import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
 import com.luismejias.lumemedlink.features.doctor.agenda.AgendaScreen
 import com.luismejias.lumemedlink.features.doctor.agenda.AgendaViewModel
 import com.luismejias.lumemedlink.features.doctor.patients.DoctorPatientsScreen
@@ -31,6 +38,7 @@ import com.luismejias.lumemedlink.resources.doctor_requests_badge
 import com.luismejias.lumemedlink.resources.doctor_tab_agenda
 import com.luismejias.lumemedlink.resources.doctor_tab_patients
 import com.luismejias.lumemedlink.resources.doctor_tab_settings
+import com.luismejias.lumemedlink.resources.toast_dismiss
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,6 +67,9 @@ internal fun DoctorMainHost(care: DoctorCareGateway, onSignOut: () -> Unit) {
     val agenda = viewModel { AgendaViewModel(care) }
     val patients = viewModel { DoctorPatientsViewModel(care) }
     val profile = viewModel { DoctorProfileViewModel(care) }
+    val photo = viewModel { ProfilePhotoModel() }
+    val picker = rememberPhotoPicker(photo::picked)
+    val toasts = rememberLumeToastHostState()
     val contact = rememberDeviceContact()
     val selected by tabs.selected.collectAsState()
     val agendaLoad by agenda.state.collectAsState()
@@ -71,7 +82,7 @@ internal fun DoctorMainHost(care: DoctorCareGateway, onSignOut: () -> Unit) {
             when (selected) {
                 DoctorTab.AGENDA -> AgendaScreen(agenda, doctor, onProfile = { tabs.show(DoctorTab.SETTINGS) })
                 DoctorTab.PATIENTS -> DoctorPatientsScreen(patients, onCall = contact::dial, onMail = contact::mail)
-                DoctorTab.SETTINGS -> DoctorProfileScreen(profile, onSignOut)
+                DoctorTab.SETTINGS -> DoctorProfileScreen(profile, photo, onSignOut)
             }
         }
         LumeTabBar(
@@ -91,6 +102,14 @@ internal fun DoctorMainHost(care: DoctorCareGateway, onSignOut: () -> Unit) {
             onSelect = { tabs.show(DoctorTab.entries[it]) },
             modifier = Modifier.align(Alignment.BottomCenter),
             style = LumeTabBarStyle.Floating,
+        )
+        ProfilePhotoFlow(photo, picker, toasts)
+        // Above the floating bar, as k3 draws it, never over it.
+        LumeToastHost(
+            toasts,
+            dismissLabel = stringResource(Res.string.toast_dismiss),
+            modifier = Modifier.padding(bottom = LumeFloatingTabBarClearance),
+            appearance = LumeToastAppearance.Inverted,
         )
     }
 }

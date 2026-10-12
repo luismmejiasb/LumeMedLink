@@ -2,6 +2,7 @@ package com.luismejias.lumemedlink.features.patient.tabs
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -27,11 +28,15 @@ import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.RatingPrompt
 import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberDirections
+import com.luismejias.lumemedlink.core.device.rememberPhotoPicker
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
+import com.luismejias.lumemedlink.core.screen.ProfilePhotoFlow
+import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsScreen
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsSegment
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
@@ -48,6 +53,8 @@ import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsScreen
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeScreen
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
+import com.luismejias.lumemedlink.features.patient.rating.RateSheet
+import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 import com.luismejias.lumemedlink.features.patient.search.SearchHost
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
 import com.luismejias.lumemedlink.features.patient.settings.SettingsEntry
@@ -58,6 +65,8 @@ import com.luismejias.lumemedlink.resources.booked_toast
 import com.luismejias.lumemedlink.resources.cancelled_toast
 import com.luismejias.lumemedlink.resources.directions_copied
 import com.luismejias.lumemedlink.resources.moved_toast
+import com.luismejias.lumemedlink.resources.rate_failed
+import com.luismejias.lumemedlink.resources.rate_sent_toast
 import com.luismejias.lumemedlink.resources.sent_toast
 import com.luismejias.lumemedlink.resources.tab_appointments
 import com.luismejias.lumemedlink.resources.tab_doctors
@@ -101,6 +110,9 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
     val doctors = viewModel { MyDoctorsViewModel(care) }
     val settings = viewModel { SettingsViewModel(care) }
     val change = viewModel { ChangeViewModel(care, directory) }
+    val rate = viewModel { RateViewModel(care) }
+    val photo = viewModel { ProfilePhotoModel() }
+    val picker = rememberPhotoPicker(photo::picked)
     val contact = rememberDeviceContact()
     val directions = rememberDirections()
     val clipboard = rememberAddressClipboard()
@@ -130,6 +142,24 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
     val movedToast = stringResource(Res.string.moved_toast)
     val cancelledToast = stringResource(Res.string.cancelled_toast)
     val copiedToast = stringResource(Res.string.directions_copied)
+    val rateSent by rate.sent.collectAsState()
+    val rateState by rate.state.collectAsState()
+    val rateSentToast = stringResource(Res.string.rate_sent_toast)
+    val rateFailedToast = stringResource(Res.string.rate_failed)
+    LaunchedEffect(rateSent) {
+        if (!rateSent) return@LaunchedEffect
+        // Inicio stops asking, Ajustes counts one more, and an open c3 shows what was sent.
+        home.refresh()
+        settings.refresh()
+        changeRoutes.lastOrNull()?.let { change.reloadDetail() }
+        toasts.show(rateSentToast, LumeStatusStyle.Success)
+        rate.sentSeen()
+    }
+    LaunchedEffect(rateState?.failure) {
+        if (rateState?.failure == null) return@LaunchedEffect
+        toasts.show(rateFailedToast, LumeStatusStyle.Error)
+        rate.failureSeen()
+    }
     LaunchedEffect(changeDone) {
         val done = changeDone ?: return@LaunchedEffect
         home.refresh()
@@ -166,6 +196,9 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
                             }
                         }
                     },
+                    onRate = { appointment, stars ->
+                        rate.open(RatingPrompt(appointment.id, appointment.doctor, appointment.date), stars)
+                    },
                 )
                 changeRoute == ChangeRoute.RESCHEDULE -> RescheduleScreen(change, toasts, care.today())
                 changeRoute == ChangeRoute.CANCEL -> CancelScreen(change, care.today())
@@ -174,7 +207,7 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
                     onDirections = openDirections,
                     onChangeOrCancel = { appointment -> change.launch { openOptions(appointment) } },
                     onOpenAppointment = { appointment -> change.launch { openDetail(appointment) } },
-                    onRate = { _, _ -> },
+                    onRate = rate::open,
                     onSearch = { tabs.show(PatientTab.SEARCH) },
                     onNotices = {},
                     onProfile = { tabs.show(PatientTab.SETTINGS) },
@@ -196,6 +229,7 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
                 )
                 else -> SettingsScreen(
                     model = settings,
+                    photo = photo,
                     onEditPhone = {},
                     onEditEmail = {},
                     onEntry = { if (it == SettingsEntry.SIGN_OUT) onSignOut() },
@@ -242,9 +276,13 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
             onCall = contact::dial,
             onDismiss = change::dismissSheet,
         )
+        RateSheet(rate, onComplaint = {})
+        ProfilePhotoFlow(photo, picker, toasts)
+        // Above the floating bar, as k3 draws it, never over it.
         LumeToastHost(
             toasts,
             dismissLabel = stringResource(Res.string.toast_dismiss),
+            modifier = Modifier.padding(bottom = if (showsTabBar) LumeFloatingTabBarClearance else 0.dp),
             appearance = LumeToastAppearance.Inverted,
         )
     }

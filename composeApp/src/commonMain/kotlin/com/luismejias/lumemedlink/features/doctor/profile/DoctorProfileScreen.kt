@@ -6,8 +6,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import cl.lume.uicomposer.components.LumeAvatar
-import cl.lume.uicomposer.components.LumeAvatarSize
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeList
@@ -28,6 +26,8 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.DoctorProfile
 import com.luismejias.lumemedlink.core.screen.CareLoadView
+import com.luismejias.lumemedlink.core.screen.ProfileAvatar
+import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.doctor_address
@@ -52,15 +52,15 @@ private enum class ProfileEntry { RATINGS, CORRECTIONS }
 /**
  * m3 · the doctor's public profile: what patients see in Buscar and in their appointments, and the one switch that
  * shares their contact with all of them. PROVISIONAL (ADR-0046): the pencils, the ratings and the corrections open
- * nothing yet, and the photo waits for its own flow (k1–k4). «Abrir LumeMed» is not here (the author's call).
+ * nothing yet; the camera button opens the photo's flow (k1–k4). «Abrir LumeMed» is not here (the author's call).
  */
 @Composable
-internal fun DoctorProfileScreen(model: DoctorProfileViewModel, onSignOut: () -> Unit) {
+internal fun DoctorProfileScreen(model: DoctorProfileViewModel, photo: ProfilePhotoModel, onSignOut: () -> Unit) {
     val load by model.state.collectAsState()
     LumeContainer(scroll = LumeContainerScroll.Scrollable) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
             CareLoadView(load, onRetry = model::refresh) { profile ->
-                ProfileHeader(profile)
+                ProfileHeader(profile, photo)
                 ProfileFields(profile)
                 ShareRow(profile, onShare = { share -> model.launch { shareContact(share) } })
                 ProfileEntries(profile)
@@ -72,13 +72,13 @@ internal fun DoctorProfileScreen(model: DoctorProfileViewModel, onSignOut: () ->
 }
 
 @Composable
-private fun ProfileHeader(profile: DoctorProfile) {
+private fun ProfileHeader(profile: DoctorProfile, photo: ProfilePhotoModel) {
     LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Center, spacing = { small }) {
-        LumeAvatar(
-            initials = profile.doctor.initials,
-            size = LumeAvatarSize.Large,
+        ProfileAvatar(
+            photo,
+            profile.doctor.initials,
+            profile.doctor.displayName,
             tint = LumeTileTint.deterministic(profile.doctor.id),
-            contentDescription = profile.doctor.displayName,
         )
         LumeText(
             text = profile.doctor.displayName,

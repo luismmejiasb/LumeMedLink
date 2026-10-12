@@ -8,6 +8,7 @@ import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.screen.CareLoad
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -74,6 +75,12 @@ internal class ChangeViewModel(private val care: PatientCareGateway, private val
     suspend fun openDetail(appointment: PatientAppointment) {
         stack.value = listOf(ChangeRoute.DETAIL)
         detail.load(appointment)
+    }
+
+    /** The open detail read again — after f5, c3 shows the rating just sent. */
+    fun reloadDetail() {
+        val appointment = (detail.state.value as? CareLoad.Ready)?.content?.appointment ?: return
+        launch { detail.load(appointment) }
     }
 
     /** f2 → f3, c1/c2 → f3. Mis citas' «Cambiar» comes here directly. */

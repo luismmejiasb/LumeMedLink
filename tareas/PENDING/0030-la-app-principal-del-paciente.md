@@ -20,8 +20,8 @@ contrato 0.96.0; lo que no, va en `docs/backend-requests/0008`.
 3. **Tu próxima cita** (f1–f4): cómo llegar, cambiar (reagendar es la operación atómica del contrato, nunca cancelar
    y reservar — T7) y cancelar con su motivo propio (`CANNOT_ATTEND`, `SCHEDULE_CONFLICT`, `OTHER`).
 4. **Detalle de una cita** (c1–c3).
-5. **Valorar la atención** (f5a–f5d) — sin contrato; espera el control de estrellas del kit.
-6. **Foto de perfil** (k1–k4) — sin contrato y con cámara/galería: ADR de dependencia antes.
+5. **Valorar la atención** (f5a–f5d) — hecho contra el guion (2026-10-12), con las piezas del kit.
+6. **Foto de perfil** (k1–k4) — hecho en memoria (2026-10-12, ADR-0050), en Configuración y en el perfil del médico.
 7. **El médico** (m1–m3): agenda simple, pacientes como contactos, su perfil.
 
 Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.

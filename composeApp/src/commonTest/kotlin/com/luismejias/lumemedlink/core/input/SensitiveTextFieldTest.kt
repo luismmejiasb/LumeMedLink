@@ -88,4 +88,11 @@ class SensitiveTextFieldTest {
     fun aSearchHidesItsValueLikeEveryOtherField() {
         assertEquals(LumeFieldSensitivity.Personal, SEARCH_FIELD_SENSITIVITY)
     }
+
+    @Test
+    fun thePatientsOwnWordsAreHardenedLikeAPersonalDatum() {
+        assertEquals(LumeTextCase.Verbatim, WORDS_FIELD_REQUEST.textCase)
+        assertEquals(LumeFieldSensitivity.Personal, WORDS_FIELD_REQUEST.sensitivity)
+        assertFalse(WORDS_FIELD_REQUEST.masked)
+    }
 }

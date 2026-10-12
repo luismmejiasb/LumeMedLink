@@ -525,4 +525,63 @@
     <string-array name="weekdays_initial">
         <item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item><item>S</item>
     </string-array>
+    <!-- f5 · Rate the visit -->
+    <string name="rate_title">How was your visit with %1$s?</string>
+    <string name="rate_title_him">How was your visit with %1$s?</string>
+    <string name="rate_title_her">How was your visit with %1$s?</string>
+    <string name="rate_subtitle">Visit on %1$s · %2$s</string>
+    <string name="rate_level_1">Very bad</string>
+    <string name="rate_level_2">Bad</string>
+    <string name="rate_level_3">Fair</string>
+    <string name="rate_level_4">Good</string>
+    <string name="rate_level_5">Excellent</string>
+    <string name="rate_ask_bad">What went wrong? · Optional</string>
+    <string name="rate_ask_fair">What could we improve? · Optional</string>
+    <string name="rate_ask_good">What stood out? · Optional</string>
+    <string name="aspect_long_wait">I waited a long time</string>
+    <string name="aspect_not_explained">Nothing was explained</string>
+    <string name="aspect_unkind">Unfriendly manner</string>
+    <string name="aspect_unexpected_charge">Unexpected charge</string>
+    <string name="aspect_moved_hour">My time was changed</string>
+    <string name="aspect_punctuality">Punctuality</string>
+    <string name="aspect_clarity">Clear explanations</string>
+    <string name="aspect_visit_time">Length of the visit</string>
+    <string name="aspect_notice">Advance notice</string>
+    <string name="aspect_facilities">Facilities</string>
+    <string name="aspect_explained_clearly">Explained clearly</string>
+    <string name="aspect_kind">Friendly manner</string>
+    <string name="aspect_solved_it">Solved my problem</string>
+    <string name="aspect_other">Other</string>
+    <string name="rate_other_placeholder">Write the aspect</string>
+    <string name="rate_other_helper">A short title, on one line.</string>
+    <string name="rate_other_counter">%1$d of %2$d characters</string>
+    <string name="rate_comment_placeholder">Tell us more (optional)</string>
+    <string name="rate_comment_helper">Published without your name. Never include your health details.</string>
+    <string name="rate_complaint">Was it serious? You can file a formal complaint. [[File a complaint]]</string>
+    <string name="rate_later">Not now</string>
+    <string name="rate_send">Send rating</string>
+    <string name="rate_sent_toast">Thanks for your rating</string>
+    <string name="rate_failed">We could not send your rating. Please try again.</string>
+
+    <!-- k1–k4 · Profile photo -->
+    <string name="photo_change">Change photo</string>
+    <string name="photo_options_title">Profile photo</string>
+    <string name="photo_take">Take photo</string>
+    <string name="photo_pick">Choose from gallery</string>
+    <string name="photo_remove">Remove photo</string>
+    <string name="photo_cancel">Cancel</string>
+    <string name="photo_crop_title">Adjust photo</string>
+    <string name="photo_crop_help">Move and pinch to frame your face</string>
+    <string name="photo_crop_use">Use photo</string>
+    <string name="photo_crop_frame">Your photo framing</string>
+    <string name="photo_crop_zoom_in">Zoom in</string>
+    <string name="photo_crop_zoom_out">Zoom out</string>
+    <string name="photo_crop_center">Center</string>
+    <string name="photo_updated">Photo updated</string>
+    <string name="photo_denied_gallery_title">No access to your photos</string>
+    <string name="photo_denied_gallery_body">To choose a photo, allow access in Settings. Your photo is only used on your profile.</string>
+    <string name="photo_denied_camera_title">No access to the camera</string>
+    <string name="photo_denied_camera_body">To take a photo, allow access in Settings. Your photo is only used on your profile.</string>
+    <string name="photo_open_settings">Open Settings</string>
+    <string name="photo_not_now">Not now</string>
 </resources>

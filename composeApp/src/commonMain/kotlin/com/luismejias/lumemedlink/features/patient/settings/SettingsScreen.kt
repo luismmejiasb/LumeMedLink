@@ -5,8 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import cl.lume.uicomposer.components.LumeAvatar
-import cl.lume.uicomposer.components.LumeAvatarSize
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeList
@@ -27,6 +25,8 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.PatientProfile
 import com.luismejias.lumemedlink.core.screen.CareLoadView
+import com.luismejias.lumemedlink.core.screen.ProfileAvatar
+import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.settings_complaints
@@ -55,11 +55,12 @@ internal enum class SettingsEntry { CORRECTION, REMINDERS, RATINGS, COMPLAINTS, 
 /**
  * Configuración (p7). The RUT is never edited here — it is the identifier (the handoff's inherited rule); a
  * wrong one goes through "Solicitar corrección de un dato", which the doctor or their secretary approves.
- * PROVISIONAL (ADR-0046): the camera badge on the avatar waits for the photo flow (k1–k4).
+ * The avatar's camera button opens the photo's flow (k1–k4), which the host draws over the tabs.
  */
 @Composable
 internal fun SettingsScreen(
     model: SettingsViewModel,
+    photo: ProfilePhotoModel,
     onEditPhone: () -> Unit,
     onEditEmail: () -> Unit,
     onEntry: (SettingsEntry) -> Unit,
@@ -79,11 +80,7 @@ internal fun SettingsScreen(
                     alignment = LumeStackAlignment.Center,
                     spacing = { small },
                 ) {
-                    LumeAvatar(
-                        initials = profile.initials,
-                        size = LumeAvatarSize.Large,
-                        contentDescription = "${profile.givenNames} ${profile.familyNames}",
-                    )
+                    ProfileAvatar(photo, profile.initials, "${profile.givenNames} ${profile.familyNames}")
                     LumeText(text = "${profile.givenNames} ${profile.familyNames}", style = LumeTextStyle.HeadingMedium)
                     if (profile.verified) {
                         LumeTag(text = stringResource(Res.string.settings_verified), style = LumeTagStyle.Success)

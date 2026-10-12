@@ -4,11 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeDocumentField
 import cl.lume.uicomposer.components.LumeDocumentFormat
+import cl.lume.uicomposer.components.LumeFieldCounter
 import cl.lume.uicomposer.components.LumeFieldKeyboard
 import cl.lume.uicomposer.components.LumeFieldSensitivity
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
+import cl.lume.uicomposer.components.LumeMultilineField
 import cl.lume.uicomposer.components.LumePasswordField
 import cl.lume.uicomposer.components.LumeRevealLabels
 import cl.lume.uicomposer.components.LumeSearchField
@@ -214,5 +216,67 @@ internal fun SensitiveSearchField(
         clearContentDescription = clearLabel,
         modifier = modifier,
         sensitivity = SEARCH_FIELD_SENSITIVITY,
+    )
+}
+
+/**
+ * What the patient's own words ask of the kit (f5's «Otro» and «Cuéntanos más»): the hardening of a personal datum.
+ * The words are free, so a name, a phone or worse can be in them — typed verbatim, so the keyboard learns none of it,
+ * and hidden from services that are not accessibility tools (ADR-0013, ADR-0042). A test keeps it.
+ */
+internal val WORDS_FIELD_REQUEST: KitFieldRequest =
+    kitFieldRequestFor(SensitiveFieldPurpose.PERSONAL_DATA, SensitiveFieldFormat.TEXT)
+
+/**
+ * A short line of the patient's own words with no visible title, its limit counted inside (f5d's «Otro»: «30/40»).
+ * [counter] is what a reader hears instead of the digits.
+ */
+@Composable
+internal fun SensitiveWordsField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    maxLength: Int,
+    helper: String,
+    counter: (count: Int, max: Int) -> String,
+    modifier: Modifier = Modifier,
+) {
+    val request = WORDS_FIELD_REQUEST
+    LumeTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = null,
+        placeholder = placeholder,
+        modifier = modifier,
+        keyboard = request.keyboard,
+        textCase = request.textCase,
+        maxLength = maxLength,
+        helper = helper,
+        sensitivity = request.sensitivity,
+        counter = LumeFieldCounter(counter),
+    )
+}
+
+/**
+ * Several lines of the patient's own words with no visible title (f5's «Cuéntanos más»), and a line under them. The
+ * value is hidden like every field here, but the kit's multiline field takes no text case yet: its keyboard keeps its
+ * corrections, so it can learn what is typed. Declared, not hidden — asked of the kit.
+ */
+@Composable
+internal fun SensitiveWordsArea(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    helper: String,
+    modifier: Modifier = Modifier,
+) {
+    LumeMultilineField(
+        value = value,
+        onValueChange = onValueChange,
+        label = null,
+        placeholder = placeholder,
+        modifier = modifier,
+        helper = helper,
+        sensitivity = WORDS_FIELD_REQUEST.sensitivity,
     )
 }

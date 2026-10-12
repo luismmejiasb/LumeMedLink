@@ -1,6 +1,7 @@
 package com.luismejias.lumemedlink.core.screen
 
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.unit.IntRect
 import com.luismejias.lumemedlink.core.device.PhotoResult
 import com.luismejias.lumemedlink.core.device.PhotoSource
 import kotlin.test.Test
@@ -41,5 +42,23 @@ class ProfilePhotoModelTest {
         model.cropped(image)
         model.remove()
         assertNull(model.photo.value)
+    }
+
+    @Test
+    fun theFramedSquareBecomesTheAvatarScaledDown() {
+        val large = ImageBitmap(1_200, 900)
+        model.picked(PhotoResult.Picked(large))
+        model.framed(IntRect(100, 50, 900, 850))
+        val photo = model.photo.value
+        assertEquals(PHOTO_SIDE, photo?.width, "800 px square, compressed to the avatar's side")
+        assertEquals(PHOTO_SIDE, photo?.height)
+        assertTrue(model.updated.value)
+    }
+
+    @Test
+    fun aSmallSquareIsNotBlownUp() {
+        model.picked(PhotoResult.Picked(ImageBitmap(300, 300)))
+        model.framed(IntRect(0, 0, 200, 200))
+        assertEquals(200, model.photo.value?.width)
     }
 }

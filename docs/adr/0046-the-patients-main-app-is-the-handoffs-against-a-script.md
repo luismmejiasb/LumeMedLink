@@ -82,6 +82,12 @@ Two contract facts shape the screens and are not the design's:
     design's three kinds.
 16. **f2's change window is in minutes; the contract's is in hours.** `cancelCutoffHours` (contract 0.102.0, request
     `0008`) cannot say the design's «hasta 30 min antes». The script keeps minutes.
+17. **f5's «Hacer un reclamo» opens nothing**, like p7's «Reclamos»: there is no complaint flow to open. The link reads
+    inside the callout, after its sentence, instead of standing on its right as the design draws it.
+18. **k1 is the kit's sheet, not the system's action sheet**, with the same three options; «Tomar foto» only on a phone
+    with a camera, and «Eliminar foto» only once there is a photo (spec k1).
+19. **k3 never fails to upload**: the photo stays in memory and goes nowhere (ADR-0050), so «No pudimos subir tu foto ·
+    Reintentar» has nothing to say.
 
 ## Consequences
 

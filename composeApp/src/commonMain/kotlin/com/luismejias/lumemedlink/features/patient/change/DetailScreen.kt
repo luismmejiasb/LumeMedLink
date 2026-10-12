@@ -94,6 +94,7 @@ internal fun AppointmentDetailScreen(
     onDirections: (PatientAppointment) -> Unit,
     onCall: (String) -> Unit,
     onBookAgain: (PatientAppointment) -> Unit,
+    onRate: (PatientAppointment, Int) -> Unit,
 ) {
     val load by model.detail.state.collectAsState()
     val ready = (load as? CareLoad.Ready)?.content
@@ -130,7 +131,7 @@ internal fun AppointmentDetailScreen(
             }
             if (appointment.status == AppointmentStatus.COMPLETED) {
                 LumeEyebrow(stringResource(Res.string.detail_rating))
-                RatingCard(content.rating)
+                RatingCard(content.rating, onRate = { stars -> onRate(appointment, stars) })
                 LumeCallout(runs = stringResource(Res.string.detail_clinical).richRuns())
             }
         }
@@ -239,7 +240,7 @@ private fun DetailFacts(
 
 /** c3: the stars sent, read only, the patient's words and when; unrated, the stars that open f5. */
 @Composable
-private fun RatingCard(rating: SentRating?) {
+private fun RatingCard(rating: SentRating?, onRate: (Int) -> Unit) {
     val spoken = listOf(stringResource(Res.string.rate_none)) +
         (1..MAX_STARS).map { stringResource(Res.string.rate_value, it) }
     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
@@ -249,8 +250,8 @@ private fun RatingCard(rating: SentRating?) {
             if (rating != null) {
                 LumeRatingInput(rating.stars, label, describe, size = LumeRatingInputSize.Compact)
             } else {
-                // f5 waits for its own slice; the stars are drawn as c3 asks and open nothing yet.
-                LumeRatingInput(0, onValueChange = {}, label, describe, size = LumeRatingInputSize.Compact)
+                // Tapping a star opens f5 at that level (spec c3).
+                LumeRatingInput(0, onValueChange = onRate, label, describe, size = LumeRatingInputSize.Compact)
             }
             rating?.comment?.let { LumeText(text = "«$it»") }
             rating?.let {
