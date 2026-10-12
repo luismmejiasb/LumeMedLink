@@ -114,6 +114,16 @@ movieron a `core/screen`. Pendiente del kit: las secciones de m2 en una sola tar
 - Como todo el lado paciente, va contra un guion. La agenda y el roster son las rutas tenant-scoped de la trampa T11
   del backend; el pedido de contrato de cada una debe incluir la pregunta de restricción cuando se conecten.
 
+## Valorar (f5) y la foto de perfil (k1–k4): lo que decidió el autor (2026-10-11)
+
+- **Valorar sigue al diseño, como maqueta**: «Cuéntanos más» y «Otro» con texto de hasta 40 caracteres, y c3 con el
+  comentario. El backend registró ese mismo día otra decisión del autor (valoraciones públicas, sólo el promedio,
+  estrellas y motivos cerrados, sin texto libre; tarea `0121` del backend). Cuando llegue el contrato, f5 y c3 se
+  ajustan a eso.
+- **La foto, maqueta completa en memoria**: hoja de opciones, recorte circular (pieza nueva del kit), permisos con su
+  ADR y el aviso sin permiso. La foto vive sólo en memoria, se borra al cerrar sesión, y nunca se guarda en disco ni se
+  sube. Android usa el selector de fotos del sistema (sin permiso) y la cámara sin archivo.
+
 ## La respuesta del backend al pedido `0008` (2026-10-11)
 
 Está en `../lumemed-cloud-platform/tareas/PENDING/0121-lo-que-le-falta-al-contrato-para-la-app-del-paciente.md`.

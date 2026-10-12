@@ -93,3 +93,16 @@ Lo que decidió el autor sobre esa respuesta:
 - **Aditivos propuestos por el backend**: el autor aprueba los cuatro (`professionalId` en la cita, la dirección del
   lugar en la cita, `cancelCutoffHours` en la cita y `specialtyCode` en el contacto compartido). Se le comunican al
   backend cuando vuelva a tomar pedidos de este repo.
+
+## Lo que decidió el autor en el backend (2026-10-11, commit 8da435e de lumemed-cloud-platform)
+
+- Aditivos aprobados: `professionalId`, la dirección del lugar con la unidad nueva, `specialtyCode` en los contactos y
+  `cancelCutoffHours` en la tarjeta.
+- El RUT propio va en el perfil por clínica, sin vista de titular.
+- La lista de contactos incluye a todo profesional que atendió, con `phone`/`email` nulos si no comparte.
+- Valoraciones públicas: sólo el promedio, con estrellas y motivos cerrados, sin texto libre. La maqueta de f5 sigue el
+  diseño (con texto) por decisión del autor en este repo, y se ajusta cuando llegue el contrato.
+- Habrá buzón del paciente (el push sólo dice «hay novedades»), así que la campana se queda.
+- Recordatorios fijos a 24 h y 2 h antes, sólo con el consentimiento dado; el paciente no elige los tiempos.
+- Búsquedas recientes en ninguna parte (ya quitadas).
+- El pedido `0005` (geocodificación) se descartó por ahora: esta app no tiene autocompletado de direcciones construido.
