@@ -100,7 +100,7 @@ fecha c3 «Martes 2 de septiembre», pero el 2 de septiembre de 2026 es miércol
 El rol médico entra a su app de tres pestañas (Agenda, Pacientes, Ajustes) en vez de la pantalla provisional:
 confirma o rechaza solicitudes, ve el día, busca pacientes por nombre o RUT y los llama o les escribe, y comparte o no
 su contacto. Agrega «Cerrar sesión» en Ajustes, que m3 no dibuja. Las piezas que comparten las dos audiencias se
-movieron a `core/screen`. Pendiente del kit: las secciones de m2 en una sola tarjeta.
+movieron a `core/screen`. Las secciones de m2 van en una sola tarjeta con el índice del kit (`LumeListChrome.OpenIndex`, 2026-10-12).
 
 ### Lo que decidió el autor (2026-10-11)
 

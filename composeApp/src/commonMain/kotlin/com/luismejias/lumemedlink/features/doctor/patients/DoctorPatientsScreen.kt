@@ -85,7 +85,7 @@ internal fun DoctorPatientsScreen(model: DoctorPatientsViewModel, onCall: (Strin
                         key = { it.id },
                         scrolls = false,
                         background = Color.Transparent,
-                        chrome = LumeListChrome.OpenRuled,
+                        chrome = LumeListChrome.OpenIndex,
                     ) { contact -> ContactRow(contact, onCall, onMail) }
                 }
                 LumeCallout(
