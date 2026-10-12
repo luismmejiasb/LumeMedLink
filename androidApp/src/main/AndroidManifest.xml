@@ -14,6 +14,15 @@
          permission in the MERGED manifest that is not on the allowlist (F12, ADR-0016). -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- f1 «Cómo llegar» (ADR-0048): which installed apps open an address. Package visibility is scoped to the one
+         intent the app hands them, a geo: view, and grants no permission. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+    </queries>
+
     <application
         android:label="LumeMedLink"
         android:allowBackup="false"

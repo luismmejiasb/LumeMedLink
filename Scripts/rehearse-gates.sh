@@ -367,6 +367,43 @@ import sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceContact.android.kt"
 p.write_text(p.read_text() + "\nprivate fun send() = Intent(Intent.ACTION_SEND)\n")
 '
+# ── P2 · ADR-0048 opened one geo: line; everything around it must stay red ───────────────────────
+bait "the map line copied outside its one file" check-forbidden-patterns.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device"
+(d / "Geo.kt").write_text(
+    "package com.luismejias.lumemedlink.core.device\n\nimport android.content.Intent\nimport android.net.Uri\n\n"
+    "internal fun geo(a: String) = Intent(Intent.ACTION_VIEW, Uri.parse(GEO_QUERY + Uri.encode(a)))\n")
+'
+bait "a stream put on the map intent" check-forbidden-patterns.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceDirections.android.kt"
+s = p.read_text()
+p.write_text(s.replace(".setPackage(app.id)", ".setPackage(app.id).putExtra(Intent.EXTRA_STREAM, Uri.EMPTY)", 1))
+'
+bait "a second map door in the same file" check-forbidden-patterns.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceDirections.android.kt"
+p.write_text(p.read_text() + "\nprivate fun again(a: String): Intent = Intent(Intent.ACTION_VIEW, Uri.parse(GEO_QUERY + Uri.encode(a)))\n")
+'
+# ── The clipboard: ADR-0049 opened one door, marked; everything around it must stay red ──────────
+bait "a clipboard write in a screen" check-input-surfaces.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device"
+(d / "Copy.kt").write_text(
+    "package com.luismejias.lumemedlink.core.device\n\nimport android.content.ClipData\n\n"
+    "internal fun rut(r: String) = ClipData.newPlainText(\"\", r)\n")
+'
+bait "the address clip without its sensitive mark" check-input-surfaces.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/AddressClipboard.android.kt"
+p.write_text(p.read_text().replace("putBoolean(IS_SENSITIVE, true)", "putBoolean(IS_SENSITIVE, false)"))
+'
+bait "the address item synced to other devices" check-input-surfaces.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/device/AddressClipboard.ios.kt"
+p.write_text(p.read_text().replace("UIPasteboardOptionLocalOnly to true,", ""))
+'
 bait "a session token to logcat from inside core/, via an import" check-logging.sh '
 import sys, pathlib
 d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/session"

@@ -2,6 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>waze</string>
+	</array>
 	<!--
 	  Deliberately short. Three things are ABSENT on purpose, and their absence is the control —
 	  Scripts/check-ios-host.sh fails the build if any of them appears:

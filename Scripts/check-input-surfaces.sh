@@ -37,12 +37,25 @@ scan() {
     grep -rnE "$1" $SRC 2>/dev/null | grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|/\*)' || true
 }
 
-# ── The clipboard: no legitimate caller exists yet ──────────────────────────────────────────────
-hits=$(scan 'ClipboardManager|LocalClipboardManager|LocalClipboard|ClipData|setPrimaryClip|ClipDescription|UIPasteboard')
+# ── The clipboard: one reviewed door, ADR-0049 ──────────────────────────────────────────────────
+# A copied RUT or phone is readable by every app on the device (§8.9). The ONE caller is f1's «Copiar dirección»: the
+# clinic's address, in core/device's two AddressClipboard files, each with its marking.
+CLIP_ANDROID="composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/AddressClipboard.android.kt"
+CLIP_IOS="composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/device/AddressClipboard.ios.kt"
+hits=$(scan 'ClipboardManager|LocalClipboardManager|LocalClipboard|ClipData|setPrimaryClip|ClipDescription|UIPasteboard' \
+    | grep -v "^$CLIP_ANDROID:" | grep -v "^$CLIP_IOS:" || true)
 if [ -n "$hits" ]; then
     fail "input: clipboard API in use" \
-         "A copied RUT or phone is readable by every app on the device (§8.9). No feature needs copy yet; when one does it arrives with its own reviewed seam." \
+         "A copied RUT or phone is readable by every app on the device (§8.9). The only door is ADR-0049's, for the clinic's address." \
          "$hits"
+fi
+if [ -f "$CLIP_ANDROID" ] && ! grep -q 'putBoolean(IS_SENSITIVE, true)' "$CLIP_ANDROID"; then
+    fail "input: the address clip is not marked sensitive" \
+         "ADR-0049: the clip carries EXTRA_IS_SENSITIVE, so Android 13+ keeps it out of its overlay." "$CLIP_ANDROID"
+fi
+if [ -f "$CLIP_IOS" ] && ! { grep -q 'UIPasteboardOptionLocalOnly to true' "$CLIP_IOS" && grep -q 'UIPasteboardOptionExpirationDate to' "$CLIP_IOS"; }; then
+    fail "input: the address item is not local and expiring" \
+         "ADR-0049: local only (no Universal Clipboard) and gone after two minutes." "$CLIP_IOS"
 fi
 
 # SelectionContainer is the quiet form of the same leak: it hands arbitrary rendered text to the

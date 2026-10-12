@@ -11,8 +11,8 @@
 # What it hunts:
 #   P1  no_globalscope — total, no exceptions, core/ included (§6).
 #   P2  no_document_delivery — ADR-0007: share sheets / exporters have no legitimate clinical use
-#       in this app: FileProvider, ACTION_SEND*, UIActivityViewController. ONE exception, ADR-0047: the
-#       mail app opened with an address and nothing else, in one line of one file.
+#       in this app: FileProvider, ACTION_SEND*, UIActivityViewController. TWO exceptions, each one line
+#       of one file: ADR-0047 (the mail app, with an address) and ADR-0048 (a map app, with the clinic's).
 #   P3  secrets_gate, call-shaped half — plain-storage CALLS outside core/ (§8.4, ADR-0005). The
 #       import-shaped half lives in detekt's ForbiddenImport.
 #
@@ -51,8 +51,11 @@ fi
 # core/device's Android contact and nowhere else. Only that line is exempt; any other send intent, anywhere, stays red.
 MAIL_DOOR="composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceContact.android.kt"
 MAIL_LINE='Intent\(Intent\.ACTION_SENDTO, Uri\.fromParts\("mailto", [A-Za-z]+, null\)\)'
+# ADR-0048 opens a second one: a geo: view intent carrying the clinic's address, built by one function in one file.
+MAP_DOOR="composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device/DeviceDirections.android.kt"
+MAP_LINE='Intent\(Intent\.ACTION_VIEW, Uri\.parse\(GEO_QUERY \+ Uri\.encode\([A-Za-z]+\)\)\)'
 hits=$(grep -rnE 'FileProvider|ACTION_SEND|ACTION_VIEW|ACTION_CREATE_DOCUMENT|UIActivityViewController|UIDocumentInteractionController|UIDocumentPickerViewController|ShareCompat|MediaStore|PrintManager|UIPrintInteractionController|createPrintDocumentAdapter|Intent\.createChooser|startActivityForResult' $SRC 2>/dev/null \
-    | grep -vE "^$MAIL_DOOR:[0-9]+:[^/]*$MAIL_LINE" || true)
+    | grep -vE "^$MAIL_DOOR:[0-9]+:[^/]*$MAIL_LINE" | grep -vE "^$MAP_DOOR:[0-9]+:[^/]*$MAP_LINE" || true)
 if [ -n "$hits" ]; then
     fail "P2 document delivery surface" \
          "This app never shows, prints, exports nor transports a document (ADR-0007). Sending a prescription from here reopens Ley 19.799 for the whole family (backend trap T1). The one exception is ADR-0047's mailto line." \
@@ -72,6 +75,22 @@ if [ -f "$MAIL_DOOR" ]; then
     if [ -n "$loaded" ]; then
         fail "P2 something put on the mail intent" \
              "The mail app gets an address and nothing else: no attachment, subject, body or stream (ADR-0047)." \
+             "$loaded"
+    fi
+fi
+
+# The map door, the same way (ADR-0048): one geo: intent, and nothing on it but the chosen app's package.
+if [ -f "$MAP_DOOR" ]; then
+    doors=$(grep -cE "$MAP_LINE" "$MAP_DOOR" || true)
+    if [ "$doors" -gt 1 ]; then
+        fail "P2 more than one map door" \
+             "ADR-0048 allows one geo: view intent, built in one line." \
+             "$(grep -nE "$MAP_LINE" "$MAP_DOOR")"
+    fi
+    loaded=$(grep -nE 'putExtra|putExtras|EXTRA_|setType|setDataAndType|setClipData|ClipData|setData\(|\.data = |\.type = |\.clipData|FLAG_GRANT' "$MAP_DOOR" || true)
+    if [ -n "$loaded" ]; then
+        fail "P2 something put on the map intent" \
+             "A map app gets the clinic's address and nothing else (ADR-0048)." \
              "$loaded"
     fi
 fi
