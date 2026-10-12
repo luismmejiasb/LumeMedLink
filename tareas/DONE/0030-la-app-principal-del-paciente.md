@@ -1,6 +1,6 @@
 # 0030 · La app principal del paciente, contra un guion leído del contrato
 
-> **Estado:** PENDING (abierta 2026-10-11) · ADR-0046, ADR-0045 · pedido al backend `0008`
+> **Estado:** DONE (abierta 2026-10-11, cerrada 2026-10-12) · ADR-0046, ADR-0045 · pedido al backend `0008`
 
 ## De dónde sale
 
@@ -44,8 +44,8 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 - Capturas en el simulador de iOS con el recorrido de `tmp/tour/`. En Android, `FLAG_SECURE` deja la captura negra: se
   captura con un build temporal sin esa bandera, restaurada apenas compila y jamás commiteada (2026-10-12).
 - **Pasada final del 2026-10-12**, diseño, iOS y Android en tríos (39 pantallas): nada roto por los cambios globales del
-  kit de ese día. Quedan cuatro paridades pedidas al kit (estados vacíos, la franja de e6, buscadores grises, lápices
-  azules); la tarea pasa a `DONE/` cuando estén conectadas.
+  kit de ese día. Las cuatro paridades que quedaban (estados vacíos, la franja de e6, buscadores grises, lápices azules)
+  se conectaron y se verificaron en iOS y Android el mismo día.
 
 ## Lo que decidió el autor (2026-10-11)
 
