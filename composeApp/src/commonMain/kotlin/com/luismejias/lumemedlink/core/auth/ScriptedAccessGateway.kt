@@ -19,6 +19,7 @@ internal object AccessScript {
     const val SMS_CODE = "123456"
     const val LINK_CODE = "K7Q2M9XA"
     const val UNVERIFIED_LINK_CODE = "PEND1NG0"
+    const val NOT_LINKED_CODE = "S1NENL4C"
     const val DOCTOR_RUT = "12987654-9"
     const val DOCTOR_NAME = "Dra. Mariana Rendón"
     const val DOCTOR_SPECIALTY = "Medicina Familiar"
@@ -51,6 +52,7 @@ internal class ScriptedAccessGateway(
     private var code: PendingCode? = null
     private var resetVerified = false
     private var linked: Boolean? = null
+    private var notLinked = false
 
     private class PendingCode(val expiresAt: Long, var attemptsLeft: Int)
 
@@ -143,8 +145,11 @@ internal class ScriptedAccessGateway(
         val doctor = ChileanRut.parse(AccessScript.DOCTOR_RUT)
         when {
             doctor == null -> fail(AccessFailure.Unavailable)
-            code == AccessScript.LINK_CODE || code == AccessScript.UNVERIFIED_LINK_CODE -> {
+            code == AccessScript.LINK_CODE ||
+                code == AccessScript.UNVERIFIED_LINK_CODE ||
+                code == AccessScript.NOT_LINKED_CODE -> {
                 linked = code == AccessScript.LINK_CODE
+                notLinked = code == AccessScript.NOT_LINKED_CODE
                 AccessResult.Ok(
                     LinkedDoctor(
                         AccessScript.DOCTOR_NAME,
@@ -159,10 +164,11 @@ internal class ScriptedAccessGateway(
     }
 
     override suspend fun confirmLink(): AccessResult<Unit> = scripted(null) {
-        when (linked) {
-            true -> AccessResult.Ok(Unit)
-            false -> fail(AccessFailure.DoctorUnverified)
-            null -> fail(AccessFailure.LinkCodeSpent)
+        when {
+            notLinked -> fail(AccessFailure.DoctorNotLinked)
+            linked == true -> AccessResult.Ok(Unit)
+            linked == false -> fail(AccessFailure.DoctorUnverified)
+            else -> fail(AccessFailure.LinkCodeSpent)
         }
     }
 

@@ -117,3 +117,9 @@ Sin comunicar al backend todavía: el autor decide cuándo (ver «No se le hacen
 - La MFA de un token de LumeMedLink es la de esa cuenta, nunca la del iPad.
 - **El clasificador falla cerrado** (su tarea `0137`), como eligió el autor.
 - **0.104.0**: en Mis médicos, un profesional oculto llega sin segundo apellido ni especialidad (ya eran nulables).
+
+### Lo que decidió el autor sobre ese choque (2026-10-12)
+
+- **La maqueta sigue el diseño**: el médico vincula con el código de 4a, como eligió el autor. El choque con el enlace
+  hecho por el personal (ADR-0090 del backend) queda anotado para cuando el backend vuelva a tomar pedidos de este repo.
+- **La cuenta sin enlazar sí tiene pantalla en la maqueta**, con la forma de 4b-e1 (ADR-0044, desviación 11).

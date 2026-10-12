@@ -223,6 +223,15 @@ class AccessFlowTest {
     }
 
     @Test
+    fun aDoctorWhoseAccountIsNotLinkedYetIsToldSoAndWaits() = runTest {
+        flow.push(AccessRoute.DOCTOR_CODE)
+        attempt.doctor.codeChanged(AccessScript.NOT_LINKED_CODE)
+        attempt.doctor.lookUp()
+        attempt.doctor.confirmLink()
+        assertEquals(listOf(AccessRoute.DOCTOR_NOT_LINKED), flow.routes.value)
+    }
+
+    @Test
     fun aSpentLinkingCodeIsItsOwnScreenAndGoesBackEmpty() = runTest {
         flow.push(AccessRoute.DOCTOR_CODE)
         attempt.doctor.codeChanged("ZZZZ9999")

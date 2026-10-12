@@ -81,6 +81,10 @@ internal class DoctorLinkModel(private val gateway: DoctorLinkGateway, private v
                     flow.replaceWith(AccessRoute.DOCTOR_UNVERIFIED)
                     StepOutcome.Advanced
                 }
+                AccessFailure.DoctorNotLinked -> {
+                    flow.replaceWith(AccessRoute.DOCTOR_NOT_LINKED)
+                    StepOutcome.Advanced
+                }
                 AccessFailure.LinkCodeSpent -> {
                     flow.push(AccessRoute.DOCTOR_CODE_SPENT)
                     StepOutcome.Advanced

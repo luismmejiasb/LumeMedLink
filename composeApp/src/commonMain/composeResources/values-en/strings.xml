@@ -165,6 +165,8 @@
     <string name="doctor_confirm_no">It’s not me</string>
     <string name="doctor_unverified_title">Your account is still being verified</string>
     <string name="doctor_unverified_body">LumeMed is validating your provider registration. We’ll let you know when you can link it.</string>
+    <string name="doctor_not_linked_title">Your account is not linked to your practice yet</string>
+    <string name="doctor_not_linked_body">Your practice has to link it in LumeMed. We will let you know when you can sign in.</string>
     <string name="doctor_linked_title">Account linked</string>
     <string name="doctor_linked_body">%1$s, you can now manage your profile and see your agenda from your phone.</string>
     <string name="doctor_linked_profile">Your public profile</string>

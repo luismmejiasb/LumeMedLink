@@ -67,6 +67,8 @@ import com.luismejias.lumemedlink.resources.doctor_linked_profile
 import com.luismejias.lumemedlink.resources.doctor_linked_profile_body
 import com.luismejias.lumemedlink.resources.doctor_linked_start
 import com.luismejias.lumemedlink.resources.doctor_linked_title
+import com.luismejias.lumemedlink.resources.doctor_not_linked_body
+import com.luismejias.lumemedlink.resources.doctor_not_linked_title
 import com.luismejias.lumemedlink.resources.doctor_spent_body
 import com.luismejias.lumemedlink.resources.doctor_spent_hint
 import com.luismejias.lumemedlink.resources.doctor_spent_retry
@@ -219,6 +221,22 @@ internal fun DoctorUnverifiedScreen(onUnderstood: () -> Unit) {
             icon = LumeIcon.Clock,
             title = stringResource(Res.string.doctor_unverified_title),
             body = stringResource(Res.string.doctor_unverified_body),
+            tone = AccessTone.WAIT,
+        )
+    }
+}
+
+/** Not in the design: the account is not linked to a practice yet (4b-e1's shape). Nothing to do but wait. */
+@Composable
+internal fun DoctorNotLinkedScreen(onUnderstood: () -> Unit) {
+    LumeContainer(
+        alignment = LumeContainerAlignment.CenterAbovePinnedAction,
+        action = { ResultActions(primary = stringResource(Res.string.common_understood), onPrimary = onUnderstood) },
+    ) {
+        AccessHeader(
+            icon = LumeIcon.Link,
+            title = stringResource(Res.string.doctor_not_linked_title),
+            body = stringResource(Res.string.doctor_not_linked_body),
             tone = AccessTone.WAIT,
         )
     }

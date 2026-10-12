@@ -58,6 +58,9 @@ the patient access model later (2026-10-11).
    ones, and a field shows the design's error for the design's own example.
 10. **The 6-digit code input is the kit's** (2c, 3b): a label, a clear button and smaller boxes, where the design has
     bigger bare boxes that turn red on a wrong code. The author left it as the kit draws it (2026-10-12).
+11. **One screen the design does not draw: «Tu cuenta aún no está enlazada a tu consulta»**, in 4b-e1's shape. The
+    backend answers `not_provisioned` to a doctor's account no practice has linked (its ADR-0090), and the author asked
+    for the state in the mock (2026-10-12). The script reaches it with the code `S1NENL4C`.
 
 ## Consequences
 

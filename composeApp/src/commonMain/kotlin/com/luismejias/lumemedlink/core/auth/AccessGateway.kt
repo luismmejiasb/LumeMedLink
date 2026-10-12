@@ -38,6 +38,12 @@ internal sealed interface AccessFailure {
     /** The doctor's provider registry is still being verified in LumeMed (4b-e1). */
     data object DoctorUnverified : AccessFailure
 
+    /**
+     * The account is not linked to a practice yet: the backend's `not_provisioned` (its ADR-0090). The design has no
+     * screen for it; the author added one in the shape of 4b-e1 (2026-10-12).
+     */
+    data object DoctorNotLinked : AccessFailure
+
     /** The phone has no Face ID / fingerprint configured (1c-e1). */
     data object BiometricsNotConfigured : AccessFailure
 

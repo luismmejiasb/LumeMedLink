@@ -62,6 +62,9 @@ internal enum class AccessRoute {
     /** 4b-e1. */
     DOCTOR_UNVERIFIED,
 
+    /** Not in the design: the account is not linked to a practice yet, in 4b-e1's shape (the author, 2026-10-12). */
+    DOCTOR_NOT_LINKED,
+
     /** 4c. */
     DOCTOR_LINKED,
     ;
@@ -91,6 +94,7 @@ internal enum class AccessRoute {
             DOCTOR_CODE_SPENT -> true
             DOCTOR_CONFIRM -> true
             DOCTOR_UNVERIFIED -> false
+            DOCTOR_NOT_LINKED -> false
             DOCTOR_LINKED -> false
         }
 }

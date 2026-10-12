@@ -22,6 +22,7 @@ import com.luismejias.lumemedlink.features.auth.doctor.DoctorCodeScreen
 import com.luismejias.lumemedlink.features.auth.doctor.DoctorCodeSpentScreen
 import com.luismejias.lumemedlink.features.auth.doctor.DoctorConfirmScreen
 import com.luismejias.lumemedlink.features.auth.doctor.DoctorLinkedScreen
+import com.luismejias.lumemedlink.features.auth.doctor.DoctorNotLinkedScreen
 import com.luismejias.lumemedlink.features.auth.doctor.DoctorUnverifiedScreen
 import com.luismejias.lumemedlink.features.auth.recovery.NewPasswordScreen
 import com.luismejias.lumemedlink.features.auth.recovery.RecoveryCodeScreen
@@ -144,6 +145,7 @@ internal fun AccessHost(
             AccessRoute.DOCTOR_CODE_SPENT -> DoctorCodeSpentScreen(attempt.doctor, back)
             AccessRoute.DOCTOR_CONFIRM -> DoctorConfirmScreen(attempt.doctor, retryEpoch, back)
             AccessRoute.DOCTOR_UNVERIFIED -> DoctorUnverifiedScreen(onUnderstood = viewModel::restart)
+            AccessRoute.DOCTOR_NOT_LINKED -> DoctorNotLinkedScreen(onUnderstood = viewModel::restart)
             AccessRoute.DOCTOR_LINKED -> DoctorLinkedScreen(attempt.doctor)
         }
     }

@@ -107,6 +107,8 @@ class ScriptedAccessGatewayTest {
         assertEquals(AccessResult.Ok(Unit), gateway.confirmLink())
         assertIs<AccessResult.Ok<LinkedDoctor>>(gateway.lookUp(AccessScript.UNVERIFIED_LINK_CODE))
         assertEquals(AccessResult.Failed(AccessFailure.DoctorUnverified), gateway.confirmLink())
+        assertIs<AccessResult.Ok<LinkedDoctor>>(gateway.lookUp(AccessScript.NOT_LINKED_CODE))
+        assertEquals(AccessResult.Failed(AccessFailure.DoctorNotLinked), gateway.confirmLink())
         assertEquals(AccessResult.Failed(AccessFailure.LinkCodeSpent), gateway.lookUp("ZZZZ9999"))
     }
 
