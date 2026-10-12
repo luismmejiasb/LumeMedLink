@@ -34,5 +34,7 @@ What p6 needs is not a send. It is the address, given to the mail app, with noth
 - ADR-0046 deviation 4 closes: «Correo» opens the mail app.
 - A future need to prefill anything (a subject naming the clinic, say) is not covered here. It needs a new ADR,
   because prefilled text is content this app would author.
+- The same door serves the doctor's side (m2): a patient's address, by the author's call of 2026-10-11. What the doctor
+  writes or attaches in their own mail app never passes through this one.
 - The exception is narrow enough to be read in one line of the gate. Widening it means editing that line, which is the
   point.

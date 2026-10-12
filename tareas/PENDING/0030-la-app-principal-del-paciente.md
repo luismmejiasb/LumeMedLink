@@ -95,6 +95,18 @@ fecha c3 «Martes 2 de septiembre», pero el 2 de septiembre de 2026 es miércol
   los botones bajo el avatar. Y las estrellas sólo para ver, en c3.
 - Sin motivo (c2) y sin previsión (c1–c3), por las decisiones anteriores.
 
+## Las pantallas del médico (m1–m3): lo que decidió el autor (2026-10-11)
+
+- **Kit**: la fecha sobre el título (m1), la hora al inicio de la fila de agenda (m1) y dos botones redondos a la
+  derecha de una fila (m2).
+- **Tipo de cita en m1**: una lista cerrada («Primera consulta», «Control», «Teleconsulta»), nunca texto libre; ninguno
+  dice de qué es la consulta (ADR-0001).
+- **Correo a los pacientes en m2**: sí, por la misma puerta de ADR-0047 (sólo la dirección, sin adjunto, asunto ni
+  cuerpo). Lo que el médico haga en su propia app de correo queda fuera de esta.
+- **«Abrir LumeMed» en m3**: no va.
+- Como todo el lado paciente, va contra un guion. La agenda y el roster son las rutas tenant-scoped de la trampa T11
+  del backend; el pedido de contrato de cada una debe incluir la pregunta de restricción cuando se conecten.
+
 ## La respuesta del backend al pedido `0008` (2026-10-11)
 
 Está en `../lumemed-cloud-platform/tareas/PENDING/0121-lo-que-le-falta-al-contrato-para-la-app-del-paciente.md`.
