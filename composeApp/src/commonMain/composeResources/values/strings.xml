@@ -562,7 +562,8 @@
     <string name="rate_other_counter">%1$d de %2$d caracteres</string>
     <string name="rate_comment_placeholder">Cuéntanos más (opcional)</string>
     <string name="rate_comment_helper">Se publica sin tu nombre. Nunca incluyas datos de tu salud.</string>
-    <string name="rate_complaint">¿Fue algo grave? Puedes hacer un reclamo formal. [[Hacer un reclamo]]</string>
+    <string name="rate_complaint">¿Fue algo grave? Puedes hacer un reclamo formal.</string>
+    <string name="rate_complaint_action">Hacer un reclamo</string>
     <string name="rate_later">Ahora no</string>
     <string name="rate_send">Enviar valoración</string>
     <string name="rate_sent_toast">Gracias por tu valoración</string>

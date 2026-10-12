@@ -180,4 +180,4 @@ de los días, el punto medio del chip de filtros, el campo de búsqueda sin tít
   - el modo «tal cual» en el campo de varias líneas, para que el teclado no aprenda lo que escribe el paciente
     (seguridad, ADR-0013).
 
-  Hasta que lleguen, el enlace va después de la frase y el campo de varias líneas conserva las correcciones del teclado.
+  Llegaron el mismo día y están conectadas.

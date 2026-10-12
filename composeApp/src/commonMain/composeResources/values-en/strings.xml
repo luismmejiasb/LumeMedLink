@@ -557,7 +557,8 @@
     <string name="rate_other_counter">%1$d of %2$d characters</string>
     <string name="rate_comment_placeholder">Tell us more (optional)</string>
     <string name="rate_comment_helper">Published without your name. Never include your health details.</string>
-    <string name="rate_complaint">Was it serious? You can file a formal complaint. [[File a complaint]]</string>
+    <string name="rate_complaint">Was it serious? You can file a formal complaint.</string>
+    <string name="rate_complaint_action">File a complaint</string>
     <string name="rate_later">Not now</string>
     <string name="rate_send">Send rating</string>
     <string name="rate_sent_toast">Thanks for your rating</string>

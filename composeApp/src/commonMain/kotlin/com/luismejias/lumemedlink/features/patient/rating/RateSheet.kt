@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import cl.lume.uicomposer.components.LumeAsyncButton
 import cl.lume.uicomposer.components.LumeAvatar
 import cl.lume.uicomposer.components.LumeAvatarSize
@@ -14,8 +15,8 @@ import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonSize
 import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCallout
+import cl.lume.uicomposer.components.LumeCalloutAction
 import cl.lume.uicomposer.components.LumeCalloutStyle
-import cl.lume.uicomposer.components.LumeCalloutSurface
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFilterChip
 import cl.lume.uicomposer.components.LumeFilterChipLook
@@ -35,7 +36,6 @@ import com.luismejias.lumemedlink.core.care.RatingAspect
 import com.luismejias.lumemedlink.core.input.SensitiveWordsArea
 import com.luismejias.lumemedlink.core.input.SensitiveWordsField
 import com.luismejias.lumemedlink.core.screen.dayMonthText
-import com.luismejias.lumemedlink.core.screen.richRuns
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.aspect_clarity
 import com.luismejias.lumemedlink.resources.aspect_explained_clearly
@@ -57,6 +57,7 @@ import com.luismejias.lumemedlink.resources.rate_ask_good
 import com.luismejias.lumemedlink.resources.rate_comment_helper
 import com.luismejias.lumemedlink.resources.rate_comment_placeholder
 import com.luismejias.lumemedlink.resources.rate_complaint
+import com.luismejias.lumemedlink.resources.rate_complaint_action
 import com.luismejias.lumemedlink.resources.rate_label
 import com.luismejias.lumemedlink.resources.rate_later
 import com.luismejias.lumemedlink.resources.rate_level_1
@@ -180,18 +181,21 @@ internal fun RateSheet(model: RateViewModel, onComplaint: () -> Unit) {
         )
         if (level == RatingLevel.BAD) {
             LumeCallout(
-                runs = stringResource(Res.string.rate_complaint).richRuns(onLink = onComplaint),
+                text = stringResource(Res.string.rate_complaint),
+                action = LumeCalloutAction(stringResource(Res.string.rate_complaint_action), onComplaint),
                 style = LumeCalloutStyle.Error,
-                surface = LumeCalloutSurface.Washed,
             )
         }
     }
 }
 
-/** The level's aspects, then «+ Otro», wrapping as the design lays them (f5). */
+/**
+ * The level's aspects, then «+ Otro», wrapping as the design lays them (f5). No air of their own: each chip's 48 touch
+ * target already keeps the rows ~12 apart, the closest the kit allows to the design's ~10.
+ */
 @Composable
 private fun AspectChips(level: RatingLevel, state: RateState, model: RateViewModel) {
-    LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Wrap, spacing = { xSmall }) {
+    LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Wrap, spacing = { 0.dp }) {
         level.aspects.forEach { aspect ->
             val title = stringResource(ASPECT_TITLES.getValue(aspect))
             LumeFilterChip(

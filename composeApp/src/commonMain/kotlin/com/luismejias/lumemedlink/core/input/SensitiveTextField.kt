@@ -258,9 +258,8 @@ internal fun SensitiveWordsField(
 }
 
 /**
- * Several lines of the patient's own words with no visible title (f5's «Cuéntanos más»), and a line under them. The
- * value is hidden like every field here, but the kit's multiline field takes no text case yet: its keyboard keeps its
- * corrections, so it can learn what is typed. Declared, not hidden — asked of the kit.
+ * Several lines of the patient's own words with no visible title (f5's «Cuéntanos más»), and a line under them —
+ * typed verbatim and hidden like every field here.
  */
 @Composable
 internal fun SensitiveWordsArea(
@@ -276,6 +275,7 @@ internal fun SensitiveWordsArea(
         label = null,
         placeholder = placeholder,
         modifier = modifier,
+        textCase = WORDS_FIELD_REQUEST.textCase,
         helper = helper,
         sensitivity = WORDS_FIELD_REQUEST.sensitivity,
     )
