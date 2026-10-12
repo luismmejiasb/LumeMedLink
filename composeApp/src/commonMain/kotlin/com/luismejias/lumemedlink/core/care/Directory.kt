@@ -87,4 +87,7 @@ internal interface DirectoryGateway {
         from: CalendarDate,
         to: CalendarDate,
     ): CareResult<List<ClosedDay>>
+
+    /** A doctor as the directory lists them, for c3's «Agendar de nuevo»; null when they no longer take bookings. */
+    suspend fun doctor(doctorId: String): CareResult<DirectoryDoctor?>
 }

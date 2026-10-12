@@ -1,6 +1,7 @@
 package com.luismejias.lumemedlink.features.patient.change
 
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
+import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.ChangeFailure
 import com.luismejias.lumemedlink.core.care.ChangeReason
 import com.luismejias.lumemedlink.core.care.ChangeResult
@@ -9,6 +10,7 @@ import com.luismejias.lumemedlink.core.care.ClosedKind
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.SentRating
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.features.patient.parts.CareLoad
 import com.luismejias.lumemedlink.features.patient.parts.allOf
@@ -256,5 +258,43 @@ internal class CancelModel(private val care: PatientCareGateway) {
 
     fun clear() {
         current.value = null
+    }
+}
+
+// ── c1–c3 · Detalle de una cita ─────────────────────────────────────────────────────────────────
+
+internal data class DetailContent(
+    val appointment: PatientAppointment,
+    /** What the bottom bar may still do, with the practice's phone once the window has closed (spec c1). */
+    val options: ChangeOptions,
+    /** «Contacto de la consulta»: only when the doctor shares it (spec c1). */
+    val phone: String?,
+    /** c3: the rating already sent, or null to offer the stars. */
+    val rating: SentRating?,
+) {
+    override fun toString(): String = "DetailContent(status=${appointment.status})"
+}
+
+internal class DetailModel(private val care: PatientCareGateway) {
+    private val current = MutableStateFlow<CareLoad<DetailContent>>(CareLoad.Loading)
+    val state: StateFlow<CareLoad<DetailContent>> = current.asStateFlow()
+
+    suspend fun load(appointment: PatientAppointment) {
+        current.value = CareLoad.Loading
+        val doctors = care.myDoctors()
+        val rating = if (appointment.status == AppointmentStatus.COMPLETED) {
+            care.ratingFor(appointment.id)
+        } else {
+            CareResult.Ok(null)
+        }
+        current.value = allOf(doctors, rating) {
+            val phone = doctors.ok.firstOrNull { it.doctor.id == appointment.doctor.id }?.phone
+            DetailContent(
+                appointment = appointment,
+                options = changeOptionsFor(appointment, care.today(), care.now(), phone),
+                phone = phone,
+                rating = rating.ok,
+            )
+        }
     }
 }

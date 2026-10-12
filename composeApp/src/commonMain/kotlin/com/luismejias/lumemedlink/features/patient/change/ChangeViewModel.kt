@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.CareResult
+import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
@@ -19,8 +20,8 @@ internal sealed interface ChangeSheet {
     data class Options(val options: ChangeOptions) : ChangeSheet
 }
 
-/** The screens pushed over a tab when the patient changes an appointment (f3, f4). */
-internal enum class ChangeRoute { RESCHEDULE, CANCEL }
+/** The screens pushed over a tab for one appointment: its detail (c1–c3), and changing or cancelling it (f3, f4). */
+internal enum class ChangeRoute { DETAIL, RESCHEDULE, CANCEL }
 
 /** What finished, for the tab host to refresh what it shows and to say so in a toast. */
 internal sealed interface ChangeDone {
@@ -30,21 +31,24 @@ internal sealed interface ChangeDone {
 }
 
 /**
- * «Tu próxima cita» (f1–f4): reached from Inicio's card and from Mis citas, so the tab host owns one (ADR-0045: a
- * flow's state lives in its own owner, not in a screen).
+ * One appointment's flow — its detail (c1–c3) and «Tu próxima cita» (f1–f4) — reached from Inicio and from Mis citas,
+ * so the tab host owns one (ADR-0045: a flow's state lives in its own owner, not in a screen).
  */
-internal class ChangeViewModel(private val care: PatientCareGateway, directory: DirectoryGateway) : ViewModel() {
+internal class ChangeViewModel(private val care: PatientCareGateway, private val directory: DirectoryGateway) :
+    ViewModel() {
     private val shownSheet = MutableStateFlow<ChangeSheet?>(null)
     val sheet: StateFlow<ChangeSheet?> = shownSheet.asStateFlow()
 
-    private val shownRoute = MutableStateFlow<ChangeRoute?>(null)
-    val route: StateFlow<ChangeRoute?> = shownRoute.asStateFlow()
+    /** The detail may sit under a change, and «Volver» returns to it: a stack, not a single screen. */
+    private val stack = MutableStateFlow<List<ChangeRoute>>(emptyList())
+    val routes: StateFlow<List<ChangeRoute>> = stack.asStateFlow()
 
     private val finished = MutableStateFlow<ChangeDone?>(null)
     val done: StateFlow<ChangeDone?> = finished.asStateFlow()
 
     val reschedule = RescheduleModel(care, directory)
     val cancel = CancelModel(care)
+    val detail = DetailModel(care)
 
     /** Runs a step in this ViewModel's scope — a screen never owns the work it starts. */
     fun launch(step: suspend ChangeViewModel.() -> Unit) {
@@ -66,34 +70,49 @@ internal class ChangeViewModel(private val care: PatientCareGateway, directory: 
         shownSheet.value = null
     }
 
-    /** f2 → f3. Mis citas' «Cambiar» comes here directly. */
+    /** c1–c3: Mis citas' card, and Inicio's «Esperando confirmación». */
+    suspend fun openDetail(appointment: PatientAppointment) {
+        stack.value = listOf(ChangeRoute.DETAIL)
+        detail.load(appointment)
+    }
+
+    /** f2 → f3, c1/c2 → f3. Mis citas' «Cambiar» comes here directly. */
     suspend fun changeTime(appointment: PatientAppointment) {
         shownSheet.value = null
-        shownRoute.value = ChangeRoute.RESCHEDULE
+        push(ChangeRoute.RESCHEDULE)
         reschedule.load(appointment)
     }
 
-    /** f2 → f4. Mis citas' «Cancelar» comes here directly. */
+    /** f2 → f4, c1/c2 → f4. Mis citas' «Cancelar» comes here directly. */
     fun cancelAppointment(appointment: PatientAppointment) {
         shownSheet.value = null
         cancel.start(appointment)
-        shownRoute.value = ChangeRoute.CANCEL
+        push(ChangeRoute.CANCEL)
     }
 
+    /** One screen back; from the detail, back to the tab. */
     fun back() {
-        shownRoute.value = null
-        cancel.clear()
+        if (stack.value.lastOrNull() == ChangeRoute.CANCEL) cancel.clear()
+        stack.value = stack.value.dropLast(1)
     }
 
     fun moved(appointment: PatientAppointment) {
-        shownRoute.value = null
+        stack.value = emptyList()
         finished.value = ChangeDone.Moved(appointment)
     }
 
     fun cancelled() {
-        shownRoute.value = null
+        stack.value = emptyList()
         cancel.clear()
         finished.value = ChangeDone.Cancelled
+    }
+
+    /** c3's «Agendar de nuevo»: the same doctor as the directory lists them today, or null when they are not listed. */
+    suspend fun doctorToBookAgain(appointment: PatientAppointment): DirectoryDoctor? =
+        (directory.doctor(appointment.doctor.id) as? CareResult.Ok)?.value
+
+    private fun push(route: ChangeRoute) {
+        stack.value = stack.value.filterNot { it == route } + route
     }
 
     fun doneSeen() {
@@ -104,6 +123,7 @@ internal class ChangeViewModel(private val care: PatientCareGateway, directory: 
     suspend fun changeInstead() {
         val appointment = cancel.state.value?.appointment ?: return
         cancel.clear()
+        stack.value = stack.value.filterNot { it == ChangeRoute.CANCEL }
         if (appointment.status in setOf(AppointmentStatus.CONFIRMED, AppointmentStatus.REQUESTED)) {
             changeTime(appointment)
         }

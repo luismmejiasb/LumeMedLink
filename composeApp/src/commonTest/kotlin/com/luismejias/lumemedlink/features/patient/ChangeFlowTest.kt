@@ -32,6 +32,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -79,7 +80,7 @@ class ChangeFlowTest {
     @Test
     fun theStripNamesHolidaysAndDaysWithoutAttention() = runTest {
         model.changeTime(appointment(RENDON))
-        assertEquals(ChangeRoute.RESCHEDULE, model.route.value)
+        assertEquals(listOf(ChangeRoute.RESCHEDULE), model.routes.value)
         val days = reschedule().days.associateBy { it.date }
         assertEquals(2, days.getValue(script.today()).free, "only 11:00 and 15:00 are left today (f3)")
         assertEquals(ClosedKind.NO_ATTENTION, days.getValue(CalendarDate(2026, 9, 17)).closed)
@@ -156,8 +157,39 @@ class ChangeFlowTest {
         assertEquals(ChangeResult.Failed(ChangeFailure.WindowClosed), result)
     }
 
+    @Test
+    fun theDetailSitsUnderAChangeAndBackReturnsToIt() = runTest {
+        model.openDetail(appointment(RENDON))
+        val detail = (model.detail.state.value as CareLoad.Ready).content
+        assertEquals("+56 2 2345 6789", detail.phone, "Dra. Rendón shares her phone (c1)")
+        assertTrue(detail.options.canChange)
+        model.changeTime(appointment(RENDON))
+        assertEquals(listOf(ChangeRoute.DETAIL, ChangeRoute.RESCHEDULE), model.routes.value)
+        model.back()
+        assertEquals(listOf(ChangeRoute.DETAIL), model.routes.value)
+        model.back()
+        assertTrue(model.routes.value.isEmpty())
+    }
+
+    @Test
+    fun anAttendedVisitShowsTheRatingAlreadySent() = runTest {
+        model.openDetail(appointment(RENDON_ATTENDED))
+        val rating = assertNotNull((model.detail.state.value as CareLoad.Ready).content.rating)
+        assertEquals(5, rating.stars)
+        assertNotNull(model.doctorToBookAgain(appointment(RENDON_ATTENDED)), "«Agendar de nuevo» finds her listed")
+    }
+
+    @Test
+    fun choosingToChangeInsteadOfCancellingLeavesTheCancelBehind() = runTest {
+        model.openDetail(appointment(RENDON))
+        model.cancelAppointment(appointment(RENDON))
+        model.changeInstead()
+        assertEquals(listOf(ChangeRoute.DETAIL, ChangeRoute.RESCHEDULE), model.routes.value)
+    }
+
     private companion object {
         const val RENDON = "a-rendon-0916"
         const val PINTO = "a-pinto-0921"
+        const val RENDON_ATTENDED = "a-rendon-0902"
     }
 }

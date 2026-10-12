@@ -91,6 +91,14 @@ internal data class RatingPrompt(val appointmentId: String, val doctor: CareDoct
 }
 
 /**
+ * A rating the patient already sent for a visit (c3): the stars, their own words, and when. No contract (request 0008
+ * §4). The words are the patient's; the author chose to show them (2026-10-11).
+ */
+internal data class SentRating(val stars: Int, val comment: String?, val sentOn: CalendarDate) {
+    override fun toString(): String = "SentRating(stars=$stars)"
+}
+
+/**
  * A professional who attended the patient (p6). The contact is null when they do not share it — the
  * contract's rule, once for all their patients. [attentions] has no contract field (request 0008 §3).
  */
@@ -138,6 +146,9 @@ internal interface PatientCareGateway {
 
     /** Whether something waits behind the bell (p1). No contract (request 0008 §5). */
     suspend fun hasUnreadNotices(): CareResult<Boolean>
+
+    /** The rating sent for an attended appointment, or null when there is none yet (c3 then offers the stars). */
+    suspend fun ratingFor(appointmentId: String): CareResult<SentRating?>
 
     /** The clinic's wall clock now: with [today], what a change window is measured against. */
     fun now(): ClockTime

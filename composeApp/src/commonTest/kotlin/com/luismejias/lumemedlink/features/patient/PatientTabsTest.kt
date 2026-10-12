@@ -79,7 +79,7 @@ class PatientTabsTest {
         val content = (AppointmentsViewModel(design).also { it.load() }.state.value as CareLoad.Ready).content
         assertEquals(1, content.awaiting)
         assertEquals(2, content.upcoming.size)
-        assertEquals(listOf(AppointmentStatus.COMPLETED), content.past.map { it.status })
+        assertEquals(listOf(AppointmentStatus.COMPLETED, AppointmentStatus.COMPLETED), content.past.map { it.status })
         assertEquals(24, content.changeWindowHours)
     }
 

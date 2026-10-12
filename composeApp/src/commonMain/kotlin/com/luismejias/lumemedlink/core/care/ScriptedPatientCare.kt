@@ -32,6 +32,12 @@ internal class ScriptedPatientCare(
 
     override fun today(): CalendarDate = TODAY
 
+    override suspend fun ratingFor(appointmentId: String): CareResult<SentRating?> =
+        answer(if (world == CareWorld.DESIGN) RATINGS[appointmentId] else null)
+
+    override suspend fun doctor(doctorId: String): CareResult<DirectoryDoctor?> =
+        answer(DirectoryScript.doctor(doctorId, TODAY, NOW, ::isBooked))
+
     /** The design's status bar: 9:41. */
     override fun now(): ClockTime = NOW
 
@@ -217,6 +223,18 @@ internal class ScriptedPatientCare(
         val APOQUINDO = CarePlace("Av. Apoquindo 3600, oficina 1102", "Centro Apoquindo · Las Condes, Santiago")
 
         val APPOINTMENTS = listOf(
+            // c3: attended and rated.
+            PatientAppointment(
+                "a-rendon-0902",
+                RENDON,
+                TODAY.plusDays(-14),
+                ClockTime(9, 0),
+                30,
+                AppointmentStatus.COMPLETED,
+                LYON,
+                locationId = DirectoryScript.locationOf("p-rendon"),
+                changeCutoffMinutes = DirectoryScript.changeCutoffMinutes("p-rendon"),
+            ),
             PatientAppointment(
                 "a-fuentes-0902",
                 FUENTES,
@@ -249,6 +267,12 @@ internal class ScriptedPatientCare(
                 locationId = DirectoryScript.locationOf("p-pinto"),
             ),
         )
+
+        /**
+         * c3's rating. The design's words name the visit's content, which this app does not carry (ADR-0001), so the
+         * sample says something else.
+         */
+        val RATINGS = mapOf("a-rendon-0902" to SentRating(5, "Muy clara y puntual.", TODAY.plusDays(-14)))
 
         /** The design's "18.456.789-2" fails módulo 11 (ADR-0044, deviation 9); this one is valid. */
         val PROFILE = PatientProfile(

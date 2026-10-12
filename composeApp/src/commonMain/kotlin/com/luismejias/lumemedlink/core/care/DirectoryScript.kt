@@ -104,6 +104,20 @@ internal object DirectoryScript {
         )
     }
 
+    /** One listed doctor, as a search would return them; null for one the directory does not list. */
+    fun doctor(
+        doctorId: String,
+        today: CalendarDate,
+        now: ClockTime,
+        taken: (String, Slot) -> Boolean,
+    ): DirectoryDoctor? = LISTINGS.firstOrNull { it.doctor.id == doctorId }
+        ?.let { listing ->
+            doctorsIn(listing.specialty, listing.commune, today, now, taken).first {
+                it.doctor.id ==
+                    doctorId
+            }
+        }
+
     fun nearby(specialty: String, commune: String, today: CalendarDate): List<NearbyCommune> =
         LISTINGS.filter { it.specialty == specialty && it.commune != commune }
             .groupBy { it.commune }
