@@ -16,7 +16,7 @@ import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonWidth
-import cl.lume.uicomposer.components.LumeCalloutBox
+import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeCalloutStyle
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeGlassButton
@@ -138,18 +138,19 @@ internal fun AccessTitle(title: String, body: String) {
 @Composable
 internal fun OfflineBanner(visible: Boolean) {
     if (visible) {
-        LumeCalloutBox(text = stringResource(Res.string.offline_title), style = LumeCalloutStyle.Warning) {
-            LumeText(text = stringResource(Res.string.offline_body), color = LumeTextColor.Secondary)
-        }
+        LumeCallout(
+            title = stringResource(Res.string.offline_title),
+            text = stringResource(Res.string.offline_body),
+            style = LumeCalloutStyle.Warning,
+            icon = LumeIcon.Wifi,
+        )
     }
 }
 
 /** A refusal the screen explains inline (1b-e1): the bold line and the line under it. */
 @Composable
-internal fun ErrorBanner(title: String, body: String?) {
-    LumeCalloutBox(text = title, style = LumeCalloutStyle.Error) {
-        if (body != null) LumeText(text = body, color = LumeTextColor.Secondary)
-    }
+internal fun ErrorBanner(title: String, body: String) {
+    LumeCallout(title = title, text = body, style = LumeCalloutStyle.Error, icon = LumeIcon.Alert)
 }
 
 /**
