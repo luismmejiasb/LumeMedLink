@@ -37,6 +37,9 @@ internal data class SignUpProfileState(
     val offline: Boolean = false,
 ) {
     val rutInvalid: Boolean get() = judged && ChileanRut.parse(rut) == null
+
+    /** 2a's ✓: a RUT that passes módulo 11 and is not taken — said as soon as it is typed, not on submit. */
+    val rutValid: Boolean get() = !rutTaken && ChileanRut.parse(rut) != null
     val givenNamesMissing: Boolean get() = judged && givenNames.isBlank()
     val familyNamesMissing: Boolean get() = judged && familyNames.isBlank()
     val mobileInvalid: Boolean get() = judged && ChileanMobile.parse(mobile) == null

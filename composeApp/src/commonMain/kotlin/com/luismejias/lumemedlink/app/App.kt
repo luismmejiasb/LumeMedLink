@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.lume.uicomposer.foundations.LumeBrand
 import cl.lume.uicomposer.foundations.LumeTheme
 import cl.lume.uicomposer.tokens.LumeCanvas
+import cl.lume.uicomposer.tokens.LumeFieldLook
 import cl.lume.uicomposer.tokens.LumeNeutrals
 import cl.lume.uicomposer.tokens.LumeRadius
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
@@ -67,6 +68,8 @@ private val LumeMedLinkBrand = LumeBrand(
     neutrals = LumeNeutrals.Slate,
     radius = LumeRadius(medium = 14.dp),
     canvas = LumeCanvas.Grouped,
+    // The handoff's fields: the label in the primary ink, figures monospaced, a ✓ when valid, focus and error washed.
+    fields = LumeFieldLook.Marked,
 )
 
 /**

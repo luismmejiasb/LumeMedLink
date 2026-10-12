@@ -16,6 +16,7 @@ import cl.lume.uicomposer.components.LumeIconTile
 import cl.lume.uicomposer.components.LumeIconTileSize
 import cl.lume.uicomposer.components.LumeLink
 import cl.lume.uicomposer.components.LumeRevealLabels
+import cl.lume.uicomposer.components.LumeRevealLook
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
@@ -41,8 +42,10 @@ import com.luismejias.lumemedlink.resources.common_retry
 import com.luismejias.lumemedlink.resources.common_understood
 import com.luismejias.lumemedlink.resources.field_password
 import com.luismejias.lumemedlink.resources.field_password_hide
+import com.luismejias.lumemedlink.resources.field_password_hide_spoken
 import com.luismejias.lumemedlink.resources.field_password_placeholder
 import com.luismejias.lumemedlink.resources.field_password_show
+import com.luismejias.lumemedlink.resources.field_password_show_spoken
 import com.luismejias.lumemedlink.resources.field_rut
 import com.luismejias.lumemedlink.resources.field_rut_invalid
 import com.luismejias.lumemedlink.resources.field_rut_placeholder
@@ -128,8 +131,12 @@ internal fun SignInScreen(
                     label = stringResource(Res.string.field_password),
                     placeholder = stringResource(Res.string.field_password_placeholder),
                     reveal = LumeRevealLabels(
-                        show = stringResource(Res.string.field_password_show),
-                        hide = stringResource(Res.string.field_password_hide),
+                        show = stringResource(Res.string.field_password_show_spoken),
+                        hide = stringResource(Res.string.field_password_hide_spoken),
+                    ),
+                    revealLook = LumeRevealLook.Words(
+                        stringResource(Res.string.field_password_show),
+                        stringResource(Res.string.field_password_hide),
                     ),
                     validation = if (wrong != null) {
                         LumeFieldValidation.Error(stringResource(Res.string.sign_in_check_password))

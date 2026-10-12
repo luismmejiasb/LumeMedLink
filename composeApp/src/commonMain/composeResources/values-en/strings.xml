@@ -31,6 +31,8 @@
     <string name="field_password_placeholder">Your password</string>
     <string name="field_password_show">Show</string>
     <string name="field_password_hide">Hide</string>
+    <string name="field_password_show_spoken">Show password</string>
+    <string name="field_password_hide_spoken">Hide password</string>
     <string name="field_password_repeat">Repeat password</string>
     <string name="field_password_new">New password</string>
     <string name="field_passwords_differ">The passwords don’t match.</string>

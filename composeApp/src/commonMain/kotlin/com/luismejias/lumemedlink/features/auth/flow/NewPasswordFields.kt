@@ -7,6 +7,7 @@ import cl.lume.uicomposer.components.LumeRequirement
 import cl.lume.uicomposer.components.LumeRequirementList
 import cl.lume.uicomposer.components.LumeRequirementState
 import cl.lume.uicomposer.components.LumeRevealLabels
+import cl.lume.uicomposer.components.LumeRevealLook
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import com.luismejias.lumemedlink.core.input.SensitiveFieldPurpose
@@ -16,9 +17,11 @@ import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_requirement_met
 import com.luismejias.lumemedlink.resources.common_requirement_unmet
 import com.luismejias.lumemedlink.resources.field_password_hide
+import com.luismejias.lumemedlink.resources.field_password_hide_spoken
 import com.luismejias.lumemedlink.resources.field_password_placeholder
 import com.luismejias.lumemedlink.resources.field_password_repeat
 import com.luismejias.lumemedlink.resources.field_password_show
+import com.luismejias.lumemedlink.resources.field_password_show_spoken
 import com.luismejias.lumemedlink.resources.field_passwords_differ
 import com.luismejias.lumemedlink.resources.password_rule_case
 import com.luismejias.lumemedlink.resources.password_rule_digit
@@ -35,8 +38,12 @@ internal fun NewPasswordFields(
     extraError: String? = null,
 ) {
     val reveal = LumeRevealLabels(
-        show = stringResource(Res.string.field_password_show),
-        hide = stringResource(Res.string.field_password_hide),
+        show = stringResource(Res.string.field_password_show_spoken),
+        hide = stringResource(Res.string.field_password_hide_spoken),
+    )
+    val revealLook = LumeRevealLook.Words(
+        stringResource(Res.string.field_password_show),
+        stringResource(Res.string.field_password_hide),
     )
     val rules = entry.rules
     fun stateOf(met: Boolean) = if (met) LumeRequirementState.Met else LumeRequirementState.Unmet
@@ -48,6 +55,7 @@ internal fun NewPasswordFields(
             label = passwordLabel,
             placeholder = stringResource(Res.string.field_password_placeholder),
             reveal = reveal,
+            revealLook = revealLook,
             newCredential = true,
             validation = if (extraError != null) LumeFieldValidation.Error(extraError) else LumeFieldValidation.Neutral,
             submit = LumeFieldSubmit.Next,
@@ -68,6 +76,7 @@ internal fun NewPasswordFields(
             label = stringResource(Res.string.field_password_repeat),
             placeholder = stringResource(Res.string.field_password_placeholder),
             reveal = reveal,
+            revealLook = revealLook,
             newCredential = true,
             validation = when {
                 entry.mismatch -> LumeFieldValidation.Error(stringResource(Res.string.field_passwords_differ))

@@ -13,6 +13,7 @@ import cl.lume.uicomposer.components.LumeFieldValidation
 import cl.lume.uicomposer.components.LumeMultilineField
 import cl.lume.uicomposer.components.LumePasswordField
 import cl.lume.uicomposer.components.LumeRevealLabels
+import cl.lume.uicomposer.components.LumeRevealLook
 import cl.lume.uicomposer.components.LumeSearchField
 import cl.lume.uicomposer.components.LumeTextCase
 import cl.lume.uicomposer.components.LumeTextField
@@ -137,6 +138,8 @@ internal fun SensitiveTextField(
     submit: LumeFieldSubmit = LumeFieldSubmit.Done,
     /** A credential's show/hide control; `null` hides it. */
     reveal: LumeRevealLabels? = null,
+    /** How the show/hide control is drawn — the eye, or the words; a reader hears [reveal] either way. */
+    revealLook: LumeRevealLook = LumeRevealLook.Glyph,
     /** A password being CREATED: the platform offers a strong one instead of saving a half-typed secret. */
     newCredential: Boolean = false,
     onSubmit: (() -> Unit)? = null,
@@ -150,6 +153,7 @@ internal fun SensitiveTextField(
             placeholder = placeholder,
             modifier = modifier,
             reveal = reveal,
+            revealLook = revealLook,
             newCredential = newCredential,
             state = state,
             validation = validation,

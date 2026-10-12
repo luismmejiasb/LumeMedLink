@@ -40,6 +40,8 @@
     <string name="field_password_placeholder">Tu contraseña</string>
     <string name="field_password_show">Mostrar</string>
     <string name="field_password_hide">Ocultar</string>
+    <string name="field_password_show_spoken">Mostrar contraseña</string>
+    <string name="field_password_hide_spoken">Ocultar contraseña</string>
     <string name="field_password_repeat">Repetir contraseña</string>
     <string name="field_password_new">Contraseña nueva</string>
     <string name="field_passwords_differ">Las contraseñas no coinciden.</string>

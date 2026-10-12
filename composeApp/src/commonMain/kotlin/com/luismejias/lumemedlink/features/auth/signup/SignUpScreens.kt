@@ -157,6 +157,7 @@ internal fun SignUpProfileScreen(
                 placeholder = stringResource(Res.string.field_rut_placeholder),
                 validation = when {
                     state.rutTaken -> LumeFieldValidation.Error(stringResource(Res.string.sign_up_rut_taken))
+                    state.rutValid -> LumeFieldValidation.Valid
                     else -> errorOr(state.rutInvalid, Res.string.field_rut_invalid)
                 },
                 submit = LumeFieldSubmit.Next,
