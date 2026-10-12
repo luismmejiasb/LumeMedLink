@@ -99,6 +99,43 @@ internal data class SentRating(val stars: Int, val comment: String?, val sentOn:
 }
 
 /**
+ * What f5 asks about a visit, by how it went: what failed (1–2 stars), what to improve (3), what to highlight (4–5).
+ * A closed list per level, plus «Otro» with the patient's own words. None names the visit's content (ADR-0001).
+ */
+internal enum class RatingAspect {
+    // 1–2 stars: what failed.
+    LONG_WAIT,
+    NOT_EXPLAINED,
+    UNKIND,
+    UNEXPECTED_CHARGE,
+    MOVED_HOUR,
+
+    // 3 stars: what to improve, and 4–5: what to highlight.
+    PUNCTUALITY,
+    CLARITY,
+    VISIT_TIME,
+    NOTICE,
+    FACILITIES,
+    EXPLAINED_CLEARLY,
+    KIND,
+    SOLVED_IT,
+}
+
+/**
+ * A rating the patient sends (f5). [other] is «Otro»'s short title (40 characters at most) and [comment]
+ * «Cuéntanos más»: the patient's words, published without their name. PROVISIONAL (ADR-0046): the author chose the design's free text
+ * for this mock; the contract the backend decided carries stars and closed reasons only (request 0008).
+ */
+internal data class RatingDraft(
+    val stars: Int,
+    val aspects: Set<RatingAspect>,
+    val other: String?,
+    val comment: String?,
+) {
+    override fun toString(): String = "RatingDraft(stars=$stars, aspects=${aspects.size})"
+}
+
+/**
  * A professional who attended the patient (p6). The contact is null when they do not share it — the
  * contract's rule, once for all their patients. [attentions] has no contract field (request 0008 §3).
  */
@@ -149,6 +186,9 @@ internal interface PatientCareGateway {
 
     /** The rating sent for an attended appointment, or null when there is none yet (c3 then offers the stars). */
     suspend fun ratingFor(appointmentId: String): CareResult<SentRating?>
+
+    /** Sends a rating for an attended appointment (f5). */
+    suspend fun rate(appointmentId: String, draft: RatingDraft): CareResult<Unit>
 
     /** The clinic's wall clock now: with [today], what a change window is measured against. */
     fun now(): ClockTime

@@ -27,13 +27,23 @@ internal class ScriptedPatientCare(
     /** What this run moved, by the move's client key: the new appointment, waiting for the doctor (spec f3). */
     private val moved = LinkedHashMap<String, PatientAppointment>()
 
+    /** What this run rated, by appointment id. */
+    private val rated = mutableMapOf<String, SentRating>()
+
     /** What this run cancelled or withdrew, by appointment id. */
     private val cancelled = mutableSetOf<String>()
 
     override fun today(): CalendarDate = TODAY
 
     override suspend fun ratingFor(appointmentId: String): CareResult<SentRating?> =
-        answer(if (world == CareWorld.DESIGN) RATINGS[appointmentId] else null)
+        answer(rated[appointmentId] ?: if (world == CareWorld.DESIGN) RATINGS[appointmentId] else null)
+
+    override suspend fun rate(appointmentId: String, draft: RatingDraft): CareResult<Unit> {
+        latency()
+        failure?.let { return CareResult.Failed(it) }
+        rated[appointmentId] = SentRating(draft.stars, draft.comment, TODAY)
+        return CareResult.Ok(Unit)
+    }
 
     override suspend fun doctor(doctorId: String): CareResult<DirectoryDoctor?> =
         answer(DirectoryScript.doctor(doctorId, TODAY, NOW, ::isBooked))
@@ -52,7 +62,7 @@ internal class ScriptedPatientCare(
 
     override suspend fun ratingPrompts(): CareResult<List<RatingPrompt>> = answer(
         if (world == CareWorld.DESIGN) {
-            listOf(RatingPrompt("a-fuentes-0902", FUENTES, TODAY.plusDays(-14)))
+            listOf(RatingPrompt("a-fuentes-0902", FUENTES, TODAY.plusDays(-14))).filterNot { it.appointmentId in rated }
         } else {
             emptyList()
         },
@@ -73,7 +83,9 @@ internal class ScriptedPatientCare(
     override suspend fun policy(): CareResult<CarePolicy> =
         answer(CarePolicy(changeWindowHours = 24, remindersHoursBefore = listOf(24, 2)))
 
-    override suspend fun sentRatingCount(): CareResult<Int> = answer(if (world == CareWorld.DESIGN) 3 else 0)
+    override suspend fun sentRatingCount(): CareResult<Int> = answer(
+        (if (world == CareWorld.DESIGN) 3 else 0) + rated.size,
+    )
 
     override suspend fun hasUnreadNotices(): CareResult<Boolean> = answer(world == CareWorld.DESIGN)
 
