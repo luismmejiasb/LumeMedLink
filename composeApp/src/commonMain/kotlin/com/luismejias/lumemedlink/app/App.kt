@@ -15,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -26,6 +28,7 @@ import cl.lume.uicomposer.tokens.LumeCanvas
 import cl.lume.uicomposer.tokens.LumeFieldLook
 import cl.lume.uicomposer.tokens.LumeNeutrals
 import cl.lume.uicomposer.tokens.LumeRadius
+import cl.lume.uicomposer.tokens.LumeTypography
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
@@ -70,6 +73,10 @@ private val LumeMedLinkBrand = LumeBrand(
     canvas = LumeCanvas.Grouped,
     // The handoff's fields: the label in the primary ink, figures monospaced, a ✓ when valid, focus and error washed.
     fields = LumeFieldLook.Marked,
+    // The handoff's screen titles are bold and a little smaller than the kit's default (measured on 2b).
+    typography = LumeTypography().let { base ->
+        base.copy(headingLarge = base.headingLarge.copy(fontSize = 23.sp, fontWeight = FontWeight.Bold))
+    },
 )
 
 /**
