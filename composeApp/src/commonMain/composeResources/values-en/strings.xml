@@ -399,4 +399,65 @@
     <string name="booking_offline_body">The booking wasn’t sent. Check your connection and try again.</string>
     <string name="booking_unavailable_title">We couldn’t send the booking</string>
     <string name="booking_unavailable_body">Try again in a moment.</string>
+
+    <!-- f1–f4 · Your next appointment -->
+    <string name="directions_title">Open the address in</string>
+    <string name="directions_copy">Copy address</string>
+    <string name="directions_copied">Address copied</string>
+    <string name="directions_close">Cancel</string>
+    <string name="options_title">What would you like to do?</string>
+    <string name="options_change">Change date or time</string>
+    <string name="options_change_body">Pick another available time</string>
+    <string name="options_cancel">Cancel appointment</string>
+    <string name="options_cancel_body">The time goes back to other patients</string>
+    <string name="options_withdraw_body">You withdraw the request; the doctor has not confirmed it yet</string>
+    <string name="options_window">You can change or cancel up to **%1$s before**. After that, only by calling the practice.</string>
+    <string name="options_window_closed">The time to change or cancel has passed: contact the practice.</string>
+    <string name="options_call">Call the practice</string>
+    <string name="options_close">Back</string>
+    <string name="window_minutes">%1$d min</string>
+    <string name="window_hours">%1$d h</string>
+    <string name="reschedule_title">Change time</string>
+    <string name="reschedule_current">Current time: </string>
+    <string name="reschedule_afternoon">%1$s · afternoon</string>
+    <string name="reschedule_note">Your time %1$s is released only when %2$s confirms the new one.</string>
+    <string name="reschedule_keep">Keep time</string>
+    <string name="reschedule_to">Change to %1$s · %2$s</string>
+    <string name="reschedule_choose">Pick a time</string>
+    <string name="reschedule_none">No times available in the coming days</string>
+    <string name="day_no_attention">closed</string>
+    <string name="day_holiday">holiday</string>
+    <string name="day_spoken">%1$s, %2$s</string>
+    <string name="slot_taken_spoken">%1$s, taken</string>
+    <string name="taken_now_title">That time was just taken</string>
+    <string name="taken_now_body">%1$s is no longer available. Pick another.</string>
+    <string name="taken_none">No times left on %1$s.</string>
+    <string name="taken_next">%1$s has %2$d.</string>
+    <string name="moved_toast">Change sent · waiting for confirmation</string>
+    <string name="move_failed_title">We couldn’t change the time</string>
+    <string name="move_window_body">The time to change it has passed. Contact the practice.</string>
+    <string name="move_offline_body">You need a connection to change the time. Your current time stays.</string>
+    <string name="move_unavailable_body">We’re having trouble. Try again in a few minutes; your current time stays.</string>
+    <string name="cancel_title">Cancel appointment</string>
+    <string name="cancel_reasons">Why are you cancelling?</string>
+    <string name="cancel_reason_time">I can’t make that time</string>
+    <string name="cancel_reason_doctor">I’ll see another doctor</string>
+    <string name="cancel_reason_other">Another reason</string>
+    <string name="cancel_reason_note">The reason is optional and only the doctor sees it.</string>
+    <string name="cancel_warning">The time goes back to other patients and **can’t be recovered**. If you just need another time, better [[change it]].</string>
+    <string name="cancel_confirm">Cancel appointment</string>
+    <string name="cancel_back">Back</string>
+    <string name="cancel_offline">You need a connection to cancel.</string>
+    <string name="cancel_window">The time to cancel has passed. Contact the practice.</string>
+    <string name="cancel_unavailable">We’re having trouble. Try again in a few minutes.</string>
+    <string name="cancelled_toast">Appointment cancelled</string>
+
+    <plurals name="day_hours">
+        <item quantity="one">%1$d time</item>
+        <item quantity="other">%1$d times</item>
+    </plurals>
+    <plurals name="taken_left">
+        <item quantity="one">%1$d time left on %2$s.</item>
+        <item quantity="other">%1$d times left on %2$s.</item>
+    </plurals>
 </resources>

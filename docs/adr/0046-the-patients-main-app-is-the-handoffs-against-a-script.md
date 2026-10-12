@@ -70,6 +70,14 @@ Two contract facts shape the screens and are not the design's:
 10. **p2 has no recent searches** (the author's call, 2026-10-11, on the backend's answer to request `0008` §7): a
     specialty with a commune says something about the searcher's health, and nothing keeps it.
 
+11. **f1 sends the address as text, not coordinates.** The handoff wants the pin on the door; the backend does not
+    geocode (its task `0118`), so the map app finds the address as text (ADR-0048).
+12. **f3 draws no taken hours either, and only the week the design shows.** As in a1, availability returns free hours;
+    one taken while the patient chose it is struck through (e10). The strip shows six days at once, as f3 does.
+13. **One calendar for every screen.** f3 and a1 mark the 17th without attention and the 18th and 19th as holidays;
+    p3's sample («Mañana · 09:00», «Vie 18 · 15:30») contradicts them, so p3's next hours follow the calendar.
+14. **f4 offers three reasons, not four**: «Ya me siento mejor» is health information (ADR-0001; the author's call).
+
 ## Consequences
 
 - The flows behind the tab roots (search to booking, detail, change, cancel, rating, photo, the doctor's three

@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeActivityIndicator
 import cl.lume.uicomposer.components.LumeAvatar
+import cl.lume.uicomposer.components.LumeAvatarSize
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
@@ -196,10 +197,16 @@ internal fun doctorMarker(doctor: CareDoctor): LumeListAccessory =
  * stressed, each of [details] as a quieter line under it, and [extra] — the rating — last.
  */
 @Composable
-internal fun DoctorIdentity(doctor: CareDoctor, details: List<String>, extra: (@Composable () -> Unit)? = null) {
+internal fun DoctorIdentity(
+    doctor: CareDoctor,
+    details: List<String>,
+    avatar: LumeAvatarSize = LumeAvatarSize.Medium,
+    extra: (@Composable () -> Unit)? = null,
+) {
     LumeStack(axis = LumeStackAxis.Horizontal, alignment = LumeStackAlignment.Center) {
         LumeAvatar(
             initials = doctor.initials,
+            size = avatar,
             tint = LumeTileTint.deterministic(doctor.id),
             contentDescription = doctor.displayName,
         )

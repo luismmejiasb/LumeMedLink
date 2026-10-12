@@ -404,4 +404,65 @@
     <string name="booking_offline_body">La reserva no se envió. Revisa tu conexión e inténtalo de nuevo.</string>
     <string name="booking_unavailable_title">No pudimos enviar la reserva</string>
     <string name="booking_unavailable_body">Inténtalo de nuevo en un momento.</string>
+
+    <!-- f1–f4 · Tu próxima cita -->
+    <string name="directions_title">Abrir la dirección en</string>
+    <string name="directions_copy">Copiar dirección</string>
+    <string name="directions_copied">Dirección copiada</string>
+    <string name="directions_close">Cancelar</string>
+    <string name="options_title">¿Qué quieres hacer?</string>
+    <string name="options_change">Cambiar fecha u hora</string>
+    <string name="options_change_body">Eliges otra hora disponible</string>
+    <string name="options_cancel">Cancelar cita</string>
+    <string name="options_cancel_body">La hora se libera para otro paciente</string>
+    <string name="options_withdraw_body">Retiras la solicitud; el médico aún no la confirma</string>
+    <string name="options_window">Puedes cambiar o cancelar hasta **%1$s antes**. Después, solo llamando a la consulta.</string>
+    <string name="options_window_closed">Ya pasó el plazo para cambiar o cancelar: comunícate con la consulta.</string>
+    <string name="options_call">Llamar a la consulta</string>
+    <string name="options_close">Volver</string>
+    <string name="window_minutes">%1$d min</string>
+    <string name="window_hours">%1$d h</string>
+    <string name="reschedule_title">Cambiar hora</string>
+    <string name="reschedule_current">Hora actual: </string>
+    <string name="reschedule_afternoon">%1$s · tarde</string>
+    <string name="reschedule_note">Tu hora de %1$s se libera solo cuando %2$s confirme la nueva.</string>
+    <string name="reschedule_keep">Mantener hora</string>
+    <string name="reschedule_to">Cambiar a %1$s · %2$s</string>
+    <string name="reschedule_choose">Elige una hora</string>
+    <string name="reschedule_none">No hay horas disponibles en los próximos días</string>
+    <string name="day_no_attention">sin atención</string>
+    <string name="day_holiday">feriado</string>
+    <string name="day_spoken">%1$s, %2$s</string>
+    <string name="slot_taken_spoken">%1$s, tomada</string>
+    <string name="taken_now_title">Esa hora se acaba de tomar</string>
+    <string name="taken_now_body">Las %1$s ya no está disponible. Elige otra.</string>
+    <string name="taken_none">No quedan horas el %1$s.</string>
+    <string name="taken_next">El %1$s hay %2$d.</string>
+    <string name="moved_toast">Cambio enviado · esperando confirmación</string>
+    <string name="move_failed_title">No pudimos cambiar la hora</string>
+    <string name="move_window_body">Ya pasó el plazo para cambiarla. Comunícate con la consulta.</string>
+    <string name="move_offline_body">Necesitas conexión para cambiar la hora. Tu hora actual sigue igual.</string>
+    <string name="move_unavailable_body">Estamos con problemas. Intenta en unos minutos; tu hora actual sigue igual.</string>
+    <string name="cancel_title">Cancelar cita</string>
+    <string name="cancel_reasons">¿Por qué cancelas?</string>
+    <string name="cancel_reason_time">No puedo a esa hora</string>
+    <string name="cancel_reason_doctor">Me atenderé con otro médico</string>
+    <string name="cancel_reason_other">Otro motivo</string>
+    <string name="cancel_reason_note">El motivo es opcional y solo lo ve el médico.</string>
+    <string name="cancel_warning">La hora se libera para otro paciente y **no se puede recuperar**. Si solo necesitas otra hora, mejor [[cámbiala]].</string>
+    <string name="cancel_confirm">Cancelar cita</string>
+    <string name="cancel_back">Volver</string>
+    <string name="cancel_offline">Necesitas conexión para cancelar.</string>
+    <string name="cancel_window">Ya pasó el plazo para cancelar. Comunícate con la consulta.</string>
+    <string name="cancel_unavailable">Estamos con problemas. Intenta en unos minutos.</string>
+    <string name="cancelled_toast">Cita cancelada</string>
+
+    <plurals name="day_hours">
+        <item quantity="one">%1$d hora</item>
+        <item quantity="other">%1$d horas</item>
+    </plurals>
+    <plurals name="taken_left">
+        <item quantity="one">Queda %1$d hora el %2$s.</item>
+        <item quantity="other">Quedan %1$d horas el %2$s.</item>
+    </plurals>
 </resources>

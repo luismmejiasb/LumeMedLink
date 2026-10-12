@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -16,17 +18,29 @@ import cl.lume.uicomposer.components.LumeFloatingTabBarClearance
 import cl.lume.uicomposer.components.LumeTabBar
 import cl.lume.uicomposer.components.LumeTabBarItem
 import cl.lume.uicomposer.components.LumeTabBarStyle
+import cl.lume.uicomposer.components.LumeToastAppearance
 import cl.lume.uicomposer.components.LumeToastHost
 import cl.lume.uicomposer.components.rememberLumeToastHostState
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeStatusStyle
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
+import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
+import com.luismejias.lumemedlink.core.device.rememberDirections
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsScreen
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsSegment
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
+import com.luismejias.lumemedlink.features.patient.change.CancelScreen
+import com.luismejias.lumemedlink.features.patient.change.ChangeDone
+import com.luismejias.lumemedlink.features.patient.change.ChangeRoute
+import com.luismejias.lumemedlink.features.patient.change.ChangeSheet
+import com.luismejias.lumemedlink.features.patient.change.ChangeViewModel
+import com.luismejias.lumemedlink.features.patient.change.DirectionsSheet
+import com.luismejias.lumemedlink.features.patient.change.OptionsSheet
+import com.luismejias.lumemedlink.features.patient.change.RescheduleScreen
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsScreen
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeScreen
@@ -40,6 +54,9 @@ import com.luismejias.lumemedlink.features.patient.settings.SettingsScreen
 import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.booked_toast
+import com.luismejias.lumemedlink.resources.cancelled_toast
+import com.luismejias.lumemedlink.resources.directions_copied
+import com.luismejias.lumemedlink.resources.moved_toast
 import com.luismejias.lumemedlink.resources.sent_toast
 import com.luismejias.lumemedlink.resources.tab_appointments
 import com.luismejias.lumemedlink.resources.tab_doctors
@@ -82,7 +99,13 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
     val appointments = viewModel { AppointmentsViewModel(care) }
     val doctors = viewModel { MyDoctorsViewModel(care) }
     val settings = viewModel { SettingsViewModel(care) }
+    val change = viewModel { ChangeViewModel(care, directory) }
     val contact = rememberDeviceContact()
+    val directions = rememberDirections()
+    val clipboard = rememberAddressClipboard()
+    val changeRoute by change.route.collectAsState()
+    val changeSheet by change.sheet.collectAsState()
+    val changeDone by change.done.collectAsState()
     val selected by tabs.selected.collectAsState()
     val appointmentsLoad by appointments.state.collectAsState()
     val awaiting = (appointmentsLoad as? CareLoad.Ready)?.content?.awaiting ?: 0
@@ -102,38 +125,59 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
             )
         }
     }
-    val showsTabBar = selected != PatientTab.SEARCH || searchRoutes.last().showsTabBar
+    val movedToast = stringResource(Res.string.moved_toast)
+    val cancelledToast = stringResource(Res.string.cancelled_toast)
+    val copiedToast = stringResource(Res.string.directions_copied)
+    LaunchedEffect(changeDone) {
+        val done = changeDone ?: return@LaunchedEffect
+        home.refresh()
+        appointments.refresh()
+        toasts.show(if (done is ChangeDone.Moved) movedToast else cancelledToast, LumeStatusStyle.Success)
+        change.doneSeen()
+    }
+    // f1: with one map app only, it opens directly and no sheet is drawn (spec f1).
+    val openDirections: (PatientAppointment) -> Unit = { appointment ->
+        val apps = directions.mapApps()
+        if (apps.size == 1) {
+            directions.open(apps.single(), "${appointment.place.address} ${appointment.place.detail}")
+        } else {
+            change.openDirections(appointment)
+        }
+    }
+    val showsTabBar = changeRoute == null && (selected != PatientTab.SEARCH || searchRoutes.last().showsTabBar)
 
     Box(modifier = Modifier.fillMaxSize()) {
         // The bar floats over the content, which scrolls under it: each screen leaves the kit's clearance at its end.
         CompositionLocalProvider(LocalTabBarClearance provides if (showsTabBar) LumeFloatingTabBarClearance else 0.dp) {
-            when (selected) {
-                PatientTab.HOME -> HomeScreen(
+            when {
+                changeRoute == ChangeRoute.RESCHEDULE -> RescheduleScreen(change, toasts, care.today())
+                changeRoute == ChangeRoute.CANCEL -> CancelScreen(change, care.today())
+                selected == PatientTab.HOME -> HomeScreen(
                     model = home,
-                    onDirections = {},
-                    onChangeOrCancel = {},
+                    onDirections = openDirections,
+                    onChangeOrCancel = { appointment -> change.launch { openOptions(appointment) } },
                     onOpenAppointment = {},
                     onRate = { _, _ -> },
                     onSearch = { tabs.show(PatientTab.SEARCH) },
                     onNotices = {},
                     onProfile = { tabs.show(PatientTab.SETTINGS) },
                 )
-                PatientTab.SEARCH -> SearchHost(search, onBooked)
-                PatientTab.APPOINTMENTS -> AppointmentsScreen(
+                selected == PatientTab.SEARCH -> SearchHost(search, onBooked)
+                selected == PatientTab.APPOINTMENTS -> AppointmentsScreen(
                     model = appointments,
                     onOpen = {},
-                    onChange = {},
-                    onCancel = {},
+                    onChange = { appointment -> change.launch { changeTime(appointment) } },
+                    onCancel = change::cancelAppointment,
                     onSearch = { tabs.show(PatientTab.SEARCH) },
                 )
-                PatientTab.DOCTORS -> MyDoctorsScreen(
+                selected == PatientTab.DOCTORS -> MyDoctorsScreen(
                     model = doctors,
                     onOpen = {},
                     onCall = contact::dial,
                     onMail = contact::mail,
                     onSearch = { tabs.show(PatientTab.SEARCH) },
                 )
-                PatientTab.SETTINGS -> SettingsScreen(
+                else -> SettingsScreen(
                     model = settings,
                     onEditPhone = {},
                     onEditEmail = {},
@@ -163,6 +207,28 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
                 style = LumeTabBarStyle.Floating,
             )
         }
-        LumeToastHost(toasts, dismissLabel = stringResource(Res.string.toast_dismiss))
+        DirectionsSheet(
+            appointment = (changeSheet as? ChangeSheet.Directions)?.appointment,
+            apps = remember(changeSheet) {
+                if (changeSheet is ChangeSheet.Directions) directions.mapApps() else emptyList()
+            },
+            directions = directions,
+            clipboard = clipboard,
+            onCopied = { toasts.show(copiedToast, LumeStatusStyle.Success) },
+            onDismiss = change::dismissSheet,
+        )
+        OptionsSheet(
+            options = (changeSheet as? ChangeSheet.Options)?.options,
+            today = care.today(),
+            onChange = { appointment -> change.launch { changeTime(appointment) } },
+            onCancel = change::cancelAppointment,
+            onCall = contact::dial,
+            onDismiss = change::dismissSheet,
+        )
+        LumeToastHost(
+            toasts,
+            dismissLabel = stringResource(Res.string.toast_dismiss),
+            appearance = LumeToastAppearance.Inverted,
+        )
     }
 }

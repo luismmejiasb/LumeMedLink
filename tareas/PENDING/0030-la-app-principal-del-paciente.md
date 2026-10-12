@@ -60,7 +60,13 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 - **«Llamar» y «Correo» en Mis médicos** van bajo el avatar, en el borde izquierdo de la tarjeta, no bajo el nombre como dibuja p6.
 - **Marca en la cabecera de Inicio**: el kit agrega un lugar opcional a la izquierda de la barra con título grande para el ícono y el nombre de la app. Hasta que llegue el logotipo en SVG, va el escudo del kit con el nombre en texto.
 
-## «Tu próxima cita» (f1–f4): lo que decidió el autor (2026-10-11)
+## «Tu próxima cita» (f1–f4) — HECHA contra el guion, 2026-10-11
+
+Cómo llegar (hoja con las apps de mapas y copiar dirección), Cambiar o cancelar (hoja), Cambiar hora con e10 y Cancelar
+cita, desde la tarjeta de Inicio y desde Mis citas. Desviaciones 11–14 en ADR-0046; excepciones en ADR-0048 y
+ADR-0049. Pendiente del kit: el texto de la barra de f3, la nota del día en dos líneas y la fila de acción en acento.
+
+### Lo que decidió el autor (2026-10-11)
 
 - **Kit**: se autorizan la hoja inferior (f1, f2), los días con conteo y feriado (f3), la lista de opciones con radio
   (f4), el texto tachado, el enlace dentro de un aviso y el aviso oscuro con título y cuerpo (e10).
