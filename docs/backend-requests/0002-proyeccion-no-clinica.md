@@ -105,3 +105,15 @@ el canal dice si es teleconsulta.
   un alcance que no debía tener.
 
 Sin comunicar al backend todavía: el autor decide cuándo (ver «No se le hacen más pedidos», 2026-10-11, en el pedido 0008).
+
+## Lo que construyó el backend sobre el enlace (2026-10-12, contrato 0.105.0, su ADR-0090)
+
+- **El enlace lo hace el personal de LumeMed**, no el médico: el OWNER enlaza la cuenta de LumeMedLink con
+  `POST /v1/platform/linked-identities`. **No es lo que eligió el autor aquí** (que el médico se vincule desde LumeMed con
+  un código de un solo uso), que nunca se le comunicó al backend. Queda para que el autor lo concilie.
+- Una cuenta sin enlazar no es miembro de nada: agenda y contactos responden `404`, y `/v1/me` responde
+  `not_provisioned`. La app debería decirlo como «tu cuenta aún no está enlazada a tu consulta», no como un error.
+- En desarrollo, `POST /dev/token {"userId":"dev-doctor-link","client":"LINK_CLINICIAN"}` es la cuenta enlazada.
+- La MFA de un token de LumeMedLink es la de esa cuenta, nunca la del iPad.
+- **El clasificador falla cerrado** (su tarea `0137`), como eligió el autor.
+- **0.104.0**: en Mis médicos, un profesional oculto llega sin segundo apellido ni especialidad (ya eran nulables).
