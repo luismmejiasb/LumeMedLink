@@ -95,7 +95,14 @@ fecha c3 «Martes 2 de septiembre», pero el 2 de septiembre de 2026 es miércol
   los botones bajo el avatar. Y las estrellas sólo para ver, en c3.
 - Sin motivo (c2) y sin previsión (c1–c3), por las decisiones anteriores.
 
-## Las pantallas del médico (m1–m3): lo que decidió el autor (2026-10-11)
+## Las pantallas del médico (m1–m3) — HECHAS contra el guion, 2026-10-11
+
+El rol médico entra a su app de tres pestañas (Agenda, Pacientes, Ajustes) en vez de la pantalla provisional:
+confirma o rechaza solicitudes, ve el día, busca pacientes por nombre o RUT y los llama o les escribe, y comparte o no
+su contacto. Agrega «Cerrar sesión» en Ajustes, que m3 no dibuja. Las piezas que comparten las dos audiencias se
+movieron a `core/screen`. Pendiente del kit: las secciones de m2 en una sola tarjeta.
+
+### Lo que decidió el autor (2026-10-11)
 
 - **Kit**: la fecha sobre el título (m1), la hora al inicio de la fila de agenda (m1) y dos botones redondos a la
   derecha de una fila (m2).

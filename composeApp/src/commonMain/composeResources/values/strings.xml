@@ -179,10 +179,6 @@
     <string name="doctor_linked_start">Empezar</string>
 
     <!-- Main app, pending -->
-    <string name="pending_patient_title">App del paciente</string>
-    <string name="pending_doctor_title">Vista del médico</string>
-    <string name="pending_body">Esta parte de la app todavía no está construida.</string>
-    <string name="pending_restart">Volver al inicio</string>
 
     <!-- Lock screen (session) -->
     <string name="unlock_title">Hola de nuevo</string>
@@ -478,4 +474,60 @@
     <string name="detail_rating_sent">Enviada el %1$s</string>
     <string name="detail_clinical">El detalle clínico de la atención **no está en LumeMedLink**: lo maneja tu médico.</string>
     <string name="detail_time_range">%1$s – %2$s</string>
+
+    <!-- m1–m3 · el médico -->
+    <string name="doctor_tab_agenda">Agenda</string>
+    <string name="doctor_tab_patients">Pacientes</string>
+    <string name="doctor_tab_settings">Ajustes</string>
+    <string name="doctor_profile_action">Mi perfil</string>
+    <string name="doctor_requests">Solicitudes por confirmar</string>
+    <string name="doctor_request_line">%1$s · %2$s · %3$s</string>
+    <string name="doctor_confirm">Confirmar</string>
+    <string name="doctor_reject">Rechazar</string>
+    <string name="doctor_today">Hoy</string>
+    <string name="doctor_day_empty">Sin citas este día</string>
+    <string name="doctor_agenda_note">Vista simple. El horario, los sobrecupos y las estadísticas se gestionan en LumeMed.</string>
+    <string name="visit_first">Primera consulta</string>
+    <string name="visit_follow_up">Control</string>
+    <string name="visit_teleconsult">Teleconsulta</string>
+    <string name="doctor_answer_failed">No pudimos responder la solicitud</string>
+    <string name="doctor_answer_offline">Necesitas conexión para responder. La solicitud sigue esperando.</string>
+    <string name="doctor_answer_unavailable">Estamos con problemas. Intenta en unos minutos.</string>
+    <string name="doctor_patients_search">Buscar por nombre o RUT</string>
+    <string name="doctor_patients_none">Ningún paciente coincide con la búsqueda.</string>
+    <string name="doctor_patients_note">Sin historia clínica ni diagnósticos: eso vive solo en LumeMed.</string>
+    <string name="doctor_call_named">Llamar a %1$s</string>
+    <string name="doctor_mail_named">Escribir a %1$s</string>
+    <string name="doctor_linked">Cuenta vinculada con LumeMed</string>
+    <string name="doctor_specialty">Especialidad</string>
+    <string name="doctor_address">Dirección de consulta</string>
+    <string name="doctor_phone">Teléfono de consulta</string>
+    <string name="doctor_edit_named">Editar %1$s</string>
+    <string name="doctor_share">Compartir mi contacto</string>
+    <string name="doctor_share_body">Visible para todos tus pacientes</string>
+    <string name="doctor_ratings">Mis valoraciones</string>
+    <string name="doctor_corrections">Correcciones de datos</string>
+    <plurals name="doctor_day_entries">
+        <item quantity="one">%2$s · %1$d cita</item>
+        <item quantity="other">%2$s · %1$d citas</item>
+    </plurals>
+    <plurals name="doctor_patients_count">
+        <item quantity="one">%1$d paciente atendido · solo datos de contacto</item>
+        <item quantity="other">%1$d pacientes atendidos · solo datos de contacto</item>
+    </plurals>
+    <plurals name="doctor_ratings_body">
+        <item quantity="one">%1$s · %2$d opinión</item>
+        <item quantity="other">%1$s · %2$d opiniones</item>
+    </plurals>
+    <plurals name="doctor_corrections_body">
+        <item quantity="one">%1$d por revisar</item>
+        <item quantity="other">%1$d por revisar</item>
+    </plurals>
+    <plurals name="doctor_requests_badge">
+        <item quantity="one">%1$d solicitud por confirmar</item>
+        <item quantity="other">%1$d solicitudes por confirmar</item>
+    </plurals>
+    <string-array name="weekdays_initial">
+        <item>L</item><item>M</item><item>M</item><item>J</item><item>V</item><item>S</item><item>D</item>
+    </string-array>
 </resources>

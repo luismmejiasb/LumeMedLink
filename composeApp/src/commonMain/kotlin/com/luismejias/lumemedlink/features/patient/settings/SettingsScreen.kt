@@ -183,7 +183,7 @@ private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEd
                 trailing = LumeListAccessory.Button(
                     LumeIcon.Edit,
                     stringResource(Res.string.settings_edit_phone),
-                    onEditPhone,
+                    onClick = onEditPhone,
                 ),
                 textStyle = LumeListRowTextStyle.LabelOverValue,
             )
@@ -193,7 +193,7 @@ private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEd
                 trailing = LumeListAccessory.Button(
                     LumeIcon.Edit,
                     stringResource(Res.string.settings_edit_email),
-                    onEditEmail,
+                    onClick = onEditEmail,
                 ),
                 textStyle = LumeListRowTextStyle.LabelOverValue,
             )

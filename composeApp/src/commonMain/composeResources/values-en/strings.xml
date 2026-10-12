@@ -174,10 +174,6 @@
     <string name="doctor_linked_start">Get started</string>
 
     <!-- Main app, pending -->
-    <string name="pending_patient_title">Patient app</string>
-    <string name="pending_doctor_title">Doctor view</string>
-    <string name="pending_body">This part of the app isn’t built yet.</string>
-    <string name="pending_restart">Back to start</string>
 
     <!-- Lock screen (session) -->
     <string name="unlock_title">Welcome back</string>
@@ -473,4 +469,60 @@
     <string name="detail_rating_sent">Sent on %1$s</string>
     <string name="detail_clinical">The clinical detail of the visit **isn’t in LumeMedLink**: your doctor handles it.</string>
     <string name="detail_time_range">%1$s – %2$s</string>
+
+    <!-- m1–m3 · the doctor -->
+    <string name="doctor_tab_agenda">Agenda</string>
+    <string name="doctor_tab_patients">Patients</string>
+    <string name="doctor_tab_settings">Settings</string>
+    <string name="doctor_profile_action">My profile</string>
+    <string name="doctor_requests">Requests to confirm</string>
+    <string name="doctor_request_line">%1$s · %2$s · %3$s</string>
+    <string name="doctor_confirm">Confirm</string>
+    <string name="doctor_reject">Decline</string>
+    <string name="doctor_today">Today</string>
+    <string name="doctor_day_empty">No appointments this day</string>
+    <string name="doctor_agenda_note">Simple view. Schedule, overbooking and statistics are managed in LumeMed.</string>
+    <string name="visit_first">First visit</string>
+    <string name="visit_follow_up">Follow-up</string>
+    <string name="visit_teleconsult">Teleconsultation</string>
+    <string name="doctor_answer_failed">We couldn’t answer the request</string>
+    <string name="doctor_answer_offline">You need a connection to answer. The request is still waiting.</string>
+    <string name="doctor_answer_unavailable">We’re having trouble. Try again in a few minutes.</string>
+    <string name="doctor_patients_search">Search by name or RUT</string>
+    <string name="doctor_patients_none">No patient matches the search.</string>
+    <string name="doctor_patients_note">No clinical record or diagnoses: those live only in LumeMed.</string>
+    <string name="doctor_call_named">Call %1$s</string>
+    <string name="doctor_mail_named">Write to %1$s</string>
+    <string name="doctor_linked">Account linked with LumeMed</string>
+    <string name="doctor_specialty">Specialty</string>
+    <string name="doctor_address">Practice address</string>
+    <string name="doctor_phone">Practice phone</string>
+    <string name="doctor_edit_named">Edit %1$s</string>
+    <string name="doctor_share">Share my contact</string>
+    <string name="doctor_share_body">Visible to all your patients</string>
+    <string name="doctor_ratings">My ratings</string>
+    <string name="doctor_corrections">Data corrections</string>
+    <plurals name="doctor_day_entries">
+        <item quantity="one">%2$s · %1$d appointment</item>
+        <item quantity="other">%2$s · %1$d appointments</item>
+    </plurals>
+    <plurals name="doctor_patients_count">
+        <item quantity="one">%1$d patient attended · contact details only</item>
+        <item quantity="other">%1$d patients attended · contact details only</item>
+    </plurals>
+    <plurals name="doctor_ratings_body">
+        <item quantity="one">%1$s · %2$d review</item>
+        <item quantity="other">%1$s · %2$d reviews</item>
+    </plurals>
+    <plurals name="doctor_corrections_body">
+        <item quantity="one">%1$d to review</item>
+        <item quantity="other">%1$d to review</item>
+    </plurals>
+    <plurals name="doctor_requests_badge">
+        <item quantity="one">%1$d request to confirm</item>
+        <item quantity="other">%1$d requests to confirm</item>
+    </plurals>
+    <string-array name="weekdays_initial">
+        <item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item><item>S</item>
+    </string-array>
 </resources>

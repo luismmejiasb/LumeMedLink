@@ -26,6 +26,7 @@ import cl.lume.uicomposer.tokens.LumeCanvas
 import cl.lume.uicomposer.tokens.LumeNeutrals
 import cl.lume.uicomposer.tokens.LumeRadius
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
+import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
@@ -48,6 +49,7 @@ import com.luismejias.lumemedlink.features.auth.flow.AccessFlowViewModel
 import com.luismejias.lumemedlink.features.auth.flow.AccessHost
 import com.luismejias.lumemedlink.features.auth.flow.AccessRole
 import com.luismejias.lumemedlink.features.auth.unlock.UnlockScreen
+import com.luismejias.lumemedlink.features.doctor.tabs.DoctorMainHost
 import com.luismejias.lumemedlink.features.patient.tabs.PatientMainHost
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -104,6 +106,8 @@ public fun App() {
     // their own that a sign-out empties.
     val patientScope = viewModel { SessionScope() }
     val patientCare = remember { ScriptedPatientCare() }
+    val doctorScope = viewModel(key = "doctor-scope") { SessionScope() }
+    val doctorCare = remember { ScriptedDoctorCare() }
     val secureStore = rememberSecureStore()
     val unlockGate = rememberUnlockGate(secureStore) ?: AbsentUnlockGate
     val sessionManager = remember(secureStore) {
@@ -221,6 +225,7 @@ public fun App() {
         shell.reauthenticating.value = false
         access.restart()
         patientScope.reset()
+        doctorScope.reset()
         locked = true
     }
 
@@ -258,7 +263,15 @@ public fun App() {
                                     },
                                 )
                             }
-                            AccessRole.DOCTOR -> PendingMainScreen(role = role, onRestart = access::restart)
+                            AccessRole.DOCTOR -> InSessionScope(doctorScope) {
+                                DoctorMainHost(
+                                    care = doctorCare,
+                                    onSignOut = {
+                                        doctorScope.reset()
+                                        access.restart()
+                                    },
+                                )
+                            }
                             null -> AccessHost(viewModel = access, onCancel = onCancel)
                         }
                     }
