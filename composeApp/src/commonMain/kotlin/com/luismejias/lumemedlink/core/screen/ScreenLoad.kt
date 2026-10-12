@@ -8,6 +8,8 @@ import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeEmptyState
+import cl.lume.uicomposer.components.LumeEmptyStateLook
+import cl.lume.uicomposer.components.LumeEmptyStateTone
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.CareFailure
@@ -72,6 +74,7 @@ internal fun <T> CareLoadView(
             is CareLoad.Failed -> {
                 val offline = load.failure == CareFailure.Offline
                 LumeEmptyState(
+                    look = LumeEmptyStateLook.Tiled(LumeEmptyStateTone.Error),
                     icon = if (offline) LumeIcon.Wifi else LumeIcon.Alert,
                     title = stringResource(if (offline) offlineTitle else Res.string.care_unavailable_title),
                     message = stringResource(if (offline) offlineBody else Res.string.care_unavailable_body),

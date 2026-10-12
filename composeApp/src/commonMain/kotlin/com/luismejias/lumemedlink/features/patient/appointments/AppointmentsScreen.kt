@@ -19,6 +19,7 @@ import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeEmptyState
+import cl.lume.uicomposer.components.LumeEmptyStateLook
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListRow
@@ -119,29 +120,28 @@ internal fun AppointmentsScreen(
                     AppointmentsSegment.CANCELLED -> content.cancelled
                 }
                 if (shown.isEmpty()) {
-                    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Absent) {
-                        LumeEmptyState(
-                            icon = LumeIcon.Calendar,
-                            title = stringResource(
-                                when (segment) {
-                                    AppointmentsSegment.UPCOMING -> Res.string.appointments_empty_upcoming
-                                    AppointmentsSegment.PAST -> Res.string.appointments_empty_past
-                                    AppointmentsSegment.CANCELLED -> Res.string.appointments_empty_cancelled
-                                },
-                            ),
-                            message = if (segment == AppointmentsSegment.UPCOMING) {
-                                stringResource(Res.string.appointments_empty_upcoming_body)
-                            } else {
-                                null
+                    LumeEmptyState(
+                        look = LumeEmptyStateLook.Tiled(),
+                        icon = LumeIcon.Calendar,
+                        title = stringResource(
+                            when (segment) {
+                                AppointmentsSegment.UPCOMING -> Res.string.appointments_empty_upcoming
+                                AppointmentsSegment.PAST -> Res.string.appointments_empty_past
+                                AppointmentsSegment.CANCELLED -> Res.string.appointments_empty_cancelled
                             },
-                            action = if (segment == AppointmentsSegment.UPCOMING) {
-                                LumeButtonContent.Title(stringResource(Res.string.search_doctor))
-                            } else {
-                                null
-                            },
-                            onAction = onSearch,
-                        )
-                    }
+                        ),
+                        message = if (segment == AppointmentsSegment.UPCOMING) {
+                            stringResource(Res.string.appointments_empty_upcoming_body)
+                        } else {
+                            null
+                        },
+                        action = if (segment == AppointmentsSegment.UPCOMING) {
+                            LumeButtonContent.Title(stringResource(Res.string.search_doctor))
+                        } else {
+                            null
+                        },
+                        onAction = onSearch,
+                    )
                 }
                 shown.forEach { appointment ->
                     AppointmentCard(

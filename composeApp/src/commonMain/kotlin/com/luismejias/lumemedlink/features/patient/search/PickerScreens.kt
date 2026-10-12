@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeEmptyState
+import cl.lume.uicomposer.components.LumeEmptyStateLook
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
@@ -73,6 +74,7 @@ internal fun SpecialtyScreen(model: SearchViewModel, onBack: () -> Unit) {
             }
             when {
                 matches.isEmpty() -> LumeEmptyState(
+                    look = LumeEmptyStateLook.Tiled(),
                     icon = LumeIcon.Search,
                     title = stringResource(Res.string.search_specialty_none_title, content.query.trim()),
                     message = stringResource(Res.string.search_specialty_none_body),

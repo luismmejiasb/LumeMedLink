@@ -16,6 +16,7 @@ import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeDivider
 import cl.lume.uicomposer.components.LumeEmptyState
+import cl.lume.uicomposer.components.LumeEmptyStateLook
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
@@ -75,15 +76,14 @@ internal fun MyDoctorsScreen(
         ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
                 if (content.all.isEmpty()) {
-                    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Absent) {
-                        LumeEmptyState(
-                            icon = LumeIcon.Doctors,
-                            title = stringResource(Res.string.doctors_empty_title),
-                            message = stringResource(Res.string.doctors_empty_body),
-                            action = LumeButtonContent.Title(stringResource(Res.string.search_doctor)),
-                            onAction = onSearch,
-                        )
-                    }
+                    LumeEmptyState(
+                        look = LumeEmptyStateLook.Tiled(),
+                        icon = LumeIcon.PersonFill,
+                        title = stringResource(Res.string.doctors_empty_title),
+                        message = stringResource(Res.string.doctors_empty_body),
+                        action = LumeButtonContent.Title(stringResource(Res.string.search_doctor)),
+                        onAction = onSearch,
+                    )
                 } else {
                     SensitiveSearchField(
                         query = content.query,

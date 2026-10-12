@@ -17,6 +17,7 @@ import cl.lume.uicomposer.components.LumeChip
 import cl.lume.uicomposer.components.LumeChipStyle
 import cl.lume.uicomposer.components.LumeDivider
 import cl.lume.uicomposer.components.LumeEmptyState
+import cl.lume.uicomposer.components.LumeEmptyStateLook
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeFilterChip
@@ -138,6 +139,7 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
             val filters = content.filters
             if (content.doctors.isEmpty()) {
                 LumeEmptyState(
+                    look = LumeEmptyStateLook.Tiled(),
                     icon = LumeIcon.Stethoscope,
                     title = stringResource(Res.string.results_empty_title, specialty, commune),
                     message = stringResource(Res.string.results_empty_body),

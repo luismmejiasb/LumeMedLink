@@ -17,6 +17,7 @@ import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeEmptyState
+import cl.lume.uicomposer.components.LumeEmptyStateLook
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
@@ -103,8 +104,9 @@ internal fun HomeScreen(
                 if (next != null) {
                     NextAppointmentCard(next, home, onDirections, onChangeOrCancel)
                 } else if (home.waiting.isEmpty()) {
-                    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Absent) {
+                    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Dashed) {
                         LumeEmptyState(
+                            look = LumeEmptyStateLook.Tiled(),
                             icon = LumeIcon.Calendar,
                             title = stringResource(Res.string.home_empty_title),
                             message = stringResource(Res.string.home_empty_body),
