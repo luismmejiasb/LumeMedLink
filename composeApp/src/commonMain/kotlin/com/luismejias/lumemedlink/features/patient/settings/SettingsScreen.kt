@@ -9,6 +9,7 @@ import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListButtonLook
 import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowRole
@@ -180,6 +181,7 @@ private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEd
                 trailing = LumeListAccessory.Button(
                     LumeIcon.Edit,
                     stringResource(Res.string.settings_edit_phone),
+                    LumeListButtonLook.Accent,
                     onClick = onEditPhone,
                 ),
                 textStyle = LumeListRowTextStyle.LabelOverValue,
@@ -190,6 +192,7 @@ private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEd
                 trailing = LumeListAccessory.Button(
                     LumeIcon.Edit,
                     stringResource(Res.string.settings_edit_email),
+                    LumeListButtonLook.Accent,
                     onClick = onEditEmail,
                 ),
                 textStyle = LumeListRowTextStyle.LabelOverValue,

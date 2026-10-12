@@ -10,6 +10,7 @@ import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeList
 import cl.lume.uicomposer.components.LumeListAccessory
+import cl.lume.uicomposer.components.LumeListButtonLook
 import cl.lume.uicomposer.components.LumeListChrome
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowRole
@@ -113,7 +114,7 @@ private fun ProfileFields(profile: DoctorProfile) {
                 ProfileField.ADDRESS -> profile.address
                 ProfileField.PHONE -> profile.phone
             },
-            trailing = LumeListAccessory.Button(LumeIcon.Edit, edits.getValue(field)) {},
+            trailing = LumeListAccessory.Button(LumeIcon.Edit, edits.getValue(field), LumeListButtonLook.Accent) {},
             textStyle = LumeListRowTextStyle.LabelOverValue,
         )
     }
