@@ -101,11 +101,8 @@ class HttpSecurityEventReporterTest {
         // the same trick SecureStoreKey uses to keep the wipe test honest.
         SecurityEventKind.entries.forEach { reporter.report(it) }
 
-        // Only the kinds the platform has a NAME for are sent. The rest are dropped on purpose —
-        // see `toPlatformKind`. The assertion is written against the mapping rather than a literal
-        // count so it stays true when the platform's vocabulary grows.
-        val translatable = SecurityEventKind.entries.count { it.toPlatformKind() != null }
-        assertEquals(translatable, double.received.size)
+        // Every kind has a name over there since contract 0.101.0, so every one is sent — once.
+        assertEquals(SecurityEventKind.entries.size, double.received.size)
     }
 
     // ── The vocabulary is the platform's, and this app does not get to invent values ────────────
@@ -130,35 +127,32 @@ class HttpSecurityEventReporterTest {
     }
 
     @Test
-    fun aKindThePlatformCannotNameIsNotSentAtAll() = runTest {
-        val double = ContractDouble { HttpStatusCode.NoContent to "" }
-        val reporter = HttpSecurityEventReporter(double.client())
-
-        SecurityEventKind.entries.filter { it.toPlatformKind() == null }.forEach { reporter.report(it) }
-
-        assertEquals(
-            0,
-            double.received.size,
-            "Silence beats an approximately-true kind: the kind IS the message (ADR-0023), and " +
-                "the platform cannot tell an approximation from a fact — it will act on it.",
+    fun theThreeDetectionsThePlatformNamedIn0101TravelUnderItsNames() = runTest {
+        val expected = mapOf(
+            SecurityEventKind.SESSION_UNLOCK_INVALIDATED to "biometricKeyInvalidated",
+            SecurityEventKind.NETWORK_ORIGIN_REFUSED to "foreignOriginBlocked",
+            SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED to "unexpectedHtmlResponse",
         )
+        expected.forEach { (kind, wire) ->
+            val double = ContractDouble { HttpStatusCode.NoContent to "" }
+
+            HttpSecurityEventReporter(double.client()).report(kind)
+
+            val body = double.bodies.single()
+            assertTrue(
+                body.contains("\"$wire\""),
+                "backend-requests/0006 asked for these by name and contract 0.101.0 gave them. Until then " +
+                    "they were not sent at all, because a near-miss is worse than silence. Body was: $body",
+            )
+        }
     }
 
     @Test
-    fun exactlyThreeKindsHaveNoHomeAndThatIsDeliberate() {
-        val unmapped = SecurityEventKind.entries.filter { it.toPlatformKind() == null }.toSet()
+    fun noTwoOfOurKindsShareAPlatformName() {
+        // An approximation would show up as two of our kinds collapsing onto one of theirs.
+        val names = SecurityEventKind.entries.map { it.toPlatformKind() }
 
-        assertEquals(
-            setOf(
-                SecurityEventKind.SESSION_UNLOCK_INVALIDATED,
-                SecurityEventKind.NETWORK_ORIGIN_REFUSED,
-                SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED,
-            ),
-            unmapped,
-            "These three are the client-side detections the platform's vocabulary never " +
-                "anticipated, and backend-requests/0006 asks for them by name. If this set " +
-                "changes, it is because somebody decided something — make sure they did.",
-        )
+        assertEquals(names.size, names.toSet().size, "each detection keeps its own name on the wire: $names")
     }
 
     // ── But a cancellation is NOT swallowed ─────────────────────────────────────────────────────

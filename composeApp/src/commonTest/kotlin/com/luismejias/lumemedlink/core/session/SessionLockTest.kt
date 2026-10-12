@@ -2,7 +2,6 @@ package com.luismejias.lumemedlink.core.session
 
 import com.luismejias.lumemedlink.core.security.SecurityEventEmitter
 import com.luismejias.lumemedlink.core.security.SecurityEventKind
-import com.luismejias.lumemedlink.core.security.toPlatformKind
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -162,9 +161,8 @@ class SessionLockSecurityEventsTest {
             }
 
             assertEquals(LockOutcome.SessionEnded(reason), lock.attemptUnlock(), "scenario for $reason")
-            val expected = reason.securityEvent()
-            assertEquals(expected, events.kinds.lastOrNull().takeIf { expected != null }, "$reason")
-            if (expected == null) {
+            assertEquals(reason.securityEvent(), events.kinds.lastOrNull(), "$reason")
+            if (reason == SessionEndReason.ENROLLMENT_CHANGED) {
                 assertTrue(
                     SecurityEventKind.SESSION_ENDED_UNRECOVERABLE !in events.kinds,
                     "$reason is the tier working as designed and must not be filed as a lockout",
@@ -174,15 +172,18 @@ class SessionLockSecurityEventsTest {
     }
 
     @Test
-    fun everyKindThePlatformCanHearHasAnEmitterInTheLock() {
-        // The three kinds that translate onto the wire are exactly the lock's; if one stops having an
-        // emitter (or a fourth kind starts translating) this names it. SECURE_STORE_UNREADABLE is ALSO
-        // emitted by the launch probe (app/SessionProbe.kt), which has its own test.
-        val emitted = SessionEndReason.entries.mapNotNull { it.securityEvent() }.toSet() +
+    fun everyKindBornInTheLockHasAnEmitterThere() {
+        // Every kind is heard by the platform since contract 0.101.0. The two network kinds are born in
+        // the stack, not here, and have NO emitter yet — declared, not hidden. SECURE_STORE_UNREADABLE is
+        // ALSO emitted by the launch probe (app/SessionProbe.kt), which has its own test.
+        val emitted = SessionEndReason.entries.map { it.securityEvent() }.toSet() +
             SecurityEventKind.SESSION_UNLOCK_FAILED
-        val translatable = SecurityEventKind.entries.filter { it.toPlatformKind() != null }.toSet()
+        val bornInTheNetworkStack = setOf(
+            SecurityEventKind.NETWORK_ORIGIN_REFUSED,
+            SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED,
+        )
 
-        assertEquals(translatable, emitted)
+        assertEquals(SecurityEventKind.entries.toSet() - bornInTheNetworkStack, emitted)
     }
 }
 

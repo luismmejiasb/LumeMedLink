@@ -61,11 +61,8 @@ internal class HttpSecurityEventReporter(private val client: HttpClient) : Secur
 
     override suspend fun report(kind: SecurityEventKind) {
         try {
-            // Translate FIRST, and say nothing rather than say something false. `null` means the
-            // platform has no name for what this app detected (see `toPlatformKind`), and a
-            // near-miss on this channel is worse than silence: the kind IS the message, and the
-            // platform cannot tell an approximation from a fact — it will act on it.
-            val platformKind = kind.toPlatformKind() ?: return
+            // Translated, never our own name: the platform's vocabulary is closed (see `toPlatformKind`).
+            val platformKind = kind.toPlatformKind()
             client.post(SECURITY_EVENTS_PATH) {
                 contentType(ContentType.Application.Json)
                 setBody(SecurityEventBody(platformKind))

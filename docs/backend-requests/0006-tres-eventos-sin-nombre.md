@@ -51,3 +51,14 @@ hoy no lo hace y es deliberado.
 
 Una respuesta corta: la opción elegida, los nombres exactos si agregás valores, y la versión de
 contrato donde aterrizan.
+
+## Respuesta del backend (2026-10-12)
+
+El backend respondió en su nota `0049` (`../lumemed-cloud-platform/docs/backend-responses/0049-three-security-events-get-their-names.md`)
+con la opción de agregar valores, que eligió el autor. Los tres nombres aterrizaron en el contrato `0.101.0`:
+`biometricKeyInvalidated`, `foreignOriginBlocked` y `unexpectedHtmlResponse`. Confirmó que no reintentar un `429` es lo
+correcto, porque la ruta no tiene clave de reintento.
+
+En este repo, `PlatformSecurityEventKind` ganó los tres valores y `toPlatformKind` ya no deja ningún tipo sin nombre.
+El lock reporta ahora un cambio de enrolamiento biométrico, que antes callaba. Los dos eventos de red **todavía no tienen
+emisor**: nacen en el stack, y cablearlos es trabajo propio de este repo, sin pedido pendiente.

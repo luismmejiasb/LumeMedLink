@@ -5,7 +5,9 @@ import kotlinx.serialization.Serializable
 
 /**
  * The platform's OWN closed vocabulary for `POST /v1/security-events`, transcribed from contract
- * 0.32.0. It is not ours and this app does not get to extend it: a value outside this set is a 400.
+ * 0.32.0 and grown by three in 0.101.0, when the platform named what this app detects
+ * (`backend-requests/0006`). It is not ours and this app does not get to extend it: a value outside
+ * this set is a 400, and a server older than 0.101.0 answers 400 to the three new ones.
  *
  * Why it is a separate type from [SecurityEventKind] instead of renaming ours: the two vocabularies
  * answer to different owners. Ours describes what THIS app detected and is governed by ADR-0023;
@@ -42,11 +44,19 @@ internal enum class PlatformSecurityEventKind {
 
     @SerialName("securityStorageFailure")
     SECURITY_STORAGE_FAILURE,
+
+    @SerialName("biometricKeyInvalidated")
+    BIOMETRIC_KEY_INVALIDATED,
+
+    @SerialName("foreignOriginBlocked")
+    FOREIGN_ORIGIN_BLOCKED,
+
+    @SerialName("unexpectedHtmlResponse")
+    UNEXPECTED_HTML_RESPONSE,
 }
 
 /**
- * Translates one of this app's kinds into the platform's, or answers `null` when the platform has
- * **no name for it**.
+ * Translates one of this app's kinds into the platform's.
  *
  * ## Why this function exists at all
  *
@@ -58,30 +68,21 @@ internal enum class PlatformSecurityEventKind {
  * word for word, the failure ADR-0023 was written to avoid after LumeMed shipped this channel wired
  * to a no-op and the platform never received an event.
  *
- * ## Why `null` instead of a nearest neighbour
+ * ## Why every kind has an exact name, and never a nearest neighbour
  *
- * Three of this app's six kinds have no home in the platform's set, and each near-miss would be a
- * lie with consequences:
- *
- * - `SESSION_UNLOCK_INVALIDATED` is not a `securityStorageFailure`. The tier-2 key was destroyed by
- *   a new biometric enrollment — that is the control **working as designed**, and filing it as a
- *   storage failure raises an alarm for a healthy device.
- * - `NETWORK_ORIGIN_REFUSED` is not an `integrityViolation`. That name means the binary or the
- *   runtime was tampered with; this is our own stack refusing to send somewhere, which says nothing
- *   about the device.
- * - `NETWORK_INTERSTITIAL_DETECTED` is likewise not an integrity event.
- *
- * The kind IS the message on this channel (ADR-0023). Sending an approximately-true kind is worse
- * than sending nothing, because the platform cannot tell the difference and will act on it.
- *
- * These three are exactly the client-side detections this app added and the platform's vocabulary —
- * written for LumeMed — never anticipated. `backend-requests/0006` asks for them by name.
+ * Until contract 0.101.0 three of this app's kinds had no home over there, and they were not sent at
+ * all: each near-miss would have been a lie with consequences. A key destroyed by a new biometric
+ * enrollment is the control **working**, not a `securityStorageFailure`; our stack refusing an origin,
+ * or a 2xx arriving as HTML, says nothing about a tampered binary, so neither is an
+ * `integrityViolation`. `backend-requests/0006` asked for the three by name and the platform added
+ * them (its answer `0049`). The kind IS the message on this channel (ADR-0023): if a future kind has
+ * no name over there, this goes back to answering `null` for it — never to the closest neighbour.
  *
  * The `when` is exhaustive with **no `else`**: adding a kind to [SecurityEventKind] stops compiling
  * until somebody decides what the platform should hear, which is the decision this file exists to
  * force.
  */
-internal fun SecurityEventKind.toPlatformKind(): PlatformSecurityEventKind? = when (this) {
+internal fun SecurityEventKind.toPlatformKind(): PlatformSecurityEventKind = when (this) {
     // Exact: the tier-2 gate refused an unlock attempt.
     SecurityEventKind.SESSION_UNLOCK_FAILED -> PlatformSecurityEventKind.REAUTH_FAILURE
 
@@ -92,8 +93,8 @@ internal fun SecurityEventKind.toPlatformKind(): PlatformSecurityEventKind? = wh
     // Exact: a stored secret could not be read back.
     SecurityEventKind.SECURE_STORE_UNREADABLE -> PlatformSecurityEventKind.SECURITY_STORAGE_FAILURE
 
-    // No name over there. See the KDoc — each of these has a tempting near-miss that would be false.
-    SecurityEventKind.SESSION_UNLOCK_INVALIDATED -> null
-    SecurityEventKind.NETWORK_ORIGIN_REFUSED -> null
-    SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED -> null
+    // Exact, since 0.101.0: the names the platform gave what this app detects.
+    SecurityEventKind.SESSION_UNLOCK_INVALIDATED -> PlatformSecurityEventKind.BIOMETRIC_KEY_INVALIDATED
+    SecurityEventKind.NETWORK_ORIGIN_REFUSED -> PlatformSecurityEventKind.FOREIGN_ORIGIN_BLOCKED
+    SecurityEventKind.NETWORK_INTERSTITIAL_DETECTED -> PlatformSecurityEventKind.UNEXPECTED_HTML_RESPONSE
 }

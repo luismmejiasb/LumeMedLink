@@ -35,16 +35,16 @@ internal enum class SessionEndReason {
 }
 
 /**
- * What the platform hears when a lock attempt ends the session, by reason (task 0018). `null` is a
- * decision, not a gap — each one says why:
+ * What the platform hears when a lock attempt ends the session, by reason (task 0018).
  *
- * - [SessionEndReason.ENROLLMENT_CHANGED] is the tier working AS DESIGNED, and the platform has no name
- *   for it (`SESSION_UNLOCK_INVALIDATED` translates to nothing; `backend-requests/0006` asks for one).
- *   Filing it as a lockout would raise an alarm over a healthy device.
+ * [SessionEndReason.ENROLLMENT_CHANGED] is the tier working AS DESIGNED: it reports
+ * `SESSION_UNLOCK_INVALIDATED`, which the platform names `biometricKeyInvalidated` since contract
+ * 0.101.0 (`backend-requests/0006`). Until then it reported nothing, because filing it as a lockout
+ * would have raised an alarm over a healthy device.
  *
  * Exhaustive with no `else`: a new reason stops compiling until somebody decides what it reports.
  */
-internal fun SessionEndReason.securityEvent(): SecurityEventKind? = when (this) {
+internal fun SessionEndReason.securityEvent(): SecurityEventKind = when (this) {
     SessionEndReason.TOO_MANY_ATTEMPTS -> SecurityEventKind.SESSION_ENDED_UNRECOVERABLE
     SessionEndReason.BIOMETRICS_UNAVAILABLE -> SecurityEventKind.SESSION_ENDED_UNRECOVERABLE
     // The store could not keep the count, or the gate's own material could not be read: both are a
@@ -52,7 +52,7 @@ internal fun SessionEndReason.securityEvent(): SecurityEventKind? = when (this) 
     // `securityStorageFailure` names.
     SessionEndReason.ATTEMPTS_UNRECORDABLE -> SecurityEventKind.SECURE_STORE_UNREADABLE
     SessionEndReason.UNLOCK_MATERIAL_UNREADABLE -> SecurityEventKind.SECURE_STORE_UNREADABLE
-    SessionEndReason.ENROLLMENT_CHANGED -> null
+    SessionEndReason.ENROLLMENT_CHANGED -> SecurityEventKind.SESSION_UNLOCK_INVALIDATED
 }
 
 /** The result of asking the lock to let the user back in. */
@@ -127,7 +127,7 @@ internal class SessionLock(
     }
 
     suspend fun attemptUnlock(): LockOutcome = decideUnlock().also { outcome ->
-        if (outcome is LockOutcome.SessionEnded) outcome.reason.securityEvent()?.let(events::emit)
+        if (outcome is LockOutcome.SessionEnded) events.emit(outcome.reason.securityEvent())
     }
 
     private suspend fun decideUnlock(): LockOutcome {
