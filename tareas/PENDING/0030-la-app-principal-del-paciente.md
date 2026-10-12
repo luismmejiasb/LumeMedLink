@@ -17,12 +17,12 @@ contrato 0.96.0; lo que no, va en `docs/backend-requests/0008`.
 2. **Buscar → reservar — HECHO 2026-10-11** (e0–e3, p3, p4, a1–a4, e2, e5, e6; e10 es de «cambiar hora», tajada 3): especialidad y comuna desde los catálogos,
    resultados del directorio, filtros, día y hora de la disponibilidad, confirmar, «Reserva enviada» (el médico
    confirma: `REQUESTED`). Reservar manda `clientId`.
-3. **Tu próxima cita** (f1–f4): cómo llegar, cambiar (reagendar es la operación atómica del contrato, nunca cancelar
+3. **Tu próxima cita** (f1–f4) — HECHO 2026-10-11: cómo llegar, cambiar (reagendar es la operación atómica del contrato, nunca cancelar
    y reservar — T7) y cancelar con su motivo propio (`CANNOT_ATTEND`, `SCHEDULE_CONFLICT`, `OTHER`).
-4. **Detalle de una cita** (c1–c3).
+4. **Detalle de una cita** (c1–c3) — HECHO 2026-10-11.
 5. **Valorar la atención** (f5a–f5d) — hecho contra el guion (2026-10-12), con las piezas del kit.
 6. **Foto de perfil** (k1–k4) — hecho en memoria (2026-10-12, ADR-0050), en Configuración y en el perfil del médico.
-7. **El médico** (m1–m3): agenda simple, pacientes como contactos, su perfil.
+7. **El médico** (m1–m3) — HECHO 2026-10-11/12: agenda simple, pacientes como contactos (en una tarjeta con el índice del kit), su perfil.
 
 Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 
@@ -41,7 +41,11 @@ Cada tajada lleva sus capturas junto a las del diseño, enviadas al autor.
 
 - `./gradlew build`, los tests de `features/patient/` y `shared/CalendarDateTest` en los dos targets.
 - Todos los gates, y `Scripts/rehearse-gates.sh` en verde.
-- Capturas en el simulador de iOS con el recorrido de `tmp/tour/` (Android deja la captura negra: `FLAG_SECURE`).
+- Capturas en el simulador de iOS con el recorrido de `tmp/tour/`. En Android, `FLAG_SECURE` deja la captura negra: se
+  captura con un build temporal sin esa bandera, restaurada apenas compila y jamás commiteada (2026-10-12).
+- **Pasada final del 2026-10-12**, diseño, iOS y Android en tríos (39 pantallas): nada roto por los cambios globales del
+  kit de ese día. Quedan cuatro paridades pedidas al kit (estados vacíos, la franja de e6, buscadores grises, lápices
+  azules); la tarea pasa a `DONE/` cuando estén conectadas.
 
 ## Lo que decidió el autor (2026-10-11)
 
