@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The handoff's link symbol (02-Assets/marca/simbolo-enlace.svg): two linked rings, in one colour the kit's brand
+     lockup tints with the next run's ink. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="2.1"
+        android:pathData="M6,8.5 H10 A3.5,3.5 0 0 1 13.5,12 A3.5,3.5 0 0 1 10,15.5 H6 A3.5,3.5 0 0 1 2.5,12 A3.5,3.5 0 0 1 6,8.5 Z" />
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="2.1"
+        android:pathData="M14,8.5 H18 A3.5,3.5 0 0 1 21.5,12 A3.5,3.5 0 0 1 18,15.5 H14 A3.5,3.5 0 0 1 10.5,12 A3.5,3.5 0 0 1 14,8.5 Z" />
+</vector>

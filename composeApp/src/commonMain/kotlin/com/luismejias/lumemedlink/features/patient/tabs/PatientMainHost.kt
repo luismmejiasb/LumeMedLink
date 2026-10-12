@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.lume.uicomposer.components.LocalLumeToastHostState
 import cl.lume.uicomposer.components.LumeCountBadge
 import cl.lume.uicomposer.components.LumeFloatingTabBarClearance
 import cl.lume.uicomposer.components.LumeTabBar
@@ -180,7 +181,11 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
 
     Box(modifier = Modifier.fillMaxSize()) {
         // The bar floats over the content, which scrolls under it: each screen leaves the kit's clearance at its end.
-        CompositionLocalProvider(LocalTabBarClearance provides if (showsTabBar) LumeFloatingTabBarClearance else 0.dp) {
+        // The toasts' state reaches the screens, so a pinned action bar can tell the host where it starts (e10).
+        CompositionLocalProvider(
+            LocalTabBarClearance provides if (showsTabBar) LumeFloatingTabBarClearance else 0.dp,
+            LocalLumeToastHostState provides toasts,
+        ) {
             when {
                 changeRoute == ChangeRoute.DETAIL -> AppointmentDetailScreen(
                     model = change,

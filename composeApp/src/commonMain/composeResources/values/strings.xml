@@ -8,6 +8,10 @@
 <resources>
     <!-- Shared -->
     <string name="app_name">LumeMedLink</string>
+    <!-- The name's three parts, as the brand lockup draws them; a brand, never translated. -->
+    <string name="brand_lume" translatable="false">Lume</string>
+    <string name="brand_med" translatable="false">Med</string>
+    <string name="brand_link" translatable="false">Link</string>
     <string name="common_back">Volver</string>
     <string name="common_continue">Continuar</string>
     <string name="common_retry">Reintentar</string>

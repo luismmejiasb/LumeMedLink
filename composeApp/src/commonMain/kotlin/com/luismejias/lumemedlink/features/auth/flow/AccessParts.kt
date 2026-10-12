@@ -8,6 +8,10 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import cl.lume.uicomposer.components.LumeBrandInk
+import cl.lume.uicomposer.components.LumeBrandJoiner
+import cl.lume.uicomposer.components.LumeBrandLockup
+import cl.lume.uicomposer.components.LumeBrandRun
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
@@ -33,14 +37,20 @@ import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.session.Clock
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.app_name
+import com.luismejias.lumemedlink.resources.brand_link
+import com.luismejias.lumemedlink.resources.brand_lume
+import com.luismejias.lumemedlink.resources.brand_med
 import com.luismejias.lumemedlink.resources.common_back
 import com.luismejias.lumemedlink.resources.common_done
 import com.luismejias.lumemedlink.resources.common_failed_short
+import com.luismejias.lumemedlink.resources.lumemedlink_icon
 import com.luismejias.lumemedlink.resources.offline_body
 import com.luismejias.lumemedlink.resources.offline_title
+import com.luismejias.lumemedlink.resources.simbolo_enlace
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -77,15 +87,22 @@ internal fun AccessBack(onBack: (() -> Unit)?) {
 }
 
 /**
- * The brand over the sign-in screens. PROVISIONAL (ADR-0044, deviation 6): the design's wordmark and app icon
- * wait for their SVG; until then the kit's shield in the accent and the name as kit text.
+ * The brand over the sign-in screens (1a, 1b): the app icon and the name in its three inks, the link between «Med» and
+ * «Link», as the handoff draws it (02-Assets/marca). A reader hears the name once.
  */
 @Composable
 internal fun AccessBrand() {
-    LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Center, spacing = { small }) {
-        LumeIconTile(icon = LumeIcon.Shield, emphasis = LumeIconTileEmphasis.Solid, size = LumeIconTileSize.Large)
-        LumeText(text = stringResource(Res.string.app_name), style = LumeTextStyle.HeadingLarge)
-    }
+    LumeBrandLockup(
+        mark = painterResource(Res.drawable.lumemedlink_icon),
+        wordmark = listOf(
+            LumeBrandRun(stringResource(Res.string.brand_lume)),
+            LumeBrandRun(stringResource(Res.string.brand_med), LumeBrandInk.Hue(LumeTileTint.Teal)),
+            LumeBrandRun(stringResource(Res.string.brand_link), LumeBrandInk.Accent),
+        ),
+        joiner = LumeBrandJoiner(painterResource(Res.drawable.simbolo_enlace), after = 1),
+        contentDescription = stringResource(Res.string.app_name),
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 /** A glyph tile, a title, one line of why — the head of almost every access screen. */

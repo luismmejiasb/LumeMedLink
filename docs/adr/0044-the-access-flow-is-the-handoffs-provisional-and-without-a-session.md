@@ -50,7 +50,7 @@ the patient access model later (2026-10-11).
 4. **The welcome carousel on 1a is the kit's** `LumeCarousel`, requested and authorized on 2026-10-11 and
    delivered the same day: this app writes no UI of its own.
 5. **The step progress is `LumeStepIndicator`** with its labels, not the design's segmented bars.
-6. **The wordmark is pending its SVG**; until then the name is drawn as kit text.
+6. **~~The wordmark is pending its SVG~~ — closed 2026-10-12**: the kit's brand lockup draws the app icon and the name in its three inks with the link symbol, from the handoff's assets. The kit's face sets the name about 8 % wider than the design's.
 7. **The accent is the kit's derivation of `#3E63DD`** (`LumeBrand(seed = …)`); its strong and light tones are
    computed, not the design's literal hexes.
 8. **Phone and tablet**: the handoff says both; ADR-0002 keeps v1 phone-first, portrait.

@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.lume.uicomposer.components.LocalLumeToastHostState
 import cl.lume.uicomposer.components.LumeCountBadge
 import cl.lume.uicomposer.components.LumeFloatingTabBarClearance
 import cl.lume.uicomposer.components.LumeTabBar
@@ -78,7 +79,10 @@ internal fun DoctorMainHost(care: DoctorCareGateway, onSignOut: () -> Unit) {
     val doctor = (profileLoad as? CareLoad.Ready)?.content?.doctor
 
     Box(modifier = Modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalTabBarClearance provides LumeFloatingTabBarClearance) {
+        CompositionLocalProvider(
+            LocalTabBarClearance provides LumeFloatingTabBarClearance,
+            LocalLumeToastHostState provides toasts,
+        ) {
             when (selected) {
                 DoctorTab.AGENDA -> AgendaScreen(agenda, doctor, onProfile = { tabs.show(DoctorTab.SETTINGS) })
                 DoctorTab.PATIENTS -> DoctorPatientsScreen(patients, onCall = contact::dial, onMail = contact::mail)
