@@ -1,8 +1,6 @@
 package com.luismejias.lumemedlink.features.auth.welcome
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeBrandLockupSize
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
@@ -12,11 +10,7 @@ import cl.lume.uicomposer.components.LumeCarousel
 import cl.lume.uicomposer.components.LumeCarouselItem
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
-import cl.lume.uicomposer.components.LumeLink
-import cl.lume.uicomposer.components.LumeLinkSize
-import cl.lume.uicomposer.components.LumeLinkTone
 import cl.lume.uicomposer.components.LumeStack
-import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.features.auth.flow.AccessBrand
 import com.luismejias.lumemedlink.resources.Res
@@ -28,7 +22,6 @@ import com.luismejias.lumemedlink.resources.welcome_card_rate_title
 import com.luismejias.lumemedlink.resources.welcome_card_search_body
 import com.luismejias.lumemedlink.resources.welcome_card_search_title
 import com.luismejias.lumemedlink.resources.welcome_create_account
-import com.luismejias.lumemedlink.resources.welcome_doctor_link
 import com.luismejias.lumemedlink.resources.welcome_have_account
 import org.jetbrains.compose.resources.stringResource
 
@@ -41,7 +34,7 @@ import org.jetbrains.compose.resources.stringResource
 private const val WELCOME_CARDS = 3
 
 @Composable
-internal fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit, onDoctor: () -> Unit) {
+internal fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit) {
     LumeContainer(
         alignment = LumeContainerAlignment.CenterAbovePinnedAction,
         action = {
@@ -57,15 +50,8 @@ internal fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit, on
                     width = LumeButtonWidth.Fill,
                     onClick = onSignIn,
                 )
-                LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Center) {
-                    LumeLink(
-                        title = stringResource(Res.string.welcome_doctor_link),
-                        size = LumeLinkSize.Small,
-                        tone = LumeLinkTone.Quiet,
-                        icon = LumeIcon.Stethoscope,
-                        onClick = onDoctor,
-                    )
-                }
+                // No doctor entrance: a doctor signs in here like anybody, and the server says which app opens
+                // (ADR-0056).
             }
         },
     ) {

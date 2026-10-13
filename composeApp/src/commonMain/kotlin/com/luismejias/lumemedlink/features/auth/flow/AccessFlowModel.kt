@@ -58,6 +58,9 @@ internal class AccessFlowModel(
     private val retries = MutableStateFlow(0)
     private val ending = MutableStateFlow<AccessRole?>(null)
 
+    /** Which app the account opens, as sign-in answered it (ADR-0056); the flow finishes with it. */
+    var signedInAs: AccessRole = AccessRole.PATIENT
+
     val routes: StateFlow<List<AccessRoute>> = path.asStateFlow()
     val lastMove: StateFlow<AccessMove> = move.asStateFlow()
 

@@ -32,18 +32,6 @@ internal sealed interface AccessFailure {
     /** The new password is the one it replaces (3c). */
     data object PasswordReused : AccessFailure
 
-    /** The linking code from LumeMed expired or was already used (4a-e1). */
-    data object LinkCodeSpent : AccessFailure
-
-    /** The doctor's provider registry is still being verified in LumeMed (4b-e1). */
-    data object DoctorUnverified : AccessFailure
-
-    /**
-     * The account is not linked to a practice yet: the backend's `not_provisioned` (its ADR-0090). The design has no
-     * screen for it; the author added one in the shape of 4b-e1 (2026-10-12).
-     */
-    data object DoctorNotLinked : AccessFailure
-
     /** The phone has no Face ID / fingerprint configured (1c-e1). */
     data object BiometricsNotConfigured : AccessFailure
 
@@ -93,18 +81,17 @@ internal class AccountSummary(val givenNames: String, val familyNames: String, v
     override fun toString(): String = "AccountSummary(redacted)"
 }
 
-/** The LumeMed account a linking code points to, for "¿Eres tú?" (4b). Display strings, as LumeMed holds them. */
-internal class LinkedDoctor(val displayName: String, val specialty: String, val practice: String, val rut: ChileanRut) {
-    override fun toString(): String = "LinkedDoctor(redacted)"
-}
-
 /**
  * The patient's way in (03-Specs/1-Auth.md §1): sign in with RUT and password, create an account in three
  * steps, or recover the password by SMS. The server decides every rule the design names — attempts, lockout,
  * code lifetime, resend interval — and this app only shows what it answers.
  */
 internal interface PatientAccessGateway {
-    suspend fun signIn(rut: ChileanRut, password: String): AccessResult<Unit>
+    /**
+     * Everyone signs in here, doctors too (ADR-0056): the answer says which app the account opens. A doctor is one
+     * whose LumeMed account the server has linked; this app never asks anybody whether they are one.
+     */
+    suspend fun signIn(rut: ChileanRut, password: String): AccessResult<AccountKind>
 
     /** Offers Face ID / fingerprint for the next sign-in (1c). */
     suspend fun enableQuickSignIn(): AccessResult<Unit>
@@ -129,13 +116,5 @@ internal interface PatientAccessGateway {
     suspend fun setNewPassword(password: String): AccessResult<Unit>
 }
 
-/**
- * The doctor's way in (03-Specs/1-Auth.md §2): no account here, only a link to the one in LumeMed, by an
- * eight-character code shown there. The QR path waits for its own ADR (camera, no GMS).
- */
-internal interface DoctorLinkGateway {
-    suspend fun lookUp(code: String): AccessResult<LinkedDoctor>
-
-    /** "Sí, soy yo" (4b → 4c). */
-    suspend fun confirmLink(): AccessResult<Unit>
-}
+/** Which app an account opens, as the server answers at sign-in (ADR-0056). */
+internal enum class AccountKind { PATIENT, DOCTOR }

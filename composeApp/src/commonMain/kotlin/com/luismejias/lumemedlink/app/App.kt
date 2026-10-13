@@ -127,7 +127,6 @@ public fun App() {
         val scripted = ScriptedAccessGateway(SystemClock)
         AccessFlowViewModel(
             patients = scripted,
-            doctors = scripted,
             clock = SystemClock,
             consent = telemetryConsent,
             logEvent = telemetry::log,

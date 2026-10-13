@@ -50,23 +50,6 @@ internal enum class AccessRoute {
     /** 3d. */
     RECOVERY_DONE,
 
-    /** 4a — the typed code only. */
-    DOCTOR_CODE,
-
-    /** 4a-e1. */
-    DOCTOR_CODE_SPENT,
-
-    /** 4b. */
-    DOCTOR_CONFIRM,
-
-    /** 4b-e1. */
-    DOCTOR_UNVERIFIED,
-
-    /** Not in the design: the account is not linked to a practice yet, in 4b-e1's shape (the author, 2026-10-12). */
-    DOCTOR_NOT_LINKED,
-
-    /** 4c. */
-    DOCTOR_LINKED,
     ;
 
     /**
@@ -90,12 +73,6 @@ internal enum class AccessRoute {
             RECOVERY_CODE -> true
             RECOVERY_NEW_PASSWORD -> true
             RECOVERY_DONE -> false
-            DOCTOR_CODE -> true
-            DOCTOR_CODE_SPENT -> true
-            DOCTOR_CONFIRM -> true
-            DOCTOR_UNVERIFIED -> false
-            DOCTOR_NOT_LINKED -> false
-            DOCTOR_LINKED -> false
         }
 }
 

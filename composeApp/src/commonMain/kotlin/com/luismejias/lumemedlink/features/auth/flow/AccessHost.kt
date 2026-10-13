@@ -18,12 +18,6 @@ import cl.lume.uicomposer.foundations.LumeTheme
 import cl.lume.uicomposer.foundations.lumeAnimationsEnabled
 import cl.lume.uicomposer.tokens.LumeStatusStyle
 import com.luismejias.lumemedlink.core.device.rememberDeviceSettings
-import com.luismejias.lumemedlink.features.auth.doctor.DoctorCodeScreen
-import com.luismejias.lumemedlink.features.auth.doctor.DoctorCodeSpentScreen
-import com.luismejias.lumemedlink.features.auth.doctor.DoctorConfirmScreen
-import com.luismejias.lumemedlink.features.auth.doctor.DoctorLinkedScreen
-import com.luismejias.lumemedlink.features.auth.doctor.DoctorNotLinkedScreen
-import com.luismejias.lumemedlink.features.auth.doctor.DoctorUnverifiedScreen
 import com.luismejias.lumemedlink.features.auth.recovery.NewPasswordScreen
 import com.luismejias.lumemedlink.features.auth.recovery.RecoveryCodeScreen
 import com.luismejias.lumemedlink.features.auth.recovery.RecoveryDoneScreen
@@ -98,7 +92,6 @@ internal fun AccessHost(
             AccessRoute.WELCOME -> WelcomeScreen(
                 onCreateAccount = { flow.push(AccessRoute.SIGN_UP_PROFILE) },
                 onSignIn = { flow.push(AccessRoute.SIGN_IN) },
-                onDoctor = { flow.push(AccessRoute.DOCTOR_CODE) },
             )
             AccessRoute.SIGN_IN -> SignInScreen(
                 model = attempt.signIn,
@@ -141,12 +134,6 @@ internal fun AccessHost(
             AccessRoute.RECOVERY_DONE -> RecoveryDoneScreen(
                 onSignIn = { flow.replaceWith(AccessRoute.WELCOME, AccessRoute.SIGN_IN) },
             )
-            AccessRoute.DOCTOR_CODE -> DoctorCodeScreen(attempt.doctor, retryEpoch, back)
-            AccessRoute.DOCTOR_CODE_SPENT -> DoctorCodeSpentScreen(attempt.doctor, back)
-            AccessRoute.DOCTOR_CONFIRM -> DoctorConfirmScreen(attempt.doctor, retryEpoch, back)
-            AccessRoute.DOCTOR_UNVERIFIED -> DoctorUnverifiedScreen(onUnderstood = viewModel::restart)
-            AccessRoute.DOCTOR_NOT_LINKED -> DoctorNotLinkedScreen(onUnderstood = viewModel::restart)
-            AccessRoute.DOCTOR_LINKED -> DoctorLinkedScreen(attempt.doctor)
         }
     }
 

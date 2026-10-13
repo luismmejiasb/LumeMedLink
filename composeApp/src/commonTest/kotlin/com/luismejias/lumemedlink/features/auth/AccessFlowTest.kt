@@ -33,7 +33,7 @@ private const val RUT = "18.456.789-K"
 class AccessFlowTest {
     private val clock = ManualClock()
     private val gateway = ScriptedAccessGateway(clock, latency = {})
-    private val attempt = AccessAttempt(gateway, gateway)
+    private val attempt = AccessAttempt(gateway)
     private val flow = attempt.flow
 
     private fun path(vararg routes: AccessRoute) = assertEquals(routes.toList(), flow.routes.value)
@@ -215,42 +215,14 @@ class AccessFlowTest {
     }
 
     @Test
-    fun aDoctorLinksWithTheCodeAndAnUnverifiedOneWaits() = runTest {
-        flow.push(AccessRoute.DOCTOR_CODE)
-        attempt.doctor.codeChanged("k7q2 · m9xa")
-        assertEquals(StepOutcome.Advanced, attempt.doctor.lookUp())
-        assertEquals(AccessScript.DOCTOR_NAME, attempt.doctor.confirmState.value.doctor?.displayName)
-        attempt.doctor.confirmLink()
-        path(AccessRoute.DOCTOR_LINKED)
-        attempt.doctor.start()
+    fun aDoctorSignsInThroughTheSameDoorAndOpensTheDoctorsApp() = runTest {
+        // No doctor entrance: the answer to sign-in says which app opens (ADR-0056).
+        flow.push(AccessRoute.SIGN_IN)
+        attempt.signIn.rutChanged(AccessScript.DOCTOR_RUT)
+        attempt.signIn.passwordChanged(AccessScript.PASSWORD)
+        assertEquals(StepOutcome.Advanced, attempt.signIn.submit())
+        assertEquals(StepOutcome.Advanced, attempt.quickSignIn.activate())
         assertEquals(AccessRole.DOCTOR, flow.finished.value)
-
-        val second = AccessAttempt(gateway, gateway)
-        second.flow.push(AccessRoute.DOCTOR_CODE)
-        second.doctor.codeChanged(AccessScript.UNVERIFIED_LINK_CODE)
-        second.doctor.lookUp()
-        second.doctor.confirmLink()
-        assertEquals(listOf(AccessRoute.DOCTOR_UNVERIFIED), second.flow.routes.value)
-    }
-
-    @Test
-    fun aDoctorWhoseAccountIsNotLinkedYetIsToldSoAndWaits() = runTest {
-        flow.push(AccessRoute.DOCTOR_CODE)
-        attempt.doctor.codeChanged(AccessScript.NOT_LINKED_CODE)
-        attempt.doctor.lookUp()
-        attempt.doctor.confirmLink()
-        assertEquals(listOf(AccessRoute.DOCTOR_NOT_LINKED), flow.routes.value)
-    }
-
-    @Test
-    fun aSpentLinkingCodeIsItsOwnScreenAndGoesBackEmpty() = runTest {
-        flow.push(AccessRoute.DOCTOR_CODE)
-        attempt.doctor.codeChanged("ZZZZ9999")
-        attempt.doctor.lookUp()
-        assertEquals(AccessRoute.DOCTOR_CODE_SPENT, flow.top)
-        attempt.doctor.typeAnother()
-        assertEquals(AccessRoute.DOCTOR_CODE, flow.top)
-        assertEquals("", attempt.doctor.codeState.value.typed)
     }
 
     @Test

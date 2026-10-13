@@ -36,7 +36,7 @@ class ScriptedAccessGatewayTest {
 
     @Test
     fun theScriptedPasswordSignsIn() = runTest {
-        assertEquals(AccessResult.Ok(Unit), gateway.signIn(rut("18.456.789-K"), AccessScript.PASSWORD))
+        assertEquals(AccessResult.Ok(AccountKind.PATIENT), gateway.signIn(rut("18.456.789-K"), AccessScript.PASSWORD))
     }
 
     @Test
@@ -49,7 +49,7 @@ class ScriptedAccessGatewayTest {
         // Even the right password waits out the lockout.
         assertIs<AccessFailure.LockedOut>((gateway.signIn(who, AccessScript.PASSWORD) as AccessResult.Failed).failure)
         clock.now += AccessScript.LOCKOUT_MILLIS
-        assertEquals(AccessResult.Ok(Unit), gateway.signIn(who, AccessScript.PASSWORD))
+        assertEquals(AccessResult.Ok(AccountKind.PATIENT), gateway.signIn(who, AccessScript.PASSWORD))
     }
 
     @Test
@@ -104,14 +104,9 @@ class ScriptedAccessGatewayTest {
     }
 
     @Test
-    fun linkingCodesLeadToTheirScreens() = runTest {
-        assertIs<AccessResult.Ok<LinkedDoctor>>(gateway.lookUp(AccessScript.LINK_CODE))
-        assertEquals(AccessResult.Ok(Unit), gateway.confirmLink())
-        assertIs<AccessResult.Ok<LinkedDoctor>>(gateway.lookUp(AccessScript.UNVERIFIED_LINK_CODE))
-        assertEquals(AccessResult.Failed(AccessFailure.DoctorUnverified), gateway.confirmLink())
-        assertIs<AccessResult.Ok<LinkedDoctor>>(gateway.lookUp(AccessScript.NOT_LINKED_CODE))
-        assertEquals(AccessResult.Failed(AccessFailure.DoctorNotLinked), gateway.confirmLink())
-        assertEquals(AccessResult.Failed(AccessFailure.LinkCodeSpent), gateway.lookUp("ZZZZ9999"))
+    fun theScriptsDoctorSignsInAsADoctor() = runTest {
+        val doctor = requireNotNull(ChileanRut.parse(AccessScript.DOCTOR_RUT))
+        assertEquals(AccessResult.Ok(AccountKind.DOCTOR), gateway.signIn(doctor, AccessScript.PASSWORD))
     }
 
     @Test

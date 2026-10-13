@@ -2,12 +2,10 @@ package com.luismejias.lumemedlink.features.auth.flow
 
 import androidx.lifecycle.ViewModel
 import com.luismejias.lumemedlink.core.auth.AccountSummary
-import com.luismejias.lumemedlink.core.auth.DoctorLinkGateway
 import com.luismejias.lumemedlink.core.auth.PatientAccessGateway
 import com.luismejias.lumemedlink.core.session.Clock
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
-import com.luismejias.lumemedlink.features.auth.doctor.DoctorLinkModel
 import com.luismejias.lumemedlink.features.auth.recovery.NewPasswordModel
 import com.luismejias.lumemedlink.features.auth.recovery.RecoveryCodeModel
 import com.luismejias.lumemedlink.features.auth.recovery.RecoveryRutModel
@@ -27,7 +25,6 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 internal class AccessAttempt(
     patients: PatientAccessGateway,
-    doctors: DoctorLinkGateway,
     telemetryChosen: suspend (Boolean) -> Unit = {},
     logEvent: (AnalyticsEvent) -> Unit = {},
 ) {
@@ -55,7 +52,6 @@ internal class AccessAttempt(
     val recoveryCode = RecoveryCodeModel(patients, flow)
     val recoveryRut = RecoveryRutModel(patients, flow, recoveryCode::started)
     val newPassword = NewPasswordModel(patients, flow)
-    val doctor = DoctorLinkModel(doctors, flow)
 }
 
 /**
@@ -65,7 +61,6 @@ internal class AccessAttempt(
  */
 internal class AccessFlowViewModel(
     private val patients: PatientAccessGateway,
-    private val doctors: DoctorLinkGateway,
     /** For the countdowns: lockout, code expiry, resend. */
     val clock: Clock,
     /** Where 2b's optional consent to Crashlytics and Analytics is kept (ADR-0052). */
@@ -80,5 +75,5 @@ internal class AccessFlowViewModel(
         current.value = newAttempt()
     }
 
-    private fun newAttempt() = AccessAttempt(patients, doctors, consent::setGranted, logEvent)
+    private fun newAttempt() = AccessAttempt(patients, consent::setGranted, logEvent)
 }

@@ -1,6 +1,7 @@
 package com.luismejias.lumemedlink.features.auth.signin
 
 import com.luismejias.lumemedlink.core.auth.AccessFailure
+import com.luismejias.lumemedlink.core.auth.AccountKind
 import com.luismejias.lumemedlink.core.auth.PatientAccessGateway
 import com.luismejias.lumemedlink.features.auth.flow.AccessFlowModel
 import com.luismejias.lumemedlink.features.auth.flow.AccessRole
@@ -58,9 +59,10 @@ internal class SignInModel(private val gateway: PatientAccessGateway, private va
         return gateway.signIn(rut, typed.password).settle(
             flow,
             onOffline = { current.value = current.value.copy(offline = true) },
-            onOk = {
+            onOk = { kind ->
                 // The password is spent: it leaves memory the moment it is used.
                 current.value = SignInState(rut = typed.rut)
+                flow.signedInAs = if (kind == AccountKind.DOCTOR) AccessRole.DOCTOR else AccessRole.PATIENT
                 flow.push(AccessRoute.QUICK_SIGN_IN)
                 StepOutcome.Advanced
             },
@@ -102,7 +104,7 @@ internal class QuickSignInModel(private val gateway: PatientAccessGateway, priva
         onOffline = { current.value = QuickSignInState(offline = true) },
         onOk = {
             current.value = QuickSignInState()
-            flow.finish(AccessRole.PATIENT)
+            flow.finish(flow.signedInAs)
             StepOutcome.Advanced
         },
         onFailure = { failure ->

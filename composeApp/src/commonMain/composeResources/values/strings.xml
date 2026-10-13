@@ -71,7 +71,6 @@
     <!-- 1a · Welcome -->
     <string name="welcome_create_account">Crear cuenta</string>
     <string name="welcome_have_account">Ya tengo cuenta</string>
-    <string name="welcome_doctor_link">¿Eres médico? Vincula tu cuenta LumeMed</string>
     <string name="welcome_card_change_title">Cambia o cancela</string>
     <string name="welcome_card_change_body">Sin llamar, desde la app.</string>
     <string name="welcome_card_rate_title">Valora tu atención</string>
@@ -164,37 +163,6 @@
     <string name="recovery_done_action">Ir a ingresar</string>
 
     <!-- 4 · Doctor link -->
-    <string name="doctor_link_title">Vincula tu cuenta de médico</string>
-    <string name="doctor_link_body">En LumeMed, abre Configuración › LumeMedLink y muestra el código.</string>
-    <string name="doctor_link_field">Código de vinculación</string>
-    <string name="doctor_link_placeholder">K7Q2M9XA</string>
-    <string name="doctor_link_action">Vincular</string>
-    <string name="doctor_link_running">Buscando tu cuenta…</string>
-    <string name="doctor_spent_title">Este código ya no sirve</string>
-    <string name="doctor_spent_body">Venció o ya se usó. Cada código dura 10 minutos y sirve una sola vez.</string>
-    <string name="doctor_spent_hint">Genera un código nuevo en LumeMed › Configuración › LumeMedLink.</string>
-    <string name="doctor_spent_retry">Escribir otro código</string>
-    <string name="doctor_confirm_title">¿Eres tú?</string>
-    <string name="doctor_confirm_body">Confirma que esta es tu cuenta de LumeMed antes de vincularla.</string>
-    <string name="doctor_confirm_rut">RUT %1$s</string>
-    <string name="doctor_confirm_verified">Prestador verificado en LumeMed</string>
-    <string name="doctor_confirm_scope">Aquí verás tu perfil público, tu agenda en forma simple y tus pacientes como contactos. Nunca datos clínicos: eso sigue solo en LumeMed.</string>
-    <string name="doctor_confirm_yes">Sí, soy yo</string>
-    <string name="doctor_confirm_linking">Vinculando…</string>
-    <string name="doctor_confirm_no">No soy yo</string>
-    <string name="doctor_unverified_title">Tu cuenta aún está en verificación</string>
-    <string name="doctor_unverified_body">LumeMed está validando tu registro de prestador. Te avisaremos cuando puedas vincularla.</string>
-    <string name="doctor_not_linked_title">Tu cuenta aún no está enlazada a tu consulta</string>
-    <string name="doctor_not_linked_body">Tu consulta tiene que enlazarla en LumeMed. Te avisaremos cuando puedas entrar.</string>
-    <string name="doctor_linked_title">Cuenta vinculada</string>
-    <string name="doctor_linked_body">%1$s, ya puedes gestionar tu perfil y ver tu agenda desde el teléfono.</string>
-    <string name="doctor_linked_profile">Tu perfil público</string>
-    <string name="doctor_linked_profile_body">Foto, especialidad y contacto</string>
-    <string name="doctor_linked_agenda">Tu agenda simple</string>
-    <string name="doctor_linked_agenda_body">Citas del día y la semana</string>
-    <string name="doctor_linked_patients">Tus pacientes</string>
-    <string name="doctor_linked_patients_body">Como lista de contactos</string>
-    <string name="doctor_linked_start">Empezar</string>
 
     <!-- Main app, pending -->
 

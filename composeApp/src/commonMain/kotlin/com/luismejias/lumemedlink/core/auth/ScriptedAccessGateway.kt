@@ -17,13 +17,7 @@ internal object AccessScript {
     const val TAKEN_RUT = "22222222-2"
     const val NO_BIOMETRICS_RUT = "33333333-3"
     const val SMS_CODE = "123456"
-    const val LINK_CODE = "K7Q2M9XA"
-    const val UNVERIFIED_LINK_CODE = "PEND1NG0"
-    const val NOT_LINKED_CODE = "S1NENL4C"
     const val DOCTOR_RUT = "12987654-9"
-    const val DOCTOR_NAME = "Dra. Mariana Rendón"
-    const val DOCTOR_SPECIALTY = "Medicina Familiar"
-    const val DOCTOR_PRACTICE = "consulta particular"
 
     const val SIGN_IN_ATTEMPTS = 5
     const val LOCKOUT_MILLIS = 15 * 60_000L
@@ -43,27 +37,33 @@ internal object AccessScript {
 internal class ScriptedAccessGateway(
     private val clock: Clock,
     private val latency: suspend () -> Unit = { delay(SCRIPTED_LATENCY_MILLIS) },
-) : PatientAccessGateway,
-    DoctorLinkGateway {
+) : PatientAccessGateway {
     private var failedSignIns = 0
     private var lockedUntil = 0L
     private var signedIn: ChileanRut? = null
     private var pendingSignUp: SignUpProfile? = null
     private var code: PendingCode? = null
     private var resetVerified = false
-    private var linked: Boolean? = null
-    private var notLinked = false
 
     private class PendingCode(val expiresAt: Long, var attemptsLeft: Int)
 
-    override suspend fun signIn(rut: ChileanRut, password: String): AccessResult<Unit> = scripted(rut) {
+    override suspend fun signIn(rut: ChileanRut, password: String): AccessResult<AccountKind> = scripted(rut) {
         val now = clock.nowEpochMillis()
         when {
             now < lockedUntil -> fail(AccessFailure.LockedOut(lockedUntil))
             password == AccessScript.PASSWORD -> {
                 failedSignIns = 0
                 signedIn = rut
-                AccessResult.Ok(Unit)
+                // The script's doctor opens the doctor's app; everyone else, the patient's (ADR-0056).
+                AccessResult.Ok(
+                    if (rut.canonical ==
+                        AccessScript.DOCTOR_RUT
+                    ) {
+                        AccountKind.DOCTOR
+                    } else {
+                        AccountKind.PATIENT
+                    },
+                )
             }
             else -> {
                 failedSignIns += 1
@@ -138,37 +138,6 @@ internal class ScriptedAccessGateway(
                 resetVerified = false
                 AccessResult.Ok(Unit)
             }
-        }
-    }
-
-    override suspend fun lookUp(code: String): AccessResult<LinkedDoctor> = scripted(null) {
-        val doctor = ChileanRut.parse(AccessScript.DOCTOR_RUT)
-        when {
-            doctor == null -> fail(AccessFailure.Unavailable)
-            code == AccessScript.LINK_CODE ||
-                code == AccessScript.UNVERIFIED_LINK_CODE ||
-                code == AccessScript.NOT_LINKED_CODE -> {
-                linked = code == AccessScript.LINK_CODE
-                notLinked = code == AccessScript.NOT_LINKED_CODE
-                AccessResult.Ok(
-                    LinkedDoctor(
-                        AccessScript.DOCTOR_NAME,
-                        AccessScript.DOCTOR_SPECIALTY,
-                        AccessScript.DOCTOR_PRACTICE,
-                        doctor,
-                    ),
-                )
-            }
-            else -> fail(AccessFailure.LinkCodeSpent)
-        }
-    }
-
-    override suspend fun confirmLink(): AccessResult<Unit> = scripted(null) {
-        when {
-            notLinked -> fail(AccessFailure.DoctorNotLinked)
-            linked == true -> AccessResult.Ok(Unit)
-            linked == false -> fail(AccessFailure.DoctorUnverified)
-            else -> fail(AccessFailure.LinkCodeSpent)
         }
     }
 
