@@ -52,6 +52,9 @@
   sin métricas de entrega. Pero el autor eligió no construir la mitad cliente mientras el token no tenga a dónde ir.
 - **El permiso de notificaciones se pide al reservar la primera hora**, justo después de a3, para los recordatorios de
   esa cita. Nunca al abrir la app ni al terminar el acceso. Configuración sigue pudiendo cambiarlo.
+- **El payload ya tiene forma (ADR-0053):** `kind` de `PushSignalKind` y, opcional, `link`, un path relativo del
+  catálogo de links. El destino queda atado al tipo, y un link fuera del tipo cae al lugar propio de ese tipo.
+  `pushNoticeOf` lo lee. Ese es el contrato que se le pide al backend cuando se reabran los pedidos.
 - En iOS hará falta el entitlement `aps-environment` y activar Push Notifications en el App ID del portal de Apple;
   sin eso, un build a dispositivo no firma.
 

@@ -47,6 +47,25 @@ con el lock— antes; la verificación de dominio espera.
 - **Cuatro cebos** de ese gate y **el que le faltaba al rechazo de `CFBundleURLTypes`** en `check-ios-host.sh`: el ensayo
   pasa de 47 a 52, todos rojos; verificado además que el rojo es por la regla y no por un error de parseo.
 
+## Avance — 2026-10-13: el router, sin el dominio (ADR-0053)
+
+A pedido del autor, la base del lado cliente ya existe en `core/links/`:
+
+- el catálogo `DeepLinkEntry`, con paths en español y valores en la query;
+- el parser con la lista de hosts vacía;
+- `LinkCenter`, con un solo espacio detrás del lock;
+- el resolvedor;
+- las líneas de cada host (`openPatientLink`, `openDoctorLink`);
+- el puente con los pushes (`pushNoticeOf`).
+
+Tiene tests, y se verificó en pantalla con un tour en el simulador de iOS. El router «que pase por el lock» de esta
+tarea es `LinkCenter`.
+
+**Lo que sigue esperando el dominio:** la entrada de cada plataforma —`onContinueUserActivity` en iOS, los datos del
+intent en Android— hacia `LinkCenter`, el primer host de la lista, y los archivos de asociación. Ojo con el detalle que
+la ADR-0053 deja escrito: `MainActivity` es exportada, así que un intent explícito con URL no pasa por la verificación de
+App Links. La defensa es el diseño: el host, el catálogo exacto, el lock, y que un link conceda navegación, jamás acceso.
+
 ## Lo que queda, y por qué espera
 
 La mitad positiva: el entitlement de associated domains y el `apple-app-site-association`, el intent filter con

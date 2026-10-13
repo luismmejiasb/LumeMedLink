@@ -105,6 +105,8 @@ So the suite is allowed, and what it may carry is closed in code and asserted by
   - `appointment_booked`, `appointment_rescheduled`, `appointment_cancelled`, `appointment_rated`.
 
   None carries a parameter. A new event is a decision about what leaves for Google, reviewed like a dependency.
+  **Amended by ADR-0053 (same day):** `deep_link_opened` is added, with closed details. The key is an
+  `AnalyticsParam`, and the value is the name of an enum constant of this code. Free text still has no way in.
 - **The Remote Config catalog is empty.** The plumbing is in place: defaults set, fetched at launch, and read through
   the enum. No flag exists until one is decided.
 - **Crashlytics brings `firebase-sessions`.** It reports app sessions so Crashlytics can count crash-free users. It is

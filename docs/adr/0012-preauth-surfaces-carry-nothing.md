@@ -1,6 +1,9 @@
 # ADR-0012 — Pre-auth surfaces carry nothing, and a push payload cannot express content
 
 - **Status:** Accepted · 2026-08-21 (fortification slice F2)
+- **Amended 2026-10-13 by ADR-0053:** five new `PushSignalKind`s (appointment reminder and update, rating invited,
+  official notice, account changed), and an optional catalogued `link` in the payload, held to its kind. The visible
+  copy is still chosen by the app from the kind alone.
 - **Related:** §8.5 of this constitution; threat model T2 (shared device, ranked first);
   ADR-0010 (the on-screen half); ADR-0001 (the data boundary).
 
