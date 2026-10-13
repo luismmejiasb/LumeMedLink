@@ -6,7 +6,9 @@ import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.RatingPrompt
+import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
 import com.luismejias.lumemedlink.core.screen.ok
@@ -39,6 +41,10 @@ internal class HomeViewModel(private val care: PatientCareGateway) : ViewModel()
     private val current = MutableStateFlow<CareLoad<HomeContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<HomeContent>> = current.asStateFlow()
 
+    /** The screen's own shape while it waits (ADR-0055). */
+    private val standInContent = StandIn<HomeContent>()
+    val standIn: StateFlow<HomeContent?> = standInContent.content
+
     init {
         refresh()
     }
@@ -48,12 +54,17 @@ internal class HomeViewModel(private val care: PatientCareGateway) : ViewModel()
     }
 
     suspend fun load() {
+        standInContent.fill { read(standInPatientCare()) }
         current.markLoading()
+        current.value = read(care)
+    }
+
+    private suspend fun read(care: PatientCareGateway): CareLoad<HomeContent> {
         val profile = care.profile()
         val appointments = care.appointments()
         val ratings = care.ratingPrompts()
         val notices = care.hasUnreadNotices()
-        current.value = allOf(profile, appointments, ratings, notices) {
+        return allOf(profile, appointments, ratings, notices) {
             val today = care.today()
             val ahead = appointments.ok.upcoming(today)
             HomeContent(

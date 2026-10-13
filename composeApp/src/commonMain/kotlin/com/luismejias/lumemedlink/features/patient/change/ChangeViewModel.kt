@@ -8,6 +8,7 @@ import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import com.luismejias.lumemedlink.shared.OpaqueRef
@@ -52,9 +53,11 @@ internal class ChangeViewModel(
     private val finished = MutableStateFlow<ChangeDone?>(null)
     val done: StateFlow<ChangeDone?> = finished.asStateFlow()
 
-    val reschedule = RescheduleModel(care, directory, logEvent)
+    val reschedule = RescheduleModel(care, directory, logEvent) {
+        standInPatientCare().let { stand -> RescheduleModel(stand, stand) }
+    }
     val cancel = CancelModel(care, logEvent)
-    val detail = DetailModel(care)
+    val detail = DetailModel(care) { DetailModel(standInPatientCare()) }
 
     /** Runs a step in this ViewModel's scope — a screen never owns the work it starts. */
     fun launch(step: suspend ChangeViewModel.() -> Unit) {

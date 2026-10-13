@@ -9,6 +9,7 @@ import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.care.Specialty
+import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,12 +30,22 @@ internal class SearchViewModel(
     private val chosen = MutableStateFlow(SearchCriteria())
     val criteria: StateFlow<SearchCriteria> = chosen.asStateFlow()
 
-    val specialties = CatalogPicker({ directory.specialties() }) { listOf(it.name) + it.synonyms }
-    val communes = CatalogPicker({
-        chosen.value.specialty?.let { directory.communes(it.code) } ?: CareResult.Ok(emptyList())
-    }) { listOf(it.name) }
-    val results = ResultsModel(directory, care::today)
-    val schedule = ScheduleModel(directory, care::appointments, care::today)
+    val specialties = CatalogPicker(
+        read = { directory.specialties() },
+        standInRead = { standInPatientCare().specialties() },
+    ) { listOf(it.name) + it.synonyms }
+    val communes = CatalogPicker(
+        read = { chosen.value.specialty?.let { directory.communes(it.code) } ?: CareResult.Ok(emptyList()) },
+        standInRead = {
+            chosen.value.specialty?.let { standInPatientCare().communes(it.code) } ?: CareResult.Ok(emptyList())
+        },
+    ) { listOf(it.name) }
+    val results = ResultsModel(directory, care::today) {
+        standInPatientCare().let { stand -> ResultsModel(stand, stand::today) }
+    }
+    val schedule = ScheduleModel(directory, care::appointments, care::today) {
+        standInPatientCare().let { stand -> ScheduleModel(stand, stand::appointments, stand::today) }
+    }
     val booking = BookingModel(directory, logEvent)
 
     /** Runs a step of the flow in this ViewModel's scope — a screen never owns the work it starts. */

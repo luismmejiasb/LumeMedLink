@@ -67,7 +67,8 @@ internal fun MyDoctorsScreen(
     onSearch: () -> Unit,
 ) {
     val load by model.state.collectAsState()
-    CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
+    val standIn by model.standIn.collectAsState()
+    CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
             topBar = {

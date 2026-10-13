@@ -115,6 +115,7 @@ private const val WEEK_SHOWN = 6
 @Composable
 internal fun RescheduleScreen(model: ChangeViewModel, toasts: LumeToastHostState, today: CalendarDate) {
     val load by model.reschedule.state.collectAsState()
+    val standIn by model.reschedule.standIn.collectAsState()
     val ready = (load as? CareLoad.Ready)?.content
     val takenTitle = stringResource(Res.string.taken_now_title)
     val takenBody = (ready?.outcome as? MoveOutcome.Taken)?.let {
@@ -135,7 +136,7 @@ internal fun RescheduleScreen(model: ChangeViewModel, toasts: LumeToastHostState
         onBack = model::back,
         action = { MoveActions(ready, model) },
     ) {
-        CareLoadView(load, onRetry = {
+        CareLoadView(load, standIn, onRetry = {
             ready?.appointment?.let { appointment -> model.launch { reschedule.load(appointment) } }
         }) { content ->
             CurrentTime(content.appointment, today)

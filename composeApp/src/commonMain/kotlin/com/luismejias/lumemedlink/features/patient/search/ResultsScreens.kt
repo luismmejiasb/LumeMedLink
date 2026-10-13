@@ -109,6 +109,7 @@ internal fun slotText(slot: Slot, today: CalendarDate): String =
 @Composable
 internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
     val load by model.results.state.collectAsState()
+    val standIn by model.results.standIn.collectAsState()
     val criteria by model.criteria.collectAsState()
     PushedScreen(title = stringResource(Res.string.results_title), onBack = onBack) {
         val specialty = criteria.specialty?.name.orEmpty()
@@ -132,6 +133,7 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
         }
         CareLoadView(
             load,
+            standIn,
             onRetry = { model.launch { search() } },
             offlineTitle = Res.string.results_offline_title,
             offlineBody = Res.string.results_offline_body,

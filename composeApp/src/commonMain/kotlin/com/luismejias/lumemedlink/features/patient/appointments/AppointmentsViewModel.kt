@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
 import com.luismejias.lumemedlink.core.screen.ok
@@ -41,6 +43,10 @@ internal class AppointmentsViewModel(private val care: PatientCareGateway) : Vie
     private val current = MutableStateFlow<CareLoad<AppointmentsContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<AppointmentsContent>> = current.asStateFlow()
 
+    /** The screen's own shape while it waits (ADR-0055). */
+    private val standInContent = StandIn<AppointmentsContent>()
+    val standIn: StateFlow<AppointmentsContent?> = standInContent.content
+
     private val shown = MutableStateFlow(AppointmentsSegment.UPCOMING)
     val segment: StateFlow<AppointmentsSegment> = shown.asStateFlow()
 
@@ -57,10 +63,15 @@ internal class AppointmentsViewModel(private val care: PatientCareGateway) : Vie
     }
 
     suspend fun load() {
+        standInContent.fill { read(standInPatientCare()) }
         current.markLoading()
+        current.value = read(care)
+    }
+
+    private suspend fun read(care: PatientCareGateway): CareLoad<AppointmentsContent> {
         val appointments = care.appointments()
         val policy = care.policy()
-        current.value = allOf(appointments, policy) {
+        return allOf(appointments, policy) {
             val today = care.today()
             AppointmentsContent(
                 today = today,

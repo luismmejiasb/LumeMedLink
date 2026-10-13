@@ -127,6 +127,16 @@ if [ -n "$hits" ]; then
          "$hits"
 fi
 
+# ── P5 · a screen waits as a skeleton of itself, never a spinner (ADR-0055) ──────────────────────
+# core/ included: CareLoadView draws the wait with the kit's placeholder, and nothing else in the app has a reason to
+# spin. A button's own progress is the kit's (`LumeButtonFeedback`, `LumeResultButton`), not this component.
+hits=$(grep -rnE '\bLumeActivityIndicator\b' $SRC 2>/dev/null | grep -vE '^[^:]*:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)
+if [ -n "$hits" ]; then
+    fail "P5 a spinner where a screen waits" \
+         "A screen that waits for content is drawn as a skeleton of itself under the kit's placeholder (ADR-0055)." \
+         "$hits"
+fi
+
 if [ $FAIL -eq 0 ]; then
     echo "forbidden-patterns: OK"
 else

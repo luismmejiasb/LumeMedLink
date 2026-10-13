@@ -97,13 +97,14 @@ internal fun AppointmentDetailScreen(
     onRate: (PatientAppointment, Int) -> Unit,
 ) {
     val load by model.detail.state.collectAsState()
+    val standIn by model.detail.standIn.collectAsState()
     val ready = (load as? CareLoad.Ready)?.content
     PushedScreen(
         title = stringResource(Res.string.detail_title),
         onBack = model::back,
         action = { ready?.let { DetailActions(it, model, onBookAgain) } },
     ) {
-        CareLoadView(load, onRetry = {
+        CareLoadView(load, standIn, onRetry = {
             ready?.appointment?.let { appointment -> model.launch { detail.load(appointment) } }
         }) { content ->
             val appointment = content.appointment

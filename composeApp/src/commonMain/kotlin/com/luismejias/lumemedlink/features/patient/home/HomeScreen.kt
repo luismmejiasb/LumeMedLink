@@ -87,7 +87,8 @@ internal fun HomeScreen(
     onProfile: () -> Unit,
 ) {
     val load by model.state.collectAsState()
-    CareLoadView(load, onRetry = model::refresh, standalone = true) { home ->
+    val standIn by model.standIn.collectAsState()
+    CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { home ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
             topBar = { HomeBar(home, onNotices, onProfile) },

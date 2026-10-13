@@ -6,7 +6,9 @@ import com.luismejias.lumemedlink.core.care.AgendaEntry
 import com.luismejias.lumemedlink.core.care.ChangeFailure
 import com.luismejias.lumemedlink.core.care.ChangeResult
 import com.luismejias.lumemedlink.core.care.DoctorCareGateway
+import com.luismejias.lumemedlink.core.care.standInDoctorCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
 import com.luismejias.lumemedlink.core.screen.ok
@@ -33,6 +35,10 @@ internal class AgendaViewModel(private val care: DoctorCareGateway) : ViewModel(
     private val current = MutableStateFlow<CareLoad<AgendaContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<AgendaContent>> = current.asStateFlow()
 
+    /** The screen's own shape while it waits (ADR-0055). */
+    private val standInContent = StandIn<AgendaContent>()
+    val standIn: StateFlow<AgendaContent?> = standInContent.content
+
     /** Why the last confirm or reject did not go through, until it is seen. */
     private val refusal = MutableStateFlow<ChangeFailure?>(null)
     val failure: StateFlow<ChangeFailure?> = refusal.asStateFlow()
@@ -50,10 +56,15 @@ internal class AgendaViewModel(private val care: DoctorCareGateway) : ViewModel(
     }
 
     suspend fun load(day: CalendarDate = (current.value as? CareLoad.Ready)?.content?.day ?: care.today()) {
+        standInContent.fill { standInDoctorCare().let { read(it, it.today()) } }
         current.markLoading()
+        current.value = read(care, day)
+    }
+
+    private suspend fun read(care: DoctorCareGateway, day: CalendarDate): CareLoad<AgendaContent> {
         val requests = care.requests()
         val entries = care.agenda(day)
-        current.value = allOf(requests, entries) {
+        return allOf(requests, entries) {
             val monday = day.plusDays(1 - day.isoWeekday)
             AgendaContent(
                 care.today(),

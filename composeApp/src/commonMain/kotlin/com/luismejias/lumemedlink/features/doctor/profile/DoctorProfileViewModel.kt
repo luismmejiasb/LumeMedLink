@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.DoctorCareGateway
 import com.luismejias.lumemedlink.core.care.DoctorProfile
+import com.luismejias.lumemedlink.core.care.standInDoctorCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.markLoading
 import com.luismejias.lumemedlink.core.screen.toLoad
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,10 @@ import kotlinx.coroutines.launch
 internal class DoctorProfileViewModel(private val care: DoctorCareGateway) : ViewModel() {
     private val current = MutableStateFlow<CareLoad<DoctorProfile>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<DoctorProfile>> = current.asStateFlow()
+
+    /** The screen's own shape while it waits (ADR-0055). */
+    private val standInContent = StandIn<DoctorProfile>()
+    val standIn: StateFlow<DoctorProfile?> = standInContent.content
 
     init {
         refresh()
@@ -31,6 +37,7 @@ internal class DoctorProfileViewModel(private val care: DoctorCareGateway) : Vie
     }
 
     suspend fun load() {
+        standInContent.fill { standInDoctorCare().profile().toLoad { it } }
         current.markLoading()
         current.value = care.profile().toLoad { it }
     }

@@ -49,9 +49,10 @@ private fun CharRange.title(): String = "${first.uppercaseChar()} – ${last.upp
 @Composable
 internal fun SpecialtyScreen(model: SearchViewModel, onBack: () -> Unit) {
     val load by model.specialties.state.collectAsState()
+    val standIn by model.specialties.standIn.collectAsState()
     val criteria by model.criteria.collectAsState()
     PushedScreen(title = stringResource(Res.string.search_specialty), onBack = onBack) {
-        CareLoadView(load, onRetry = { model.launch { specialties.load() } }) { content ->
+        CareLoadView(load, standIn, onRetry = { model.launch { specialties.load() } }) { content ->
             SensitiveSearchField(
                 query = content.query,
                 onQueryChange = model.specialties::queryChanged,
@@ -106,9 +107,10 @@ internal fun SpecialtyScreen(model: SearchViewModel, onBack: () -> Unit) {
 @Composable
 internal fun CommuneScreen(model: SearchViewModel, onBack: () -> Unit) {
     val load by model.communes.state.collectAsState()
+    val standIn by model.communes.standIn.collectAsState()
     val criteria by model.criteria.collectAsState()
     PushedScreen(title = stringResource(Res.string.search_commune), onBack = onBack) {
-        CareLoadView(load, onRetry = { model.launch { communes.load() } }) { content ->
+        CareLoadView(load, standIn, onRetry = { model.launch { communes.load() } }) { content ->
             SensitiveSearchField(
                 query = content.query,
                 onQueryChange = model.communes::queryChanged,

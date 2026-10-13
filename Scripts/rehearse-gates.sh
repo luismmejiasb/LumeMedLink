@@ -360,6 +360,15 @@ d.mkdir(parents=True, exist_ok=True)
     "fun stash(c: Context, t: String) {\n"
     "    c.getSharedPreferences(\"s\", Context.MODE_PRIVATE).edit().putString(\"t\", t).apply()\n}\n")
 '
+# ── P5 · ADR-0055: a screen waits as a skeleton, so a spinner in a feature is red ──────────────────
+bait "a spinner put back on a screen" check-forbidden-patterns.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/patient/home"
+(d / "Spinner.kt").write_text(
+    "package com.luismejias.lumemedlink.features.patient.home\n\n"
+    "import androidx.compose.runtime.Composable\nimport cl.lume.uicomposer.components.LumeActivityIndicator\n\n"
+    "@Composable\ninternal fun Waiting() = LumeActivityIndicator(contentDescription = \"\")\n")
+'
 # ── P2 · ADR-0047 opened one mailto line; everything around it must stay red ─────────────────────
 bait "a share sheet in a feature" check-forbidden-patterns.sh '
 import sys, pathlib

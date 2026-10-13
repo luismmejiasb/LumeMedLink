@@ -79,8 +79,9 @@ internal fun AppointmentsScreen(
     onSearch: () -> Unit,
 ) {
     val load by model.state.collectAsState()
+    val standIn by model.standIn.collectAsState()
     val segment by model.segment.collectAsState()
-    CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
+    CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
             topBar = {

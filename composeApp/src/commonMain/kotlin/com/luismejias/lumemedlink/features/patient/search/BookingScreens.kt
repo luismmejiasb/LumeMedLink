@@ -118,6 +118,7 @@ private fun DoctorHeader(entry: DirectoryDoctor) {
 @Composable
 internal fun ScheduleScreen(model: SearchViewModel, onBack: () -> Unit) {
     val load by model.schedule.state.collectAsState()
+    val standIn by model.schedule.standIn.collectAsState()
     val ready = (load as? CareLoad.Ready)?.content
     PushedScreen(
         title = stringResource(Res.string.schedule_title),
@@ -141,7 +142,7 @@ internal fun ScheduleScreen(model: SearchViewModel, onBack: () -> Unit) {
             }
         },
     ) {
-        CareLoadView(load, onRetry = {
+        CareLoadView(load, standIn, onRetry = {
             ready?.doctor?.let { doctor -> model.launch { schedule.load(doctor) } }
         }) { content ->
             DoctorHeader(content.doctor)

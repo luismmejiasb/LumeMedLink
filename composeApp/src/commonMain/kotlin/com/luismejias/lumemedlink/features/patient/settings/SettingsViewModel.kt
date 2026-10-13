@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
+import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
 import com.luismejias.lumemedlink.core.screen.ok
@@ -30,6 +32,10 @@ internal class SettingsViewModel(private val care: PatientCareGateway, private v
     private val current = MutableStateFlow<CareLoad<SettingsContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<SettingsContent>> = current.asStateFlow()
 
+    /** The screen's own shape while it waits (ADR-0055). */
+    private val standInContent = StandIn<SettingsContent>()
+    val standIn: StateFlow<SettingsContent?> = standInContent.content
+
     private val telemetryGranted = MutableStateFlow(false)
 
     /** «Errores y estadísticas»: the consent of ADR-0052, withdrawn or given here. */
@@ -53,11 +59,16 @@ internal class SettingsViewModel(private val care: PatientCareGateway, private v
     }
 
     suspend fun load() {
+        standInContent.fill { read(standInPatientCare()) }
         current.markLoading()
+        current.value = read(care)
+    }
+
+    private suspend fun read(care: PatientCareGateway): CareLoad<SettingsContent> {
         val profile = care.profile()
         val policy = care.policy()
         val ratings = care.sentRatingCount()
-        current.value = allOf(profile, policy, ratings) {
+        return allOf(profile, policy, ratings) {
             SettingsContent(
                 profile = profile.ok,
                 remindersHoursBefore = policy.ok.remindersHoursBefore.sortedDescending(),

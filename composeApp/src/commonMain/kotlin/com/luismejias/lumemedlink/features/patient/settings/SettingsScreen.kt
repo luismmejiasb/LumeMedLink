@@ -69,8 +69,9 @@ internal fun SettingsScreen(
     onEntry: (SettingsEntry) -> Unit,
 ) {
     val load by model.state.collectAsState()
+    val standIn by model.standIn.collectAsState()
     val telemetry by model.telemetry.collectAsState()
-    CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
+    CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { content ->
         val profile = content.profile
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,

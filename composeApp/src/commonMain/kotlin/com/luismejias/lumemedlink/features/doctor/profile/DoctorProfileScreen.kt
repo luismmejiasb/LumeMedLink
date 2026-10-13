@@ -58,9 +58,10 @@ private enum class ProfileEntry { RATINGS, CORRECTIONS }
 @Composable
 internal fun DoctorProfileScreen(model: DoctorProfileViewModel, photo: ProfilePhotoModel, onSignOut: () -> Unit) {
     val load by model.state.collectAsState()
+    val standIn by model.standIn.collectAsState()
     LumeContainer(scroll = LumeContainerScroll.Scrollable) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
-            CareLoadView(load, onRetry = model::refresh) { profile ->
+            CareLoadView(load, standIn, onRetry = model::refresh) { profile ->
                 ProfileHeader(profile, photo)
                 ProfileFields(profile)
                 ShareRow(profile, onShare = { share -> model.launch { shareContact(share) } })

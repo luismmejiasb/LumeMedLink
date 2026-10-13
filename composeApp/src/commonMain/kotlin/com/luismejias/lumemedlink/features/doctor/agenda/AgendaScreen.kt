@@ -93,6 +93,7 @@ internal fun visitKindText(kind: VisitKind): String = stringResource(
 @Composable
 internal fun AgendaScreen(model: AgendaViewModel, doctor: CareDoctor?, onProfile: () -> Unit) {
     val load by model.state.collectAsState()
+    val standIn by model.standIn.collectAsState()
     val failure by model.failure.collectAsState()
     val today = (load as? CareLoad.Ready)?.content?.today
     val profileLabel = stringResource(Res.string.doctor_profile_action)
@@ -117,7 +118,7 @@ internal fun AgendaScreen(model: AgendaViewModel, doctor: CareDoctor?, onProfile
         },
     ) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
-            CareLoadView(load, onRetry = model::refresh) { content ->
+            CareLoadView(load, standIn, onRetry = model::refresh) { content ->
                 WeekStrip(content, model)
                 content.requests.firstOrNull()?.let { RequestCard(it, content.requests.size, model) }
                 DayCard(content)

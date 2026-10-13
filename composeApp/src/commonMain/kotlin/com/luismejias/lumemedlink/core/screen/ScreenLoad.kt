@@ -3,7 +3,6 @@ package com.luismejias.lumemedlink.core.screen
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import cl.lume.uicomposer.components.LumeActivityIndicator
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeCalloutSurface
@@ -12,6 +11,9 @@ import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeEmptyStateLook
 import cl.lume.uicomposer.components.LumeEmptyStateTone
+import cl.lume.uicomposer.components.LumePlaceholder
+import cl.lume.uicomposer.components.LumeSkeleton
+import cl.lume.uicomposer.components.LumeSkeletonShape
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.CareFailure
@@ -25,6 +27,8 @@ import com.luismejias.lumemedlink.resources.care_unavailable_title
 import com.luismejias.lumemedlink.resources.common_retry
 import com.luismejias.lumemedlink.resources.offline_title
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -52,19 +56,35 @@ internal inline fun <R> allOf(vararg results: CareResult<*>, build: () -> R): Ca
 /** Reads `value` of a result already checked by [allOf]. */
 internal val <T> CareResult<T>.ok: T get() = (this as CareResult.Ok<T>).value
 
+/**
+ * What a screen waits as (ADR-0055): its own content, read once from the stand-in world ([standInPatientCare]), so the
+ * kit's placeholder draws the shape of what is coming. Filled before the real read starts, and never shown as data.
+ */
+internal class StandIn<T> {
+    private val held = MutableStateFlow<T?>(null)
+    val content: StateFlow<T?> = held.asStateFlow()
+
+    suspend fun fill(read: suspend () -> CareLoad<T>) {
+        if (held.value == null) held.value = (read() as? CareLoad.Ready)?.content
+    }
+}
+
 /** Sets a load flow to [CareLoad.Loading] unless it already holds content: a retry keeps what was shown. */
 internal fun <T> MutableStateFlow<CareLoad<T>>.markLoading() {
     if (value !is CareLoad.Ready) value = CareLoad.Loading
 }
 
 /**
- * Renders the waiting and failed states of a read, and [content] once it is ready. [standalone] wraps the two
- * states in their own centred region (a tab root); inside a pushed screen they sit in the screen's region.
- * [offlineTitle] and [offlineBody] replace the generic words where the design names what failed (e6).
+ * Renders a read: [content] once it is ready, and while it waits the same [content] drawn from [standIn] under the
+ * kit's placeholder — a skeleton of the screen itself, never a spinner (ADR-0055). The two states are one tree, so the
+ * arrival is a fill-in rather than a jump. A failure shows its state with the retry. [standalone] wraps the failure in
+ * its own centred region (a tab root); inside a pushed screen it sits in the screen's region. [offlineTitle] and
+ * [offlineBody] replace the generic words where the design names what failed (e6).
  */
 @Composable
 internal fun <T> CareLoadView(
     load: CareLoad<T>,
+    standIn: T?,
     onRetry: () -> Unit,
     standalone: Boolean = false,
     offlineTitle: StringResource = Res.string.care_offline_title,
@@ -73,7 +93,9 @@ internal fun <T> CareLoadView(
 ) {
     val state: @Composable () -> Unit = {
         when (load) {
-            CareLoad.Loading -> LumeActivityIndicator(contentDescription = stringResource(Res.string.care_loading))
+            // Only until the stand-in is read, which the script answers at once: the kit's generic rows, still no
+            // spinner.
+            CareLoad.Loading -> LumeSkeleton(LumeSkeletonShape.List(rows = STAND_IN_ROWS))
             is CareLoad.Failed -> {
                 val offline = load.failure == CareFailure.Offline
                 // e6: the dark band first, then the state — a reader hears the band as it appears.
@@ -96,9 +118,14 @@ internal fun <T> CareLoadView(
             is CareLoad.Ready -> Unit
         }
     }
+    val shown = (load as? CareLoad.Ready)?.content ?: standIn.takeIf { load is CareLoad.Loading }
     when {
-        load is CareLoad.Ready -> content(load.content)
+        shown != null -> LumePlaceholder(stringResource(Res.string.care_loading), active = load !is CareLoad.Ready) {
+            content(shown)
+        }
         standalone -> LumeContainer(alignment = LumeContainerAlignment.Center) { state() }
         else -> LumeStack(modifier = Modifier.fillMaxWidth(), spacing = { medium }) { state() }
     }
 }
+
+private const val STAND_IN_ROWS = 4

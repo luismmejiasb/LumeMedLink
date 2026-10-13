@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.folded
 import com.luismejias.lumemedlink.core.screen.markLoading
 import com.luismejias.lumemedlink.core.screen.toLoad
@@ -34,6 +36,10 @@ internal class MyDoctorsViewModel(private val care: PatientCareGateway) : ViewMo
     private val current = MutableStateFlow<CareLoad<MyDoctorsContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<MyDoctorsContent>> = current.asStateFlow()
 
+    /** The screen's own shape while it waits (ADR-0055). */
+    private val standInContent = StandIn<MyDoctorsContent>()
+    val standIn: StateFlow<MyDoctorsContent?> = standInContent.content
+
     init {
         refresh()
     }
@@ -43,6 +49,7 @@ internal class MyDoctorsViewModel(private val care: PatientCareGateway) : ViewMo
     }
 
     suspend fun load() {
+        standInContent.fill { standInPatientCare().myDoctors().toLoad { MyDoctorsContent(it) } }
         current.markLoading()
         val query = (current.value as? CareLoad.Ready)?.content?.query.orEmpty()
         current.value = care.myDoctors().toLoad { MyDoctorsContent(it, query) }

@@ -1,7 +1,7 @@
 # 0034 · Las cargas como skeleton de su pantalla
 
-> **Estado:** PENDING (abierta 2026-10-13) · ADR-0055 · **bloqueada por el kit**: el modo placeholder de
-> LumeUIComposer no existe todavía. Se lo pidió a la sesión del kit el mismo día.
+> **Estado:** PENDING (abierta 2026-10-13) · ADR-0055 · **Cableada** con el `LumePlaceholder` del kit (`b6cfabe`). Falta:
+> cubrir dos componentes en el kit y verlo en iOS y en las pantallas empujadas.
 
 ## De dónde sale
 
@@ -24,3 +24,23 @@ botones con su indicador.
 
 - No armar skeletons a mano con `LumeSkeleton` y medidas en dp: el autor eligió el modo del kit.
 - No pasar a skeleton los botones que esperan una respuesta.
+
+## Avance 2026-10-13
+
+- **`CareLoadView`** dibuja la carga como la pantalla misma, bajo `LumePlaceholder`.
+  - Es un solo árbol: el relleno mientras espera y los datos al llegar.
+  - Un fallo sigue mostrando su estado con «Reintentar».
+  - El relleno sale del `StandIn` de cada modelo: la **misma lectura** contra el guion sin latencia
+    (`standInPatientCare`, `standInDoctorCare`). No hay datos escritos a mano, y la forma sigue a la pantalla cuando
+    ella cambia.
+  - Los modelos con parámetro (detalle, cambio, reserva, resultados) leen el relleno con una copia del mismo modelo
+    apuntada al guion.
+  - Hasta que el relleno está listo, que es casi inmediato, se ven las filas genéricas de `LumeSkeleton`: nunca un
+    indicador.
+- **Gate:** P5 en `check-forbidden-patterns.sh` rechaza `LumeActivityIndicator` en la app, con su cebo (123 cebos, todos
+  en rojo).
+- **Visto en el emulador:** Inicio del paciente, con la latencia del guion subida a 8 s en una build local y no
+  commiteada. Coincide con la forma real.
+  - **Faltan en el kit:** el rótulo en mayúsculas de la tarjeta y las estrellas de la valoración, que todavía se dibujan
+    con su contenido.
+  - Las otras pestañas cargan junto con Inicio al entrar, y no se alcanzaron a capturar esperando.

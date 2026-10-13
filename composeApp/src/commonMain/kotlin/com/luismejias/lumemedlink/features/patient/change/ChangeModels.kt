@@ -13,6 +13,7 @@ import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.SentRating
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.ok
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
@@ -134,15 +135,26 @@ internal class RescheduleModel(
     private val care: PatientCareGateway,
     private val directory: DirectoryGateway,
     private val logEvent: (AnalyticsEvent) -> Unit = {},
+    private val standInModel: (() -> RescheduleModel)? = null,
 ) {
     private val current = MutableStateFlow<CareLoad<RescheduleContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<RescheduleContent>> = current.asStateFlow()
+
+    /** The screen's own shape while it waits (ADR-0055), read by [standInModel]: this model, against the script. */
+    private val standInContent = StandIn<RescheduleContent>()
+    val standIn: StateFlow<RescheduleContent?> = standInContent.content
 
     /** This move's key (the contract's required `clientId`): new for a new hour, the same for every retry of one. */
     private var clientId: String = Uuid.random().toString()
 
     /** Reads the doctor's hours from today to the horizon, opening on the first day that has one. */
     suspend fun load(appointment: PatientAppointment) {
+        standInContent.fill {
+            standInModel?.invoke()?.let {
+                it.load(appointment)
+                it.state.value
+            } ?: CareLoad.Loading
+        }
         current.value = CareLoad.Loading
         val from = care.today()
         val to = from.plusDays(HORIZON_DAYS)
@@ -282,14 +294,27 @@ internal data class DetailContent(
     override fun toString(): String = "DetailContent(status=${appointment.status})"
 }
 
-internal class DetailModel(private val care: PatientCareGateway) {
+internal class DetailModel(
+    private val care: PatientCareGateway,
+    private val standInModel: (() -> DetailModel)? = null,
+) {
     private val current = MutableStateFlow<CareLoad<DetailContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<DetailContent>> = current.asStateFlow()
+
+    /** The screen's own shape while it waits (ADR-0055), read by [standInModel]: this model, against the script. */
+    private val standInContent = StandIn<DetailContent>()
+    val standIn: StateFlow<DetailContent?> = standInContent.content
 
     /** The appointment the screen asked for last: an older load that finishes later must not overwrite it. */
     private var requested: String? = null
 
     suspend fun load(appointment: PatientAppointment) {
+        standInContent.fill {
+            standInModel?.invoke()?.let {
+                it.load(appointment)
+                it.state.value
+            } ?: CareLoad.Loading
+        }
         requested = appointment.id
         val shown = (current.value as? CareLoad.Ready)?.content?.appointment?.id
         // Reading the same appointment again (after f5) keeps it on screen; another one starts from the spinner.

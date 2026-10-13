@@ -11,6 +11,7 @@ import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.care.Specialty
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.folded
 import com.luismejias.lumemedlink.core.screen.markLoading
@@ -50,12 +51,18 @@ internal data class PickerContent<T>(
 
 internal class CatalogPicker<T>(
     private val read: suspend () -> CareResult<List<T>>,
+    /** The same read against the script, for the screen's shape while it waits (ADR-0055). */
+    private val standInRead: (suspend () -> CareResult<List<T>>)? = null,
     private val terms: (T) -> List<String>,
 ) {
     private val current = MutableStateFlow<CareLoad<PickerContent<T>>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<PickerContent<T>>> = current.asStateFlow()
 
+    private val standInContent = StandIn<PickerContent<T>>()
+    val standIn: StateFlow<PickerContent<T>?> = standInContent.content
+
     suspend fun load() {
+        standInContent.fill { standInRead?.invoke()?.toLoad { PickerContent(it, terms = terms) } ?: CareLoad.Loading }
         current.value = CareLoad.Loading
         current.value = read().toLoad { PickerContent(it, terms = terms) }
     }
@@ -120,9 +127,17 @@ internal data class ResultsContent(
     override fun toString(): String = "ResultsContent(doctors=${doctors.size})"
 }
 
-internal class ResultsModel(private val directory: DirectoryGateway, private val today: () -> CalendarDate) {
+internal class ResultsModel(
+    private val directory: DirectoryGateway,
+    private val today: () -> CalendarDate,
+    private val standInModel: (() -> ResultsModel)? = null,
+) {
     private val current = MutableStateFlow<CareLoad<ResultsContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<ResultsContent>> = current.asStateFlow()
+
+    /** The screen's own shape while it waits (ADR-0055), read by [standInModel]: this model, against the script. */
+    private val standInContent = StandIn<ResultsContent>()
+    val standIn: StateFlow<ResultsContent?> = standInContent.content
 
     /** p4 edits a draft; «Ver N médicos» applies it, «Limpiar» resets it. */
     private val drafting = MutableStateFlow(SearchFilters())
@@ -132,6 +147,12 @@ internal class ResultsModel(private val directory: DirectoryGateway, private val
         val specialty = criteria.specialty ?: return
         val commune = criteria.commune ?: return
         val filters = (current.value as? CareLoad.Ready)?.content?.filters ?: SearchFilters()
+        standInContent.fill {
+            standInModel?.invoke()?.let {
+                it.load(criteria)
+                it.state.value
+            } ?: CareLoad.Loading
+        }
         current.markLoading()
         val found = directory.search(specialty.code, commune.code)
         val nearby = if ((found as? CareResult.Ok)?.value?.isEmpty() == true) {
@@ -248,12 +269,23 @@ internal class ScheduleModel(
     private val directory: DirectoryGateway,
     private val ownAppointments: suspend () -> CareResult<List<PatientAppointment>>,
     private val today: () -> CalendarDate,
+    private val standInModel: (() -> ScheduleModel)? = null,
 ) {
     private val current = MutableStateFlow<CareLoad<ScheduleContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<ScheduleContent>> = current.asStateFlow()
 
+    /** The screen's own shape while it waits (ADR-0055), read by [standInModel]: this model, against the script. */
+    private val standInContent = StandIn<ScheduleContent>()
+    val standIn: StateFlow<ScheduleContent?> = standInContent.content
+
     /** Reads a doctor's hours from tomorrow to the booking horizon; [keepDay] stays on a day after a retry. */
     suspend fun load(doctor: DirectoryDoctor, keepDay: CalendarDate? = null) {
+        standInContent.fill {
+            standInModel?.invoke()?.let {
+                it.load(doctor)
+                it.state.value
+            } ?: CareLoad.Loading
+        }
         current.value = CareLoad.Loading
         val from = today().plusDays(1)
         val to = from.plusDays(HORIZON_DAYS)

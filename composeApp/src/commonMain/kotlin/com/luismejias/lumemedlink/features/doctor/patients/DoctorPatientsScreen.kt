@@ -51,6 +51,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun DoctorPatientsScreen(model: DoctorPatientsViewModel, onCall: (String) -> Unit, onMail: (String) -> Unit) {
     val load by model.state.collectAsState()
+    val standIn by model.standIn.collectAsState()
     LumeContainer(
         scroll = LumeContainerScroll.Scrollable,
         topBar = {
@@ -58,7 +59,7 @@ internal fun DoctorPatientsScreen(model: DoctorPatientsViewModel, onCall: (Strin
         },
     ) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
-            CareLoadView(load, onRetry = model::refresh) { content ->
+            CareLoadView(load, standIn, onRetry = model::refresh) { content ->
                 SensitiveSearchField(
                     query = content.query,
                     onQueryChange = model::queryChanged,
