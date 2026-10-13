@@ -18,6 +18,7 @@ import com.luismejias.lumemedlink.features.auth.unlock.stepOutcomeFor
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.unlock_attempts_left
 import com.luismejias.lumemedlink.resources.unlock_try_again
+import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -119,7 +120,7 @@ class AccessFlowTest {
         credentials.termsChanged(true)
         credentials.dataUseChanged(true)
         assertEquals(StepOutcome.Advanced, credentials.submit())
-        assertEquals("+56 9 •••• 4321", attempt.signUpCode.state.value.maskedMobile)
+        assertEquals("+56 9 •••• 4321".replace(" ", PhoneNumber.NO_BREAK), attempt.signUpCode.state.value.maskedMobile)
 
         attempt.signUpCode.codeChanged("000000")
         attempt.signUpCode.submit()

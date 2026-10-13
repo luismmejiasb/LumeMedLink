@@ -9,6 +9,7 @@ import cl.lume.uicomposer.components.LumeNavBarBack
 import cl.lume.uicomposer.components.LumeNavBarTitleStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
+import com.luismejias.lumemedlink.core.screen.SystemBack
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_back
@@ -26,6 +27,7 @@ internal fun PushedScreen(
     action: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
+    SystemBack(onBack)
     LumeContainer(
         scroll = scroll,
         actionStyle = LumeContainerActionStyle.Bar,

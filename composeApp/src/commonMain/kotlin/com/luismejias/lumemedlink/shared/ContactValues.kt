@@ -13,22 +13,23 @@ internal class PhoneNumber private constructor(val e164: String, private val dia
 
     private val chilean: Boolean get() = dialCode == CHILE
 
-    /** "+56 9 •••• 4321": the last four digits only, for "Te enviamos un código al …" (2c). */
+    /**
+     * "+56 9 •••• 4321": the last four digits only, for "Te enviamos un código al …" (2c). Its spaces do not break, so
+     * a sentence never splits the number across two lines (seen on the emulator, 2026-10-13).
+     */
     val masked: String
-        get() = if (chilean) {
-            "$CHILE 9 •••• ${e164.takeLast(
-                MASK_TAIL,
-            )}"
-        } else {
-            "$dialCode •••• ${e164.takeLast(MASK_TAIL)}"
+        get() {
+            val tail = e164.takeLast(MASK_TAIL)
+            val parts = if (chilean) listOf(CHILE, "9", "••••", tail) else listOf(dialCode, "••••", tail)
+            return parts.joinToString(NO_BREAK)
         }
 
-    /** "+56 9 8765 4321": the whole number, for the owner's own profile (p7). */
+    /** "+56 9 8765 4321": the whole number, for the owner's own profile (p7). Kept on one line, as [masked]. */
     val display: String
         get() = if (chilean) {
-            "$CHILE 9 ${national.drop(1).chunked(MASK_TAIL).joinToString(" ")}"
+            (listOf(CHILE, "9") + national.drop(1).chunked(MASK_TAIL)).joinToString(NO_BREAK)
         } else {
-            "$dialCode $national"
+            dialCode + NO_BREAK + national
         }
 
     override fun equals(other: Any?): Boolean = other is PhoneNumber && other.e164 == e164
@@ -43,6 +44,9 @@ internal class PhoneNumber private constructor(val e164: String, private val dia
 
         /** How a Chilean mobile is drawn as it is typed: «9 8765 4321». */
         val CHILEAN_MOBILE_GROUPS: List<Int> = listOf(1, 4, 4)
+
+        /** A space a line never breaks at. */
+        const val NO_BREAK = "\u00A0"
 
         private const val CHILE_DIGITS = "56"
         private const val SUBSCRIBER_DIGITS = 8

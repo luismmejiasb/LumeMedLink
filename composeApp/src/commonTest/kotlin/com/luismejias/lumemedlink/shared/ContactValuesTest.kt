@@ -24,7 +24,10 @@ class ContactValuesTest {
 
     @Test
     fun aMobileShowsOnlyItsLastFourDigits() {
-        assertEquals("+56 9 •••• 4321", PhoneNumber.chileanMobile("987654321")?.masked)
+        assertEquals(
+            "+56 9 •••• 4321".replace(" ", PhoneNumber.NO_BREAK),
+            PhoneNumber.chileanMobile("987654321")?.masked,
+        )
         assertFalse("8765" in PhoneNumber.chileanMobile("987654321").toString())
     }
 

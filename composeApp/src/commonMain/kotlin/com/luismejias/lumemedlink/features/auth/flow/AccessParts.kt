@@ -35,6 +35,7 @@ import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
+import com.luismejias.lumemedlink.core.screen.SystemBack
 import com.luismejias.lumemedlink.core.session.Clock
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.app_name
@@ -75,6 +76,7 @@ private suspend fun AccessText.resolveNow(): String = when (this) {
 /** The back disc at the top of a screen, where the route allows it. */
 @Composable
 internal fun AccessBack(onBack: (() -> Unit)?) {
+    SystemBack(onBack)
     if (onBack != null) {
         // Full width so the disc sits at the leading edge even inside a centred column.
         LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Start) {
