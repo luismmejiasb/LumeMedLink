@@ -33,6 +33,8 @@ import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
+import com.luismejias.lumemedlink.core.links.LinkAudience
+import com.luismejias.lumemedlink.core.links.LinkSession
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
 import com.luismejias.lumemedlink.core.logging.LogEvent
@@ -119,6 +121,8 @@ public fun App() {
         telemetryConsent.restore()
         telemetry.refreshFlags()
     }
+    // Links and notification taps (ADR-0053): one slot behind the lock, one resolver, and the host in front opens it.
+    val links = viewModel { LinksViewModel() }.center(telemetry::log)
     val access = viewModel {
         val scripted = ScriptedAccessGateway(SystemClock)
         AccessFlowViewModel(
@@ -167,6 +171,16 @@ public fun App() {
     val accessAttempt by access.attempt.collectAsState()
     val accessFinished by accessAttempt.flow.finished.collectAsState()
     var locked by remember { mutableStateOf(sessionLock.isLocked()) }
+    val linkToOpen by links.toOpen.collectAsState()
+    // The link centre follows the shell: a role once the access flow lets somebody in, open unless the lock is up.
+    LaunchedEffect(accessFinished, hasSession, locked) {
+        val role = when (accessFinished) {
+            AccessRole.PATIENT -> LinkAudience.PATIENT
+            AccessRole.DOCTOR -> LinkAudience.DOCTOR
+            null -> null
+        }
+        links.sessionChanged(LinkSession(role = role, unlocked = role != null && !(hasSession && locked)))
+    }
     var returns by remember { mutableStateOf(0) }
 
     // COMING BACK RE-ASKS THE LOCK (2026-10-07, task 0002 / F01). The timer below runs on the
@@ -251,6 +265,7 @@ public fun App() {
         hasSession = false
         shell.hasSession = false
         shell.reauthenticating.value = false
+        links.forget()
         access.restart()
         patientScope.reset()
         doctorScope.reset()
@@ -287,7 +302,10 @@ public fun App() {
                                     directory = patientCare,
                                     consent = telemetryConsent,
                                     logEvent = telemetry::log,
+                                    link = linkToOpen,
+                                    onLinkOpened = links::landed,
                                     onSignOut = {
+                                        links.forget()
                                         patientScope.reset()
                                         access.restart()
                                         // A sign-out withdraws, as the logout's wipe does (ADR-0052 §2).
@@ -298,7 +316,10 @@ public fun App() {
                             AccessRole.DOCTOR -> InSessionScope(doctorScope) {
                                 DoctorMainHost(
                                     care = doctorCare,
+                                    link = linkToOpen,
+                                    onLinkOpened = links::landed,
                                     onSignOut = {
+                                        links.forget()
                                         doctorScope.reset()
                                         access.restart()
                                         scope.launch { telemetryConsent.setGranted(false) }

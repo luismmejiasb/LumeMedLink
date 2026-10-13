@@ -1,6 +1,7 @@
 package com.luismejias.lumemedlink.core.telemetry
 
 import android.content.Context
+import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +31,11 @@ private fun firebaseTelemetry(context: Context): Telemetry? {
     return FirebaseTelemetry(context)
 }
 
+/** A detail as Firebase takes it, or null for none. Built only from [analyticsValues]: enum names, never data. */
+private fun bundleOf(details: Map<AnalyticsParam, Enum<*>>): Bundle? = analyticsValues(details)
+    .takeIf { it.isNotEmpty() }
+    ?.let { values -> Bundle().apply { values.forEach { (key, value) -> putString(key, value) } } }
+
 private class FirebaseTelemetry(context: Context) : Telemetry {
     private val crashlytics = FirebaseCrashlytics.getInstance()
     private val analytics = FirebaseAnalytics.getInstance(context)
@@ -52,7 +58,8 @@ private class FirebaseTelemetry(context: Context) : Telemetry {
         }
     }
 
-    override fun log(event: AnalyticsEvent) = analytics.logEvent(event.eventName, null)
+    override fun log(event: AnalyticsEvent, details: Map<AnalyticsParam, Enum<*>>) =
+        analytics.logEvent(event.eventName, bundleOf(details))
 
     override fun flag(flag: RemoteFlag): Boolean = config.getBoolean(flag.key)
 

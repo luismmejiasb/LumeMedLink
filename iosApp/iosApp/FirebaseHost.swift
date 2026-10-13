@@ -32,9 +32,9 @@ final class FirebaseHost: NSObject, FirebaseBridge {
         }
     }
 
-    /// A catalog name, and never a parameter (§3).
-    func logEvent(name: String) {
-        Analytics.logEvent(name, parameters: nil)
+    /// A catalog name, and its details as Kotlin reduced them: a closed key and an enum's name, never data (§3).
+    func logEvent(name: String, parameters: [String: String]) {
+        Analytics.logEvent(name, parameters: parameters.isEmpty ? nil : parameters)
     }
 
     /// The remote value once fetched, the code's default until then (§5).

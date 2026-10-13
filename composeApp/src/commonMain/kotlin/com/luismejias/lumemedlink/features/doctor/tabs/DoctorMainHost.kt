@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -24,6 +25,7 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.DoctorCareGateway
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberPhotoPicker
+import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoFlow
@@ -63,13 +65,24 @@ internal class DoctorTabsViewModel : ViewModel() {
  * sign-out empties (app/SessionScope, §8.13).
  */
 @Composable
-internal fun DoctorMainHost(care: DoctorCareGateway, onSignOut: () -> Unit) {
+internal fun DoctorMainHost(
+    care: DoctorCareGateway,
+    onSignOut: () -> Unit,
+    /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
+    link: DeepLink? = null,
+    onLinkOpened: () -> Unit = {},
+) {
     val tabs = viewModel { DoctorTabsViewModel() }
     val agenda = viewModel { AgendaViewModel(care) }
     val patients = viewModel { DoctorPatientsViewModel(care) }
     val profile = viewModel { DoctorProfileViewModel(care) }
     val photo = viewModel { ProfilePhotoModel() }
     val picker = rememberPhotoPicker(photo::picked)
+    LaunchedEffect(link) {
+        val opening = link ?: return@LaunchedEffect
+        openDoctorLink(opening, tabs)
+        onLinkOpened()
+    }
     val toasts = rememberLumeToastHostState()
     val contact = rememberDeviceContact()
     val selected by tabs.selected.collectAsState()

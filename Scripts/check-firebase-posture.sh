@@ -103,22 +103,32 @@ code_of() { python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten 
 calls=$(for f in $KOTLIN; do
     code_of "$f" | grep -q 'firebase\.analytics' && [ "$f" != "$ANDROID_ADAPTER" ] && echo "$f names com.google.firebase.analytics"
 done)
-adapter_calls=$(code_of "$ANDROID_ADAPTER" | grep -oE '\.logEvent\([^)]*\)' | sort -u)
-[ "$adapter_calls" = '.logEvent(event.eventName, null)' ] ||
+# One level of nested parentheses, so the call's own argument list is read whole.
+adapter_calls=$(code_of "$ANDROID_ADAPTER" | grep -oE '\.logEvent\([^()]*(\([^()]*\))?[^()]*\)' | sort -u)
+# Details are allowed since ADR-0053, and only one way: a Bundle built from analyticsValues(), enum names, never data.
+[ "$adapter_calls" = '.logEvent(event.eventName, bundleOf(details))' ] ||
     calls="$calls
-the Android adapter logs something other than a catalog name without parameters: ${adapter_calls:-no call at all}"
+the Android adapter logs something other than a catalog name with its closed details: ${adapter_calls:-no call at all}"
+code_of "$ANDROID_ADAPTER" | grep -qE 'Bundle\? = analyticsValues\(details\)' ||
+    calls="$calls
+the Android adapter builds its Bundle from something other than analyticsValues(details)"
+IOS_BRIDGE="composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/telemetry/Telemetry.ios.kt"
+code_of "$IOS_BRIDGE" | grep -qE 'bridge\.logEvent\(event\.eventName, analyticsValues\(details\)\)' ||
+    calls="$calls
+the iOS bridge hands Swift something other than analyticsValues(details)"
 [ -n "$(echo "$calls" | tr -d '[:space:]')" ] && fail "firebase: Analytics is called outside the catalog on Android" \
-    "ADR-0052 §3: only the adapter reaches Firebase Analytics, with a catalog name and null parameters. Free events are GoodRx's mechanism." "$calls"
+    "ADR-0052 §3: only the adapter reaches Firebase Analytics, with a catalog name and its closed details (ADR-0053). Free events are GoodRx's mechanism." "$calls"
 
 swift_calls=$(for f in $SWIFT; do
     code_of "$f" | grep -oE 'Analytics\.logEvent\([^)]*\)' | sed "s|^|$f: |"
 done)
-bad_swift=$(echo "$swift_calls" | grep -v '^$' | grep -vxF "$IOS_HOST: Analytics.logEvent(name, parameters: nil)" || true)
-echo "$swift_calls" | grep -qxF "$IOS_HOST: Analytics.logEvent(name, parameters: nil)" ||
+IOS_CALL="$IOS_HOST: Analytics.logEvent(name, parameters: parameters.isEmpty ? nil : parameters)"
+bad_swift=$(echo "$swift_calls" | grep -v '^$' | grep -vxF "$IOS_CALL" || true)
+echo "$swift_calls" | grep -qxF "$IOS_CALL" ||
     bad_swift="$bad_swift
-the iOS host no longer logs the catalog name without parameters (Analytics.logEvent(name, parameters: nil))"
+the iOS host no longer logs the catalog name with only the details Kotlin reduced"
 [ -n "$(echo "$bad_swift" | tr -d '[:space:]')" ] && fail "firebase: Analytics is called outside the catalog on iOS" \
-    "ADR-0052 §3: FirebaseHost.swift carries the Kotlin catalog's name, and never a parameter." "$bad_swift"
+    "ADR-0052 §3, ADR-0053: FirebaseHost.swift carries the Kotlin catalog's name and the details Kotlin reduced to enum names." "$bad_swift"
 
 # Identity and free text: forbidden everywhere, in both languages.
 # initiateOnDeviceConversion*: Analytics' API to hash and send an email or a phone number for ad conversion.

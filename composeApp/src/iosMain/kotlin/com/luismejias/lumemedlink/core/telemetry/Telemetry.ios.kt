@@ -15,7 +15,8 @@ import kotlin.experimental.ExperimentalNativeApi
 public interface FirebaseBridge {
     public fun setCollectionEnabled(enabled: Boolean)
 
-    public fun logEvent(name: String)
+    /** A catalog name and its details, already reduced to enum names on this side ([analyticsValues]). */
+    public fun logEvent(name: String, parameters: Map<String, String>)
 
     public fun flag(key: String, defaultValue: Boolean): Boolean
 
@@ -41,7 +42,8 @@ private class BridgedTelemetry(private val bridge: FirebaseBridge) : Telemetry {
 
     override fun setCollectionEnabled(enabled: Boolean) = bridge.setCollectionEnabled(enabled)
 
-    override fun log(event: AnalyticsEvent) = bridge.logEvent(event.eventName)
+    override fun log(event: AnalyticsEvent, details: Map<AnalyticsParam, Enum<*>>) =
+        bridge.logEvent(event.eventName, analyticsValues(details))
 
     override fun flag(flag: RemoteFlag): Boolean = bridge.flag(flag.key, flag.default)
 

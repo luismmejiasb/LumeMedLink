@@ -13,8 +13,11 @@ internal interface Telemetry {
      */
     fun setCollectionEnabled(enabled: Boolean)
 
-    /** One event of the catalog. There is no other way in: no parameters, no user ID, no properties (§3). */
-    fun log(event: AnalyticsEvent)
+    /**
+     * One event of the catalog. There is no other way in: no user ID, no properties, and no free parameter (§3). A
+     * detail's key is an [AnalyticsParam] and its value an enum constant of this code — never a string from data.
+     */
+    fun log(event: AnalyticsEvent, details: Map<AnalyticsParam, Enum<*>> = emptyMap())
 
     /** The flag's remote value once fetched, its default until then, offline, or without configuration (§5). */
     fun flag(flag: RemoteFlag): Boolean
@@ -46,7 +49,23 @@ internal enum class AnalyticsEvent(val eventName: String) {
 
     /** A rating was sent (f5); not its stars, not its words, not whom it rates. */
     APPOINTMENT_RATED("appointment_rated"),
+
+    /**
+     * A link or a notification opened a screen (ADR-0053): with [AnalyticsParam.DESTINATION], the catalog entry, and
+     * [AnalyticsParam.ORIGIN]. Never the id it carried. The author's call, 2026-10-13.
+     */
+    DEEP_LINK_OPENED("deep_link_opened"),
 }
+
+/** The keys a detail may have. Its value is an enum constant's name, lower-cased: code, never data. */
+internal enum class AnalyticsParam(val paramName: String) {
+    DESTINATION("destination"),
+    ORIGIN("origin"),
+}
+
+/** What Firebase receives for [details]: each key's name and its enum value's lower-cased name. */
+internal fun analyticsValues(details: Map<AnalyticsParam, Enum<*>>): Map<String, String> =
+    details.entries.associate { (param, value) -> param.paramName to value.name.lowercase() }
 
 /**
  * What Remote Config may switch (ADR-0052 §5): product flags with a default in code. Never personal data, never the
@@ -58,7 +77,7 @@ internal enum class RemoteFlag(val key: String, val default: Boolean)
 internal object UnconfiguredTelemetry : Telemetry {
     override fun setCollectionEnabled(enabled: Boolean) = Unit
 
-    override fun log(event: AnalyticsEvent) = Unit
+    override fun log(event: AnalyticsEvent, details: Map<AnalyticsParam, Enum<*>>) = Unit
 
     override fun flag(flag: RemoteFlag): Boolean = flag.default
 

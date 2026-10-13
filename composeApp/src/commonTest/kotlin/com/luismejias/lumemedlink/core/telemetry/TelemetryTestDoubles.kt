@@ -25,13 +25,15 @@ internal class MemorySecureStore : SecureStore {
 internal class RecordedTelemetry : Telemetry {
     val collection = mutableListOf<Boolean>()
     val events = mutableListOf<AnalyticsEvent>()
+    val details = mutableListOf<Map<AnalyticsParam, Enum<*>>>()
 
     override fun setCollectionEnabled(enabled: Boolean) {
         collection += enabled
     }
 
-    override fun log(event: AnalyticsEvent) {
+    override fun log(event: AnalyticsEvent, details: Map<AnalyticsParam, Enum<*>>) {
         events += event
+        this.details += details
     }
 
     override fun flag(flag: RemoteFlag): Boolean = flag.default

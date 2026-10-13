@@ -781,7 +781,7 @@ assert a in s; p.write_text(s.replace(a, "<key>FIREBASE_ANALYTICS_COLLECTION_ENA
 bait "a parameter bundle in the Android adapter" check-firebase-posture.sh '
 import sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/telemetry/Telemetry.android.kt"
-s = p.read_text(); a = "logEvent(event.eventName, null)"
+s = p.read_text(); a = "logEvent(event.eventName, bundleOf(details))"
 assert a in s; p.write_text(s.replace(a, "logEvent(event.eventName, android.os.Bundle().apply { putString(\"specialty\", \"x\") })"))
 '
 bait "a feature reaching Firebase Analytics by its full name" check-firebase-posture.sh '
@@ -789,10 +789,22 @@ import sys, pathlib
 d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device"
 (d / "BaitAnalytics.kt").write_text("package com.luismejias.lumemedlink.core.device\n\ninternal fun track(c: android.content.Context) =\n    com.google.firebase.analytics.FirebaseAnalytics.getInstance(c).logEvent(\"oncology_viewed\", null)\n")
 '
+bait "the Android Bundle filled from data instead of enum names" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/telemetry/Telemetry.android.kt"
+s = p.read_text(); a = "Bundle? = analyticsValues(details)"
+assert a in s; p.write_text(s.replace(a, "Bundle? = details.entries.associate { it.key.paramName to it.value.toString() }"))
+'
+bait "the iOS bridge handing Swift raw details" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/telemetry/Telemetry.ios.kt"
+s = p.read_text(); a = "bridge.logEvent(event.eventName, analyticsValues(details))"
+assert a in s; p.write_text(s.replace(a, "bridge.logEvent(event.eventName, details.entries.associate { it.key.paramName to it.value.toString() })"))
+'
 bait "a user ID set in the iOS host" check-firebase-posture.sh '
 import sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/FirebaseHost.swift"
-s = p.read_text(); a = "        Analytics.logEvent(name, parameters: nil)\n"
+s = p.read_text(); a = "        Analytics.logEvent(name, parameters: parameters.isEmpty ? nil : parameters)\n"
 assert a in s; p.write_text(s.replace(a, a + "        Analytics.setUserID(\"rut\")\n"))
 '
 bait "a Crashlytics custom key on Android" check-firebase-posture.sh '
@@ -816,7 +828,7 @@ assert a in s; p.write_text(s.replace(a, "ExceptionModel(name: typeName, reason:
 bait "parameters added to the iOS catalog call" check-firebase-posture.sh '
 import sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/FirebaseHost.swift"
-s = p.read_text(); a = "Analytics.logEvent(name, parameters: nil)"
+s = p.read_text(); a = "Analytics.logEvent(name, parameters: parameters.isEmpty ? nil : parameters)"
 assert a in s; p.write_text(s.replace(a, "Analytics.logEvent(name, parameters: [\"doctor\": name])"))
 '
 bait "firebase-ios-sdk pinned to a range" check-ios-host.sh '

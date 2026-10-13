@@ -37,6 +37,21 @@ internal value class OpaqueRef private constructor(val value: String) {
  * supplies display text, so the server cannot decide what appears on a locked screen.
  */
 internal enum class PushSignalKind {
+    /** One of the patient's appointments is coming up. Which, and when, is read inside the app. */
+    APPOINTMENT_REMINDER,
+
+    /** The clinic confirmed, moved or cancelled one of the patient's appointments. Not which, not how. */
+    APPOINTMENT_UPDATED,
+
+    /** A visit can be rated now. Not with whom. */
+    RATING_INVITED,
+
+    /** An official communication from the clinic or from LumeMedLink is waiting in the notice centre. */
+    OFFICIAL_NOTICE,
+
+    /** The account changed — its details, a setting. The person should hear of it, and act if it was not them. */
+    ACCOUNT_CHANGED,
+
     /** Something in the doctor's agenda changed. Which appointment is fetched authenticated. */
     AGENDA_CHANGED,
 
@@ -65,6 +80,11 @@ internal data class PushSignal(val kind: PushSignalKind, val ref: OpaqueRef? = n
      */
     val displayCopyKey: String
         get() = when (kind) {
+            PushSignalKind.APPOINTMENT_REMINDER -> "push.appointment_reminder"
+            PushSignalKind.APPOINTMENT_UPDATED -> "push.appointment_updated"
+            PushSignalKind.RATING_INVITED -> "push.rating_invited"
+            PushSignalKind.OFFICIAL_NOTICE -> "push.official_notice"
+            PushSignalKind.ACCOUNT_CHANGED -> "push.account_changed"
             PushSignalKind.AGENDA_CHANGED -> "push.agenda_changed"
             PushSignalKind.SESSION_REVOKED -> "push.session_revoked"
             PushSignalKind.SOMETHING_WAITING -> "push.something_waiting"

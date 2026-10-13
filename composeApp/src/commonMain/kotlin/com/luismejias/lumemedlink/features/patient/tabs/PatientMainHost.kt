@@ -34,6 +34,7 @@ import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberDirections
 import com.luismejias.lumemedlink.core.device.rememberPhotoPicker
+import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoFlow
@@ -110,6 +111,9 @@ internal fun PatientMainHost(
     consent: TelemetryConsent,
     logEvent: (AnalyticsEvent) -> Unit,
     onSignOut: () -> Unit,
+    /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
+    link: DeepLink? = null,
+    onLinkOpened: () -> Unit = {},
 ) {
     val tabs = viewModel { PatientTabsViewModel() }
     val home = viewModel { HomeViewModel(care) }
@@ -152,6 +156,11 @@ internal fun PatientMainHost(
     val copiedToast = stringResource(Res.string.directions_copied)
     val rateSent by rate.sent.collectAsState()
     val rateSentToast = stringResource(Res.string.rate_sent_toast)
+    LaunchedEffect(link) {
+        val opening = link ?: return@LaunchedEffect
+        openPatientLink(opening, tabs, change, rate)
+        onLinkOpened()
+    }
     LaunchedEffect(rateSent) {
         if (!rateSent) return@LaunchedEffect
         // Inicio stops asking, Ajustes counts one more, and an open c3 shows what was sent.

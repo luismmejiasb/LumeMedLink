@@ -10,6 +10,7 @@ import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
+import com.luismejias.lumemedlink.shared.OpaqueRef
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -99,6 +100,24 @@ internal class ChangeViewModel(
         shownSheet.value = null
         cancel.start(appointment)
         push(ChangeRoute.CANCEL)
+    }
+
+    /** A link takes the person elsewhere (ADR-0053): whatever this flow had open closes, a half-chosen cancel too. */
+    fun closeForLink() {
+        shownSheet.value = null
+        cancel.clear()
+        stack.value = emptyList()
+    }
+
+    /**
+     * c1–c3 opened by a link or a notification (ADR-0053). The id has to be one of the patient's own appointments, as
+     * the gateway lists them, or nothing opens: a link grants navigation, never access. `false` when it is not there.
+     */
+    suspend fun openDetailFor(ref: OpaqueRef): Boolean {
+        val mine = (care.appointments() as? CareResult.Ok)?.value ?: return false
+        val appointment = mine.firstOrNull { it.id == ref.value } ?: return false
+        openDetail(appointment)
+        return true
     }
 
     /** One screen back; from the detail, back to the tab. */
