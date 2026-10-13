@@ -40,6 +40,8 @@ Decidió por formulario:
 
 - Un test con una excepción cuyo mensaje lleva un RUT y una URL, que exige que ninguno aparezca en el reporte
   serializado.
-- Un test de que no hay clave sin consentimiento y de que el logout la borra.
+- Un test de que no hay clave sin consentimiento y de que el logout la borra; y de que la clave se pone al enviar, no
+  al capturar (un reporte en cola antes del logout sale sin ella).
+- `check-backup-posture.sh` aprende los archivos de la cola.
 - Un test de que la cola no pasa de tres y de que un archivo de más de siete días se descarta.
 - En el dispositivo: forzar un crash, reabrir y ver el reporte en la cola, en Android y en iOS.

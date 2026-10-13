@@ -42,9 +42,9 @@ Responde con el contrato (rutas, el `type` exacto, y si el aviso sale de ti o de
 
 ## Estado (2026-10-12)
 
-El backend enmendó su `ADR-0037` para este pedido: el teléfono se enrola solo y uno nuevo reemplaza al anterior con
-`session_superseded`. Se construye cuando el autor decida cómo se enlaza la cuenta del médico entre el tenant de LumeMed y
-el de LumeMedLink (pedido `0002`, respuesta del 2026-10-12).
+El backend enmendó su `ADR-0037` para este pedido, y lo construyó el mismo día (contrato 0.106.0, sección siguiente).
+Lo que espera es la mitad de este repo (tarea `0027`, congelada): un backend desplegado y la conciliación del enlace de la
+cuenta del médico (pedido `0002`).
 
 ## Respuesta del backend (2026-10-12, contrato 0.106.0)
 

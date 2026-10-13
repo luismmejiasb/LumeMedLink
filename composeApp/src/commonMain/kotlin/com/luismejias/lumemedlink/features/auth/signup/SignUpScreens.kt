@@ -109,8 +109,8 @@ private val STEPS =
     listOf(Res.string.sign_up_step_data, Res.string.sign_up_step_password, Res.string.sign_up_step_phone)
 
 /**
- * "Paso 1 de 3 · Tus datos" — the kit's step indicator over the design's caption (ADR-0044, deviation 5): the
- * labelled variant cut "Verificar teléfono" short on a phone, and the design names only the current step.
+ * "Paso 1 de 3 · Tus datos" on the left, "Sigue: Contraseña" on the right, over the design's segmented bars — the kit's
+ * step indicator as 2a–2c draw it (ADR-0044, deviation 5, closed).
  */
 @Composable
 private fun SignUpSteps(current: Int) {

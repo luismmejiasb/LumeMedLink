@@ -120,7 +120,8 @@ movieron a `core/screen`. Las secciones de m2 van en una sola tarjeta con el ín
 
 ## Valorar (f5) y la foto de perfil (k1–k4): lo que decidió el autor (2026-10-11)
 
-- **Valorar sigue al diseño, como maqueta**: «Cuéntanos más» y «Otro» con texto de hasta 40 caracteres, y c3 con el
+- **Valorar sigue al diseño, como maqueta**: «Otro» con texto de hasta 40 caracteres, «Cuéntanos más» sin tope (el
+  diseño no lo pone; queda para el contrato), y c3 con el
   comentario. El backend registró ese mismo día otra decisión del autor (valoraciones públicas, sólo el promedio,
   estrellas y motivos cerrados, sin texto libre; tarea `0121` del backend). Cuando llegue el contrato, f5 y c3 se
   ajustan a eso.
@@ -185,3 +186,16 @@ de los días, el punto medio del chip de filtros, el campo de búsqueda sin tít
     (seguridad, ADR-0013).
 
   Llegaron el mismo día y están conectadas.
+
+## Lo que quedó abierto al cerrar (2026-10-12)
+
+La auditoría del cierre encontró pendientes de esta misma tarea que no estaban en ADR-0046. Quedan así:
+
+- **El título raíz en 30 bold**: el kit sigue en 28 semibold para el título grande de las pestañas. Es un rol
+  tipográfico nuevo y espera al autor; no se cambió con el título de pantalla (Bold 23, que sí se cambió).
+- **Los pendientes del kit de f1–f4** (el texto de la barra de f3, la nota del día en dos líneas, la fila de acción en
+  acento) se ven como el diseño en la pasada final del 2026-10-12; no se midieron uno por uno.
+- **Los detalles devueltos al kit tras la primera captura** (tinta blanca en la tarjeta sólida, ancho de los días,
+  punto medio del chip de filtros, el buscador y el tile lavado de p2) quedaron cubiertos por los lotes del kit
+  hasta el 2026-10-12; la pasada final no muestra diferencias en ellos.
+
