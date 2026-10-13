@@ -36,7 +36,7 @@
     <string name="field_email_placeholder">name@domain.com</string>
     <string name="field_email_invalid">Check the email format.</string>
     <string name="field_password">Password</string>
-    <string name="field_password_placeholder">Your password</string>
+    <string name="field_password_placeholder">••••••••</string>
     <string name="field_password_show">Show</string>
     <string name="field_password_hide">Hide</string>
     <string name="field_password_show_spoken">Show password</string>

@@ -45,7 +45,7 @@
     <string name="field_email_placeholder">nombre@dominio.cl</string>
     <string name="field_email_invalid">Revisa el formato del correo.</string>
     <string name="field_password">Contraseña</string>
-    <string name="field_password_placeholder">Tu contraseña</string>
+    <string name="field_password_placeholder">••••••••</string>
     <string name="field_password_show">Mostrar</string>
     <string name="field_password_hide">Ocultar</string>
     <string name="field_password_show_spoken">Mostrar contraseña</string>
