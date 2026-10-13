@@ -36,6 +36,8 @@ internal fun NewPasswordFields(
     extraError: String? = null,
     /** The dot mask in the empty fields: the sign-up's (2b) only; recovery shows none (the author, 2026-10-13). */
     placeholders: Boolean = true,
+    /** «*» by both titles: the sign-up marks its required fields (the author, 2026-10-13). */
+    required: Boolean = false,
 ) {
     val placeholder = if (placeholders) stringResource(Res.string.field_password_placeholder) else ""
     val reveal = LumeRevealLabels(
@@ -56,6 +58,7 @@ internal fun NewPasswordFields(
         purpose = SensitiveFieldPurpose.CREDENTIAL,
         label = passwordLabel,
         placeholder = placeholder,
+        required = required,
         reveal = reveal,
         revealLook = revealLook,
         newCredential = true,
@@ -79,6 +82,7 @@ internal fun NewPasswordFields(
         purpose = SensitiveFieldPurpose.CREDENTIAL,
         label = stringResource(Res.string.field_password_repeat),
         placeholder = placeholder,
+        required = required,
         reveal = reveal,
         revealLook = revealLook,
         newCredential = true,

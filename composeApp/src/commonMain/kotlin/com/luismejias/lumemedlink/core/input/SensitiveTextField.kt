@@ -172,7 +172,10 @@ internal fun SensitiveTextField(
     maxLength: Int? = null,
     /** What belongs to this field and sits against it — a password's checklist (ADR-0054). */
     below: (@Composable () -> Unit)? = null,
+    /** A required field: «*» by its title (the author, 2026-10-13); its error says the rest. */
+    required: Boolean = false,
 ) {
+    val requirement = if (required) REQUIRED_MARK else null
     val request = kitFieldRequestFor(purpose, format)
     val clear = if (clearable) stringResource(Res.string.field_clear, label) else null
     if (request.masked) {
@@ -186,6 +189,7 @@ internal fun SensitiveTextField(
             revealLook = revealLook,
             newCredential = newCredential,
             below = below,
+            requirement = requirement,
             state = state,
             validation = validation,
             submit = submit,
@@ -199,6 +203,7 @@ internal fun SensitiveTextField(
             placeholder = placeholder,
             modifier = modifier,
             format = LumeDocumentFormat.ChileanRut,
+            requirement = requirement,
             sensitivity = request.sensitivity,
             state = state,
             validation = validation,
@@ -220,6 +225,7 @@ internal fun SensitiveTextField(
             // (the author, 2026-10-13; the kit's §8 names the exemption).
             lines = LumeFieldLines.Single,
             below = below,
+            requirement = requirement,
             clearContentDescription = clear,
             sensitivity = request.sensitivity,
             state = state,
@@ -348,6 +354,8 @@ internal fun SensitivePhoneField(
     onSubmit: (() -> Unit)? = null,
     /** The kit's ⓧ once something is typed, as on [SensitiveTextField]. */
     clearable: Boolean = true,
+    /** «*» by its title, as on [SensitiveTextField]. */
+    required: Boolean = false,
 ) {
     LumePhoneField(
         value = value,
@@ -365,6 +373,7 @@ internal fun SensitivePhoneField(
         ),
         modifier = modifier,
         groups = groups,
+        requirement = if (required) REQUIRED_MARK else null,
         validation = validation,
         submit = submit,
         onSubmit = onSubmit,
@@ -375,3 +384,6 @@ internal fun SensitivePhoneField(
 
 /** What a phone asks of the kit: its value hidden like every field here (ADR-0042). A test keeps it. */
 internal val PHONE_FIELD_SENSITIVITY: LumeFieldSensitivity = LumeFieldSensitivity.Personal
+
+/** How a required field's title is marked. */
+private const val REQUIRED_MARK = "*"

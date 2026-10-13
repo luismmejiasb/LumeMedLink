@@ -62,19 +62,15 @@ import com.luismejias.lumemedlink.resources.field_code
 import com.luismejias.lumemedlink.resources.field_code_clear
 import com.luismejias.lumemedlink.resources.field_email
 import com.luismejias.lumemedlink.resources.field_email_invalid
-import com.luismejias.lumemedlink.resources.field_email_placeholder
 import com.luismejias.lumemedlink.resources.field_first_name
 import com.luismejias.lumemedlink.resources.field_first_surname
 import com.luismejias.lumemedlink.resources.field_mobile
 import com.luismejias.lumemedlink.resources.field_mobile_invalid
-import com.luismejias.lumemedlink.resources.field_mobile_placeholder
 import com.luismejias.lumemedlink.resources.field_name_required
-import com.luismejias.lumemedlink.resources.field_optional
 import com.luismejias.lumemedlink.resources.field_password
 import com.luismejias.lumemedlink.resources.field_phone_invalid
 import com.luismejias.lumemedlink.resources.field_rut
 import com.luismejias.lumemedlink.resources.field_rut_invalid
-import com.luismejias.lumemedlink.resources.field_rut_placeholder
 import com.luismejias.lumemedlink.resources.field_second_name
 import com.luismejias.lumemedlink.resources.field_second_surname
 import com.luismejias.lumemedlink.resources.locked_recover
@@ -166,7 +162,8 @@ internal fun SignUpProfileScreen(
             purpose = SensitiveFieldPurpose.PERSONAL_DATA,
             format = SensitiveFieldFormat.RUT,
             label = stringResource(Res.string.field_rut),
-            placeholder = stringResource(Res.string.field_rut_placeholder),
+            required = true,
+            placeholder = "",
             validation = when {
                 state.rutTaken -> LumeFieldValidation.Error(stringResource(Res.string.sign_up_rut_taken))
                 state.rutValid -> LumeFieldValidation.Valid
@@ -198,11 +195,9 @@ internal fun SignUpProfileScreen(
                 }
             }
         } else {
-            // The names in four, the second of each optional and saying so inside (the author, 2026-10-12). One
-            // under the other at the form's full width, like every other field: LumeEqualRow sizes by each item's
-            // minimum width, which for a field is its text, so a long name widened the column past the screen and
-            // rewrapped the form as it was typed (the author, 2026-10-13).
-            val optional = stringResource(Res.string.field_optional)
+            // The names in four; the required ones carry «*», and no field has a placeholder: the errors say
+            // what is wrong (the author, 2026-10-13). One under the other at the form's full width: LumeEqualRow
+            // sized each item by its text, so a long name widened the column past the screen (2026-10-13).
             SensitiveTextField(
                 value = state.firstName,
                 onValueChange = model::firstNameChanged,
@@ -210,6 +205,7 @@ internal fun SignUpProfileScreen(
                 maxLength = NAME_MAX_LENGTH,
                 format = SensitiveFieldFormat.NAME,
                 label = stringResource(Res.string.field_first_name),
+                required = true,
                 placeholder = "",
                 validation = errorOr(state.firstNameMissing, Res.string.field_name_required),
             )
@@ -220,7 +216,7 @@ internal fun SignUpProfileScreen(
                 maxLength = NAME_MAX_LENGTH,
                 format = SensitiveFieldFormat.NAME,
                 label = stringResource(Res.string.field_second_name),
-                placeholder = optional,
+                placeholder = "",
             )
             SensitiveTextField(
                 value = state.firstSurname,
@@ -229,6 +225,7 @@ internal fun SignUpProfileScreen(
                 maxLength = NAME_MAX_LENGTH,
                 format = SensitiveFieldFormat.NAME,
                 label = stringResource(Res.string.field_first_surname),
+                required = true,
                 placeholder = "",
                 validation = errorOr(state.firstSurnameMissing, Res.string.field_name_required),
             )
@@ -239,7 +236,7 @@ internal fun SignUpProfileScreen(
                 maxLength = NAME_MAX_LENGTH,
                 format = SensitiveFieldFormat.NAME,
                 label = stringResource(Res.string.field_second_surname),
-                placeholder = optional,
+                placeholder = "",
             )
             val chilean = state.mobileDialCode == PhoneNumber.CHILE
             SensitivePhoneField(
@@ -248,7 +245,8 @@ internal fun SignUpProfileScreen(
                 region = LumeRegion.of(state.mobileRegion) ?: LumeRegion.of(CHILE_REGION)!!,
                 onRegionChange = { model.mobileRegionChanged(it.code, it.dialCode) },
                 label = stringResource(Res.string.field_mobile),
-                placeholder = if (chilean) stringResource(Res.string.field_mobile_placeholder) else "",
+                required = true,
+                placeholder = "",
                 groups = if (chilean) PhoneNumber.CHILEAN_MOBILE_GROUPS else null,
                 validation = errorOr(
                     state.mobileInvalid,
@@ -261,7 +259,8 @@ internal fun SignUpProfileScreen(
                 purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                 format = SensitiveFieldFormat.EMAIL,
                 label = stringResource(Res.string.field_email),
-                placeholder = stringResource(Res.string.field_email_placeholder),
+                required = true,
+                placeholder = "",
                 validation = errorOr(state.emailInvalid, Res.string.field_email_invalid),
             )
         }
@@ -331,6 +330,8 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
             onPassword = model::passwordChanged,
             onRepeated = model::repeatedChanged,
             passwordLabel = stringResource(Res.string.field_password),
+            placeholders = false,
+            required = true,
         )
     }
 }
