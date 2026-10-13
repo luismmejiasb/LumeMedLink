@@ -60,6 +60,7 @@
     <string name="password_rule_length">Al menos 8 caracteres</string>
     <string name="password_rule_case">Una mayúscula y una minúscula</string>
     <string name="password_rule_digit">Un número</string>
+    <string name="password_rule_symbol">Un carácter especial (por ejemplo ! # $ ?)</string>
 
     <!-- Connection and server -->
     <string name="offline_title">Sin conexión a internet</string>
@@ -123,8 +124,8 @@
     <string name="sign_up_rut_taken_body">Ingresa con tu contraseña o recupérala. Si no creaste esta cuenta, avísanos.</string>
     <string name="sign_up_password_title">Crea tu contraseña</string>
     <string name="sign_up_password_body">La usarás junto a tu RUT para ingresar.</string>
-    <string name="sign_up_terms_statement">Acepto los [[términos de uso]]</string>
-    <string name="sign_up_data_use_statement">Autorizo el uso de mis datos de contacto según la [[Ley 21.719]]</string>
+    <string name="sign_up_terms_statement">Acepto los [[Términos y Condiciones de Uso]]</string>
+    <string name="sign_up_data_use_statement">Autorizo el uso de mis datos de contacto según la [[Ley 21.719]] (la ley chilena de protección de datos personales)</string>
     <string name="sign_up_required">obligatorio</string>
     <string name="sign_up_code_title">Verifica tu teléfono</string>
     <string name="sign_up_code_body">Te enviamos un código de 6 dígitos al %1$s.</string>

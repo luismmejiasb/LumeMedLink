@@ -51,6 +51,7 @@
     <string name="password_rule_length">At least 8 characters</string>
     <string name="password_rule_case">An uppercase and a lowercase letter</string>
     <string name="password_rule_digit">A number</string>
+    <string name="password_rule_symbol">A special character (e.g. ! # $ ?)</string>
 
     <!-- Connection and server -->
     <string name="offline_title">No internet connection</string>
@@ -114,8 +115,8 @@
     <string name="sign_up_rut_taken_body">Sign in with your password or recover it. If you didn’t create this account, let us know.</string>
     <string name="sign_up_password_title">Create your password</string>
     <string name="sign_up_password_body">You’ll use it with your RUT to sign in.</string>
-    <string name="sign_up_terms_statement">I accept the [[terms of use]]</string>
-    <string name="sign_up_data_use_statement">I authorize the use of my contact details under [[Law 21.719]]</string>
+    <string name="sign_up_terms_statement">I accept the [[Terms and Conditions of Use]]</string>
+    <string name="sign_up_data_use_statement">I authorize the use of my contact details under [[Law 21.719]] (the Chilean personal data protection law)</string>
     <string name="sign_up_required">required</string>
     <string name="sign_up_code_title">Verify your phone</string>
     <string name="sign_up_code_body">We sent a 6-digit code to %1$s.</string>

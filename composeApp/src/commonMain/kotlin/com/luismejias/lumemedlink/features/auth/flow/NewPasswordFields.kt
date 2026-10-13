@@ -23,6 +23,7 @@ import com.luismejias.lumemedlink.resources.field_passwords_differ
 import com.luismejias.lumemedlink.resources.password_rule_case
 import com.luismejias.lumemedlink.resources.password_rule_digit
 import com.luismejias.lumemedlink.resources.password_rule_length
+import com.luismejias.lumemedlink.resources.password_rule_symbol
 import org.jetbrains.compose.resources.stringResource
 
 /** The two password fields and their live rules — 2b and 3c draw the same block. */
@@ -62,6 +63,7 @@ internal fun NewPasswordFields(
                     LumeRequirement(stateOf(rules.longEnough), stringResource(Res.string.password_rule_length)),
                     LumeRequirement(stateOf(rules.mixedCase), stringResource(Res.string.password_rule_case)),
                     LumeRequirement(stateOf(rules.hasDigit), stringResource(Res.string.password_rule_digit)),
+                    LumeRequirement(stateOf(rules.hasSymbol), stringResource(Res.string.password_rule_symbol)),
                 ),
                 metStateDescription = stringResource(Res.string.common_requirement_met),
                 unmetStateDescription = stringResource(Res.string.common_requirement_unmet),

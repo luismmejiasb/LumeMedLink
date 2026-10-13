@@ -30,13 +30,13 @@ fieles al diseño**, y dejar para después qué modelo de acceso del paciente ga
 
 | Se escribe | Resultado |
 | --- | --- |
-| Cualquier RUT válido + `Clave1234` | Ingresa → 1c |
+| Cualquier RUT válido + `Clave1234!` | Ingresa → 1c |
 | Otra contraseña | 1b-e1 con los intentos que quedan; al quinto, 1b-e2 (15 min) |
 | RUT `11.111.111-1` en cualquier paso | Sin conexión (1b-e3 / banner) |
 | RUT `33.333.333-3` al ingresar | 1c → 1c-e1 (biometría no configurada) |
 | RUT `22.222.222-2` al crear cuenta | 2a-e2 (RUT ya registrado) |
 | Código SMS `123456` | Correcto; otro → 2c-e1, y al tercer error o a los 10 min → 2c-e2 |
-| Contraseña nueva igual a `Clave1234` | 3c rechaza (debe ser distinta) |
+| Contraseña nueva igual a `Clave1234!` | 3c rechaza (debe ser distinta) |
 | Código de vínculo `K7Q2M9XA` (se acepta en minúsculas, con espacios o «·») | 4b → 4c |
 | Código de vínculo `PEND1NG0` | 4b → 4b-e1 (en verificación) |
 | Otro código de vínculo | 4a-e1 |

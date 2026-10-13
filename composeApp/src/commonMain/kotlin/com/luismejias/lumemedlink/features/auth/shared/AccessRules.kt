@@ -20,14 +20,21 @@ internal fun rutLooksWrong(typed: String): Boolean =
  * The design's password rules, checked live (2b, 3c). They are the DESIGN's (ADR-0044): wired to an IdP, they
  * must equal its policy or go — a rule shown here and not enforced there is a promise nobody keeps.
  */
-internal data class PasswordRules(val longEnough: Boolean, val mixedCase: Boolean, val hasDigit: Boolean) {
-    val allMet: Boolean get() = longEnough && mixedCase && hasDigit
+internal data class PasswordRules(
+    val longEnough: Boolean,
+    val mixedCase: Boolean,
+    val hasDigit: Boolean,
+    /** At least one character that is neither a letter, a digit nor a space (the author, 2026-10-13). */
+    val hasSymbol: Boolean,
+) {
+    val allMet: Boolean get() = longEnough && mixedCase && hasDigit && hasSymbol
 
     companion object {
         fun of(password: String) = PasswordRules(
             longEnough = password.length >= PASSWORD_MIN_LENGTH,
             mixedCase = password.any { it.isUpperCase() } && password.any { it.isLowerCase() },
             hasDigit = password.any { it.isDigit() },
+            hasSymbol = password.any { !it.isLetterOrDigit() && !it.isWhitespace() },
         )
     }
 }

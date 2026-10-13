@@ -12,7 +12,7 @@ private const val SCRIPTED_LATENCY_MILLIS = 600L
  * here is an incident (§9). The names are the design handoff's own examples.
  */
 internal object AccessScript {
-    const val PASSWORD = "Clave1234"
+    const val PASSWORD = "Clave1234!"
     const val OFFLINE_RUT = "11111111-1"
     const val TAKEN_RUT = "22222222-2"
     const val NO_BIOMETRICS_RUT = "33333333-3"

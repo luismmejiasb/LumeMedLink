@@ -113,8 +113,8 @@ class AccessFlowTest {
         assertEquals(StepOutcome.Advanced, profile.submit())
 
         val credentials = attempt.signUpCredentials
-        credentials.passwordChanged("Synthetic1")
-        credentials.repeatedChanged("Synthetic1")
+        credentials.passwordChanged("Synthetic1!")
+        credentials.repeatedChanged("Synthetic1!")
         assertTrue(credentials.state.value.consentRequired, "the consents are marked once the rest is ready")
         credentials.termsChanged(true)
         credentials.dataUseChanged(true)
@@ -177,8 +177,8 @@ class AccessFlowTest {
             submit()
         }
         attempt.signUpCredentials.apply {
-            passwordChanged("Synthetic1")
-            repeatedChanged("Synthetic1")
+            passwordChanged("Synthetic1!")
+            repeatedChanged("Synthetic1!")
             termsChanged(true)
             dataUseChanged(true)
             submit()
@@ -207,8 +207,8 @@ class AccessFlowTest {
         attempt.newPassword.repeatedChanged(AccessScript.PASSWORD)
         attempt.newPassword.submit()
         assertTrue(attempt.newPassword.state.value.reused)
-        attempt.newPassword.passwordChanged("Distinta123")
-        attempt.newPassword.repeatedChanged("Distinta123")
+        attempt.newPassword.passwordChanged("Distinta123!")
+        attempt.newPassword.repeatedChanged("Distinta123!")
         assertEquals(StepOutcome.Advanced, attempt.newPassword.submit())
         path(AccessRoute.RECOVERY_DONE)
     }
@@ -254,10 +254,13 @@ class AccessFlowTest {
 
     @Test
     fun theDesignsPasswordRules() {
-        assertTrue(PasswordRules.of("Synthetic1").allMet)
-        assertFalse(PasswordRules.of("synthetic1").allMet)
-        assertFalse(PasswordRules.of("Short1").allMet)
-        assertFalse(PasswordRules.of("NoDigitsHere").allMet)
+        assertTrue(PasswordRules.of("Synthetic1!").allMet)
+        assertFalse(PasswordRules.of("synthetic1!").allMet)
+        assertFalse(PasswordRules.of("Short1!").allMet)
+        assertFalse(PasswordRules.of("NoDigitsHere!").allMet)
+        assertFalse(PasswordRules.of("Synthetic1").allMet, "no special character")
+        assertFalse(PasswordRules.of("Synthetic 1").allMet, "a space is not a special character")
+        assertTrue(PasswordRules.of("Synthetic1ñ#").hasSymbol)
     }
 
     @Test
@@ -277,10 +280,10 @@ class AccessFlowTest {
     @Test
     fun nothingTypedIsPrinted() {
         attempt.signIn.rutChanged(RUT)
-        attempt.signIn.passwordChanged("Synthetic1")
+        attempt.signIn.passwordChanged("Synthetic1!")
         attempt.signUpProfile.emailChanged("camila.soto@correo.cl")
         val printed = listOf(attempt.signIn.state.value.toString(), attempt.signUpProfile.state.value.toString())
-        assertTrue(printed.none { "456" in it || "Synthetic1" in it || "camila" in it }, printed.toString())
+        assertTrue(printed.none { "456" in it || "Synthetic1!" in it || "camila" in it }, printed.toString())
     }
 
     @Test
