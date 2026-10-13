@@ -299,16 +299,18 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
                     onGrantedChange = model::termsChanged,
                     text = stringResource(Res.string.sign_up_terms_statement).richRuns(onLink = {}),
                 )
-                LumeConsentRow(
-                    granted = state.acceptedDataUse,
-                    onGrantedChange = model::dataUseChanged,
-                    text = stringResource(Res.string.sign_up_data_use_statement).richRuns(onLink = {}),
-                )
-                // Optional, and never marked missing (ADR-0051 §4): a consent the person cannot refuse is not consent.
+                // Second, between the required two (the author, 2026-10-13), and still optional and saying so (ADR-0051
+                // §4): a consent the person cannot refuse is not consent. Google is named in the privacy notice, not
+                // here (ADR-0052 §9).
                 LumeConsentRow(
                     granted = state.acceptedTelemetry,
                     onGrantedChange = model::telemetryChanged,
                     text = stringResource(Res.string.sign_up_telemetry_statement).richRuns(),
+                )
+                LumeConsentRow(
+                    granted = state.acceptedDataUse,
+                    onGrantedChange = model::dataUseChanged,
+                    text = stringResource(Res.string.sign_up_data_use_statement).richRuns(onLink = {}),
                 )
             }
         },

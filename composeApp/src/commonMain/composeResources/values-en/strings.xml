@@ -600,7 +600,7 @@
     <string name="photo_open_settings">Open Settings</string>
     <string name="photo_not_now">Not now</string>
     <!-- ADR-0051 · Reportes de error -->
-    <string name="sign_up_telemetry_statement">I allow sending error reports and usage statistics to Google, without my name or my appointments · optional</string>
+    <string name="sign_up_telemetry_statement">I allow collecting errors and usage statistics to improve my experience in the app · optional</string>
     <string name="settings_telemetry">Errors and statistics</string>
     <string name="settings_telemetry_body">Sent to Google, without your name or your appointments</string>
 </resources>
