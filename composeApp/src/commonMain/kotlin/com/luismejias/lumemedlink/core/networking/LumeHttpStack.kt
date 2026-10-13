@@ -1,6 +1,5 @@
 package com.luismejias.lumemedlink.core.networking
 
-import com.luismejias.lumemedlink.core.security.SECURITY_CHANNEL_TRANSPORT
 import com.luismejias.lumemedlink.core.security.SecurityEventEmitter
 import com.luismejias.lumemedlink.core.security.SecurityEventKind
 import com.luismejias.lumemedlink.shared.AppError
@@ -79,8 +78,8 @@ private val contractJson = Json { ignoreUnknownKeys = true }
  * **Two of its refusals are security events** (§8.16, contract 0.101.0): an origin it will not send to, and a 2xx that
  * arrived as HTML. Both are told to [securityEvents] as they happen — required, never defaulted, because a default of
  * "nothing" is how a channel looks wired and never carries a thing (task 0018). The security channel's own client is
- * the one exception, and it says so by passing [SECURITY_CHANNEL_TRANSPORT]: behind a captive portal, every report
- * would otherwise be an interstitial that reports itself, for ever.
+ * the one exception, built inside `HttpSecurityEventReporter` where no caller can swap it: behind a captive portal,
+ * every report would otherwise be an interstitial that reports itself, for ever.
  *
  * @param engine injected so production wires [platformHttpEngine] and tests wire MockEngine.
  */

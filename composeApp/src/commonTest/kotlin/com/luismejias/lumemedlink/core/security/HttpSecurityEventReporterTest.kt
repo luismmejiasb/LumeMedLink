@@ -2,13 +2,13 @@ package com.luismejias.lumemedlink.core.security
 
 import com.luismejias.lumemedlink.core.networking.NetworkLogEntry
 import com.luismejias.lumemedlink.core.networking.NetworkLogSink
-import com.luismejias.lumemedlink.core.networking.lumeHttpClient
-import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
@@ -46,19 +46,14 @@ private class ContractDouble(private val reply: (HttpRequestData) -> Pair<HttpSt
     val bodies = mutableListOf<String>()
     val logSink = SilentLogSink()
 
-    fun client(): HttpClient {
+    fun reporter(): HttpSecurityEventReporter {
         val engine = MockEngine { request ->
             received += request
             bodies += request.body.toByteArrayText()
             val (status, body) = reply(request)
             respond(content = body, status = status)
         }
-        return lumeHttpClient(
-            baseUrl = BASE_URL,
-            engine = engine,
-            logSink = logSink,
-            securityEvents = SECURITY_CHANNEL_TRANSPORT,
-        )
+        return HttpSecurityEventReporter(BASE_URL, engine, logSink)
     }
 }
 
@@ -76,7 +71,7 @@ class HttpSecurityEventReporterTest {
     fun aServerErrorIsNotTheCallersProblem() = runTest {
         val double = ContractDouble { HttpStatusCode.InternalServerError to "" }
 
-        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SESSION_UNLOCK_FAILED)
+        double.reporter().report(SecurityEventKind.SESSION_UNLOCK_FAILED)
 
         assertEquals(
             1,
@@ -89,18 +84,18 @@ class HttpSecurityEventReporterTest {
     @Test
     fun aDeadNetworkIsNotTheCallersProblem() = runTest {
         val engine = MockEngine { throw IOException("no route to host") }
-        val client = lumeHttpClient(BASE_URL, engine, SilentLogSink(), securityEvents = SECURITY_CHANNEL_TRANSPORT)
+        val reporter = HttpSecurityEventReporter(BASE_URL, engine, SilentLogSink())
 
         // No assertion needed beyond "this line returns". Every caller of this channel is in the
         // middle of applying a protection (locking a session, refusing an origin, wiping a store);
         // an exception here lands in code written assuming the FIRST failure was the emergency.
-        HttpSecurityEventReporter(client).report(SecurityEventKind.SECURE_STORE_UNREADABLE)
+        reporter.report(SecurityEventKind.SECURE_STORE_UNREADABLE)
     }
 
     @Test
     fun everyKindSurvivesAFailingServer() = runTest {
         val double = ContractDouble { HttpStatusCode.BadRequest to "" }
-        val reporter = HttpSecurityEventReporter(double.client())
+        val reporter = double.reporter()
 
         // Exhaustive by construction: a kind added later is covered the day it is added, which is
         // the same trick SecureStoreKey uses to keep the wipe test honest.
@@ -116,7 +111,7 @@ class HttpSecurityEventReporterTest {
     fun theWireCarriesThePlatformsSpellingNotOurs() = runTest {
         val double = ContractDouble { HttpStatusCode.NoContent to "" }
 
-        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SESSION_UNLOCK_FAILED)
+        double.reporter().report(SecurityEventKind.SESSION_UNLOCK_FAILED)
 
         val body = double.bodies.single()
         assertTrue(
@@ -141,7 +136,7 @@ class HttpSecurityEventReporterTest {
         expected.forEach { (kind, wire) ->
             val double = ContractDouble { HttpStatusCode.NoContent to "" }
 
-            HttpSecurityEventReporter(double.client()).report(kind)
+            double.reporter().report(kind)
 
             val body = double.bodies.single()
             assertTrue(
@@ -160,6 +155,21 @@ class HttpSecurityEventReporterTest {
         assertEquals(names.size, names.toSet().size, "each detection keeps its own name on the wire: $names")
     }
 
+    @Test
+    fun behindACaptivePortalAReportDoesNotReportItself() = runTest {
+        val engine =
+            MockEngine { respond("<html>hotel wifi</html>", headers = headersOf(HttpHeaders.ContentType, "text/html")) }
+        val reporter = HttpSecurityEventReporter(BASE_URL, engine, SilentLogSink())
+
+        reporter.report(SecurityEventKind.SESSION_UNLOCK_FAILED)
+
+        assertEquals(
+            1,
+            engine.requestHistory.size,
+            "the channel's own client must not emit the interstitial it just met: one report, one request",
+        )
+    }
+
     // ── But a cancellation is NOT swallowed ─────────────────────────────────────────────────────
 
     /**
@@ -176,11 +186,11 @@ class HttpSecurityEventReporterTest {
     @Test
     fun aCancelledCallerDoesNotCarryOn() = runTest {
         val engine = MockEngine { awaitCancellation() }
-        val client = lumeHttpClient(BASE_URL, engine, SilentLogSink(), securityEvents = SECURITY_CHANNEL_TRANSPORT)
+        val reporter = HttpSecurityEventReporter(BASE_URL, engine, SilentLogSink())
         var reachedTheNextLine = false
 
         val job = launch {
-            HttpSecurityEventReporter(client).report(SecurityEventKind.SESSION_ENDED_UNRECOVERABLE)
+            reporter.report(SecurityEventKind.SESSION_ENDED_UNRECOVERABLE)
             reachedTheNextLine = true
         }
         yield()
@@ -199,7 +209,7 @@ class HttpSecurityEventReporterTest {
         var reachedTheNextLine = false
 
         val job = launch {
-            HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SESSION_UNLOCK_FAILED)
+            double.reporter().report(SecurityEventKind.SESSION_UNLOCK_FAILED)
             reachedTheNextLine = true
         }
         job.join()
@@ -216,7 +226,7 @@ class HttpSecurityEventReporterTest {
     fun onlyTheOpaqueKindCrosses() = runTest {
         val double = ContractDouble { HttpStatusCode.Accepted to "" }
 
-        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SECURE_STORE_UNREADABLE)
+        double.reporter().report(SecurityEventKind.SECURE_STORE_UNREADABLE)
 
         val body = double.bodies.single()
         assertTrue(
@@ -240,7 +250,7 @@ class HttpSecurityEventReporterTest {
 
         // A TRANSLATABLE kind on purpose: an untranslatable one sends nothing, and this test is about
         // what happens on the wire once something is actually sent.
-        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SESSION_UNLOCK_FAILED)
+        double.reporter().report(SecurityEventKind.SESSION_UNLOCK_FAILED)
 
         assertEquals(HttpMethod.Post, double.received.single().method)
         assertEquals(
@@ -257,7 +267,7 @@ class HttpSecurityEventReporterTest {
     fun theRequestIsLoggedWithoutABody() = runTest {
         val double = ContractDouble { HttpStatusCode.Accepted to "" }
 
-        HttpSecurityEventReporter(double.client()).report(SecurityEventKind.SECURE_STORE_UNREADABLE)
+        double.reporter().report(SecurityEventKind.SECURE_STORE_UNREADABLE)
 
         val logged = double.logSink.entries.single().toString()
         assertFalse(

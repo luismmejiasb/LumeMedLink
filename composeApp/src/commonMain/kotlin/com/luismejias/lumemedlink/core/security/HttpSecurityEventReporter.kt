@@ -1,6 +1,9 @@
 package com.luismejias.lumemedlink.core.security
 
+import com.luismejias.lumemedlink.core.networking.NetworkLogSink
+import com.luismejias.lumemedlink.core.networking.lumeHttpClient
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -57,7 +60,13 @@ private data class SecurityEventBody(@SerialName("kind") val kind: PlatformSecur
  * becomes three — the backend has no idempotency key for this route (trap T13). An event that does
  * not arrive is lost, on purpose, and the platform's view of this app is best-effort by design.
  */
-internal class HttpSecurityEventReporter(private val client: HttpClient) : SecurityEventReporter {
+internal class HttpSecurityEventReporter(baseUrl: String, engine: HttpClientEngine, logSink: NetworkLogSink) :
+    SecurityEventReporter {
+    /**
+     * The channel builds its OWN client, so no caller can hand it one that reports the stack's events back into it:
+     * behind a captive portal each report would be an interstitial that reports itself, without end.
+     */
+    private val client: HttpClient = lumeHttpClient(baseUrl, engine, logSink, securityEvents = OWN_TRANSPORT_EVENTS)
 
     override suspend fun report(kind: SecurityEventKind) {
         try {
@@ -93,3 +102,11 @@ internal class HttpSecurityEventReporter(private val client: HttpClient) : Secur
         }
     }
 }
+
+/**
+ * What the channel's own transport does with the stack's security events: nothing, on purpose (see the class). Private,
+ * so no other client can borrow it and quietly undo `lumeHttpClient`'s required emitter. Behind a portal that answers
+ * every request, the interstitial event is lost here too — the channel has no queue (above) — so that event reaches the
+ * platform only from networks that intercept selectively.
+ */
+private val OWN_TRANSPORT_EVENTS: SecurityEventEmitter = SecurityEventEmitter { }

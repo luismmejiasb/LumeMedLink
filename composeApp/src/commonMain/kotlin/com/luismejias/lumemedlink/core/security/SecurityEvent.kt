@@ -79,11 +79,3 @@ internal fun interface SecurityEventEmitter {
 /** Each emission becomes one report, launched in [scope] — the owner's lifetime, not the process's. */
 internal fun SecurityEventReporter.emittingIn(scope: CoroutineScope): SecurityEventEmitter =
     SecurityEventEmitter { kind -> scope.launch { report(kind) } }
-
-/**
- * What the security channel's OWN transport does with the stack's security events: nothing, on purpose. The channel
- * posts through the hardened stack like every request, and the stack reports an interstitial as a security event; were
- * that event sent through the same client, a captive portal would turn each report into another report, without end.
- * The two network kinds are still reported — by every other client of the app.
- */
-internal val SECURITY_CHANNEL_TRANSPORT: SecurityEventEmitter = SecurityEventEmitter { }
