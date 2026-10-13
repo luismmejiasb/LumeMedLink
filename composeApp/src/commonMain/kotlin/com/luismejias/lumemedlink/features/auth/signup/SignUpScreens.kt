@@ -208,6 +208,7 @@ internal fun SignUpProfileScreen(
                 onValueChange = model::firstNameChanged,
                 purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                 maxLength = NAME_MAX_LENGTH,
+                format = SensitiveFieldFormat.NAME,
                 label = stringResource(Res.string.field_first_name),
                 placeholder = "",
                 validation = errorOr(state.firstNameMissing, Res.string.field_name_required),
@@ -217,6 +218,7 @@ internal fun SignUpProfileScreen(
                 onValueChange = model::secondNameChanged,
                 purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                 maxLength = NAME_MAX_LENGTH,
+                format = SensitiveFieldFormat.NAME,
                 label = stringResource(Res.string.field_second_name),
                 placeholder = optional,
             )
@@ -225,6 +227,7 @@ internal fun SignUpProfileScreen(
                 onValueChange = model::firstSurnameChanged,
                 purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                 maxLength = NAME_MAX_LENGTH,
+                format = SensitiveFieldFormat.NAME,
                 label = stringResource(Res.string.field_first_surname),
                 placeholder = "",
                 validation = errorOr(state.firstSurnameMissing, Res.string.field_name_required),
@@ -234,6 +237,7 @@ internal fun SignUpProfileScreen(
                 onValueChange = model::secondSurnameChanged,
                 purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                 maxLength = NAME_MAX_LENGTH,
+                format = SensitiveFieldFormat.NAME,
                 label = stringResource(Res.string.field_second_surname),
                 placeholder = optional,
             )

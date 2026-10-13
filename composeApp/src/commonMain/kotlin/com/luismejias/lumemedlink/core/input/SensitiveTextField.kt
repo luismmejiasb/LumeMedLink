@@ -49,8 +49,14 @@ internal enum class SensitiveFieldPurpose {
 
 /** Which keyboard a personal datum needs. A credential ignores it: it is always the password keyboard. */
 internal enum class SensitiveFieldFormat {
-    /** Free text: a name, an address. */
+    /** Free text: what is neither a proper name nor a format below. */
     TEXT,
+
+    /**
+     * A proper name: a given name, a surname, an address. Each word starts with a capital, still without corrections
+     * (the author, 2026-10-13): the capital teaches the keyboard nothing, the corrections are what would.
+     */
+    NAME,
     EMAIL,
     PHONE,
 
@@ -96,13 +102,14 @@ internal fun kitFieldRequestFor(purpose: SensitiveFieldPurpose, format: Sensitiv
         SensitiveFieldPurpose.PERSONAL_DATA -> KitFieldRequest(
             masked = false,
             keyboard = when (format) {
-                SensitiveFieldFormat.TEXT -> LumeFieldKeyboard.Default
+                SensitiveFieldFormat.TEXT, SensitiveFieldFormat.NAME -> LumeFieldKeyboard.Default
                 SensitiveFieldFormat.EMAIL -> LumeFieldKeyboard.Email
                 SensitiveFieldFormat.PHONE -> LumeFieldKeyboard.Phone
                 // The document field decides its own keyboard; this value is not used for it.
                 SensitiveFieldFormat.RUT -> LumeFieldKeyboard.Default
             },
-            textCase = LumeTextCase.Verbatim,
+            // Names: a capital per word, no corrections. Everything else, verbatim.
+            textCase = if (format == SensitiveFieldFormat.NAME) LumeTextCase.Names else LumeTextCase.Verbatim,
             document = format == SensitiveFieldFormat.RUT,
             sensitivity = LumeFieldSensitivity.Personal,
         )

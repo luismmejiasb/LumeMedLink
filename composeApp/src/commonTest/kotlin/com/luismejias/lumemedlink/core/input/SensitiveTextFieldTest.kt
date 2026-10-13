@@ -11,14 +11,15 @@ import kotlin.test.assertTrue
 class SensitiveTextFieldTest {
 
     @Test
-    fun everyFieldIsTypedVerbatim() {
-        // Verbatim is the only case the kit types without capitals AND without corrections; the
-        // other two keep the platform's corrections, which is how a typed value enters the
-        // keyboard's vocabulary (ADR-0013). Every purpose, every format.
+    fun noFieldAsksForCorrections() {
+        // Verbatim and Names are the kit's two cases without corrections; the other two keep the platform's,
+        // which is how a typed value enters the keyboard's vocabulary (ADR-0013). Every purpose, every format:
+        // only a personal datum that is a proper name gets Names, its capitals; everything else, Verbatim.
         SensitiveFieldPurpose.entries.forEach { purpose ->
             SensitiveFieldFormat.entries.forEach { format ->
+                val names = purpose == SensitiveFieldPurpose.PERSONAL_DATA && format == SensitiveFieldFormat.NAME
                 assertEquals(
-                    LumeTextCase.Verbatim,
+                    if (names) LumeTextCase.Names else LumeTextCase.Verbatim,
                     kitFieldRequestFor(purpose, format).textCase,
                     "$purpose/$format asks the kit for a keyboard that learns",
                 )
