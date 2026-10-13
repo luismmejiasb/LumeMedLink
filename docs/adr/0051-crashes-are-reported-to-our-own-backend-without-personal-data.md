@@ -1,6 +1,10 @@
 # ADR-0051 — Crashes are reported to our own backend, without personal data
 
-- **Status**: Accepted (2026-10-12) — the author's decisions of this date, taken by form after weighing Crashlytics
+- **Status**: **Derogated by ADR-0052 (2026-10-13)**: the author lifted the Firebase prohibition and Crashlytics
+  replaces this report. Two of its decisions survive there: a crash travels without its message (point 1), and the
+  consent is optional and can be withdrawn (point 4). The capture, the queue and the transport are removed by task
+  `0032`, and request `0009` is withdrawn. What follows is the record as accepted.
+- **Was**: Accepted (2026-10-12) — the author's decisions of this date, taken by form after weighing Crashlytics
   against a report of our own. The client half is **built** (task `0031`, 2026-10-12) and sends nothing yet
   (`NoEndpointCrashReportSender`); the backend half waits for `docs/backend-requests/0009`, written and **not sent**,
   while the author keeps requests to the backend paused.

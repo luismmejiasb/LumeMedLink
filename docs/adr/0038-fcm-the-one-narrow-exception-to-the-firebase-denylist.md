@@ -1,6 +1,9 @@
 # ADR-0038 — FCM: the one narrow exception to the Firebase denylist
 
-- **Status**: Accepted (2026-10-07). The decision is the author's, of 2026-09-26 (ADR-0036 point 3: FCM for
+- **Status**: **Point 1 superseded by ADR-0052 (2026-10-13)**: Firebase is no longer denied as a group, so the
+  artifact-by-artifact exception gives way to ADR-0052's five products. Points 2 to 5 (the merged permissions, the
+  push slice's conditions, imports only in `core/`, pre-auth surfaces) stay in force.
+- **Was**: Accepted (2026-10-07). The decision is the author's, of 2026-09-26 (ADR-0036 point 3: FCM for
   Android, together with APNs); this ADR writes its conditions and controls, as task `0024` asks, **before**
   any Firebase artifact enters a lockfile.
 - **Related**: §8.1 and §8.8 of the constitution, ADR-0012 (pre-auth surfaces), ADR-0016 (merged-manifest

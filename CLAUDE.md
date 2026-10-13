@@ -59,6 +59,7 @@ Cambiar una exige ADR nuevo que derogue al anterior (§10):
 | Idiomas | Código/comentarios/commits/ADRs en **inglés**; constitución/WORKPLAN/PROGRESS/bitácora en **español** | §11, convención de la familia. |
 | Cómo se mide una ventana de tiempo | **Dos relojes, y cierra el que llegue primero** — el de pared nombra un instante (expiración de token), el de tiempo transcurrido mide una duración (inactividad), y la ventana usa el mayor de los dos transcurridos | ADR-0032 (2026-09-21). El reloj de pared es un *ajuste*: medida sólo con él, la ventana de inactividad se apagaba atrasando la hora del teléfono. |
 | Cómo afirma un gate | **El mecanismo, en el lugar donde corre** — la llamada y su dirección, en `src/main`, con comentarios y literales despojados por tokenizador y el XML parseado; y el ensayo con cebo es un artefacto que corre en CI | ADR-0029 (2026-09-21). Nace de dos gates que estuvieron verdes con su control borrado desde que nacieron: F1/F3 satisfechos por un test que no corre, F6/F12 por un comentario XML de cuatro líneas. |
+| Telemetría | **Firebase, acotado**: Crashlytics, Analytics, Remote Config, Messaging y App Distribution, con consentimiento y catálogo cerrado | ADR-0052 (2026-10-13, decisión del autor), que derogó el default-deny de §8.1 y la ADR-0051. La base corregida queda en la ADR: esta app **sí** maneja datos que revelan salud (§1.0), y el riesgo es lo que se manda, no el SDK. |
 | Estado del ecosistema | **Un solo tablero**, en `../lumemed-cloud-platform/docs/ECOSYSTEM-STATUS.md`. La fila de este repo **ya está ahí** (autorizada por el autor, agregada el 2026-08-20) | §1.1. |
 
 ---
@@ -229,7 +230,8 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
   redirects silenciosos, logging **redactado**, retry acotado sólo en GET, mapeo RFC 9457 a un modelo
   de error propio.
 - **Cero salida de red fuera del stack**: ni `HttpURLConnection`, ni OkHttp suelto, ni `URLSession`
-  en el lado iOS. Imágenes remotas (la foto de perfil): los bytes pasan por el stack, la vista recibe
+  en el lado iOS. **Una excepción declarada**: los SDK de Firebase hablan con Google por su propio transporte
+  (ADR-0052 §10) — jamás llevan nuestros tokens ni llegan a nuestro backend. Imágenes remotas (la foto de perfil): los bytes pasan por el stack, la vista recibe
   el bitmap — espejo del §7 de LumeMed y por la misma razón.
 - **Android además lo declara al sistema** (aterrizado en F12/ADR-0016, y hasta entonces esta línea
   afirmaba un control que **no existía**): `networkSecurityConfig` con cleartext negado **y anclas de
@@ -250,11 +252,14 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 > doctrina que finge que Android es iOS protege a medias en los dos.
 
 1. **Datos personales jamás en canales laterales.** Ni en logs (facade redactor, único punto de
-   logging), ni en nombres de archivo, ni en analytics. **Default-deny de SDKs de crash/analytics** —
-   idéntico al §8.1 de LumeMed y más urgente aquí: con el IdP en Identity Platform, Firebase
-   Analytics/Crashlytics está «a una línea» en Android. Desde S0.2 el freno es doble y con gate:
-   `check-dependency-allowlist.sh` (denylist nombrado: Firebase, GMS, Sentry, Bugsnag, ACRA) +
-   `ForbiddenImport` — ambos vistos rojos con cebo (§9).
+   logging), ni en nombres de archivo, ni en analytics. **Firebase está permitido, acotado** (ADR-0052,
+   decisión del autor del 2026-10-13, que derogó el default-deny que esta línea fijaba desde S0.2):
+   Crashlytics, Analytics sin identificador publicitario, Remote Config, Cloud Messaging y App
+   Distribution, cada uno por sus artefactos. Crashlytics y Analytics **sólo con consentimiento**;
+   Analytics manda un **catálogo cerrado** (sin parámetros libres, sin user ID, jamás médico,
+   especialidad, clínica ni fecha — el mecanismo del caso GoodRx); un crash viaja **sin su mensaje**.
+   El resto de Firebase y los SDK de terceros (Sentry, Bugsnag, ACRA…) **siguen negados** por nombre en
+   `check-dependency-allowlist.sh`, y `ForbiddenImport` deja a Firebase sólo dentro de `core/`.
 2. **AuthN vía Identity Platform.** Médicos: su misma cuenta, MFA TOTP obligatoria. Pacientes: la
    política la fija la ADR del backend que aún no existe (ADR-0006) — esta constitución sólo fija el
    piso: jamás auth casera, tokens de acceso cortos, refresh con rotación.
@@ -299,9 +304,9 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
    distintas y la UI usa la que corresponde. Derechos del titular como flujo de producto: ADR cuando
    abra la fase paciente. **Nombrada no es implementada** — esta cláusula es aspiracional hasta que
    exista su ADR y su checklist por feature.
-8. **Supply chain**: dependencias mínimas, pinneadas por version catalog + lockfile, allowlist con
-   denylist nombrado (Firebase Analytics/Crashlytics, Sentry, y toda librería de red/imágenes fuera
-   del stack — espejo del gate de LumeMed §9).
+8. **Supply chain**: dependencias mínimas, pinneadas por version catalog + lockfile (y
+   `Package.resolved` en iOS), allowlist con denylist nombrado (los productos de Firebase fuera de
+   ADR-0052, Sentry, y toda librería de red/imágenes fuera del stack — espejo del gate de LumeMed §9).
 9. **Portapapeles**: datos personales (RUT, teléfono) **mostrados en pantalla** no se copian al
    portapapeles general; **dentro de un campo editable sí** — lo que la persona escribió se puede
    copiar y pegar (decisión del autor del 2026-10-06, enmienda de ADR-0013, porque a un paciente le

@@ -1,6 +1,10 @@
 # Encargo al backend — reportes de crash de LumeMedLink, sin datos personales
 
-> **Estado: escrito y NO enviado.** El autor pausó los pedidos al backend desde este repo (2026-10-11); éste espera a
+> **Estado: RETIRADO, jamás enviado (2026-10-13).** El autor derogó la prohibición de Firebase (ADR-0052 de
+> LumeMedLink) y Crashlytics reemplaza a este reporte; el backend no tiene nada que construir. Se conserva como
+> registro.
+>
+> **Antes:** escrito y NO enviado. El autor pausó los pedidos al backend desde este repo (2026-10-11); éste espera a
 > que los reabra. Nace de ADR-0051 de LumeMedLink (2026-10-12), que eligió reportes propios en vez de Crashlytics.
 
 ---
