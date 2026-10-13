@@ -1,7 +1,8 @@
 # 0033 · Los pasos de formulario como `LumeForm`
 
 > **Estado:** PENDING (abierta 2026-10-13) · ADR-0054 · `LumeForm` llegó al kit el mismo día (`6d72255` de
-> LumeUIComposer). **Migradas: 2a, 2b y 3c.** Faltan las de abajo, cada una por una razón.
+> LumeUIComposer). **Todas las pantallas con campos ya son `LumeForm`** (1b, 2a, 2b, 2c, 3a, 3b, 3c y las dos del
+> médico). Falta el gate del punto 3 y verlo en iOS.
 
 ## De dónde sale
 
@@ -66,3 +67,17 @@ regla en la constitución (§5).
     excepción a la regla;
   - en 1b, «Ingresar» pasa a la acción fija y el enlace va debajo del botón, en un slot nuevo bajo la acción.
   - Se migran cuando el kit los entregue.
+
+## Cierre de la migración (2026-10-13, tarde)
+
+- El kit entregó en `7b7c1eb`:
+  - ningún campo reserva la línea de mensaje;
+  - 12 dp entre campos;
+  - `belowAction`.
+  - También trajo un `alignment` centrado, pero **no hacía falta**: las pantallas «centradas» van arriba, y lo centrado
+    es su `LumeStack` en horizontal. Siguen así dentro de un `LumeForm` alineado arriba. El error de descripción fue de
+    esta sesión, y se le avisó al kit.
+- **1b:** «Ingresar» quedó en la acción fija, con el enlace en `belowAction`.
+- **3a:** «Enviar código», que iba debajo del campo, pasó a la acción fija. Es un cambio de diseño que pide la regla.
+- **2c, 3b y el código del médico (también el ya usado):** pasaron a `LumeForm` con su `LumeStack`.
+- Vistas en el emulador: 1b, 2a y 3a, sin caídas. **Falta:** el gate del punto 3 y la verificación en iOS.

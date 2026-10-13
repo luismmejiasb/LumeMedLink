@@ -8,10 +8,9 @@ import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
-import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeFieldGroup
-import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
+import cl.lume.uicomposer.components.LumeForm
 import cl.lume.uicomposer.components.LumeIconTile
 import cl.lume.uicomposer.components.LumeIconTileSize
 import cl.lume.uicomposer.components.LumeLink
@@ -83,10 +82,19 @@ internal fun SignInScreen(
 ) {
     val state by model.state.collectAsState()
     val wrong = state.wrongAttemptsLeft
-    LumeContainer(
-        scroll = LumeContainerScroll.Scrollable,
-        // «¿No tienes cuenta? Créala» rests at the foot of the screen, as 1b draws it.
+    LumeForm(
+        title = null,
         action = {
+            AccessPrimaryButton(
+                title = stringResource(if (state.offline) Res.string.common_retry else Res.string.sign_in_action),
+                loadingMessage = stringResource(Res.string.sign_in_running),
+                enabled = state.canSubmit,
+                retryEpoch = retryEpoch,
+                run = model::submit,
+            )
+        },
+        // «¿No tienes cuenta? Créala» rests under the pinned action, as 1b draws it (ADR-0054).
+        belowAction = {
             LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Center) {
                 LumeStack(
                     axis = LumeStackAxis.Horizontal,
@@ -122,7 +130,6 @@ internal fun SignInScreen(
                     } else {
                         LumeFieldValidation.Neutral
                     },
-                    submit = LumeFieldSubmit.Next,
                 )
                 SensitiveTextField(
                     value = state.password,
@@ -143,7 +150,6 @@ internal fun SignInScreen(
                     } else {
                         LumeFieldValidation.Neutral
                     },
-                    submit = LumeFieldSubmit.Go,
                 )
             }
             if (!state.offline) {
@@ -151,13 +157,6 @@ internal fun SignInScreen(
                     LumeLink(title = stringResource(Res.string.sign_in_forgot), onClick = onForgot)
                 }
             }
-            AccessPrimaryButton(
-                title = stringResource(if (state.offline) Res.string.common_retry else Res.string.sign_in_action),
-                loadingMessage = stringResource(Res.string.sign_in_running),
-                enabled = state.canSubmit,
-                retryEpoch = retryEpoch,
-                run = model::submit,
-            )
         }
     }
 }

@@ -38,8 +38,10 @@ screen at a time would not fix them for the next screen.
   is made now: the consents are grouped tighter.
 - **Platform limit:** the keyboard key cannot read "Continuar". Compose exposes only the action (`ImeAction.Done`), and
   the keyboard draws its own symbol for it.
-- Single-datum screens that are centred (codes, the recovery RUT) stay centred: the author asked the kit for a
-  centred `LumeForm` instead of exempting them. On sign-in, the link goes under the pinned action; that is a kit
-  slot as well (2026-10-13).
+- On sign-in, the link goes under the pinned action, in the kit's `belowAction` slot. The single-datum screens
+  (codes, the recovery RUT) keep their horizontally centred stack inside a top-aligned `LumeForm`. Their primary
+  action is pinned now, including 3a's, which used to sit under its field (2026-10-13).
+- The kit stopped reserving a field's message line, and a form's fields sit 12 dp apart. An error now pushes what is
+  under it: the author accepted that the form moves (2026-10-13).
 - No gate checks this rule yet: it stays **[manual]** until `LumeForm` exists. A gate would then look for
   `LumeContainer` around a field in `features/`.

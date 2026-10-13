@@ -16,8 +16,8 @@ import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeFieldState
-import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
+import cl.lume.uicomposer.components.LumeForm
 import cl.lume.uicomposer.components.LumeListAccessory
 import cl.lume.uicomposer.components.LumeListRow
 import cl.lume.uicomposer.components.LumeListRowTextStyle
@@ -82,8 +82,8 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun DoctorCodeScreen(model: DoctorLinkModel, retryEpoch: Int, onBack: (() -> Unit)?) {
     val state by model.codeState.collectAsState()
-    LumeContainer(
-        scroll = LumeContainerScroll.Scrollable,
+    LumeForm(
+        title = null,
         action = {
             AccessPrimaryButton(
                 title = stringResource(if (state.offline) Res.string.common_retry else Res.string.doctor_link_action),
@@ -110,7 +110,6 @@ internal fun DoctorCodeScreen(model: DoctorLinkModel, retryEpoch: Int, onBack: (
                 purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                 label = stringResource(Res.string.doctor_link_field),
                 placeholder = stringResource(Res.string.doctor_link_placeholder),
-                submit = LumeFieldSubmit.Go,
             )
         }
     }
@@ -120,8 +119,8 @@ internal fun DoctorCodeScreen(model: DoctorLinkModel, retryEpoch: Int, onBack: (
 @Composable
 internal fun DoctorCodeSpentScreen(model: DoctorLinkModel, onBack: (() -> Unit)?) {
     val state by model.codeState.collectAsState()
-    LumeContainer(
-        scroll = LumeContainerScroll.Scrollable,
+    LumeForm(
+        title = null,
         action = {
             ResultActions(primary = stringResource(Res.string.doctor_spent_retry), onPrimary = model::typeAnother)
         },

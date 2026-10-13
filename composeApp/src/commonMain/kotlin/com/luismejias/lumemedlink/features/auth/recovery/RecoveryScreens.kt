@@ -5,8 +5,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
-import cl.lume.uicomposer.components.LumeContainerScroll
-import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
 import cl.lume.uicomposer.components.LumeForm
 import cl.lume.uicomposer.components.LumeStack
@@ -62,7 +60,18 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun RecoveryRutScreen(model: RecoveryRutModel, retryEpoch: Int, onBack: (() -> Unit)?) {
     val state by model.state.collectAsState()
-    LumeContainer(scroll = LumeContainerScroll.Scrollable) {
+    LumeForm(
+        title = null,
+        action = {
+            AccessPrimaryButton(
+                title = stringResource(if (state.offline) Res.string.common_retry else Res.string.recovery_send),
+                loadingMessage = stringResource(Res.string.recovery_sending),
+                enabled = state.canSubmit,
+                retryEpoch = retryEpoch,
+                run = model::submit,
+            )
+        },
+    ) {
         LumeStack(spacing = { large }) {
             AccessBack(onBack)
             OfflineBanner(state.offline)
@@ -83,14 +92,6 @@ internal fun RecoveryRutScreen(model: RecoveryRutModel, retryEpoch: Int, onBack:
                 } else {
                     LumeFieldValidation.Neutral
                 },
-                submit = LumeFieldSubmit.Go,
-            )
-            AccessPrimaryButton(
-                title = stringResource(if (state.offline) Res.string.common_retry else Res.string.recovery_send),
-                loadingMessage = stringResource(Res.string.recovery_sending),
-                enabled = state.canSubmit,
-                retryEpoch = retryEpoch,
-                run = model::submit,
             )
         }
     }
@@ -103,8 +104,8 @@ internal fun RecoveryCodeScreen(model: RecoveryCodeModel, clock: Clock, retryEpo
     val entry = state.entry
     val wrong = entry.wrongAttemptsLeft
     val expiresIn = secondsUntil(state.dispatch?.expiresAtEpochMillis, clock) ?: 0L
-    LumeContainer(
-        scroll = LumeContainerScroll.Scrollable,
+    LumeForm(
+        title = null,
         action = {
             AccessPrimaryButton(
                 title = stringResource(if (entry.offline) Res.string.common_retry else Res.string.common_continue),

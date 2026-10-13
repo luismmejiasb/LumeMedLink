@@ -13,7 +13,6 @@ import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeConsentRow
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
-import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeFieldValidation
 import cl.lume.uicomposer.components.LumeForm
 import cl.lume.uicomposer.components.LumeLink
@@ -330,8 +329,8 @@ internal fun SignUpCodeScreen(model: SignUpCodeModel, clock: Clock, retryEpoch: 
     val scope = rememberCoroutineScope()
     val wrong = state.entry.wrongAttemptsLeft
     val resendIn = secondsUntil(state.dispatch?.resendAvailableAtEpochMillis, clock) ?: 0L
-    LumeContainer(
-        scroll = LumeContainerScroll.Scrollable,
+    LumeForm(
+        title = null,
         action = {
             AccessPrimaryButton(
                 title = stringResource(if (state.entry.offline) Res.string.common_retry else Res.string.sign_up_create),
