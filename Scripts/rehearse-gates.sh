@@ -78,6 +78,27 @@ bait() {
 
 echo "rehearsing gates against bait..."
 
+# ── Compose resources must reach the APK (2026-10-12): the line deleted, commented out, or false ──
+bait "Android resources line deleted from the KMP target" check-compose-resources-packaging.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/build.gradle.kts"
+s = p.read_text()
+assert "androidResources { enable = true }" in s
+p.write_text(s.replace("androidResources { enable = true }", ""))
+'
+bait "Android resources line commented out" check-compose-resources-packaging.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/build.gradle.kts"
+s = p.read_text()
+p.write_text(s.replace("androidResources { enable = true }", "// androidResources { enable = true }"))
+'
+bait "Android resources turned off" check-compose-resources-packaging.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/build.gradle.kts"
+s = p.read_text()
+p.write_text(s.replace("androidResources { enable = true }", "androidResources { enable = false }"))
+'
+
 # ── The manifest: a parser must not be foolable by a comment or by the wrong element ────────────
 COMMENT_BAIT='
 import sys, pathlib
