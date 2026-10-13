@@ -126,7 +126,7 @@
     <string name="sign_up_password_body">La usarás junto a tu RUT para ingresar.</string>
     <string name="sign_up_terms_statement">Acepto los [[Términos y Condiciones de Uso]]</string>
     <string name="sign_up_data_use_statement">Autorizo el uso de mis datos de contacto según la [[Ley 21.719]] (la ley chilena de protección de datos personales)</string>
-    <string name="sign_up_required">obligatorio</string>
+    <string name="sign_up_consents_needed">Acepta las condiciones obligatorias para continuar.</string>
     <string name="sign_up_code_title">Verifica tu teléfono</string>
     <string name="sign_up_code_body">Te enviamos un código de 6 dígitos al %1$s.</string>
     <string name="sign_up_code_resend_in">¿No te llegó? Reenviar en %1$s</string>

@@ -117,7 +117,7 @@
     <string name="sign_up_password_body">You’ll use it with your RUT to sign in.</string>
     <string name="sign_up_terms_statement">I accept the [[Terms and Conditions of Use]]</string>
     <string name="sign_up_data_use_statement">I authorize the use of my contact details under [[Law 21.719]] (the Chilean personal data protection law)</string>
-    <string name="sign_up_required">required</string>
+    <string name="sign_up_consents_needed">Accept the required conditions to continue.</string>
     <string name="sign_up_code_title">Verify your phone</string>
     <string name="sign_up_code_body">We sent a 6-digit code to %1$s.</string>
     <string name="sign_up_code_resend_in">Didn’t get it? Resend in %1$s</string>

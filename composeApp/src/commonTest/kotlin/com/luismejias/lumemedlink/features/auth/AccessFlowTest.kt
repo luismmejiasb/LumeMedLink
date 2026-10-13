@@ -116,7 +116,7 @@ class AccessFlowTest {
         val credentials = attempt.signUpCredentials
         credentials.passwordChanged("Synthetic1!")
         credentials.repeatedChanged("Synthetic1!")
-        assertTrue(credentials.state.value.consentRequired, "the consents are marked once the rest is ready")
+        assertTrue(credentials.state.value.consentRequired, "the missing consents are named once the rest is ready")
         credentials.termsChanged(true)
         credentials.dataUseChanged(true)
         assertEquals(StepOutcome.Advanced, credentials.submit())

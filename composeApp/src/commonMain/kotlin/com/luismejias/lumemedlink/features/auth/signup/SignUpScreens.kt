@@ -9,6 +9,8 @@ import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonWidth
+import cl.lume.uicomposer.components.LumeCallout
+import cl.lume.uicomposer.components.LumeCalloutStyle
 import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeConsentRow
 import cl.lume.uicomposer.components.LumeContainer
@@ -81,6 +83,7 @@ import com.luismejias.lumemedlink.resources.sign_up_code_body
 import com.luismejias.lumemedlink.resources.sign_up_code_resend
 import com.luismejias.lumemedlink.resources.sign_up_code_resend_in
 import com.luismejias.lumemedlink.resources.sign_up_code_title
+import com.luismejias.lumemedlink.resources.sign_up_consents_needed
 import com.luismejias.lumemedlink.resources.sign_up_create
 import com.luismejias.lumemedlink.resources.sign_up_creating
 import com.luismejias.lumemedlink.resources.sign_up_data_body
@@ -91,7 +94,6 @@ import com.luismejias.lumemedlink.resources.sign_up_done_title
 import com.luismejias.lumemedlink.resources.sign_up_done_verified
 import com.luismejias.lumemedlink.resources.sign_up_password_body
 import com.luismejias.lumemedlink.resources.sign_up_password_title
-import com.luismejias.lumemedlink.resources.sign_up_required
 import com.luismejias.lumemedlink.resources.sign_up_rut_taken
 import com.luismejias.lumemedlink.resources.sign_up_rut_taken_body
 import com.luismejias.lumemedlink.resources.sign_up_rut_taken_title
@@ -262,11 +264,10 @@ internal fun SignUpProfileScreen(
     }
 }
 
-/** 2b, with 2b-e1 (no match; the Ley 21.719 consent marked required). */
+/** 2b, with 2b-e1 (no match; a consent still missing). */
 @Composable
 internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: Int, onBack: (() -> Unit)?) {
     val state by model.state.collectAsState()
-    val required = stringResource(Res.string.sign_up_required)
     LumeForm(
         title = null,
         action = {
@@ -281,21 +282,27 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
         footer = {
             // The consents are part of "Continuar": pinned over it, under the keyboard (the author, ADR-0054).
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
+                // One message for the missing consents, no row marked (the author, 2026-10-13). The optional one
+                // keeps saying it is optional: hiding that would make its consent a deceived one (Ley 21.719,
+                // ADR-0052), so it was not built.
+                if (state.consentRequired) {
+                    LumeCallout(
+                        text = stringResource(Res.string.sign_up_consents_needed),
+                        style = LumeCalloutStyle.Error,
+                        icon = LumeIcon.Alert,
+                    )
+                }
                 // One line each, the link inside, as 2b draws it. The links open nothing yet: there is no terms
                 // document to open (ADR-0044, deviation 12).
                 LumeConsentRow(
                     granted = state.acceptedTerms,
                     onGrantedChange = model::termsChanged,
                     text = stringResource(Res.string.sign_up_terms_statement).richRuns(onLink = {}),
-                    requirement = required,
-                    missing = state.consentRequired && !state.acceptedTerms,
                 )
                 LumeConsentRow(
                     granted = state.acceptedDataUse,
                     onGrantedChange = model::dataUseChanged,
                     text = stringResource(Res.string.sign_up_data_use_statement).richRuns(onLink = {}),
-                    requirement = required,
-                    missing = state.consentRequired && !state.acceptedDataUse,
                 )
                 // Optional, and never marked missing (ADR-0051 §4): a consent the person cannot refuse is not consent.
                 LumeConsentRow(
