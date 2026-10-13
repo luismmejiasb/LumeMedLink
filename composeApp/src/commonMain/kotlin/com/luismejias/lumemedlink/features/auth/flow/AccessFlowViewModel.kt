@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.luismejias.lumemedlink.core.auth.AccountSummary
 import com.luismejias.lumemedlink.core.auth.DoctorLinkGateway
 import com.luismejias.lumemedlink.core.auth.PatientAccessGateway
+import com.luismejias.lumemedlink.core.crash.CrashConsent
 import com.luismejias.lumemedlink.core.session.Clock
 import com.luismejias.lumemedlink.features.auth.doctor.DoctorLinkModel
 import com.luismejias.lumemedlink.features.auth.recovery.NewPasswordModel
@@ -23,7 +24,11 @@ import kotlinx.coroutines.flow.asStateFlow
  * away whole on a restart, so nothing typed in one attempt survives into the next (LumeMed's wipe-on-leave).
  * Holds no platform object.
  */
-internal class AccessAttempt(patients: PatientAccessGateway, doctors: DoctorLinkGateway) {
+internal class AccessAttempt(
+    patients: PatientAccessGateway,
+    doctors: DoctorLinkGateway,
+    crashReportsChosen: suspend (Boolean) -> Unit = {},
+) {
     val flow = AccessFlowModel()
     val signIn = SignInModel(patients, flow)
     val quickSignIn = QuickSignInModel(patients, flow)
@@ -40,6 +45,7 @@ internal class AccessAttempt(patients: PatientAccessGateway, doctors: DoctorLink
         flow,
         profileOf = { signUpProfile.state.value.profile },
         codeSent = signUpCode::started,
+        crashReportsChosen = crashReportsChosen,
     )
     val recoveryCode = RecoveryCodeModel(patients, flow)
     val recoveryRut = RecoveryRutModel(patients, flow, recoveryCode::started)
@@ -57,12 +63,16 @@ internal class AccessFlowViewModel(
     private val doctors: DoctorLinkGateway,
     /** For the countdowns: lockout, code expiry, resend. */
     val clock: Clock,
+    /** Where 2b's optional crash-report consent is kept (ADR-0051). */
+    private val crashConsent: CrashConsent,
 ) : ViewModel() {
-    private val current = MutableStateFlow(AccessAttempt(patients, doctors))
+    private val current = MutableStateFlow(newAttempt())
     val attempt: StateFlow<AccessAttempt> = current.asStateFlow()
 
     /** Back to the welcome screen with empty forms. */
     fun restart() {
-        current.value = AccessAttempt(patients, doctors)
+        current.value = newAttempt()
     }
+
+    private fun newAttempt() = AccessAttempt(patients, doctors, crashConsent::setGranted)
 }

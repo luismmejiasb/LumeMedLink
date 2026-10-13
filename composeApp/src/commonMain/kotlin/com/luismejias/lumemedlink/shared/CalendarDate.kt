@@ -48,7 +48,7 @@ internal data class CalendarDate(val year: Int, val month: Int, val day: Int) : 
             else -> 31
         }
 
-        private fun fromEpochDay(epochDay: Long): CalendarDate {
+        fun fromEpochDay(epochDay: Long): CalendarDate {
             val shifted = epochDay + EPOCH_SHIFT
             val era = shifted.floorDiv(DAYS_PER_ERA)
             val dayOfEra = shifted - era * DAYS_PER_ERA

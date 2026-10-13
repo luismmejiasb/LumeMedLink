@@ -600,4 +600,8 @@
     <string name="photo_denied_camera_body">Para tomar una foto, permite el acceso en Ajustes. Tu foto solo se usa en tu perfil.</string>
     <string name="photo_open_settings">Abrir Ajustes</string>
     <string name="photo_not_now">Ahora no</string>
+    <!-- ADR-0051 · Reportes de error -->
+    <string name="sign_up_crash_reports_statement">Autorizo enviar reportes de error con un número al azar, sin mis datos · opcional</string>
+    <string name="settings_crash_reports">Reportes de error</string>
+    <string name="settings_crash_reports_body">Con un número al azar, sin tus datos</string>
 </resources>

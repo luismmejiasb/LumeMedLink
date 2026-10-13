@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
+import com.luismejias.lumemedlink.core.crash.CrashConsent
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
@@ -24,12 +25,27 @@ internal data class SettingsContent(
 }
 
 /** Configuración's owner (ADR-0045). */
-internal class SettingsViewModel(private val care: PatientCareGateway) : ViewModel() {
+internal class SettingsViewModel(private val care: PatientCareGateway, private val crashConsent: CrashConsent) :
+    ViewModel() {
     private val current = MutableStateFlow<CareLoad<SettingsContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<SettingsContent>> = current.asStateFlow()
 
+    private val crashReportsGranted = MutableStateFlow(false)
+
+    /** «Reportes de error»: the consent of ADR-0051, withdrawn or given here. */
+    val crashReports: StateFlow<Boolean> = crashReportsGranted.asStateFlow()
+
     init {
         refresh()
+        viewModelScope.launch { crashReportsGranted.value = crashConsent.granted() }
+    }
+
+    fun crashReportsChanged(granted: Boolean) {
+        crashReportsGranted.value = granted
+        viewModelScope.launch {
+            crashConsent.setGranted(granted)
+            crashReportsGranted.value = crashConsent.granted()
+        }
     }
 
     fun refresh() {

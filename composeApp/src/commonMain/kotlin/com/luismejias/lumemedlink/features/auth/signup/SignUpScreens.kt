@@ -80,6 +80,7 @@ import com.luismejias.lumemedlink.resources.sign_up_code_body
 import com.luismejias.lumemedlink.resources.sign_up_code_resend
 import com.luismejias.lumemedlink.resources.sign_up_code_resend_in
 import com.luismejias.lumemedlink.resources.sign_up_code_title
+import com.luismejias.lumemedlink.resources.sign_up_crash_reports_statement
 import com.luismejias.lumemedlink.resources.sign_up_create
 import com.luismejias.lumemedlink.resources.sign_up_creating
 import com.luismejias.lumemedlink.resources.sign_up_data_body
@@ -306,6 +307,12 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
                 text = stringResource(Res.string.sign_up_data_use_statement).richRuns(onLink = {}),
                 requirement = required,
                 missing = state.consentRequired && !state.acceptedDataUse,
+            )
+            // Optional, and never marked missing (ADR-0051 §4): a consent the person cannot refuse is not consent.
+            LumeConsentRow(
+                granted = state.acceptedCrashReports,
+                onGrantedChange = model::crashReportsChanged,
+                text = stringResource(Res.string.sign_up_crash_reports_statement).richRuns(),
             )
         }
     }

@@ -32,6 +32,13 @@ import cl.lume.uicomposer.tokens.LumeTypography
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
+import com.luismejias.lumemedlink.core.crash.CrashConsent
+import com.luismejias.lumemedlink.core.crash.CrashQueue
+import com.luismejias.lumemedlink.core.crash.NoEndpointCrashReportSender
+import com.luismejias.lumemedlink.core.crash.flushCrashReports
+import com.luismejias.lumemedlink.core.crash.installCrashCapture
+import com.luismejias.lumemedlink.core.crash.rememberAppIdentity
+import com.luismejias.lumemedlink.core.crash.rememberCrashFileStore
 import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
@@ -108,9 +115,20 @@ public fun App() {
     val shell = viewModel { ShellViewModel() }
     // The access flow (ADR-0044) runs against the SCRIPT of a contract that does not exist yet — chosen here and
     // only here (ADR-0045), and it begins no session.
+    val secureStore = rememberSecureStore()
+    // Crash reports of our own, without personal data (ADR-0051): caught here, queued, and offered at the next launch
+    // to a sender that sends nothing until the backend has the endpoint (request 0009, not sent).
+    val crashConsent = remember(secureStore) { CrashConsent(secureStore) }
+    val crashFiles = rememberCrashFileStore()
+    val appIdentity = rememberAppIdentity()
+    val crashQueue = remember(crashFiles) { CrashQueue(crashFiles) }
+    LaunchedEffect(crashQueue) {
+        installCrashCapture(crashQueue, appIdentity, SystemClock::nowEpochMillis)
+        flushCrashReports(crashQueue, crashConsent, NoEndpointCrashReportSender, SystemClock.nowEpochMillis())
+    }
     val access = viewModel {
         val scripted = ScriptedAccessGateway(SystemClock)
-        AccessFlowViewModel(patients = scripted, doctors = scripted, clock = SystemClock)
+        AccessFlowViewModel(patients = scripted, doctors = scripted, clock = SystemClock, crashConsent = crashConsent)
     }
     // The patient's main app (ADR-0046), against the SCRIPT of the design; its ViewModels live in a store of
     // their own that a sign-out empties.
@@ -118,7 +136,6 @@ public fun App() {
     val patientCare = remember { ScriptedPatientCare() }
     val doctorScope = viewModel(key = "doctor-scope") { SessionScope() }
     val doctorCare = remember { ScriptedDoctorCare() }
-    val secureStore = rememberSecureStore()
     val unlockGate = rememberUnlockGate(secureStore) ?: AbsentUnlockGate
     val sessionManager = remember(secureStore) {
         SessionManager(TokenStore(secureStore), UnwiredRefreshClient())
@@ -267,6 +284,7 @@ public fun App() {
                                 PatientMainHost(
                                     care = patientCare,
                                     directory = patientCare,
+                                    crashConsent = crashConsent,
                                     onSignOut = {
                                         patientScope.reset()
                                         access.restart()

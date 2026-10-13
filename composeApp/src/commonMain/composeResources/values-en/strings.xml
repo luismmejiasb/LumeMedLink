@@ -591,4 +591,8 @@
     <string name="photo_denied_camera_body">To take a photo, allow access in Settings. Your photo is only used on your profile.</string>
     <string name="photo_open_settings">Open Settings</string>
     <string name="photo_not_now">Not now</string>
+    <!-- ADR-0051 · Reportes de error -->
+    <string name="sign_up_crash_reports_statement">I allow error reports with a random number, without my details · optional</string>
+    <string name="settings_crash_reports">Error reports</string>
+    <string name="settings_crash_reports_body">With a random number, without your details</string>
 </resources>

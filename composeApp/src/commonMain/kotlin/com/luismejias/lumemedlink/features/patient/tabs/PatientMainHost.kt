@@ -30,6 +30,7 @@ import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.RatingPrompt
+import com.luismejias.lumemedlink.core.crash.CrashConsent
 import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberDirections
@@ -102,13 +103,18 @@ internal class PatientTabsViewModel : ViewModel() {
  * caller's store — the composition root gives it one that dies on sign-out (app/SessionScope).
  */
 @Composable
-internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGateway, onSignOut: () -> Unit) {
+internal fun PatientMainHost(
+    care: PatientCareGateway,
+    directory: DirectoryGateway,
+    crashConsent: CrashConsent,
+    onSignOut: () -> Unit,
+) {
     val tabs = viewModel { PatientTabsViewModel() }
     val home = viewModel { HomeViewModel(care) }
     val search = viewModel { SearchViewModel(care, directory) }
     val appointments = viewModel { AppointmentsViewModel(care) }
     val doctors = viewModel { MyDoctorsViewModel(care) }
-    val settings = viewModel { SettingsViewModel(care) }
+    val settings = viewModel { SettingsViewModel(care, crashConsent) }
     val change = viewModel { ChangeViewModel(care, directory) }
     val rate = viewModel { RateViewModel(care) }
     val photo = viewModel { ProfilePhotoModel() }

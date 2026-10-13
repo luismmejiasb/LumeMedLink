@@ -33,6 +33,8 @@ import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.settings_complaints
 import com.luismejias.lumemedlink.resources.settings_complaints_body
 import com.luismejias.lumemedlink.resources.settings_correction
+import com.luismejias.lumemedlink.resources.settings_crash_reports
+import com.luismejias.lumemedlink.resources.settings_crash_reports_body
 import com.luismejias.lumemedlink.resources.settings_edit_email
 import com.luismejias.lumemedlink.resources.settings_edit_phone
 import com.luismejias.lumemedlink.resources.settings_email
@@ -51,7 +53,7 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /** The rows under the profile, in the design's order. */
-internal enum class SettingsEntry { CORRECTION, REMINDERS, RATINGS, COMPLAINTS, SIGN_OUT }
+internal enum class SettingsEntry { CORRECTION, REMINDERS, RATINGS, COMPLAINTS, CRASH_REPORTS, SIGN_OUT }
 
 /**
  * Configuración (p7). The RUT is never edited here — it is the identifier (the handoff's inherited rule); a
@@ -67,6 +69,7 @@ internal fun SettingsScreen(
     onEntry: (SettingsEntry) -> Unit,
 ) {
     val load by model.state.collectAsState()
+    val crashReports by model.crashReports.collectAsState()
     CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
         val profile = content.profile
         LumeContainer(
@@ -103,7 +106,12 @@ internal fun SettingsScreen(
                     )
                 }
                 LumeList(
-                    items = listOf(SettingsEntry.REMINDERS, SettingsEntry.RATINGS, SettingsEntry.COMPLAINTS),
+                    items = listOf(
+                        SettingsEntry.REMINDERS,
+                        SettingsEntry.RATINGS,
+                        SettingsEntry.COMPLAINTS,
+                        SettingsEntry.CRASH_REPORTS,
+                    ),
                     key = { it },
                     scrolls = false,
                     onRowTap = onEntry,
@@ -128,6 +136,20 @@ internal fun SettingsScreen(
                             leading = LumeListAccessory.Tile(LumeIcon.Star, LumeTileTint.Gold),
                             disclosure = true,
                         )
+                        SettingsEntry.CRASH_REPORTS -> {
+                            val title = stringResource(Res.string.settings_crash_reports)
+                            LumeListRow(
+                                textStyle = LumeListRowTextStyle.Strong,
+                                title = title,
+                                description = stringResource(Res.string.settings_crash_reports_body),
+                                leading = LumeListAccessory.Tile(LumeIcon.Alert, LumeTileTint.Teal),
+                                trailing = LumeListAccessory.Toggle(
+                                    checked = crashReports,
+                                    onCheckedChange = model::crashReportsChanged,
+                                    contentDescription = title,
+                                ),
+                            )
+                        }
                         else -> LumeListRow(
                             textStyle = LumeListRowTextStyle.Strong,
                             title = stringResource(Res.string.settings_complaints),

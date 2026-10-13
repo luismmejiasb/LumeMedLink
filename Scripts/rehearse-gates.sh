@@ -78,6 +78,22 @@ bait() {
 
 echo "rehearsing gates against bait..."
 
+# ── The crash queue out of every backup (ADR-0051 §5) ──────────────────────────────────────────
+bait "Android crash queue moved to the backed-up files dir" check-backup-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/crash/CrashCapture.android.kt"
+s = p.read_text()
+assert "context.noBackupFilesDir" in s
+p.write_text(s.replace("context.noBackupFilesDir", "context.filesDir"))
+'
+bait "iOS crash queue backup exclusion set to false" check-backup-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/crash/CrashCapture.ios.kt"
+s = p.read_text()
+assert "setResourceValue(true, forKey = NSURLIsExcludedFromBackupKey" in s
+p.write_text(s.replace("setResourceValue(true, forKey = NSURLIsExcludedFromBackupKey", "setResourceValue(false, forKey = NSURLIsExcludedFromBackupKey"))
+'
+
 # ── Compose resources must reach the APK (2026-10-12): the line deleted, commented out, or false ──
 bait "Android resources line deleted from the KMP target" check-compose-resources-packaging.sh '
 import sys, pathlib
