@@ -3,6 +3,7 @@ package com.luismejias.lumemedlink.core.screen
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeCalloutSurface
@@ -15,7 +16,9 @@ import cl.lume.uicomposer.components.LumePlaceholder
 import cl.lume.uicomposer.components.LumeSkeleton
 import cl.lume.uicomposer.components.LumeSkeletonShape
 import cl.lume.uicomposer.components.LumeStack
+import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.foundations.LumeIcon
+import cl.lume.uicomposer.tokens.LumeSpacing
 import com.luismejias.lumemedlink.core.care.CareFailure
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.resources.Res
@@ -87,6 +90,11 @@ internal fun <T> CareLoadView(
     standIn: T?,
     onRetry: () -> Unit,
     standalone: Boolean = false,
+    /**
+     * The gap of the stack this sits in, when not [standalone]. The kit's placeholder is one box, so the pieces a
+     * screen hands here are laid out again in a stack of their own, with the gap they had in the screen's.
+     */
+    spacing: LumeSpacing.() -> Dp = { medium },
     offlineTitle: StringResource = Res.string.care_offline_title,
     offlineBody: StringResource = Res.string.care_offline_body,
     content: @Composable (T) -> Unit,
@@ -120,8 +128,20 @@ internal fun <T> CareLoadView(
     }
     val shown = (load as? CareLoad.Ready)?.content ?: standIn.takeIf { load is CareLoad.Loading }
     when {
-        shown != null -> LumePlaceholder(stringResource(Res.string.care_loading), active = load !is CareLoad.Ready) {
-            content(shown)
+        shown != null -> LumePlaceholder(
+            stringResource(Res.string.care_loading),
+            modifier = Modifier.fillMaxWidth(),
+            active = load !is CareLoad.Ready,
+        ) {
+            // A tab root hands one region; a pushed screen hands loose pieces, which a box would draw on top of
+            // each other (seen on the appointment's detail, 2026-10-13).
+            if (standalone) {
+                content(shown)
+            } else {
+                LumeStack(Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Start, spacing = spacing) {
+                    content(shown)
+                }
+            }
         }
         standalone -> LumeContainer(alignment = LumeContainerAlignment.Center) { state() }
         else -> LumeStack(modifier = Modifier.fillMaxWidth(), spacing = { medium }) { state() }

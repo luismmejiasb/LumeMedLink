@@ -61,7 +61,7 @@ internal fun DoctorProfileScreen(model: DoctorProfileViewModel, photo: ProfilePh
     val standIn by model.standIn.collectAsState()
     LumeContainer(scroll = LumeContainerScroll.Scrollable) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
-            CareLoadView(load, standIn, onRetry = model::refresh) { profile ->
+            CareLoadView(load, standIn, onRetry = model::refresh, spacing = { large }) { profile ->
                 ProfileHeader(profile, photo)
                 ProfileFields(profile)
                 ShareRow(profile, onShare = { share -> model.launch { shareContact(share) } })
