@@ -49,3 +49,6 @@ iosApp/**/*.xcworkspace/xcuserdata/
 *.p8
 *.hprof
 /captures/
+
+# Scratch: build outputs, screenshots and helper scripts (the family rule puts every temporary in ./tmp)
+/tmp/
