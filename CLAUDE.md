@@ -205,6 +205,11 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
 - **Un campo de texto del kit nunca se llama desde una pantalla**: lo envuelve
   `core/input/SensitiveTextField`, que decide su teclado (ADR-0013 enmendado, gate
   `check-input-surfaces.sh`).
+- **Todo paso de formulario es un `LumeForm`** (ADR-0054, decisión del autor del 2026-10-13): los campos se desplazan
+  y son lo único que sube con el teclado; el pie —consentimientos y acción primaria— queda anclado abajo y el teclado lo
+  tapa; el teclado encadena *Siguiente* campo a campo y el último lo cierra; la ayuda de un campo (el checklist de la
+  contraseña) va pegada a él. **El kit todavía no lo tiene**: la regla está declarada y no cumplida hasta la tarea
+  `0033`, y es **[manual]** hasta que exista un gate.
 - **MVVM**: pantalla tonta (renderiza estado, emite intents), ViewModel expone `StateFlow`, los use
   cases hacen el trabajo. Navegación decidida por coordinator, renderizada por el host — espejo de
   ADR-0014 de LumeMed.
