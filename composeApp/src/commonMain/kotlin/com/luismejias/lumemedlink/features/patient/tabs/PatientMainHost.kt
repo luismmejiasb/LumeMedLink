@@ -66,7 +66,6 @@ import com.luismejias.lumemedlink.resources.booked_toast
 import com.luismejias.lumemedlink.resources.cancelled_toast
 import com.luismejias.lumemedlink.resources.directions_copied
 import com.luismejias.lumemedlink.resources.moved_toast
-import com.luismejias.lumemedlink.resources.rate_failed
 import com.luismejias.lumemedlink.resources.rate_sent_toast
 import com.luismejias.lumemedlink.resources.sent_toast
 import com.luismejias.lumemedlink.resources.tab_appointments
@@ -144,9 +143,7 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
     val cancelledToast = stringResource(Res.string.cancelled_toast)
     val copiedToast = stringResource(Res.string.directions_copied)
     val rateSent by rate.sent.collectAsState()
-    val rateState by rate.state.collectAsState()
     val rateSentToast = stringResource(Res.string.rate_sent_toast)
-    val rateFailedToast = stringResource(Res.string.rate_failed)
     LaunchedEffect(rateSent) {
         if (!rateSent) return@LaunchedEffect
         // Inicio stops asking, Ajustes counts one more, and an open c3 shows what was sent.
@@ -155,11 +152,6 @@ internal fun PatientMainHost(care: PatientCareGateway, directory: DirectoryGatew
         changeRoutes.lastOrNull()?.let { change.reloadDetail() }
         toasts.show(rateSentToast, LumeStatusStyle.Success)
         rate.sentSeen()
-    }
-    LaunchedEffect(rateState?.failure) {
-        if (rateState?.failure == null) return@LaunchedEffect
-        toasts.show(rateFailedToast, LumeStatusStyle.Error)
-        rate.failureSeen()
     }
     LaunchedEffect(changeDone) {
         val done = changeDone ?: return@LaunchedEffect

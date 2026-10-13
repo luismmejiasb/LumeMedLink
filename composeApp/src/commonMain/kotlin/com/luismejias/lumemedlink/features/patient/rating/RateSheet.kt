@@ -17,6 +17,7 @@ import cl.lume.uicomposer.components.LumeButtonWidth
 import cl.lume.uicomposer.components.LumeCallout
 import cl.lume.uicomposer.components.LumeCalloutAction
 import cl.lume.uicomposer.components.LumeCalloutStyle
+import cl.lume.uicomposer.components.LumeCalloutSurface
 import cl.lume.uicomposer.components.LumeEyebrow
 import cl.lume.uicomposer.components.LumeFilterChip
 import cl.lume.uicomposer.components.LumeFilterChipLook
@@ -58,6 +59,7 @@ import com.luismejias.lumemedlink.resources.rate_comment_helper
 import com.luismejias.lumemedlink.resources.rate_comment_placeholder
 import com.luismejias.lumemedlink.resources.rate_complaint
 import com.luismejias.lumemedlink.resources.rate_complaint_action
+import com.luismejias.lumemedlink.resources.rate_failed
 import com.luismejias.lumemedlink.resources.rate_label
 import com.luismejias.lumemedlink.resources.rate_later
 import com.luismejias.lumemedlink.resources.rate_level_1
@@ -179,6 +181,15 @@ internal fun RateSheet(model: RateViewModel, onComplaint: () -> Unit) {
             helper = stringResource(Res.string.rate_comment_helper),
             modifier = Modifier.fillMaxWidth(),
         )
+        // Inside the sheet: it draws over the screen, so a toast under it would never be seen.
+        if (shown.failure != null) {
+            LumeCallout(
+                text = stringResource(Res.string.rate_failed),
+                style = LumeCalloutStyle.Error,
+                surface = LumeCalloutSurface.Washed,
+                icon = LumeIcon.Alert,
+            )
+        }
         if (level == RatingLevel.BAD) {
             LumeCallout(
                 text = stringResource(Res.string.rate_complaint),

@@ -279,15 +279,22 @@ internal class DetailModel(private val care: PatientCareGateway) {
     private val current = MutableStateFlow<CareLoad<DetailContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<DetailContent>> = current.asStateFlow()
 
+    /** The appointment the screen asked for last: an older load that finishes later must not overwrite it. */
+    private var requested: String? = null
+
     suspend fun load(appointment: PatientAppointment) {
-        current.value = CareLoad.Loading
+        requested = appointment.id
+        val shown = (current.value as? CareLoad.Ready)?.content?.appointment?.id
+        // Reading the same appointment again (after f5) keeps it on screen; another one starts from the spinner.
+        if (shown != appointment.id) current.value = CareLoad.Loading
         val doctors = care.myDoctors()
         val rating = if (appointment.status == AppointmentStatus.COMPLETED) {
             care.ratingFor(appointment.id)
         } else {
             CareResult.Ok(null)
         }
-        current.value = allOf(doctors, rating) {
+        if (requested != appointment.id) return
+        val loaded = allOf(doctors, rating) {
             val phone = doctors.ok.firstOrNull { it.doctor.id == appointment.doctor.id }?.phone
             DetailContent(
                 appointment = appointment,
@@ -296,5 +303,8 @@ internal class DetailModel(private val care: PatientCareGateway) {
                 rating = rating.ok,
             )
         }
+        // A failed re-read of what is already shown keeps it: the rating went through, only the refresh did not.
+        if (loaded is CareLoad.Failed && shown == appointment.id) return
+        current.value = loaded
     }
 }

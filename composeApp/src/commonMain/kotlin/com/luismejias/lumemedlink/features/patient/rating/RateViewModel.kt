@@ -111,6 +111,7 @@ internal class RateViewModel(private val care: PatientCareGateway) : ViewModel()
     fun commentChanged(text: String) = update { copy(comment = text) }
 
     suspend fun send() {
+        update { copy(failure = null) }
         val state = current.value ?: return
         val draft = RatingDraft(
             stars = state.stars,
@@ -118,7 +119,14 @@ internal class RateViewModel(private val care: PatientCareGateway) : ViewModel()
             other = state.other.trim().takeIf { state.otherOn && it.isNotEmpty() },
             comment = state.comment.trim().takeIf { it.isNotEmpty() },
         )
-        when (val result = care.rate(state.prompt.appointmentId, draft)) {
+        val result = care.rate(state.prompt.appointmentId, draft)
+        // The answer belongs to the rating that was sent: if the sheet was closed and another opened meanwhile, it
+        // must not close that one nor lend it this one's failure.
+        if (current.value?.prompt?.appointmentId != state.prompt.appointmentId) {
+            if (result is CareResult.Ok) sentFlag.value = true
+            return
+        }
+        when (result) {
             is CareResult.Ok -> {
                 current.value = null
                 sentFlag.value = true

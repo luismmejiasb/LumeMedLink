@@ -20,10 +20,13 @@ import com.luismejias.lumemedlink.features.patient.change.MoveTile
 import com.luismejias.lumemedlink.features.patient.change.changeOptionsFor
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
@@ -191,5 +194,31 @@ class ChangeFlowTest {
         const val RENDON = "a-rendon-0916"
         const val PINTO = "a-pinto-0921"
         const val RENDON_ATTENDED = "a-rendon-0902"
+    }
+
+    @Test
+    fun anOlderDetailThatLoadsLateDoesNotReplaceTheOneOpenedAfter() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var first = true
+        val slow = ScriptedPatientCare(
+            latency = {
+                if (first) {
+                    first = false
+                    gate.await()
+                }
+            },
+        )
+        val flow = ChangeViewModel(slow, slow)
+        val rendon = appointment("a-rendon-0916")
+        val pinto = appointment("a-pinto-0921")
+
+        val older = launch { flow.detail.load(rendon) }
+        runCurrent()
+        flow.detail.load(pinto)
+        gate.complete(Unit)
+        older.join()
+
+        val shown = (flow.detail.state.value as CareLoad.Ready).content
+        assertEquals("a-pinto-0921", shown.appointment.id, "the detail the patient opened last stays")
     }
 }
