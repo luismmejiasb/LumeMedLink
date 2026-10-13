@@ -210,6 +210,10 @@ composeApp/src/androidMain/ | iosMain/   # SOLO adaptadores expect/actual de cor
   tapa; el teclado encadena *Siguiente* campo a campo y el último lo cierra; la ayuda de un campo (el checklist de la
   contraseña) va pegada a él. **El kit todavía no lo tiene**: la regla está declarada y no cumplida hasta la tarea
   `0033`, y es **[manual]** hasta que exista un gate.
+- **Una pantalla que espera contenido se muestra como skeleton de sí misma**, jamás con un indicador (ADR-0055,
+  decisión del autor del 2026-10-13): la vista real con datos de relleno bajo el modo placeholder del kit. Los botones
+  que esperan una respuesta conservan su indicador. **El kit todavía no tiene el modo**: declarada y no cumplida hasta
+  la tarea `0034`.
 - **MVVM**: pantalla tonta (renderiza estado, emite intents), ViewModel expone `StateFlow`, los use
   cases hacen el trabajo. Navegación decidida por coordinator, renderizada por el host — espejo de
   ADR-0014 de LumeMed.
