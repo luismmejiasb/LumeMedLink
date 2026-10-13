@@ -1,8 +1,9 @@
 # ADR-0051 — Crashes are reported to our own backend, without personal data
 
 - **Status**: Accepted (2026-10-12) — the author's decisions of this date, taken by form after weighing Crashlytics
-  against a report of our own. The client half is **not built yet** (task `0031`); the backend half waits for
-  `docs/backend-requests/0009`, written and **not sent**, while the author keeps requests to the backend paused.
+  against a report of our own. The client half is **built** (task `0031`, 2026-10-12) and sends nothing yet
+  (`NoEndpointCrashReportSender`); the backend half waits for `docs/backend-requests/0009`, written and **not sent**,
+  while the author keeps requests to the backend paused.
 - **Related**: constitution §8.1 (the crash/analytics denylist), §8.5, §8.13, §8.16; ADR-0012 (pre-auth surfaces),
   ADR-0016 (exception messages that carried the URL), ADR-0023 (the security-events channel), ADR-0038 (the one
   Firebase exception), ADR-0044 (2b's consents); task `0031`.
@@ -38,19 +39,21 @@ a report of our own to our own backend, and chose the second.
    - until consent, a report carries no key at all.
 4. **The consent is optional and can be withdrawn.** It is asked beside 2b's two required consents, as a third row
    that is **not** required, and it can be withdrawn in Configuración. A consent the person cannot refuse is not
-   consent under Ley 21.719. 2b gains a row the design does not draw; ADR-0044 records it when task `0031` builds it.
+   consent under Ley 21.719. 2b gains a row the design does not draw (ADR-0044, deviation 14).
 5. **Sent at the next launch, before any sign-in.** A crash ends the process, so the report waits for the next launch.
    It goes to an unauthenticated endpoint through the hardened stack (§7), like the minimum-version check. A crash
    before sign-in is exactly the one worth seeing, and there is no session to protect.
    - At most three pending reports are kept.
    - Each is a small file in the app's own directory, excluded from backup (§8.5), deleted after the server accepts
-     it or after seven days. It holds no key and no personal data (point 1), which is why it is not encrypted;
-     `check-backup-posture.sh` learns the files when they exist.
+     it or after seven days. It holds no key and no personal data (point 1), which is why it is not encrypted.
+     Android keeps it under `noBackupFilesDir`; iOS marks the directory `NSURLIsExcludedFromBackupKey` (seen on the
+     simulator). `check-backup-posture.sh` asserts both, with two baits.
    - There is one attempt per launch and no retry loop. The endpoint has no idempotency key (trap T13), so a retry
      would turn one crash into several.
 6. **What is caught, declared.**
    - On Android: uncaught JVM exceptions, through the default handler, which then hands over to the system's own.
-   - On iOS: uncaught Kotlin exceptions, through Kotlin/Native's unhandled-exception hook.
+   - On iOS: uncaught Kotlin exceptions, through Kotlin/Native's unhandled-exception hook. Its frames carry no line
+     numbers; an internal function's symbol is read the other way round (`pkg.Class.function#internal`).
    - Not caught: native crashes outside Kotlin (Swift, Objective-C, signals) and Android ANRs. They are said here
      rather than implied.
 7. **It never stops a crash.** Capturing writes the file and hands control back to the platform; a failure while

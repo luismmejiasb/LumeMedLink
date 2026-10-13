@@ -66,6 +66,8 @@ the patient access model later (2026-10-11).
 13. **2a asks for the names in four fields** — first and second name, first and second surname, in two rows — where the
     design has «Nombres» and «Apellidos». The second of each is optional. The app still shows the first name and the
     first surname («Camila Soto», «CS»). The author's call, 2026-10-12.
+14. **2b has a third consent the design does not draw**: crash reports with a crash-only key (ADR-0051). It is optional
+    and never marked missing; Configuración has the switch to withdraw it.
 
 ## Consequences
 

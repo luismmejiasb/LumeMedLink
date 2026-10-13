@@ -1,6 +1,6 @@
 # 0031 · Reportes de crash propios — la mitad del cliente
 
-> **Estado:** PENDING (abierta 2026-10-12) · ADR-0051 · pedido al backend `0009`, escrito y sin enviar
+> **Estado:** DONE (abierta y cerrada 2026-10-12) · ADR-0051 · pedido al backend `0009`, escrito y sin enviar
 
 ## De dónde sale
 
@@ -45,3 +45,20 @@ Decidió por formulario:
 - `check-backup-posture.sh` aprende los archivos de la cola.
 - Un test de que la cola no pasa de tres y de que un archivo de más de siete días se descarta.
 - En el dispositivo: forzar un crash, reabrir y ver el reporte en la cola, en Android y en iOS.
+
+## Cómo quedó (2026-10-12)
+
+- `core/crash/`: el reporte cerrado (`CrashReport`, sin campo para el mensaje), la cola (`CrashQueue`, tres y siete
+  días), el consentimiento y la clave (`CrashConsent`, en el almacén seguro, así que el logout los borra), el envío
+  (`flushCrashReports` con `NoEndpointCrashReportSender`) y la captura por plataforma.
+- 2b tiene la tercera fila, opcional; Configuración, el interruptor «Reportes de error».
+- Tests: el mensaje con RUT, URL y nombre no viaja; sólo marcos propios y a lo sumo ocho; tres y siete días; la clave
+  se pone al enviar (un reporte de antes del retiro sale sin ella); el logout la borra; el envío se intenta una vez y
+  no lanza; el símbolo interno de iOS.
+- `check-backup-posture.sh` aprendió la cola, con dos cebos.
+- **Visto en el simulador y en el emulador** con un crash forzado (un build temporal, jamás commiteado): el archivo
+  quedó en la cola sin el mensaje, con el tipo y un marco propio; en iOS la carpeta lleva la marca de exclusión del
+  backup.
+- Falta, del lado del backend, el endpoint (pedido `0009`, sin enviar). Y lo declarado en ADR-0051: los crashes
+  nativos y los ANR no se capturan.
+
