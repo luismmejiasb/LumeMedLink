@@ -34,8 +34,13 @@
     <string name="field_optional">Opcional</string>
     <string name="field_name_required">Completa este campo.</string>
     <string name="field_mobile">Teléfono celular</string>
-    <string name="field_mobile_placeholder">+56 9 1234 5678</string>
+    <string name="field_mobile_placeholder">9 1234 5678</string>
     <string name="field_mobile_invalid">Ingresa un celular de 9 dígitos.</string>
+    <string name="phone_region_title">País del teléfono</string>
+    <string name="phone_region_button">Cambiar el país del teléfono</string>
+    <string name="phone_region_close">Listo</string>
+    <string name="phone_region_search">Buscar país</string>
+    <string name="field_phone_invalid">Revisa el número de teléfono.</string>
     <string name="field_email">Correo</string>
     <string name="field_email_placeholder">nombre@dominio.cl</string>
     <string name="field_email_invalid">Revisa el formato del correo.</string>
@@ -50,6 +55,8 @@
     <string name="field_passwords_differ">Las contraseñas no coinciden.</string>
     <string name="field_code">Código de verificación</string>
     <string name="field_code_clear">Borrar código</string>
+    <string name="field_clear">Borrar %1$s</string>
+    <string name="field_clear_text">Borrar texto</string>
     <string name="password_rule_length">Al menos 8 caracteres</string>
     <string name="password_rule_case">Una mayúscula y una minúscula</string>
     <string name="password_rule_digit">Un número</string>

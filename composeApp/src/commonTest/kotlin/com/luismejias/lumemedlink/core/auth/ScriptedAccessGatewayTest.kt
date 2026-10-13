@@ -1,9 +1,9 @@
 package com.luismejias.lumemedlink.core.auth
 
 import com.luismejias.lumemedlink.core.session.Clock
-import com.luismejias.lumemedlink.shared.ChileanMobile
 import com.luismejias.lumemedlink.shared.ChileanRut
 import com.luismejias.lumemedlink.shared.EmailAddress
+import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,7 +23,7 @@ private fun profile(rutTyped: String = "18.456.789-K") = SignUpProfile(
     secondName = null,
     firstSurname = "Soto",
     secondSurname = null,
-    mobile = requireNotNull(ChileanMobile.parse("+56 9 8765 4321")),
+    mobile = requireNotNull(PhoneNumber.chileanMobile("+56 9 8765 4321")),
     email = requireNotNull(EmailAddress.parse("camila.soto@correo.cl")),
 )
 

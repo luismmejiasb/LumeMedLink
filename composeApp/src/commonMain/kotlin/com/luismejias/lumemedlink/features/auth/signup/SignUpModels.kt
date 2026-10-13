@@ -13,39 +13,63 @@ import com.luismejias.lumemedlink.features.auth.flow.StepOutcome
 import com.luismejias.lumemedlink.features.auth.flow.settle
 import com.luismejias.lumemedlink.features.auth.shared.CodeEntry
 import com.luismejias.lumemedlink.features.auth.shared.NewPasswordEntry
+import com.luismejias.lumemedlink.features.auth.shared.rutLooksWrong
 import com.luismejias.lumemedlink.features.auth.shared.sameRut
-import com.luismejias.lumemedlink.shared.ChileanMobile
 import com.luismejias.lumemedlink.shared.ChileanRut
 import com.luismejias.lumemedlink.shared.EmailAddress
+import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * 2a. The errors (2a-e1) appear once the person tries to continue, then follow every keystroke; while one is
- * showing, "Continuar" is off — the design's disabled button over red fields.
+ * The 2a fields judged once typed in. The RUT is not among them: it is judged by its length, as on sign-in and
+ * recovery ([rutLooksWrong]), and the optional second name and surname never are.
  */
+internal enum class SignUpField { FIRST_NAME, FIRST_SURNAME, MOBILE, EMAIL }
+
+/**
+ * 2a. Each field is judged on every keystroke from the first one typed in it (the author, 2026-10-13), not on
+ * "Continuar": waiting for the button left a whole form to fix at once. A field nobody touched stays quiet until
+ * the person tries to continue. While an error shows, "Continuar" is off — the design's disabled button over red
+ * fields.
+ */
+/** The country a sign-up's mobile starts on. */
+internal const val CHILE_REGION = "CL"
+
+/** The most a name or surname takes: a real one fits on the field's line (the author, 2026-10-13). */
+internal const val NAME_MAX_LENGTH = 40
+
 internal data class SignUpProfileState(
     val rut: String = "",
     val firstName: String = "",
     val secondName: String = "",
     val firstSurname: String = "",
     val secondSurname: String = "",
+    /** The national number's digits; its country is [mobileRegion]. */
     val mobile: String = "",
+    /** The ISO code of the mobile's country, Chile until the person picks another. */
+    val mobileRegion: String = CHILE_REGION,
+    /** That country's dial code, «+56». */
+    val mobileDialCode: String = PhoneNumber.CHILE,
     val email: String = "",
     val judged: Boolean = false,
+    /** The fields typed in at least once: those are judged as they change. */
+    val edited: Set<SignUpField> = emptySet(),
     /** 2a-e2. */
     val rutTaken: Boolean = false,
     val offline: Boolean = false,
 ) {
-    val rutInvalid: Boolean get() = judged && ChileanRut.parse(rut) == null
+    private fun judges(field: SignUpField): Boolean = judged || field in edited
+
+    val rutInvalid: Boolean get() = if (judged) ChileanRut.parse(rut) == null else rutLooksWrong(rut)
 
     /** 2a's ✓: a RUT that passes módulo 11 and is not taken — said as soon as it is typed, not on submit. */
     val rutValid: Boolean get() = !rutTaken && ChileanRut.parse(rut) != null
-    val firstNameMissing: Boolean get() = judged && firstName.isBlank()
-    val firstSurnameMissing: Boolean get() = judged && firstSurname.isBlank()
-    val mobileInvalid: Boolean get() = judged && ChileanMobile.parse(mobile) == null
-    val emailInvalid: Boolean get() = judged && EmailAddress.parse(email) == null
+    val firstNameMissing: Boolean get() = judges(SignUpField.FIRST_NAME) && firstName.isBlank()
+    val firstSurnameMissing: Boolean get() = judges(SignUpField.FIRST_SURNAME) && firstSurname.isBlank()
+    val mobileInvalid: Boolean get() = judges(SignUpField.MOBILE) && PhoneNumber.of(mobileDialCode, mobile) == null
+    val emailInvalid: Boolean get() = judges(SignUpField.EMAIL) && EmailAddress.parse(email) == null
 
     private val anyError: Boolean
         get() = rutInvalid || firstNameMissing || firstSurnameMissing || mobileInvalid || emailInvalid || rutTaken
@@ -57,7 +81,7 @@ internal data class SignUpProfileState(
     val profile: SignUpProfile?
         get() {
             val parsedRut = ChileanRut.parse(rut) ?: return null
-            val parsedMobile = ChileanMobile.parse(mobile) ?: return null
+            val parsedMobile = PhoneNumber.of(mobileDialCode, mobile) ?: return null
             val parsedEmail = EmailAddress.parse(email) ?: return null
             if (firstName.isBlank() || firstSurname.isBlank()) return null
             return SignUpProfile(
@@ -86,17 +110,22 @@ internal class SignUpProfileModel(private val gateway: PatientAccessGateway, pri
         copy(rut = value, rutTaken = rutTaken && sameRut(value, rut))
     }
 
-    fun firstNameChanged(value: String) = edit { copy(firstName = value) }
+    fun firstNameChanged(value: String) = typed(SignUpField.FIRST_NAME) { copy(firstName = value) }
 
     fun secondNameChanged(value: String) = edit { copy(secondName = value) }
 
-    fun firstSurnameChanged(value: String) = edit { copy(firstSurname = value) }
+    fun firstSurnameChanged(value: String) = typed(SignUpField.FIRST_SURNAME) { copy(firstSurname = value) }
 
     fun secondSurnameChanged(value: String) = edit { copy(secondSurname = value) }
 
-    fun mobileChanged(value: String) = edit { copy(mobile = value) }
+    fun mobileChanged(value: String) = typed(SignUpField.MOBILE) { copy(mobile = value) }
 
-    fun emailChanged(value: String) = edit { copy(email = value) }
+    /** Another country for the mobile: its number is judged by that country's rule from now on. */
+    fun mobileRegionChanged(region: String, dialCode: String?) = edit {
+        copy(mobileRegion = region, mobileDialCode = dialCode.orEmpty())
+    }
+
+    fun emailChanged(value: String) = typed(SignUpField.EMAIL) { copy(email = value) }
 
     suspend fun submit(): StepOutcome {
         current.value = current.value.copy(judged = true)
@@ -121,6 +150,11 @@ internal class SignUpProfileModel(private val gateway: PatientAccessGateway, pri
 
     private fun edit(change: SignUpProfileState.() -> SignUpProfileState) {
         current.value = current.value.change().copy(offline = false)
+    }
+
+    /** An edit by the person in [field], which from now on is judged as it changes. */
+    private fun typed(field: SignUpField, change: SignUpProfileState.() -> SignUpProfileState) = edit {
+        change().copy(edited = edited + field)
     }
 }
 

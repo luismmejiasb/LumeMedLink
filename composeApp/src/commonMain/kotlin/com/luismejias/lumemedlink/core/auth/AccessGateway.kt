@@ -1,8 +1,8 @@
 package com.luismejias.lumemedlink.core.auth
 
-import com.luismejias.lumemedlink.shared.ChileanMobile
 import com.luismejias.lumemedlink.shared.ChileanRut
 import com.luismejias.lumemedlink.shared.EmailAddress
+import com.luismejias.lumemedlink.shared.PhoneNumber
 
 /*
  * PROVISIONAL — ADR-0044. These seams have the DESIGN's shape (tareas/PENDING/Handoff, 03-Specs/1-Auth.md),
@@ -76,7 +76,7 @@ internal class SignUpProfile(
     val secondName: String?,
     val firstSurname: String,
     val secondSurname: String?,
-    val mobile: ChileanMobile,
+    val mobile: PhoneNumber,
     val email: EmailAddress,
 ) {
     // Personal data: never printed (§8.1).

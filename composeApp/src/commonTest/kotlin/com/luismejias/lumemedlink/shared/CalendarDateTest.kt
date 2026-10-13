@@ -51,6 +51,6 @@ class CalendarDateTest {
 
     @Test
     fun aMobileReadsInFull() {
-        assertEquals("+56 9 8765 4321", ChileanMobile.parse("987654321")?.display)
+        assertEquals("+56 9 8765 4321", PhoneNumber.chileanMobile("987654321")?.display)
     }
 }

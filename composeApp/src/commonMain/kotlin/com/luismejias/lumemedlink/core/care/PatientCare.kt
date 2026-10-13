@@ -1,10 +1,10 @@
 package com.luismejias.lumemedlink.core.care
 
 import com.luismejias.lumemedlink.shared.CalendarDate
-import com.luismejias.lumemedlink.shared.ChileanMobile
 import com.luismejias.lumemedlink.shared.ChileanRut
 import com.luismejias.lumemedlink.shared.ClockTime
 import com.luismejias.lumemedlink.shared.EmailAddress
+import com.luismejias.lumemedlink.shared.PhoneNumber
 
 /*
  * PROVISIONAL — ADR-0046. The patient's main app has the DESIGN's shape (tareas/PENDING/Handoff,
@@ -151,7 +151,7 @@ internal data class PatientProfile(
     val givenNames: String,
     val familyNames: String,
     val rut: ChileanRut,
-    val mobile: ChileanMobile,
+    val mobile: PhoneNumber,
     val email: EmailAddress,
     val verified: Boolean,
 ) {

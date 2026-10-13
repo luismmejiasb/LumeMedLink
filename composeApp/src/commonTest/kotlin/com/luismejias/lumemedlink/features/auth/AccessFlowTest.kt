@@ -131,18 +131,27 @@ class AccessFlowTest {
     }
 
     @Test
-    fun stepOneShowsItsErrorsOnlyAfterTryingAndATakenRutOffersTheWayIn() = runTest {
+    fun stepOneJudgesEachFieldAsItIsTypedAndATakenRutOffersTheWayIn() = runTest {
         val profile = attempt.signUpProfile
+        val untouched = profile.state.value
+        assertFalse(
+            untouched.rutInvalid || untouched.firstNameMissing || untouched.mobileInvalid || untouched.emailInvalid,
+            "an empty form is not red",
+        )
+        profile.rutChanged("18.4")
+        assertFalse(profile.state.value.rutInvalid, "a RUT is not judged before it could be whole")
         profile.rutChanged("18.456.789-5")
         profile.mobileChanged("+56 9 8765 43")
         profile.emailChanged("camila.soto@correo")
-        assertFalse(profile.state.value.rutInvalid, "no red before the first try")
+        val typed = profile.state.value
+        assertTrue(typed.rutInvalid && typed.mobileInvalid && typed.emailInvalid, "red as typed, not on Continuar")
+        assertFalse(typed.firstNameMissing, "a field nobody typed in stays quiet")
+        profile.firstNameChanged("Camila")
+        profile.firstNameChanged("")
+        assertTrue(profile.state.value.firstNameMissing, "a name typed and erased is missing at once")
         profile.firstNameChanged("Camila")
         profile.firstSurnameChanged("Soto")
-        profile.submit()
-        val judged = profile.state.value
-        assertTrue(judged.rutInvalid && judged.mobileInvalid && judged.emailInvalid)
-        assertFalse(judged.canSubmit)
+        assertFalse(profile.state.value.canSubmit)
 
         profile.rutChanged(AccessScript.TAKEN_RUT)
         profile.mobileChanged("+56 9 8765 4321")

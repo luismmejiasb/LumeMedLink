@@ -6,17 +6,30 @@ import cl.lume.uicomposer.components.LumeDocumentField
 import cl.lume.uicomposer.components.LumeDocumentFormat
 import cl.lume.uicomposer.components.LumeFieldCounter
 import cl.lume.uicomposer.components.LumeFieldKeyboard
+import cl.lume.uicomposer.components.LumeFieldLines
 import cl.lume.uicomposer.components.LumeFieldSensitivity
 import cl.lume.uicomposer.components.LumeFieldState
 import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
 import cl.lume.uicomposer.components.LumeMultilineField
 import cl.lume.uicomposer.components.LumePasswordField
+import cl.lume.uicomposer.components.LumePhoneField
+import cl.lume.uicomposer.components.LumeRegion
+import cl.lume.uicomposer.components.LumeRegionPickerWords
 import cl.lume.uicomposer.components.LumeRevealLabels
 import cl.lume.uicomposer.components.LumeRevealLook
 import cl.lume.uicomposer.components.LumeSearchField
 import cl.lume.uicomposer.components.LumeTextCase
 import cl.lume.uicomposer.components.LumeTextField
+import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.common_search_clear
+import com.luismejias.lumemedlink.resources.field_clear
+import com.luismejias.lumemedlink.resources.field_clear_text
+import com.luismejias.lumemedlink.resources.phone_region_button
+import com.luismejias.lumemedlink.resources.phone_region_close
+import com.luismejias.lumemedlink.resources.phone_region_search
+import com.luismejias.lumemedlink.resources.phone_region_title
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * What a field holds, because the correct keyboard hardening is NOT the same for both (F3,
@@ -143,8 +156,18 @@ internal fun SensitiveTextField(
     /** A password being CREATED: the platform offers a strong one instead of saving a half-typed secret. */
     newCredential: Boolean = false,
     onSubmit: (() -> Unit)? = null,
+    /**
+     * The kit's ⓧ at the field's end once something is typed, which empties it (the author, 2026-10-13). On by
+     * default; a credential never shows it — its end is the show/hide control.
+     */
+    clearable: Boolean = true,
+    /** The most it takes, in UTF-16 units as the backend counts; `null` is no limit. Text fields only. */
+    maxLength: Int? = null,
+    /** What belongs to this field and sits against it — a password's checklist (ADR-0054). */
+    below: (@Composable () -> Unit)? = null,
 ) {
     val request = kitFieldRequestFor(purpose, format)
+    val clear = if (clearable) stringResource(Res.string.field_clear, label) else null
     if (request.masked) {
         LumePasswordField(
             value = value,
@@ -155,6 +178,7 @@ internal fun SensitiveTextField(
             reveal = reveal,
             revealLook = revealLook,
             newCredential = newCredential,
+            below = below,
             state = state,
             validation = validation,
             submit = submit,
@@ -173,6 +197,7 @@ internal fun SensitiveTextField(
             validation = validation,
             submit = submit,
             onSubmit = onSubmit,
+            clearContentDescription = clear,
         )
     } else {
         LumeTextField(
@@ -183,6 +208,12 @@ internal fun SensitiveTextField(
             modifier = modifier,
             keyboard = request.keyboard,
             textCase = request.textCase,
+            maxLength = maxLength,
+            // One line that scrolls inside, the start shown at rest: a form keeps its shape while it is typed
+            // (the author, 2026-10-13; the kit's §8 names the exemption).
+            lines = LumeFieldLines.Single,
+            below = below,
+            clearContentDescription = clear,
             sensitivity = request.sensitivity,
             state = state,
             validation = validation,
@@ -244,6 +275,8 @@ internal fun SensitiveWordsField(
     helper: String,
     counter: (count: Int, max: Int) -> String,
     modifier: Modifier = Modifier,
+    /** The kit's ⓧ once something is typed, as on [SensitiveTextField]. */
+    clearable: Boolean = true,
 ) {
     val request = WORDS_FIELD_REQUEST
     LumeTextField(
@@ -254,6 +287,7 @@ internal fun SensitiveWordsField(
         modifier = modifier,
         keyboard = request.keyboard,
         textCase = request.textCase,
+        clearContentDescription = if (clearable) stringResource(Res.string.field_clear_text) else null,
         maxLength = maxLength,
         helper = helper,
         sensitivity = request.sensitivity,
@@ -284,3 +318,53 @@ internal fun SensitiveWordsArea(
         sensitivity = WORDS_FIELD_REQUEST.sensitivity,
     )
 }
+
+/**
+ * A phone with its country (the kit's [LumePhoneField], the twin's tool): «CL +56 ⌄» at the start opens the country
+ * list, and the number is grouped as typed when [groups] says how. The value is the national number's digits; the
+ * country is [region], and the rule that judges the number is the caller's (`PhoneNumber`). Hardened as every
+ * personal datum here: hidden from services that are not accessibility tools (ADR-0042), the platform's phone
+ * keyboard, no corrections.
+ */
+@Composable
+internal fun SensitivePhoneField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    region: LumeRegion,
+    onRegionChange: (LumeRegion) -> Unit,
+    label: String,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    groups: List<Int>? = null,
+    validation: LumeFieldValidation = LumeFieldValidation.Neutral,
+    submit: LumeFieldSubmit = LumeFieldSubmit.Done,
+    onSubmit: (() -> Unit)? = null,
+    /** The kit's ⓧ once something is typed, as on [SensitiveTextField]. */
+    clearable: Boolean = true,
+) {
+    LumePhoneField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        placeholder = placeholder,
+        region = region,
+        onRegionChange = onRegionChange,
+        words = LumeRegionPickerWords(
+            title = stringResource(Res.string.phone_region_title),
+            regionButton = stringResource(Res.string.phone_region_button),
+            close = stringResource(Res.string.phone_region_close),
+            search = stringResource(Res.string.phone_region_search),
+            searchClear = stringResource(Res.string.common_search_clear),
+        ),
+        modifier = modifier,
+        groups = groups,
+        validation = validation,
+        submit = submit,
+        onSubmit = onSubmit,
+        sensitivity = PHONE_FIELD_SENSITIVITY,
+        clearContentDescription = if (clearable) stringResource(Res.string.field_clear, label) else null,
+    )
+}
+
+/** What a phone asks of the kit: its value hidden like every field here (ADR-0042). A test keeps it. */
+internal val PHONE_FIELD_SENSITIVITY: LumeFieldSensitivity = LumeFieldSensitivity.Personal

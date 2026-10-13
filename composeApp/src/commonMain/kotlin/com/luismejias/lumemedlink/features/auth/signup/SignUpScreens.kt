@@ -14,10 +14,10 @@ import cl.lume.uicomposer.components.LumeConsentRow
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeContainerScroll
-import cl.lume.uicomposer.components.LumeEqualRow
-import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
+import cl.lume.uicomposer.components.LumeForm
 import cl.lume.uicomposer.components.LumeLink
+import cl.lume.uicomposer.components.LumeRegion
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
@@ -33,6 +33,7 @@ import com.luismejias.lumemedlink.core.auth.AccountSummary
 import com.luismejias.lumemedlink.core.input.OneTimeCodeField
 import com.luismejias.lumemedlink.core.input.SensitiveFieldFormat
 import com.luismejias.lumemedlink.core.input.SensitiveFieldPurpose
+import com.luismejias.lumemedlink.core.input.SensitivePhoneField
 import com.luismejias.lumemedlink.core.input.SensitiveTextField
 import com.luismejias.lumemedlink.core.screen.richRuns
 import com.luismejias.lumemedlink.core.session.Clock
@@ -69,6 +70,7 @@ import com.luismejias.lumemedlink.resources.field_mobile_placeholder
 import com.luismejias.lumemedlink.resources.field_name_required
 import com.luismejias.lumemedlink.resources.field_optional
 import com.luismejias.lumemedlink.resources.field_password
+import com.luismejias.lumemedlink.resources.field_phone_invalid
 import com.luismejias.lumemedlink.resources.field_rut
 import com.luismejias.lumemedlink.resources.field_rut_invalid
 import com.luismejias.lumemedlink.resources.field_rut_placeholder
@@ -101,6 +103,7 @@ import com.luismejias.lumemedlink.resources.sign_up_step_password
 import com.luismejias.lumemedlink.resources.sign_up_step_phone
 import com.luismejias.lumemedlink.resources.sign_up_telemetry_statement
 import com.luismejias.lumemedlink.resources.sign_up_terms_statement
+import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -140,8 +143,8 @@ internal fun SignUpProfileScreen(
     onRecoverInstead: () -> Unit,
 ) {
     val state by model.state.collectAsState()
-    LumeContainer(
-        scroll = LumeContainerScroll.Scrollable,
+    LumeForm(
+        title = null,
         action = {
             AccessPrimaryButton(
                 title = stringResource(if (state.offline) Res.string.common_retry else Res.string.common_continue),
@@ -152,111 +155,110 @@ internal fun SignUpProfileScreen(
             )
         },
     ) {
-        LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
-            AccessBack(onBack)
-            SignUpSteps(current = 0)
-            OfflineBanner(state.offline)
-            AccessTitle(stringResource(Res.string.sign_up_data_title), stringResource(Res.string.sign_up_data_body))
-            SensitiveTextField(
-                value = state.rut,
-                onValueChange = model::rutChanged,
-                purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                format = SensitiveFieldFormat.RUT,
-                label = stringResource(Res.string.field_rut),
-                placeholder = stringResource(Res.string.field_rut_placeholder),
-                validation = when {
-                    state.rutTaken -> LumeFieldValidation.Error(stringResource(Res.string.sign_up_rut_taken))
-                    state.rutValid -> LumeFieldValidation.Valid
-                    else -> errorOr(state.rutInvalid, Res.string.field_rut_invalid)
-                },
-                submit = LumeFieldSubmit.Next,
-            )
-            if (state.rutTaken) {
-                LumeCard {
-                    LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
-                        LumeText(
-                            text = stringResource(Res.string.sign_up_rut_taken_title),
-                            style = LumeTextStyle.HeadingSmall,
-                        )
-                        LumeText(
-                            text = stringResource(Res.string.sign_up_rut_taken_body),
-                            color = LumeTextColor.Secondary,
-                        )
-                        LumeButton(
-                            content = LumeButtonContent.Title(stringResource(Res.string.sign_in_action)),
-                            width = LumeButtonWidth.Fill,
-                            onClick = { onSignInInstead(state.rut) },
-                        )
-                        LumeButton(
-                            content = LumeButtonContent.Title(stringResource(Res.string.locked_recover)),
-                            emphasis = LumeButtonEmphasis.Outline,
-                            width = LumeButtonWidth.Fill,
-                            onClick = onRecoverInstead,
-                        )
-                    }
-                }
-            } else {
-                // The names in four, the second of each optional and saying so inside (the author, 2026-10-12).
-                val optional = stringResource(Res.string.field_optional)
-                LumeEqualRow {
-                    SensitiveTextField(
-                        value = state.firstName,
-                        onValueChange = model::firstNameChanged,
-                        purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                        label = stringResource(Res.string.field_first_name),
-                        placeholder = "",
-                        validation = errorOr(state.firstNameMissing, Res.string.field_name_required),
-                        submit = LumeFieldSubmit.Next,
+        AccessBack(onBack)
+        SignUpSteps(current = 0)
+        OfflineBanner(state.offline)
+        AccessTitle(stringResource(Res.string.sign_up_data_title), stringResource(Res.string.sign_up_data_body))
+        SensitiveTextField(
+            value = state.rut,
+            onValueChange = model::rutChanged,
+            purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+            format = SensitiveFieldFormat.RUT,
+            label = stringResource(Res.string.field_rut),
+            placeholder = stringResource(Res.string.field_rut_placeholder),
+            validation = when {
+                state.rutTaken -> LumeFieldValidation.Error(stringResource(Res.string.sign_up_rut_taken))
+                state.rutValid -> LumeFieldValidation.Valid
+                else -> errorOr(state.rutInvalid, Res.string.field_rut_invalid)
+            },
+        )
+        if (state.rutTaken) {
+            LumeCard {
+                LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
+                    LumeText(
+                        text = stringResource(Res.string.sign_up_rut_taken_title),
+                        style = LumeTextStyle.HeadingSmall,
                     )
-                    SensitiveTextField(
-                        value = state.secondName,
-                        onValueChange = model::secondNameChanged,
-                        purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                        label = stringResource(Res.string.field_second_name),
-                        placeholder = optional,
-                        submit = LumeFieldSubmit.Next,
+                    LumeText(
+                        text = stringResource(Res.string.sign_up_rut_taken_body),
+                        color = LumeTextColor.Secondary,
+                    )
+                    LumeButton(
+                        content = LumeButtonContent.Title(stringResource(Res.string.sign_in_action)),
+                        width = LumeButtonWidth.Fill,
+                        onClick = { onSignInInstead(state.rut) },
+                    )
+                    LumeButton(
+                        content = LumeButtonContent.Title(stringResource(Res.string.locked_recover)),
+                        emphasis = LumeButtonEmphasis.Outline,
+                        width = LumeButtonWidth.Fill,
+                        onClick = onRecoverInstead,
                     )
                 }
-                LumeEqualRow {
-                    SensitiveTextField(
-                        value = state.firstSurname,
-                        onValueChange = model::firstSurnameChanged,
-                        purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                        label = stringResource(Res.string.field_first_surname),
-                        placeholder = "",
-                        validation = errorOr(state.firstSurnameMissing, Res.string.field_name_required),
-                        submit = LumeFieldSubmit.Next,
-                    )
-                    SensitiveTextField(
-                        value = state.secondSurname,
-                        onValueChange = model::secondSurnameChanged,
-                        purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                        label = stringResource(Res.string.field_second_surname),
-                        placeholder = optional,
-                        submit = LumeFieldSubmit.Next,
-                    )
-                }
-                SensitiveTextField(
-                    value = state.mobile,
-                    onValueChange = model::mobileChanged,
-                    purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                    format = SensitiveFieldFormat.PHONE,
-                    label = stringResource(Res.string.field_mobile),
-                    placeholder = stringResource(Res.string.field_mobile_placeholder),
-                    validation = errorOr(state.mobileInvalid, Res.string.field_mobile_invalid),
-                    submit = LumeFieldSubmit.Next,
-                )
-                SensitiveTextField(
-                    value = state.email,
-                    onValueChange = model::emailChanged,
-                    purpose = SensitiveFieldPurpose.PERSONAL_DATA,
-                    format = SensitiveFieldFormat.EMAIL,
-                    label = stringResource(Res.string.field_email),
-                    placeholder = stringResource(Res.string.field_email_placeholder),
-                    validation = errorOr(state.emailInvalid, Res.string.field_email_invalid),
-                    submit = LumeFieldSubmit.Done,
-                )
             }
+        } else {
+            // The names in four, the second of each optional and saying so inside (the author, 2026-10-12). One
+            // under the other at the form's full width, like every other field: LumeEqualRow sizes by each item's
+            // minimum width, which for a field is its text, so a long name widened the column past the screen and
+            // rewrapped the form as it was typed (the author, 2026-10-13).
+            val optional = stringResource(Res.string.field_optional)
+            SensitiveTextField(
+                value = state.firstName,
+                onValueChange = model::firstNameChanged,
+                purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+                maxLength = NAME_MAX_LENGTH,
+                label = stringResource(Res.string.field_first_name),
+                placeholder = "",
+                validation = errorOr(state.firstNameMissing, Res.string.field_name_required),
+            )
+            SensitiveTextField(
+                value = state.secondName,
+                onValueChange = model::secondNameChanged,
+                purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+                maxLength = NAME_MAX_LENGTH,
+                label = stringResource(Res.string.field_second_name),
+                placeholder = optional,
+            )
+            SensitiveTextField(
+                value = state.firstSurname,
+                onValueChange = model::firstSurnameChanged,
+                purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+                maxLength = NAME_MAX_LENGTH,
+                label = stringResource(Res.string.field_first_surname),
+                placeholder = "",
+                validation = errorOr(state.firstSurnameMissing, Res.string.field_name_required),
+            )
+            SensitiveTextField(
+                value = state.secondSurname,
+                onValueChange = model::secondSurnameChanged,
+                purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+                maxLength = NAME_MAX_LENGTH,
+                label = stringResource(Res.string.field_second_surname),
+                placeholder = optional,
+            )
+            val chilean = state.mobileDialCode == PhoneNumber.CHILE
+            SensitivePhoneField(
+                value = state.mobile,
+                onValueChange = model::mobileChanged,
+                region = LumeRegion.of(state.mobileRegion) ?: LumeRegion.of(CHILE_REGION)!!,
+                onRegionChange = { model.mobileRegionChanged(it.code, it.dialCode) },
+                label = stringResource(Res.string.field_mobile),
+                placeholder = if (chilean) stringResource(Res.string.field_mobile_placeholder) else "",
+                groups = if (chilean) PhoneNumber.CHILEAN_MOBILE_GROUPS else null,
+                validation = errorOr(
+                    state.mobileInvalid,
+                    if (chilean) Res.string.field_mobile_invalid else Res.string.field_phone_invalid,
+                ),
+            )
+            SensitiveTextField(
+                value = state.email,
+                onValueChange = model::emailChanged,
+                purpose = SensitiveFieldPurpose.PERSONAL_DATA,
+                format = SensitiveFieldFormat.EMAIL,
+                label = stringResource(Res.string.field_email),
+                placeholder = stringResource(Res.string.field_email_placeholder),
+                validation = errorOr(state.emailInvalid, Res.string.field_email_invalid),
+            )
         }
     }
 }
@@ -266,8 +268,8 @@ internal fun SignUpProfileScreen(
 internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: Int, onBack: (() -> Unit)?) {
     val state by model.state.collectAsState()
     val required = stringResource(Res.string.sign_up_required)
-    LumeContainer(
-        scroll = LumeContainerScroll.Scrollable,
+    LumeForm(
+        title = null,
         action = {
             AccessPrimaryButton(
                 title = stringResource(if (state.offline) Res.string.common_retry else Res.string.common_continue),
@@ -277,44 +279,47 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
                 run = model::submit,
             )
         },
+        footer = {
+            // The consents are part of "Continuar": pinned over it, under the keyboard (the author, ADR-0054).
+            LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
+                // One line each, the link inside, as 2b draws it. The links open nothing yet: there is no terms
+                // document to open (ADR-0044, deviation 12).
+                LumeConsentRow(
+                    granted = state.acceptedTerms,
+                    onGrantedChange = model::termsChanged,
+                    text = stringResource(Res.string.sign_up_terms_statement).richRuns(onLink = {}),
+                    requirement = required,
+                    missing = state.consentRequired && !state.acceptedTerms,
+                )
+                LumeConsentRow(
+                    granted = state.acceptedDataUse,
+                    onGrantedChange = model::dataUseChanged,
+                    text = stringResource(Res.string.sign_up_data_use_statement).richRuns(onLink = {}),
+                    requirement = required,
+                    missing = state.consentRequired && !state.acceptedDataUse,
+                )
+                // Optional, and never marked missing (ADR-0051 §4): a consent the person cannot refuse is not consent.
+                LumeConsentRow(
+                    granted = state.acceptedTelemetry,
+                    onGrantedChange = model::telemetryChanged,
+                    text = stringResource(Res.string.sign_up_telemetry_statement).richRuns(),
+                )
+            }
+        },
     ) {
-        LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
-            AccessBack(onBack)
-            SignUpSteps(current = 1)
-            OfflineBanner(state.offline)
-            AccessTitle(
-                stringResource(Res.string.sign_up_password_title),
-                stringResource(Res.string.sign_up_password_body),
-            )
-            NewPasswordFields(
-                entry = state.entry,
-                onPassword = model::passwordChanged,
-                onRepeated = model::repeatedChanged,
-                passwordLabel = stringResource(Res.string.field_password),
-            )
-            // One line each, the link inside, as 2b draws it. The links open nothing yet: there is no terms document
-            // to open (ADR-0044, deviation 12).
-            LumeConsentRow(
-                granted = state.acceptedTerms,
-                onGrantedChange = model::termsChanged,
-                text = stringResource(Res.string.sign_up_terms_statement).richRuns(onLink = {}),
-                requirement = required,
-                missing = state.consentRequired && !state.acceptedTerms,
-            )
-            LumeConsentRow(
-                granted = state.acceptedDataUse,
-                onGrantedChange = model::dataUseChanged,
-                text = stringResource(Res.string.sign_up_data_use_statement).richRuns(onLink = {}),
-                requirement = required,
-                missing = state.consentRequired && !state.acceptedDataUse,
-            )
-            // Optional, and never marked missing (ADR-0051 §4): a consent the person cannot refuse is not consent.
-            LumeConsentRow(
-                granted = state.acceptedTelemetry,
-                onGrantedChange = model::telemetryChanged,
-                text = stringResource(Res.string.sign_up_telemetry_statement).richRuns(),
-            )
-        }
+        AccessBack(onBack)
+        SignUpSteps(current = 1)
+        OfflineBanner(state.offline)
+        AccessTitle(
+            stringResource(Res.string.sign_up_password_title),
+            stringResource(Res.string.sign_up_password_body),
+        )
+        NewPasswordFields(
+            entry = state.entry,
+            onPassword = model::passwordChanged,
+            onRepeated = model::repeatedChanged,
+            passwordLabel = stringResource(Res.string.field_password),
+        )
     }
 }
 

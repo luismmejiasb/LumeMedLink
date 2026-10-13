@@ -1,10 +1,10 @@
 package com.luismejias.lumemedlink.core.care
 
 import com.luismejias.lumemedlink.shared.CalendarDate
-import com.luismejias.lumemedlink.shared.ChileanMobile
 import com.luismejias.lumemedlink.shared.ChileanRut
 import com.luismejias.lumemedlink.shared.ClockTime
 import com.luismejias.lumemedlink.shared.EmailAddress
+import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.delay
 
 /** Which of the design's worlds the script plays: its sample patient, or one with nothing yet (e7, e8, e9). */
@@ -291,7 +291,7 @@ internal class ScriptedPatientCare(
             givenNames = "Camila",
             familyNames = "Soto",
             rut = requireNotNull(ChileanRut.parse("18.456.789-K")),
-            mobile = requireNotNull(ChileanMobile.parse("+56987654321")),
+            mobile = requireNotNull(PhoneNumber.chileanMobile("+56987654321")),
             email = requireNotNull(EmailAddress.parse("camila.soto@correo.cl")),
             verified = true,
         )

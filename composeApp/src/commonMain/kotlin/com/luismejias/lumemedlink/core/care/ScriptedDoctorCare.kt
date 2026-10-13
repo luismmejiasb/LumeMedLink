@@ -1,10 +1,10 @@
 package com.luismejias.lumemedlink.core.care
 
 import com.luismejias.lumemedlink.shared.CalendarDate
-import com.luismejias.lumemedlink.shared.ChileanMobile
 import com.luismejias.lumemedlink.shared.ChileanRut
 import com.luismejias.lumemedlink.shared.ClockTime
 import com.luismejias.lumemedlink.shared.EmailAddress
+import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.delay
 
 /**
@@ -96,7 +96,7 @@ internal class ScriptedDoctorCare(
                 givenNames = given,
                 familyNames = family,
                 rut = ChileanRut.parse(rut),
-                mobile = mobile?.let(ChileanMobile::parse),
+                mobile = mobile?.let(PhoneNumber::chileanMobile),
                 email = email?.let(EmailAddress::parse),
             )
 

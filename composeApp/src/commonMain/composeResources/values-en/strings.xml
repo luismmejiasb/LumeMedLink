@@ -25,8 +25,13 @@
     <string name="field_optional">Optional</string>
     <string name="field_name_required">Fill in this field.</string>
     <string name="field_mobile">Mobile phone</string>
-    <string name="field_mobile_placeholder">+56 9 1234 5678</string>
+    <string name="field_mobile_placeholder">9 1234 5678</string>
     <string name="field_mobile_invalid">Enter a 9-digit mobile number.</string>
+    <string name="phone_region_title">Phone country</string>
+    <string name="phone_region_button">Change the phone country</string>
+    <string name="phone_region_close">Done</string>
+    <string name="phone_region_search">Search country</string>
+    <string name="field_phone_invalid">Check the phone number.</string>
     <string name="field_email">Email</string>
     <string name="field_email_placeholder">name@domain.com</string>
     <string name="field_email_invalid">Check the email format.</string>
@@ -41,6 +46,8 @@
     <string name="field_passwords_differ">The passwords don’t match.</string>
     <string name="field_code">Verification code</string>
     <string name="field_code_clear">Clear code</string>
+    <string name="field_clear">Clear %1$s</string>
+    <string name="field_clear_text">Clear text</string>
     <string name="password_rule_length">At least 8 characters</string>
     <string name="password_rule_case">An uppercase and a lowercase letter</string>
     <string name="password_rule_digit">A number</string>

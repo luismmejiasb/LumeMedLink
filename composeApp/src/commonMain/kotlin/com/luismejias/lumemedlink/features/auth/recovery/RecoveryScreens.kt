@@ -8,8 +8,8 @@ import cl.lume.uicomposer.components.LumeContainerAlignment
 import cl.lume.uicomposer.components.LumeContainerScroll
 import cl.lume.uicomposer.components.LumeFieldSubmit
 import cl.lume.uicomposer.components.LumeFieldValidation
+import cl.lume.uicomposer.components.LumeForm
 import cl.lume.uicomposer.components.LumeStack
-import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.foundations.LumeIcon
@@ -147,8 +147,8 @@ internal fun RecoveryCodeScreen(model: RecoveryCodeModel, clock: Clock, retryEpo
 @Composable
 internal fun NewPasswordScreen(model: NewPasswordModel, retryEpoch: Int, onBack: (() -> Unit)?) {
     val state by model.state.collectAsState()
-    LumeContainer(
-        scroll = LumeContainerScroll.Scrollable,
+    LumeForm(
+        title = null,
         action = {
             AccessPrimaryButton(
                 title = stringResource(if (state.offline) Res.string.common_retry else Res.string.recovery_save),
@@ -159,18 +159,16 @@ internal fun NewPasswordScreen(model: NewPasswordModel, retryEpoch: Int, onBack:
             )
         },
     ) {
-        LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
-            AccessBack(onBack)
-            OfflineBanner(state.offline)
-            AccessTitle(stringResource(Res.string.recovery_new_title), stringResource(Res.string.recovery_new_body))
-            NewPasswordFields(
-                entry = state.entry,
-                onPassword = model::passwordChanged,
-                onRepeated = model::repeatedChanged,
-                passwordLabel = stringResource(Res.string.field_password_new),
-                extraError = if (state.reused) stringResource(Res.string.recovery_new_reused) else null,
-            )
-        }
+        AccessBack(onBack)
+        OfflineBanner(state.offline)
+        AccessTitle(stringResource(Res.string.recovery_new_title), stringResource(Res.string.recovery_new_body))
+        NewPasswordFields(
+            entry = state.entry,
+            onPassword = model::passwordChanged,
+            onRepeated = model::repeatedChanged,
+            passwordLabel = stringResource(Res.string.field_password_new),
+            extraError = if (state.reused) stringResource(Res.string.recovery_new_reused) else null,
+        )
     }
 }
 

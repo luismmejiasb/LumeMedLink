@@ -11,19 +11,21 @@ class ContactValuesTest {
     @Test
     fun aMobileIsAcceptedHoweverItIsTyped() {
         listOf("+56 9 8765 4321", "56987654321", "9 8765 4321", "987654321").forEach {
-            assertEquals("+56987654321", ChileanMobile.parse(it)?.e164, it)
+            assertEquals("+56987654321", PhoneNumber.chileanMobile(it)?.e164, it)
         }
     }
 
     @Test
     fun anythingThatIsNotAChileanMobileIsRefused() {
-        listOf("+56 9 8765 43", "+56 2 2765 4321", "12345", "").forEach { assertNull(ChileanMobile.parse(it), it) }
+        listOf("+56 9 8765 43", "+56 2 2765 4321", "12345", "").forEach {
+            assertNull(PhoneNumber.chileanMobile(it), it)
+        }
     }
 
     @Test
     fun aMobileShowsOnlyItsLastFourDigits() {
-        assertEquals("+56 9 •••• 4321", ChileanMobile.parse("987654321")?.masked)
-        assertFalse("8765" in ChileanMobile.parse("987654321").toString())
+        assertEquals("+56 9 •••• 4321", PhoneNumber.chileanMobile("987654321")?.masked)
+        assertFalse("8765" in PhoneNumber.chileanMobile("987654321").toString())
     }
 
     @Test

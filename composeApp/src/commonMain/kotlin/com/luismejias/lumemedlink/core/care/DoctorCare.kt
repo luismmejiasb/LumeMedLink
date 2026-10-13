@@ -1,10 +1,10 @@
 package com.luismejias.lumemedlink.core.care
 
 import com.luismejias.lumemedlink.shared.CalendarDate
-import com.luismejias.lumemedlink.shared.ChileanMobile
 import com.luismejias.lumemedlink.shared.ChileanRut
 import com.luismejias.lumemedlink.shared.ClockTime
 import com.luismejias.lumemedlink.shared.EmailAddress
+import com.luismejias.lumemedlink.shared.PhoneNumber
 
 /**
  * What kind of visit an appointment is (m1): a CLOSED list, never free text — none of them says what the visit is about
@@ -18,7 +18,7 @@ internal data class PatientContact(
     val givenNames: String,
     val familyNames: String,
     val rut: ChileanRut?,
-    val mobile: ChileanMobile?,
+    val mobile: PhoneNumber?,
     val email: EmailAddress?,
 ) {
     val displayName: String get() = "$givenNames $familyNames"
