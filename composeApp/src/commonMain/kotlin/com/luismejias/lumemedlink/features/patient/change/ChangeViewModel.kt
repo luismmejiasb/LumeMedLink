@@ -9,6 +9,7 @@ import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,8 +36,11 @@ internal sealed interface ChangeDone {
  * One appointment's flow — its detail (c1–c3) and «Tu próxima cita» (f1–f4) — reached from Inicio and from Mis citas,
  * so the tab host owns one (ADR-0045: a flow's state lives in its own owner, not in a screen).
  */
-internal class ChangeViewModel(private val care: PatientCareGateway, private val directory: DirectoryGateway) :
-    ViewModel() {
+internal class ChangeViewModel(
+    private val care: PatientCareGateway,
+    private val directory: DirectoryGateway,
+    logEvent: (AnalyticsEvent) -> Unit = {},
+) : ViewModel() {
     private val shownSheet = MutableStateFlow<ChangeSheet?>(null)
     val sheet: StateFlow<ChangeSheet?> = shownSheet.asStateFlow()
 
@@ -47,8 +51,8 @@ internal class ChangeViewModel(private val care: PatientCareGateway, private val
     private val finished = MutableStateFlow<ChangeDone?>(null)
     val done: StateFlow<ChangeDone?> = finished.asStateFlow()
 
-    val reschedule = RescheduleModel(care, directory)
-    val cancel = CancelModel(care)
+    val reschedule = RescheduleModel(care, directory, logEvent)
+    val cancel = CancelModel(care, logEvent)
     val detail = DetailModel(care)
 
     /** Runs a step in this ViewModel's scope — a screen never owns the work it starts. */

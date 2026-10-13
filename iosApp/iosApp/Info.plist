@@ -30,6 +30,28 @@
 	-->
 	<key>NSFaceIDUsageDescription</key>
 	<string>Face ID te permite volver a tu sesión sin escribir tu contraseña.</string>
+	<!--
+	  Firebase, everything off from the factory (ADR-0052 §2). Crashlytics and Analytics turn on only through the
+	  person's consent, at runtime; the rest never turns on. No IDFV, no ad personalization, no ad-network
+	  registration, no automatic screen names, no push token before login (ADR-0038 §3), and no AppDelegate swizzling:
+	  the host forwards what Firebase needs by hand. check-firebase-posture.sh asserts every key.
+	-->
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
+	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_REGISTRATION_WITH_AD_NETWORK_ENABLED</key>
+	<false/>
+	<key>FirebaseAutomaticScreenReportingEnabled</key>
+	<false/>
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<false/>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>

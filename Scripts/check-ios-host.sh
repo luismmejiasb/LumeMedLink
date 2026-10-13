@@ -228,23 +228,67 @@ problems=$(plist_problems)
 [ -n "$problems" ] && fail "ios-host: the Info.plist or the entitlements break the host's posture" \
     "Parsed, the way iOS reads them." "$problems"
 
-# ── What the host LINKS (task 0002, F17) ────────────────────────────────────────────────────────
+# ── What the host LINKS (task 0002, F17; ADR-0052) ──────────────────────────────────────────────
 # §8.1's brake on crash and analytics SDKs is "doble y con gate", and both halves were Gradle-only:
 # a Sentry `import` plus a Swift package reference in the project passed every gate (reproduced).
-# The host links the Kotlin framework and Apple's UI frameworks, nothing else; a dependency here
-# needs an ADR and a committed Package.resolved, exactly like a Gradle one.
-pkg=$(grep -nE 'XCRemoteSwiftPackageReference|XCLocalSwiftPackageReference|XCSwiftPackageProductDependency' "$PROJECT" || true)
-[ -n "$pkg" ] && fail "ios-host: the Xcode project depends on a Swift package" \
-    "A dependency of the host goes through an ADR (§8.8, ADR-0018), not through Xcode." "$pkg"
-managers=$(find iosApp \( -name Podfile -o -name Package.swift -o -name Cartfile -o -name Package.resolved \) -not -path '*/build/*' 2>/dev/null)
+# Since ADR-0052 the host links ONE package — firebase-ios-sdk, at an exact version — and five of its products,
+# nothing else. The project, the resolved graph and the imports are each checked, because each is a door.
+RESOLVED="iosApp/iosApp.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+pkg_problems=$(python3 - "$PROJECT" "$RESOLVED" <<'PY'
+import json, re, sys
+project, resolved = sys.argv[1], sys.argv[2]
+text = open(project).read()
+problems = []
+# Every package reference in the project, local or remote, with its URL and requirement.
+refs = re.findall(r'isa = (XCRemoteSwiftPackageReference|XCLocalSwiftPackageReference);(.*?)\n\t\t};', text, re.S)
+remote = [body for kind, body in refs if kind == "XCRemoteSwiftPackageReference"]
+if any(kind == "XCLocalSwiftPackageReference" for kind, _ in refs):
+    problems.append("a LOCAL Swift package is referenced; the host links firebase-ios-sdk and nothing else")
+for body in remote:
+    url = re.search(r'repositoryURL = "([^"]+)"', body)
+    url = url.group(1) if url else "?"
+    if url != "https://github.com/firebase/firebase-ios-sdk":
+        problems.append(f"a Swift package outside ADR-0052 is referenced: {url}")
+    elif not re.search(r'kind = exactVersion;', body):
+        problems.append("firebase-ios-sdk is not pinned to an exact version (a range moves under a green build)")
+if len(remote) != 1 and not problems:
+    problems.append(f"expected exactly one package reference (firebase-ios-sdk), found {len(remote)}")
+products = set(re.findall(r'isa = XCSwiftPackageProductDependency;.*?productName = ([A-Za-z]+);', text, re.S))
+allowed = {"FirebaseCore", "FirebaseCrashlytics", "FirebaseAnalyticsCore", "FirebaseRemoteConfig", "FirebaseMessaging"}
+for extra in sorted(products - allowed):
+    problems.append(f"a package product outside ADR-0052 is linked: {extra}")
+# The resolved graph: the packages firebase-ios-sdk 13.0.1 pulled in, measured on 2026-10-13, each pinned.
+graph = {"firebase-ios-sdk", "googleutilities", "googledatatransport", "googleappmeasurement", "interop-ios-for-google-sdks",
+         "promises", "nanopb", "gtm-session-fetcher", "abseil-cpp-binary", "leveldb", "app-check", "grpc-binary",
+         "google-ads-on-device-conversion-ios-sdk"}
+if remote:
+    try:
+        pins = json.load(open(resolved)).get("pins", [])
+    except (OSError, ValueError):
+        pins = None
+        problems.append(f"{resolved} is missing or unreadable: an unpinned graph resolves to whatever is newest")
+    for pin in pins or []:
+        identity, state = pin.get("identity", "?"), pin.get("state", {})
+        if identity not in graph:
+            problems.append(f"Package.resolved pins a package nobody measured: {identity}")
+        if not state.get("revision") or not state.get("version"):
+            problems.append(f"Package.resolved does not pin {identity} to a version and a revision")
+print("\n".join(problems))
+PY
+)
+[ -n "$pkg_problems" ] && fail "ios-host: the Swift packages break ADR-0052" \
+    "One package, firebase-ios-sdk at an exact version, five products, a committed Package.resolved (§8.8)." "$pkg_problems"
+managers=$(find iosApp \( -name Podfile -o -name Package.swift -o -name Cartfile -o -name Package.resolved \) -not -path '*/build/*' 2>/dev/null | grep -vxF "$RESOLVED" || true)
 [ -n "$managers" ] && fail "ios-host: a dependency manager file in the host" \
-    "The host has no third-party dependency (§8.8)." "$managers"
+    "The host's one dependency goes through the Xcode project and its committed Package.resolved (§8.8)." "$managers"
+FIREBASE_HOST="iosApp/iosApp/FirebaseHost.swift"
 imports=$(for f in $(find iosApp -name '*.swift' -not -path '*/build/*' 2>/dev/null); do
     python3 Scripts/lib/uncomment.py --lang c --strip-strings "$f" 2>/dev/null |
         grep -nE '^[[:space:]]*(@testable[[:space:]]+)?import[[:space:]]+' | sed "s|^|$f:|"
-done | grep -vE 'import[[:space:]]+(SwiftUI|UIKit|Foundation|LumeMedLink)[[:space:]]*$' || true)
+done | grep -vE 'import[[:space:]]+(SwiftUI|UIKit|Foundation|LumeMedLink)[[:space:]]*$' |
+    grep -vE "^$FIREBASE_HOST:[0-9]+:[[:space:]]*import[[:space:]]+(FirebaseCore|FirebaseCrashlytics|FirebaseAnalytics|FirebaseRemoteConfig|FirebaseMessaging)[[:space:]]*$" || true)
 [ -n "$imports" ] && fail "ios-host: the host imports a module it is not allowed to link" \
-    "Allowed: SwiftUI, UIKit, Foundation and the Kotlin framework. Anything else is a dependency, and needs an ADR (§8.1, §8.8)." "$imports"
+    "Allowed: SwiftUI, UIKit, Foundation, the Kotlin framework, and Firebase's five modules inside FirebaseHost.swift only (ADR-0052)." "$imports"
 
 # ── ABSENCE, in the Swift ───────────────────────────────────────────────────────────────────────
 hits=$(swift_code 'UIPasteboard')

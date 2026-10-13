@@ -130,7 +130,7 @@ internal data class SignUpCredentialsState(
     val acceptedTerms: Boolean = false,
     val acceptedDataUse: Boolean = false,
     /** The third consent, optional (ADR-0051 §4): crash reports with a crash-only key. Never blocks «Continuar». */
-    val acceptedCrashReports: Boolean = false,
+    val acceptedTelemetry: Boolean = false,
     val offline: Boolean = false,
 ) {
     /** Everything else is right and a consent is still missing: the row says it is required. */
@@ -147,7 +147,7 @@ internal class SignUpCredentialsModel(
     private val profileOf: () -> SignUpProfile?,
     private val codeSent: (CodeDispatch, SignUpProfile) -> Unit,
     /** Where the optional crash-report consent goes once the step is accepted (ADR-0051 §4). */
-    private val crashReportsChosen: suspend (Boolean) -> Unit = {},
+    private val telemetryChosen: suspend (Boolean) -> Unit = {},
 ) {
     private val current = MutableStateFlow(SignUpCredentialsState())
     val state: StateFlow<SignUpCredentialsState> = current.asStateFlow()
@@ -160,7 +160,7 @@ internal class SignUpCredentialsModel(
 
     fun dataUseChanged(value: Boolean) = edit { copy(acceptedDataUse = value) }
 
-    fun crashReportsChanged(value: Boolean) = edit { copy(acceptedCrashReports = value) }
+    fun telemetryChanged(value: Boolean) = edit { copy(acceptedTelemetry = value) }
 
     suspend fun submit(): StepOutcome {
         val typed = current.value
@@ -171,7 +171,7 @@ internal class SignUpCredentialsModel(
             flow,
             onOffline = { edit { copy(offline = true) } },
             onOk = { dispatch ->
-                crashReportsChosen(typed.acceptedCrashReports)
+                telemetryChosen(typed.acceptedTelemetry)
                 codeSent(dispatch, profile)
                 flow.push(AccessRoute.SIGN_UP_CODE)
                 StepOutcome.Advanced

@@ -16,7 +16,10 @@ local.properties
 
 # Xcode (the iOS host)
 xcuserdata/
-*.xcworkspace/xcshareddata/swiftpm/
+# SwiftPM's local state is not committed, but Package.resolved IS: it pins the Firebase graph (ADR-0052), the way a
+# lockfile pins Gradle's, and check-ios-host.sh reads it.
+*.xcworkspace/xcshareddata/swiftpm/*
+!*.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Credentials and signing material (F20, ADR-0018).
 # This section is not hypothetical hygiene: every commit in this repo is made with `git add -A`,

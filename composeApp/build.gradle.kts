@@ -93,6 +93,12 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.androidx.biometric)
+            // ADR-0052: reached only from core/telemetry and core/push (detekt's ForbiddenImport).
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.analytics)
+            implementation(libs.firebase.config)
+            implementation(libs.firebase.messaging)
         }
 
         getByName("androidDeviceTest").dependencies {

@@ -118,10 +118,67 @@ val copyKitComposeResourcesIntoAssets =
         resourcePackage.set("cl.lume.uicomposer.generated.resources")
     }
 
+// ── Firebase's options, without Google's plugin (ADR-0052 §8) ──────────────────────────────────────
+//
+// `google-services.json` stays out of git (.gitignore), and the `google-services` Gradle plugin stays out of the
+// build: a plugin runs with the build's privileges (ADR-0018). Its one job here is small enough to do in the open —
+// turn the file into the string resources `FirebaseOptions.fromResource` reads. Without the file this writes nothing,
+// `fromResource` answers null, and core/telemetry never starts Firebase.
+abstract class FirebaseOptionsResources : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val config: ConfigurableFileCollection
+
+    @get:Input
+    abstract val applicationId: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val out = outputDirectory.get().asFile
+        out.deleteRecursively()
+        val file = config.files.firstOrNull { it.isFile } ?: return
+
+        @Suppress("UNCHECKED_CAST")
+        fun Any?.map() = this as Map<String, Any?>
+
+        @Suppress("UNCHECKED_CAST")
+        fun Any?.list() = this as List<Any?>
+        val json = groovy.json.JsonSlurper().parse(file).map()
+        val project = json["project_info"].map()
+        val client = json["client"].list().map { it.map() }.firstOrNull {
+            it["client_info"].map()["android_client_info"].map()["package_name"] == applicationId.get()
+        } ?: throw GradleException("google-services.json has no client for ${applicationId.get()}")
+        val apiKey = client["api_key"].list().first().map()["current_key"]
+        val values = linkedMapOf(
+            "google_app_id" to client["client_info"].map()["mobilesdk_app_id"],
+            "gcm_defaultSenderId" to project["project_number"],
+            "google_api_key" to apiKey,
+            "google_crash_reporting_api_key" to apiKey,
+            "project_id" to project["project_id"],
+            "google_storage_bucket" to project["storage_bucket"],
+        ).filterValues { it != null }
+        val xml = values.entries.joinToString("\n") { (name, value) ->
+            val escaped = value.toString().replace("&", "&amp;").replace("<", "&lt;").replace("'", "\\'")
+            "    <string name=\"$name\" translatable=\"false\">$escaped</string>"
+        }
+        File(out, "values").mkdirs()
+        File(out, "values/firebase_options.xml").writeText("<resources>\n$xml\n</resources>\n")
+    }
+}
+
+val firebaseOptionsResources = tasks.register<FirebaseOptionsResources>("firebaseOptionsResources") {
+    config.from(layout.projectDirectory.file("google-services.json"))
+    applicationId.set(android.defaultConfig.applicationId)
+}
+
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(
             copyKitComposeResourcesIntoAssets,
         ) { it.outputDirectory }
+        variant.sources.res?.addGeneratedSourceDirectory(firebaseOptionsResources) { it.outputDirectory }
     }
 }

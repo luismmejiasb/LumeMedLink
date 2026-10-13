@@ -4,8 +4,9 @@ import androidx.lifecycle.ViewModel
 import com.luismejias.lumemedlink.core.auth.AccountSummary
 import com.luismejias.lumemedlink.core.auth.DoctorLinkGateway
 import com.luismejias.lumemedlink.core.auth.PatientAccessGateway
-import com.luismejias.lumemedlink.core.crash.CrashConsent
 import com.luismejias.lumemedlink.core.session.Clock
+import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
+import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
 import com.luismejias.lumemedlink.features.auth.doctor.DoctorLinkModel
 import com.luismejias.lumemedlink.features.auth.recovery.NewPasswordModel
 import com.luismejias.lumemedlink.features.auth.recovery.RecoveryCodeModel
@@ -27,9 +28,10 @@ import kotlinx.coroutines.flow.asStateFlow
 internal class AccessAttempt(
     patients: PatientAccessGateway,
     doctors: DoctorLinkGateway,
-    crashReportsChosen: suspend (Boolean) -> Unit = {},
+    telemetryChosen: suspend (Boolean) -> Unit = {},
+    logEvent: (AnalyticsEvent) -> Unit = {},
 ) {
-    val flow = AccessFlowModel()
+    val flow = AccessFlowModel(onFinished = { logEvent(AnalyticsEvent.SIGN_IN_COMPLETED) })
     val signIn = SignInModel(patients, flow)
     val quickSignIn = QuickSignInModel(patients, flow)
 
@@ -38,14 +40,17 @@ internal class AccessAttempt(
     /** Who 2d greets. Memory only. */
     val createdAccount: StateFlow<AccountSummary?> = account.asStateFlow()
 
-    val signUpCode = SignUpCodeModel(patients, flow) { account.value = it }
+    val signUpCode = SignUpCodeModel(patients, flow) {
+        account.value = it
+        logEvent(AnalyticsEvent.SIGN_UP_COMPLETED)
+    }
     val signUpProfile = SignUpProfileModel(patients, flow)
     val signUpCredentials = SignUpCredentialsModel(
         patients,
         flow,
         profileOf = { signUpProfile.state.value.profile },
         codeSent = signUpCode::started,
-        crashReportsChosen = crashReportsChosen,
+        telemetryChosen = telemetryChosen,
     )
     val recoveryCode = RecoveryCodeModel(patients, flow)
     val recoveryRut = RecoveryRutModel(patients, flow, recoveryCode::started)
@@ -63,8 +68,9 @@ internal class AccessFlowViewModel(
     private val doctors: DoctorLinkGateway,
     /** For the countdowns: lockout, code expiry, resend. */
     val clock: Clock,
-    /** Where 2b's optional crash-report consent is kept (ADR-0051). */
-    private val crashConsent: CrashConsent,
+    /** Where 2b's optional consent to Crashlytics and Analytics is kept (ADR-0052). */
+    private val consent: TelemetryConsent,
+    private val logEvent: (AnalyticsEvent) -> Unit = {},
 ) : ViewModel() {
     private val current = MutableStateFlow(newAttempt())
     val attempt: StateFlow<AccessAttempt> = current.asStateFlow()
@@ -74,5 +80,5 @@ internal class AccessFlowViewModel(
         current.value = newAttempt()
     }
 
-    private fun newAttempt() = AccessAttempt(patients, doctors, crashConsent::setGranted)
+    private fun newAttempt() = AccessAttempt(patients, doctors, consent::setGranted, logEvent)
 }

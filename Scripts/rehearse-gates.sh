@@ -35,8 +35,10 @@ trap cleanup EXIT INT TERM
 sync_tree() {
     rm -rf "$TREE"
     mkdir -p "$TREE"
+    # ./tmp is the sessions' scratch (never committed): since ADR-0052 it holds SwiftPM's checkouts, gigabytes copied
+    # once per bait, and no gate reads it.
     tar -cf - --exclude='./.git' --exclude='*/build' --exclude='./build' --exclude='./.gradle' \
-        --exclude='*.class' --exclude='./dd' . 2>/dev/null | (cd "$TREE" && tar -xf -) || return 1
+        --exclude='*.class' --exclude='./dd' --exclude='./tmp' . 2>/dev/null | (cd "$TREE" && tar -xf -) || return 1
 }
 sync_tree || { echo "rehearse: could not copy the tree"; exit 1; }
 
@@ -78,21 +80,6 @@ bait() {
 
 echo "rehearsing gates against bait..."
 
-# ── The crash queue out of every backup (ADR-0051 §5) ──────────────────────────────────────────
-bait "Android crash queue moved to the backed-up files dir" check-backup-posture.sh '
-import sys, pathlib
-p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/crash/CrashCapture.android.kt"
-s = p.read_text()
-assert "context.noBackupFilesDir" in s
-p.write_text(s.replace("context.noBackupFilesDir", "context.filesDir"))
-'
-bait "iOS crash queue backup exclusion set to false" check-backup-posture.sh '
-import sys, pathlib
-p = pathlib.Path(sys.argv[1]) / "composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/crash/CrashCapture.ios.kt"
-s = p.read_text()
-assert "setResourceValue(true, forKey = NSURLIsExcludedFromBackupKey" in s
-p.write_text(s.replace("setResourceValue(true, forKey = NSURLIsExcludedFromBackupKey", "setResourceValue(false, forKey = NSURLIsExcludedFromBackupKey"))
-'
 
 # ── Compose resources must reach the APK (2026-10-12): the line deleted, commented out, or false ──
 bait "Android resources line deleted from the KMP target" check-compose-resources-packaging.sh '
@@ -333,17 +320,17 @@ import sys, pathlib, re
 p = pathlib.Path(sys.argv[1]) / "gradle/wrapper/gradle-wrapper.properties"
 p.write_text(re.sub(r"^distributionUrl=.*$", r"distributionUrl=https\\://evil.test/distributions/gradle-9.7.1-bin.zip", p.read_text(), flags=re.M))
 '
-# The FCM exception is ARTIFACTS, never the group (ADR-0038): with com.google.firebase allowlisted
-# for messaging, analytics riding in beside it must still fail at the denylist.
-bait "firebase-analytics shipped beside the FCM exception" check-dependency-allowlist.sh '
+# The Firebase suite is ARTIFACTS, never the group (ADR-0052): with com.google.firebase and com.google.android.gms
+# allowlisted for the five products, another product riding in beside them must still fail at the denylist.
+bait "firestore shipped beside the allowed Firebase suite" check-dependency-allowlist.sh '
 import sys, pathlib
-root = pathlib.Path(sys.argv[1])
-lock = root / "androidApp/gradle.lockfile"
-lock.write_text(lock.read_text()
-    + "com.google.firebase:firebase-messaging:26.0.0=releaseRuntimeClasspath\n"
-    + "com.google.firebase:firebase-analytics:23.0.0=releaseRuntimeClasspath\n")
-allow = root / "config/dependency-allowlist.txt"
-allow.write_text(allow.read_text() + "com.google.firebase\n")
+lock = pathlib.Path(sys.argv[1]) / "androidApp/gradle.lockfile"
+lock.write_text(lock.read_text() + "com.google.firebase:firebase-firestore:26.0.0=releaseRuntimeClasspath\n")
+'
+bait "play-services-ads shipped beside the Firebase closure" check-dependency-allowlist.sh '
+import sys, pathlib
+lock = pathlib.Path(sys.argv[1]) / "composeApp/gradle.lockfile"
+lock.write_text(lock.read_text() + "com.google.android.gms:play-services-ads:24.0.0=androidRuntimeClasspath\n")
 '
 
 bait "a CI action pinned to a tag the denylist never named" check-dependency-allowlist.sh '
@@ -765,6 +752,97 @@ p.write_text(s.replace(anchor, "\t\t<string>$(AppIdentifierPrefix)com.luismejias
 '
 bait "an app group, which is a keychain group too" check-ios-host.sh "$IOS_ENT_EDIT"'
 p.write_text(s.replace("\t<key>keychain-access-groups</key>", "\t<key>com.apple.security.application-groups</key>\n\t<array><string>group.com.luismejias.lume</string></array>\n\t<key>keychain-access-groups</key>"))
+'
+# ── Firebase, bounded (ADR-0052) ───────────────────────────────────────────────────────────────
+bait "Crashlytics collecting from the factory on Android" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/AndroidManifest.xml"
+s = p.read_text(); a = "\"firebase_crashlytics_collection_enabled\" android:value=\"false\""
+assert a in s; p.write_text(s.replace(a, "\"firebase_crashlytics_collection_enabled\" android:value=\"true\""))
+'
+bait "FirebaseInitProvider back in the merge" check-firebase-posture.sh '
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/AndroidManifest.xml"
+s = p.read_text(); s2 = re.sub(r"<provider\s+android:name=\"com\.google\.firebase\.provider\.FirebaseInitProvider\".*?/>", "", s, flags=re.S)
+assert s2 != s; p.write_text(s2)
+'
+bait "the AD_ID removal hidden inside an XML comment" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "androidApp/src/main/AndroidManifest.xml"
+s = p.read_text(); a = "<uses-permission android:name=\"com.google.android.gms.permission.AD_ID\" tools:node=\"remove\" />"
+assert a in s; p.write_text(s.replace(a, "<!--\n    " + a + "\n    -->"))
+'
+bait "Analytics collecting from the factory on iOS" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/Info.plist"
+s = p.read_text(); a = "<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>\n\t<false/>"
+assert a in s; p.write_text(s.replace(a, "<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>\n\t<true/>"))
+'
+bait "a parameter bundle in the Android adapter" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/telemetry/Telemetry.android.kt"
+s = p.read_text(); a = "logEvent(event.eventName, null)"
+assert a in s; p.write_text(s.replace(a, "logEvent(event.eventName, android.os.Bundle().apply { putString(\"specialty\", \"x\") })"))
+'
+bait "a feature reaching Firebase Analytics by its full name" check-firebase-posture.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/device"
+(d / "BaitAnalytics.kt").write_text("package com.luismejias.lumemedlink.core.device\n\ninternal fun track(c: android.content.Context) =\n    com.google.firebase.analytics.FirebaseAnalytics.getInstance(c).logEvent(\"oncology_viewed\", null)\n")
+'
+bait "a user ID set in the iOS host" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/FirebaseHost.swift"
+s = p.read_text(); a = "        Analytics.logEvent(name, parameters: nil)\n"
+assert a in s; p.write_text(s.replace(a, a + "        Analytics.setUserID(\"rut\")\n"))
+'
+bait "a Crashlytics custom key on Android" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/telemetry/Telemetry.android.kt"
+s = p.read_text(); a = "        crashlytics.isCrashlyticsCollectionEnabled = enabled\n"
+assert a in s; p.write_text(s.replace(a, a + "        crashlytics.setCustomKey(\"patient\", \"x\")\n"))
+'
+bait "the message-free crash handler no longer installed" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/telemetry/Telemetry.android.kt"
+s = p.read_text(); a = "        installMessageFreeCrashes()\n"
+assert a in s; p.write_text(s.replace(a, "        // installMessageFreeCrashes()\n"))
+'
+bait "an iOS crash recorded with its reason" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/FirebaseHost.swift"
+s = p.read_text(); a = "ExceptionModel(name: typeName, reason: \"\")"
+assert a in s; p.write_text(s.replace(a, "ExceptionModel(name: typeName, reason: frames.joined())"))
+'
+bait "parameters added to the iOS catalog call" check-firebase-posture.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/FirebaseHost.swift"
+s = p.read_text(); a = "Analytics.logEvent(name, parameters: nil)"
+assert a in s; p.write_text(s.replace(a, "Analytics.logEvent(name, parameters: [\"doctor\": name])"))
+'
+bait "firebase-ios-sdk pinned to a range" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = p.read_text(); a = "kind = exactVersion;"
+assert s.count(a) == 1; p.write_text(s.replace(a, "kind = upToNextMajorVersion;"))
+'
+bait "Package.resolved pinning a package nobody measured" check-ios-host.sh '
+import sys, pathlib, json
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+d = json.loads(p.read_text())
+d["pins"].append({"identity": "sentry-cocoa", "kind": "remoteSourceControl", "location": "https://github.com/getsentry/sentry-cocoa", "state": {"revision": "0" * 40, "version": "9.0.0"}})
+p.write_text(json.dumps(d))
+'
+bait "FirebasePerformance linked beside the five products" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = p.read_text(); a = "productName = FirebaseMessaging;"
+assert s.count(a) == 1; p.write_text(s.replace(a, "productName = FirebasePerformance;"))
+'
+bait "Firebase imported outside FirebaseHost.swift" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"
+s = p.read_text(); assert s.startswith("import UIKit\n")
+p.write_text(s.replace("import UIKit\n", "import UIKit\nimport FirebaseAnalytics\n", 1))
 '
 # F17 · what the iOS host links
 bait "a crash SDK imported and started in the iOS host" check-ios-host.sh '

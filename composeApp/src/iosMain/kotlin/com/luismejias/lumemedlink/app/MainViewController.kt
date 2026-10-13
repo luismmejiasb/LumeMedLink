@@ -1,7 +1,10 @@
 package com.luismejias.lumemedlink.app
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.window.ComposeUIViewController
+import com.luismejias.lumemedlink.core.telemetry.FirebaseBridge
+import com.luismejias.lumemedlink.core.telemetry.LocalFirebaseBridge
 import platform.UIKit.UIViewController
 
 /**
@@ -16,7 +19,9 @@ import platform.UIKit.UIViewController
 // The keyboard is the kit's to handle: its containers pad the pinned action by the keyboard and bring a focused field
 // into view. Compose's default also shifts the whole view up on focus, which counted the keyboard twice and left 2c's
 // lines under «Crear cuenta». So the view itself does nothing on focus.
+//
+// [firebase] is the Swift host's Firebase (ADR-0052 §8), or null when the build carried no GoogleService-Info.plist.
 @Suppress("ktlint:standard:function-naming")
-public fun MainViewController(): UIViewController = ComposeUIViewController(
+public fun MainViewController(firebase: FirebaseBridge?): UIViewController = ComposeUIViewController(
     configure = { onFocusBehavior = OnFocusBehavior.DoNothing },
-) { App() }
+) { CompositionLocalProvider(LocalFirebaseBridge provides firebase) { App() } }

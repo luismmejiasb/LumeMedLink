@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
-import com.luismejias.lumemedlink.core.crash.CrashConsent
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
 import com.luismejias.lumemedlink.core.screen.ok
+import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,26 +25,26 @@ internal data class SettingsContent(
 }
 
 /** Configuración's owner (ADR-0045). */
-internal class SettingsViewModel(private val care: PatientCareGateway, private val crashConsent: CrashConsent) :
+internal class SettingsViewModel(private val care: PatientCareGateway, private val consent: TelemetryConsent) :
     ViewModel() {
     private val current = MutableStateFlow<CareLoad<SettingsContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<SettingsContent>> = current.asStateFlow()
 
-    private val crashReportsGranted = MutableStateFlow(false)
+    private val telemetryGranted = MutableStateFlow(false)
 
-    /** «Reportes de error»: the consent of ADR-0051, withdrawn or given here. */
-    val crashReports: StateFlow<Boolean> = crashReportsGranted.asStateFlow()
+    /** «Errores y estadísticas»: the consent of ADR-0052, withdrawn or given here. */
+    val telemetry: StateFlow<Boolean> = telemetryGranted.asStateFlow()
 
     init {
         refresh()
-        viewModelScope.launch { crashReportsGranted.value = crashConsent.granted() }
+        viewModelScope.launch { telemetryGranted.value = consent.granted() }
     }
 
-    fun crashReportsChanged(granted: Boolean) {
-        crashReportsGranted.value = granted
+    fun telemetryChanged(granted: Boolean) {
+        telemetryGranted.value = granted
         viewModelScope.launch {
-            crashConsent.setGranted(granted)
-            crashReportsGranted.value = crashConsent.granted()
+            consent.setGranted(granted)
+            telemetryGranted.value = consent.granted()
         }
     }
 

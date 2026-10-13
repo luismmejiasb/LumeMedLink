@@ -15,6 +15,7 @@ import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.ok
+import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
@@ -129,7 +130,11 @@ internal data class RescheduleContent(
 }
 
 @OptIn(ExperimentalUuidApi::class)
-internal class RescheduleModel(private val care: PatientCareGateway, private val directory: DirectoryGateway) {
+internal class RescheduleModel(
+    private val care: PatientCareGateway,
+    private val directory: DirectoryGateway,
+    private val logEvent: (AnalyticsEvent) -> Unit = {},
+) {
     private val current = MutableStateFlow<CareLoad<RescheduleContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<RescheduleContent>> = current.asStateFlow()
 
@@ -166,6 +171,7 @@ internal class RescheduleModel(private val care: PatientCareGateway, private val
         val ready = (current.value as? CareLoad.Ready)?.content ?: return
         val slot = ready.slot ?: return
         val result = care.reschedule(ready.appointment, slot, RESCHEDULE_REASON, clientId)
+        if (result is ChangeResult.Moved) logEvent(AnalyticsEvent.APPOINTMENT_RESCHEDULED)
         update {
             when (result) {
                 is ChangeResult.Moved -> copy(outcome = MoveOutcome.Moved(result.appointment))
@@ -221,7 +227,7 @@ internal data class CancelState(
     override fun toString(): String = "CancelState(choice=$choice, outcome=${outcome?.let { it::class.simpleName }})"
 }
 
-internal class CancelModel(private val care: PatientCareGateway) {
+internal class CancelModel(private val care: PatientCareGateway, private val logEvent: (AnalyticsEvent) -> Unit = {}) {
     private val current = MutableStateFlow<CancelState?>(null)
     val state: StateFlow<CancelState?> = current.asStateFlow()
 
@@ -244,6 +250,7 @@ internal class CancelModel(private val care: PatientCareGateway) {
         } else {
             care.cancel(state.appointment, state.choice?.reason ?: ChangeReason.OTHER)
         }
+        if (result !is ChangeResult.Failed) logEvent(AnalyticsEvent.APPOINTMENT_CANCELLED)
         current.value = state.copy(
             outcome = when (result) {
                 is ChangeResult.Failed -> CancelOutcome.Refused(result.failure)

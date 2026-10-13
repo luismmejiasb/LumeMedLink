@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Backup posture (F6, ADR-0015). The two attributes are COMPLEMENTARY, not alternatives, and
          the reason is measured, not assumed: allowBackup="false" stops cloud backup, but on
          targetSdk >= 31 the platform deliberately ignores it for device-to-device migration
@@ -13,6 +14,17 @@
          writing it down turns it into one. See Scripts/check-network-posture.sh, which fails on any
          permission in the MERGED manifest that is not on the allowlist (F12, ADR-0016). -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Analytics without the advertising identifier and without install attribution (ADR-0052 §1). Analytics'
+         closure declares these four, and a permission a dependency asked for is a permission nobody decided: removed,
+         so no ad ID, no Privacy Sandbox attribution and no Play install referrer can be read, whatever the collection
+         flags below say. check-firebase-posture.sh asserts each removal. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+    <uses-permission
+        android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE"
+        tools:node="remove" />
 
     <!-- f1 «Cómo llegar» (ADR-0048): which installed apps open an address. Package visibility is scoped to the one
          intent the app hands them, a geo: view, and grants no permission. -->
@@ -31,6 +43,29 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.LumeMedLink">
+        <!-- Firebase starts when the app says so, never at process launch (ADR-0038 §3, ADR-0052 §8): the provider
+             that would initialize it before any code of ours runs is removed, and core/telemetry initializes it with
+             the options the build generated — or not at all, when the build carried no configuration. -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            tools:node="remove" />
+
+        <!-- Everything off from the factory (ADR-0052 §2). Crashlytics and Analytics turn on only through the person's
+             consent, at runtime; the rest never turns on. -->
+        <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
+        <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
+        <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
+        <meta-data android:name="google_analytics_ssaid_collection_enabled" android:value="false" />
+        <meta-data android:name="google_analytics_default_allow_ad_personalization_signals" android:value="false" />
+        <meta-data android:name="google_analytics_automatic_screen_reporting_enabled" android:value="false" />
+        <!-- No push token before login (ADR-0038 §3), and FCM's delivery metrics are not exported. -->
+        <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
+        <meta-data android:name="delivery_metrics_exported_to_big_query_enabled" android:value="false" />
+        <!-- The Crashlytics Gradle plugin stays out (ADR-0052 §8, a plugin runs with the build's privileges). It only
+             stamps a build ID for R8 mapping files, and this build does not shrink (isMinifyEnabled = false). -->
+        <meta-data android:name="com.crashlytics.RequireBuildId" android:value="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

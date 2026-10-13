@@ -108,25 +108,6 @@ else
     done
 fi
 
-# ── The crash-report queue stays out of every backup (ADR-0051 §5) ──────────────────────────────
-# Android: the files live under noBackupFilesDir, which the platform leaves out of the cloud backup and of the
-# device-to-device transfer. iOS: the directory is marked NSURLIsExcludedFromBackupKey (measured on the simulator).
-# Asserted as the call, with comments and strings blanked (ADR-0029).
-CRASH_ANDROID="composeApp/src/androidMain/kotlin/com/luismejias/lumemedlink/core/crash/CrashCapture.android.kt"
-CRASH_IOS="composeApp/src/iosMain/kotlin/com/luismejias/lumemedlink/core/crash/CrashCapture.ios.kt"
-if [ -f "$CRASH_ANDROID" ]; then
-    code=$(python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten "$CRASH_ANDROID" 2>/dev/null)
-    printf '%s\n' "$code" | grep -qE 'File\([[:space:]]*context\.noBackupFilesDir' ||
-        fail "backup: the Android crash queue is not under noBackupFilesDir" \
-             "ADR-0051 §5: a queued report must not reach a backup or a device transfer." "$CRASH_ANDROID"
-fi
-if [ -f "$CRASH_IOS" ]; then
-    code=$(python3 Scripts/lib/uncomment.py --lang c --strip-strings --flatten "$CRASH_IOS" 2>/dev/null)
-    printf '%s\n' "$code" | grep -qE 'setResourceValue\([[:space:]]*true[[:space:]]*,[[:space:]]*forKey[[:space:]]*=[[:space:]]*NSURLIsExcludedFromBackupKey' ||
-        fail "backup: the iOS crash queue is not excluded from backup" \
-             "ADR-0051 §5: the directory must carry NSURLIsExcludedFromBackupKey = true." "$CRASH_IOS"
-fi
-
 if [ $FAIL -eq 0 ]; then
     echo "backup-posture: OK"
 else

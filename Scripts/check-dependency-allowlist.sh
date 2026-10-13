@@ -81,32 +81,45 @@ SHIPPED_MODULES=$(cat $LOCKFILES | grep -v '^#' | grep -v '^empty' | awk -F= '
 # visible note instead: it is a real supply-chain surface on the developer's machine, but blocking
 # the build over AGP's internals would get this gate switched off, and a gate that gets switched
 # off protects nothing.
-# The ONE narrow exception (ADR-0038, task 0024): FCM for Android, decided by the author on 2026-09-26.
-# EXACT group:artifact pairs — firebase-messaging and the closure it resolves to, measured from its POMs
-# on 2026-10-07 — never a group. Everything else under the two groups stays denied: firebase-analytics,
-# crashlytics, perf, play-services-ads, play-services-measurement… A new member of the closure after a
-# bump stops here for a decision, which is the point.
-NARROW_EXCEPTION="com.google.firebase:firebase-messaging
-com.google.firebase:firebase-common
-com.google.firebase:firebase-common-ktx
-com.google.firebase:firebase-components
+# The suite ADR-0052 allows (2026-10-13, the author's decision, which superseded ADR-0038's FCM-only exception):
+# Crashlytics, Analytics, Remote Config and Messaging, as EXACT group:artifact pairs — the closure Firebase BoM 35.0.0
+# resolved to in the lockfiles that day — never a group. Everything else under the two groups stays denied:
+# firestore, database, auth, storage, perf, inappmessaging, play-services-ads, play-services-location… A new member
+# of the closure after a bump stops here for a decision, which is the point.
+ALLOWED_FIREBASE="com.google.android.gms:play-services-ads-identifier
+com.google.android.gms:play-services-base
+com.google.android.gms:play-services-basement
+com.google.android.gms:play-services-cloud-messaging
+com.google.android.gms:play-services-measurement
+com.google.android.gms:play-services-measurement-api
+com.google.android.gms:play-services-measurement-base
+com.google.android.gms:play-services-measurement-impl
+com.google.android.gms:play-services-measurement-sdk
+com.google.android.gms:play-services-measurement-sdk-api
+com.google.android.gms:play-services-stats
+com.google.android.gms:play-services-tasks
+com.google.firebase:firebase-abt
+com.google.firebase:firebase-analytics
 com.google.firebase:firebase-annotations
+com.google.firebase:firebase-bom
+com.google.firebase:firebase-common
+com.google.firebase:firebase-components
+com.google.firebase:firebase-config
+com.google.firebase:firebase-config-interop
+com.google.firebase:firebase-crashlytics
+com.google.firebase:firebase-datatransport
 com.google.firebase:firebase-encoders
 com.google.firebase:firebase-encoders-json
 com.google.firebase:firebase-encoders-proto
-com.google.firebase:firebase-datatransport
 com.google.firebase:firebase-iid-interop
 com.google.firebase:firebase-installations
 com.google.firebase:firebase-installations-interop
 com.google.firebase:firebase-measurement-connector
-com.google.android.gms:play-services-base
-com.google.android.gms:play-services-basement
-com.google.android.gms:play-services-cloud-messaging
-com.google.android.gms:play-services-stats
-com.google.android.gms:play-services-tasks"
+com.google.firebase:firebase-messaging
+com.google.firebase:firebase-sessions"
 deny() {
     prefix=$1; reason=$2
-    shipped=$(echo "$SHIPPED_MODULES" | grep -E "^${prefix}" | grep -vxF "$NARROW_EXCEPTION" || true)
+    shipped=$(echo "$SHIPPED_MODULES" | grep -E "^${prefix}" | grep -vxF "$ALLOWED_FIREBASE" || true)
     if [ -n "$shipped" ]; then
         FAIL=1
         echo ""
@@ -114,13 +127,14 @@ deny() {
         echo "  $reason"
         return
     fi
-    buildtime=$(echo "$MODULES" | grep -E "^${prefix}" || true)
+    # Neither the allowed artifacts nor anything that ships belong in a "build-time only" note.
+    buildtime=$(echo "$MODULES" | grep -E "^${prefix}" | grep -vxF "$ALLOWED_FIREBASE" | grep -vxF "$SHIPPED_MODULES" || true)
     if [ -n "$buildtime" ]; then
         echo "note: denylisted group present BUILD-TIME only (not shipped): $(echo "$buildtime" | tr '\n' ' ')"
     fi
 }
-deny 'com\.google\.firebase'        'Default-deny of crash/analytics SDKs (§8.1). Firebase is "one line away" with this IdP; the line stays unwritten. The ONLY exception is FCM, artifact by artifact (ADR-0038).'
-deny 'com\.google\.android\.gms'    'Play Services drags analytics surface (§8.1). The FCM closure is the only exception (ADR-0038); Play Integrity, when it lands, gets its own reviewed coordinate.'
+deny 'com\.google\.firebase'        'A Firebase product outside ADR-0052. Crashlytics, Analytics, Remote Config and Messaging are allowed artifact by artifact; any other product needs an ADR of its own (§8.1).'
+deny 'com\.google\.android\.gms'    'A Play Services artifact outside the Firebase closure ADR-0052 measured. Ads, location and the rest stay denied; Play Integrity, when it lands, gets its own reviewed coordinate.'
 deny 'io\.sentry'                   'Default-deny of crash/analytics SDKs (§8.1).'
 deny 'com\.bugsnag'                 'Default-deny of crash/analytics SDKs (§8.1).'
 deny 'org\.acra'                    'Default-deny of crash/analytics SDKs (§8.1).'

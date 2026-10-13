@@ -8,6 +8,7 @@ import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.RatingAspect
 import com.luismejias.lumemedlink.core.care.RatingDraft
 import com.luismejias.lumemedlink.core.care.RatingPrompt
+import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -77,7 +78,10 @@ internal data class RateState(
  * f5's owner, opened from Inicio's stars or from an attended visit's (c3). PROVISIONAL (ADR-0046): the free text is the
  * design's, by the author's call for this mock; the contract will carry stars and closed reasons only.
  */
-internal class RateViewModel(private val care: PatientCareGateway) : ViewModel() {
+internal class RateViewModel(
+    private val care: PatientCareGateway,
+    private val logEvent: (AnalyticsEvent) -> Unit = {},
+) : ViewModel() {
     private val current = MutableStateFlow<RateState?>(null)
     val state: StateFlow<RateState?> = current.asStateFlow()
 
@@ -120,6 +124,7 @@ internal class RateViewModel(private val care: PatientCareGateway) : ViewModel()
             comment = state.comment.trim().takeIf { it.isNotEmpty() },
         )
         val result = care.rate(state.prompt.appointmentId, draft)
+        if (result is CareResult.Ok) logEvent(AnalyticsEvent.APPOINTMENT_RATED)
         // The answer belongs to the rating that was sent: if the sheet was closed and another opened meanwhile, it
         // must not close that one nor lend it this one's failure.
         if (current.value?.prompt?.appointmentId != state.prompt.appointmentId) {

@@ -22,7 +22,10 @@ struct iOSApp: App {
 }
 
 /// Bridges the Compose UI into SwiftUI. Nothing else: this is composition, not behaviour.
+/// Firebase is configured here, once, or not at all when the build carried no configuration (ADR-0052 §8).
 struct ComposeView: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> UIViewController { MainViewControllerKt.MainViewController() }
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainViewControllerKt.MainViewController(firebase: FirebaseHost.configured())
+    }
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }

@@ -32,13 +32,6 @@ import cl.lume.uicomposer.tokens.LumeTypography
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
-import com.luismejias.lumemedlink.core.crash.CrashConsent
-import com.luismejias.lumemedlink.core.crash.CrashQueue
-import com.luismejias.lumemedlink.core.crash.NoEndpointCrashReportSender
-import com.luismejias.lumemedlink.core.crash.flushCrashReports
-import com.luismejias.lumemedlink.core.crash.installCrashCapture
-import com.luismejias.lumemedlink.core.crash.rememberAppIdentity
-import com.luismejias.lumemedlink.core.crash.rememberCrashFileStore
 import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
 import com.luismejias.lumemedlink.core.logging.DiscardingLogSink
 import com.luismejias.lumemedlink.core.logging.LogDetail
@@ -56,6 +49,8 @@ import com.luismejias.lumemedlink.core.session.performLogout
 import com.luismejias.lumemedlink.core.session.platformInstallSentinel
 import com.luismejias.lumemedlink.core.session.rememberSecureStore
 import com.luismejias.lumemedlink.core.session.rememberUnlockGate
+import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
+import com.luismejias.lumemedlink.core.telemetry.rememberTelemetry
 import com.luismejias.lumemedlink.features.auth.flow.AccessFlowViewModel
 import com.luismejias.lumemedlink.features.auth.flow.AccessHost
 import com.luismejias.lumemedlink.features.auth.flow.AccessRole
@@ -116,19 +111,23 @@ public fun App() {
     // The access flow (ADR-0044) runs against the SCRIPT of a contract that does not exist yet — chosen here and
     // only here (ADR-0045), and it begins no session.
     val secureStore = rememberSecureStore()
-    // Crash reports of our own, without personal data (ADR-0051): caught here, queued, and offered at the next launch
-    // to a sender that sends nothing until the backend has the endpoint (request 0009, not sent).
-    val crashConsent = remember(secureStore) { CrashConsent(secureStore) }
-    val crashFiles = rememberCrashFileStore()
-    val appIdentity = rememberAppIdentity()
-    val crashQueue = remember(crashFiles) { CrashQueue(crashFiles) }
-    LaunchedEffect(crashQueue) {
-        installCrashCapture(crashQueue, appIdentity, SystemClock::nowEpochMillis)
-        flushCrashReports(crashQueue, crashConsent, NoEndpointCrashReportSender, SystemClock.nowEpochMillis())
+    // Firebase, bounded (ADR-0052): off from the factory, and on only while the person's consent says so. Without the
+    // build's configuration it is the unconfigured no-op, and the app runs as before.
+    val telemetry = rememberTelemetry()
+    val telemetryConsent = remember(secureStore, telemetry) { TelemetryConsent(secureStore, telemetry) }
+    LaunchedEffect(telemetryConsent) {
+        telemetryConsent.restore()
+        telemetry.refreshFlags()
     }
     val access = viewModel {
         val scripted = ScriptedAccessGateway(SystemClock)
-        AccessFlowViewModel(patients = scripted, doctors = scripted, clock = SystemClock, crashConsent = crashConsent)
+        AccessFlowViewModel(
+            patients = scripted,
+            doctors = scripted,
+            clock = SystemClock,
+            consent = telemetryConsent,
+            logEvent = telemetry::log,
+        )
     }
     // The patient's main app (ADR-0046), against the SCRIPT of the design; its ViewModels live in a store of
     // their own that a sign-out empties.
@@ -240,6 +239,8 @@ public fun App() {
         // be this inline sequence, which meant the first throw skipped the rest and the shell's
         // dying scope could truncate the erase.
         val outcome = performLogout(sessionManager, secureStore, unlockGate, sessionLock)
+        // The wipe took the consent; Firebase follows it now rather than at the next launch (ADR-0052 §2).
+        telemetryConsent.restore()
         if (!outcome.complete) {
             // Ends the session anyway — fail closed — but the shell now KNOWS the erase was partial.
             // Telling the person is the login slice's job: this screen is a placeholder and a
@@ -284,10 +285,13 @@ public fun App() {
                                 PatientMainHost(
                                     care = patientCare,
                                     directory = patientCare,
-                                    crashConsent = crashConsent,
+                                    consent = telemetryConsent,
+                                    logEvent = telemetry::log,
                                     onSignOut = {
                                         patientScope.reset()
                                         access.restart()
+                                        // A sign-out withdraws, as the logout's wipe does (ADR-0052 §2).
+                                        scope.launch { telemetryConsent.setGranted(false) }
                                     },
                                 )
                             }
@@ -297,6 +301,7 @@ public fun App() {
                                     onSignOut = {
                                         doctorScope.reset()
                                         access.restart()
+                                        scope.launch { telemetryConsent.setGranted(false) }
                                     },
                                 )
                             }

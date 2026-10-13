@@ -16,6 +16,7 @@ import com.luismejias.lumemedlink.core.screen.folded
 import com.luismejias.lumemedlink.core.screen.markLoading
 import com.luismejias.lumemedlink.core.screen.ok
 import com.luismejias.lumemedlink.core.screen.toLoad
+import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
@@ -310,7 +311,10 @@ internal data class BookingState(val doctor: DirectoryDoctor, val slot: Slot, va
 }
 
 @OptIn(ExperimentalUuidApi::class)
-internal class BookingModel(private val directory: DirectoryGateway) {
+internal class BookingModel(
+    private val directory: DirectoryGateway,
+    private val logEvent: (AnalyticsEvent) -> Unit = {},
+) {
     private val current = MutableStateFlow<BookingState?>(null)
     val state: StateFlow<BookingState?> = current.asStateFlow()
 
@@ -332,7 +336,9 @@ internal class BookingModel(private val directory: DirectoryGateway) {
         val result = directory.book(booking.doctor.doctor.id, booking.doctor.locationId, booking.slot, clientId)
         current.value = booking.copy(
             outcome = when (result) {
-                is BookingResult.Booked -> BookingOutcome.Sent(result.appointment)
+                is BookingResult.Booked -> BookingOutcome.Sent(result.appointment).also {
+                    logEvent(AnalyticsEvent.APPOINTMENT_BOOKED)
+                }
                 is BookingResult.Failed -> BookingOutcome.Refused(result.failure)
             },
         )

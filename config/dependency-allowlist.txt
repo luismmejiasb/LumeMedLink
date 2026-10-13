@@ -16,6 +16,21 @@
 # Regenerated 2026-08-21 from the real lockfiles (F20, ADR-0018).
 
 
+# ── Firebase, the suite ADR-0052 allows (2026-10-13) ────────────────────────────────────────────
+# The two Google groups are admitted here and narrowed back to exact artifacts by the denylist in
+# check-dependency-allowlist.sh: any Firebase product or Play Services artifact outside the measured closure fails.
+com.google.firebase
+com.google.android.gms
+# Google's telemetry transport, which Crashlytics, Analytics and Messaging send through. What it sends is part of the
+# pre-release capture ADR-0038 and ADR-0052 require.
+com.google.android.datatransport
+# firebase-common keeps its own settings in DataStore files inside the app's directory.
+androidx.datastore
+# Pulled by play-services-measurement-api for ad attribution. The manifest removes its permissions and turns ad ID
+# collection off (ADR-0052 §1), so the code ships and is not reachable to an advertiser.
+androidx.privacysandbox.ads
+
+
 # ── The product's own stack ─────────────────────────────────────────────────────────────────────
 androidx.activity
 androidx.annotation

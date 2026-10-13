@@ -70,6 +70,14 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+# Firebase, the five products ADR-0052 allows (2026-10-13). The BoM pins every member; its 35.0.0 was the
+# maven-metadata `<release>` on dl.google.com that day. Analytics ships without the advertising ID (the manifest removes
+# AD_ID and turns its collection off). App Distribution is NOT here: it is a release tool run by the CLI, not a library.
+firebase-bom = { module = "com.google.firebase:firebase-bom", version = "35.0.0" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-config = { module = "com.google.firebase:firebase-config" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

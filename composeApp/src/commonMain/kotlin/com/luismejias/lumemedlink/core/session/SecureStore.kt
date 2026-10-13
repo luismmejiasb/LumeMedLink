@@ -57,11 +57,8 @@ internal enum class SecureStoreKey(val storageKey: String) {
     FAILED_UNLOCK_ATTEMPTS("failed_unlock_attempts_v1"),
 
     /**
-     * The person's optional consent to crash reports with a key (ADR-0051). Not a secret: here so the logout erases it,
-     * and the next person on a shared phone starts without it.
+     * The person's optional consent to Crashlytics and Analytics (ADR-0052 §2). Not a secret: here so the logout erases
+     * it, and the next person on a shared phone starts without it.
      */
-    CRASH_CONSENT("crash_consent_v1"),
-
-    /** The crash-only key, sent with a report only under [CRASH_CONSENT] (ADR-0051). Erased with it at logout. */
-    CRASH_KEY("crash_key_v1"),
+    TELEMETRY_CONSENT("telemetry_consent_v1"),
 }

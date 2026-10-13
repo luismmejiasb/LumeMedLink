@@ -1,0 +1,70 @@
+package com.luismejias.lumemedlink.core.telemetry
+
+import androidx.compose.runtime.Composable
+
+/**
+ * Firebase's reach into this app, closed (ADR-0052): Crashlytics and Analytics behind one consent switch, Analytics
+ * through a catalog, Remote Config through a catalog. A feature never touches Firebase; it gets this.
+ */
+internal interface Telemetry {
+    /**
+     * Crashlytics and Analytics together, as the person's one consent governs both (ADR-0052 §2). Turning them off
+     * also deletes what the device still holds: Crashlytics' unsent reports and Analytics' local data.
+     */
+    fun setCollectionEnabled(enabled: Boolean)
+
+    /** One event of the catalog. There is no other way in: no parameters, no user ID, no properties (§3). */
+    fun log(event: AnalyticsEvent)
+
+    /** The flag's remote value once fetched, its default until then, offline, or without configuration (§5). */
+    fun flag(flag: RemoteFlag): Boolean
+
+    /** Fetches and activates Remote Config's values for the next read. Fails into the defaults, silently. */
+    suspend fun refreshFlags()
+}
+
+/**
+ * What Analytics may say (ADR-0052 §3): that something happened, never to whom or with whom. An entry never names a
+ * doctor, a specialty, a clinic, a date, a place or a reason — the payload is where GoodRx's leak was, not the SDK.
+ * A new entry is a decision about what leaves for Google, so it gets reviewed like a dependency.
+ */
+internal enum class AnalyticsEvent(val eventName: String) {
+    /** The access flow ended in an account (2c). */
+    SIGN_UP_COMPLETED("sign_up_completed"),
+
+    /** The access flow ended in a sign-in. */
+    SIGN_IN_COMPLETED("sign_in_completed"),
+
+    /** An hour was booked (a2); not with whom, not when, not where. */
+    APPOINTMENT_BOOKED("appointment_booked"),
+
+    /** An appointment moved to another hour (f3); not which one. */
+    APPOINTMENT_RESCHEDULED("appointment_rescheduled"),
+
+    /** An appointment was cancelled or a request withdrawn (f4); never the reason chosen. */
+    APPOINTMENT_CANCELLED("appointment_cancelled"),
+
+    /** A rating was sent (f5); not its stars, not its words, not whom it rates. */
+    APPOINTMENT_RATED("appointment_rated"),
+}
+
+/**
+ * What Remote Config may switch (ADR-0052 §5): product flags with a default in code. Never personal data, never the
+ * kill switch (§8.15 keeps that on the backend), never a security control. Empty until a flag is decided.
+ */
+internal enum class RemoteFlag(val key: String, val default: Boolean)
+
+/** Without Firebase configuration (ADR-0052 §8): collects nothing, sends nothing, answers every flag's default. */
+internal object UnconfiguredTelemetry : Telemetry {
+    override fun setCollectionEnabled(enabled: Boolean) = Unit
+
+    override fun log(event: AnalyticsEvent) = Unit
+
+    override fun flag(flag: RemoteFlag): Boolean = flag.default
+
+    override suspend fun refreshFlags() = Unit
+}
+
+/** The platform's Firebase, or [UnconfiguredTelemetry] when the app was built without its configuration. */
+@Composable
+internal expect fun rememberTelemetry(): Telemetry

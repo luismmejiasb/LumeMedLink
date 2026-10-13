@@ -7,9 +7,10 @@ import com.luismejias.lumemedlink.core.care.CarePlace
 import com.luismejias.lumemedlink.core.care.CareWorld
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
-import com.luismejias.lumemedlink.core.crash.CrashConsent
-import com.luismejias.lumemedlink.core.crash.MemorySecureStore
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.telemetry.MemorySecureStore
+import com.luismejias.lumemedlink.core.telemetry.RecordedTelemetry
+import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeContent
@@ -75,7 +76,7 @@ class PatientTabsTest {
         assertEquals(CareLoad.Failed(CareFailure.Offline), MyDoctorsViewModel(offline).also { it.load() }.state.value)
         assertEquals(
             CareLoad.Failed(CareFailure.Offline),
-            SettingsViewModel(offline, CrashConsent(MemorySecureStore())).also {
+            SettingsViewModel(offline, TelemetryConsent(MemorySecureStore(), RecordedTelemetry())).also {
                 it.load()
             }.state.value,
         )
@@ -112,7 +113,9 @@ class PatientTabsTest {
 
     @Test
     fun remindersReadLargestFirstAndNothingPersonalPrints() = runTest {
-        val settings = SettingsViewModel(design, CrashConsent(MemorySecureStore())).also { it.load() }
+        val settings = SettingsViewModel(design, TelemetryConsent(MemorySecureStore(), RecordedTelemetry())).also {
+            it.load()
+        }
         val content = (settings.state.value as CareLoad.Ready).content
         assertEquals(listOf(24, 2), content.remindersHoursBefore)
         assertFalse("Camila" in content.toString())

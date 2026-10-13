@@ -33,8 +33,6 @@ import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.settings_complaints
 import com.luismejias.lumemedlink.resources.settings_complaints_body
 import com.luismejias.lumemedlink.resources.settings_correction
-import com.luismejias.lumemedlink.resources.settings_crash_reports
-import com.luismejias.lumemedlink.resources.settings_crash_reports_body
 import com.luismejias.lumemedlink.resources.settings_edit_email
 import com.luismejias.lumemedlink.resources.settings_edit_phone
 import com.luismejias.lumemedlink.resources.settings_email
@@ -47,13 +45,15 @@ import com.luismejias.lumemedlink.resources.settings_reminders_one
 import com.luismejias.lumemedlink.resources.settings_reminders_two
 import com.luismejias.lumemedlink.resources.settings_rut
 import com.luismejias.lumemedlink.resources.settings_sign_out
+import com.luismejias.lumemedlink.resources.settings_telemetry
+import com.luismejias.lumemedlink.resources.settings_telemetry_body
 import com.luismejias.lumemedlink.resources.settings_title
 import com.luismejias.lumemedlink.resources.settings_verified
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /** The rows under the profile, in the design's order. */
-internal enum class SettingsEntry { CORRECTION, REMINDERS, RATINGS, COMPLAINTS, CRASH_REPORTS, SIGN_OUT }
+internal enum class SettingsEntry { CORRECTION, REMINDERS, RATINGS, COMPLAINTS, TELEMETRY, SIGN_OUT }
 
 /**
  * Configuración (p7). The RUT is never edited here — it is the identifier (the handoff's inherited rule); a
@@ -69,7 +69,7 @@ internal fun SettingsScreen(
     onEntry: (SettingsEntry) -> Unit,
 ) {
     val load by model.state.collectAsState()
-    val crashReports by model.crashReports.collectAsState()
+    val telemetry by model.telemetry.collectAsState()
     CareLoadView(load, onRetry = model::refresh, standalone = true) { content ->
         val profile = content.profile
         LumeContainer(
@@ -110,7 +110,7 @@ internal fun SettingsScreen(
                         SettingsEntry.REMINDERS,
                         SettingsEntry.RATINGS,
                         SettingsEntry.COMPLAINTS,
-                        SettingsEntry.CRASH_REPORTS,
+                        SettingsEntry.TELEMETRY,
                     ),
                     key = { it },
                     scrolls = false,
@@ -136,16 +136,16 @@ internal fun SettingsScreen(
                             leading = LumeListAccessory.Tile(LumeIcon.Star, LumeTileTint.Gold),
                             disclosure = true,
                         )
-                        SettingsEntry.CRASH_REPORTS -> {
-                            val title = stringResource(Res.string.settings_crash_reports)
+                        SettingsEntry.TELEMETRY -> {
+                            val title = stringResource(Res.string.settings_telemetry)
                             LumeListRow(
                                 textStyle = LumeListRowTextStyle.Strong,
                                 title = title,
-                                description = stringResource(Res.string.settings_crash_reports_body),
+                                description = stringResource(Res.string.settings_telemetry_body),
                                 leading = LumeListAccessory.Tile(LumeIcon.Alert, LumeTileTint.Teal),
                                 trailing = LumeListAccessory.Toggle(
-                                    checked = crashReports,
-                                    onCheckedChange = model::crashReportsChanged,
+                                    checked = telemetry,
+                                    onCheckedChange = model::telemetryChanged,
                                     contentDescription = title,
                                 ),
                             )

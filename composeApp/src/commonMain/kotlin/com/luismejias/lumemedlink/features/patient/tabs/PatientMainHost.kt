@@ -30,7 +30,6 @@ import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.RatingPrompt
-import com.luismejias.lumemedlink.core.crash.CrashConsent
 import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberDirections
@@ -39,6 +38,8 @@ import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoFlow
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
+import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
+import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsScreen
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsSegment
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
@@ -106,17 +107,18 @@ internal class PatientTabsViewModel : ViewModel() {
 internal fun PatientMainHost(
     care: PatientCareGateway,
     directory: DirectoryGateway,
-    crashConsent: CrashConsent,
+    consent: TelemetryConsent,
+    logEvent: (AnalyticsEvent) -> Unit,
     onSignOut: () -> Unit,
 ) {
     val tabs = viewModel { PatientTabsViewModel() }
     val home = viewModel { HomeViewModel(care) }
-    val search = viewModel { SearchViewModel(care, directory) }
+    val search = viewModel { SearchViewModel(care, directory, logEvent) }
     val appointments = viewModel { AppointmentsViewModel(care) }
     val doctors = viewModel { MyDoctorsViewModel(care) }
-    val settings = viewModel { SettingsViewModel(care, crashConsent) }
-    val change = viewModel { ChangeViewModel(care, directory) }
-    val rate = viewModel { RateViewModel(care) }
+    val settings = viewModel { SettingsViewModel(care, consent) }
+    val change = viewModel { ChangeViewModel(care, directory, logEvent) }
+    val rate = viewModel { RateViewModel(care, logEvent) }
     val photo = viewModel { ProfilePhotoModel() }
     val picker = rememberPhotoPicker(photo::picked)
     val contact = rememberDeviceContact()

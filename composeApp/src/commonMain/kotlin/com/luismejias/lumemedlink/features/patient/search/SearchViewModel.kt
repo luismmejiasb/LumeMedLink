@@ -9,6 +9,7 @@ import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.care.Specialty
+import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,8 +19,11 @@ import kotlinx.coroutines.launch
  * Buscar's owner (ADR-0045): the tab's stack and every screen's model on it, from the search (p2) to the
  * booking (a2). Each step is a suspend function a test can call; the screens launch them.
  */
-internal class SearchViewModel(private val care: PatientCareGateway, private val directory: DirectoryGateway) :
-    ViewModel() {
+internal class SearchViewModel(
+    private val care: PatientCareGateway,
+    private val directory: DirectoryGateway,
+    logEvent: (AnalyticsEvent) -> Unit = {},
+) : ViewModel() {
     val flow = SearchFlow()
 
     private val chosen = MutableStateFlow(SearchCriteria())
@@ -31,7 +35,7 @@ internal class SearchViewModel(private val care: PatientCareGateway, private val
     }) { listOf(it.name) }
     val results = ResultsModel(directory, care::today)
     val schedule = ScheduleModel(directory, care::appointments, care::today)
-    val booking = BookingModel(directory)
+    val booking = BookingModel(directory, logEvent)
 
     /** Runs a step of the flow in this ViewModel's scope — a screen never owns the work it starts. */
     fun launch(step: suspend SearchViewModel.() -> Unit) {

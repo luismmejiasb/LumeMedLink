@@ -48,7 +48,10 @@ internal val ShortRejection = StepOutcome.Rejected(AccessText.Plain(Res.string.c
  *
  * Pure Kotlin with no Compose and no platform types, so every transition is pinned by a test.
  */
-internal class AccessFlowModel {
+internal class AccessFlowModel(
+    /** Told when somebody came in — for the catalog's sign-in event (ADR-0052 §3), never with who. */
+    private val onFinished: (AccessRole) -> Unit = {},
+) {
     private val path = MutableStateFlow(listOf(AccessRoute.WELCOME))
     private val move = MutableStateFlow(AccessMove.FORWARD)
     private val serverAlert = MutableStateFlow(false)
@@ -99,6 +102,7 @@ internal class AccessFlowModel {
 
     fun finish(role: AccessRole) {
         ending.value = role
+        onFinished(role)
     }
 
     /** The server could not answer: the alert, and the step can be retried from it. */
