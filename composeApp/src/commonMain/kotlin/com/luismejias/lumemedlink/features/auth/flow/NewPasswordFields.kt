@@ -34,7 +34,10 @@ internal fun NewPasswordFields(
     onRepeated: (String) -> Unit,
     passwordLabel: String,
     extraError: String? = null,
+    /** The dot mask in the empty fields: the sign-up's (2b) only; recovery shows none (the author, 2026-10-13). */
+    placeholders: Boolean = true,
 ) {
+    val placeholder = if (placeholders) stringResource(Res.string.field_password_placeholder) else ""
     val reveal = LumeRevealLabels(
         show = stringResource(Res.string.field_password_show_spoken),
         hide = stringResource(Res.string.field_password_hide_spoken),
@@ -52,7 +55,7 @@ internal fun NewPasswordFields(
         onValueChange = onPassword,
         purpose = SensitiveFieldPurpose.CREDENTIAL,
         label = passwordLabel,
-        placeholder = stringResource(Res.string.field_password_placeholder),
+        placeholder = placeholder,
         reveal = reveal,
         revealLook = revealLook,
         newCredential = true,
@@ -75,7 +78,7 @@ internal fun NewPasswordFields(
         onValueChange = onRepeated,
         purpose = SensitiveFieldPurpose.CREDENTIAL,
         label = stringResource(Res.string.field_password_repeat),
-        placeholder = stringResource(Res.string.field_password_placeholder),
+        placeholder = placeholder,
         reveal = reveal,
         revealLook = revealLook,
         newCredential = true,

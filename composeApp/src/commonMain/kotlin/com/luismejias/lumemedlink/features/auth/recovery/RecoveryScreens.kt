@@ -36,7 +36,6 @@ import com.luismejias.lumemedlink.resources.field_code_clear
 import com.luismejias.lumemedlink.resources.field_password_new
 import com.luismejias.lumemedlink.resources.field_rut
 import com.luismejias.lumemedlink.resources.field_rut_invalid
-import com.luismejias.lumemedlink.resources.field_rut_placeholder
 import com.luismejias.lumemedlink.resources.recovery_body
 import com.luismejias.lumemedlink.resources.recovery_code_body
 import com.luismejias.lumemedlink.resources.recovery_code_expires_in
@@ -86,7 +85,8 @@ internal fun RecoveryRutScreen(model: RecoveryRutModel, retryEpoch: Int, onBack:
                 purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                 format = SensitiveFieldFormat.RUT,
                 label = stringResource(Res.string.field_rut),
-                placeholder = stringResource(Res.string.field_rut_placeholder),
+                // No placeholders while recovering, as on sign-in (the author, 2026-10-13).
+                placeholder = "",
                 validation = if (state.rutInvalid) {
                     LumeFieldValidation.Error(stringResource(Res.string.field_rut_invalid))
                 } else {
@@ -169,6 +169,7 @@ internal fun NewPasswordScreen(model: NewPasswordModel, retryEpoch: Int, onBack:
             onRepeated = model::repeatedChanged,
             passwordLabel = stringResource(Res.string.field_password_new),
             extraError = if (state.reused) stringResource(Res.string.recovery_new_reused) else null,
+            placeholders = false,
         )
     }
 }

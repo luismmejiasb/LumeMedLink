@@ -42,12 +42,10 @@ import com.luismejias.lumemedlink.resources.common_understood
 import com.luismejias.lumemedlink.resources.field_password
 import com.luismejias.lumemedlink.resources.field_password_hide
 import com.luismejias.lumemedlink.resources.field_password_hide_spoken
-import com.luismejias.lumemedlink.resources.field_password_placeholder
 import com.luismejias.lumemedlink.resources.field_password_show
 import com.luismejias.lumemedlink.resources.field_password_show_spoken
 import com.luismejias.lumemedlink.resources.field_rut
 import com.luismejias.lumemedlink.resources.field_rut_invalid
-import com.luismejias.lumemedlink.resources.field_rut_placeholder
 import com.luismejias.lumemedlink.resources.locked_body
 import com.luismejias.lumemedlink.resources.locked_recover
 import com.luismejias.lumemedlink.resources.locked_title
@@ -124,7 +122,8 @@ internal fun SignInScreen(
                     purpose = SensitiveFieldPurpose.PERSONAL_DATA,
                     format = SensitiveFieldFormat.RUT,
                     label = stringResource(Res.string.field_rut),
-                    placeholder = stringResource(Res.string.field_rut_placeholder),
+                    // No placeholder on sign-in: the labels are enough (the author, 2026-10-13).
+                    placeholder = "",
                     validation = if (state.rutInvalid) {
                         LumeFieldValidation.Error(stringResource(Res.string.field_rut_invalid))
                     } else {
@@ -136,7 +135,7 @@ internal fun SignInScreen(
                     onValueChange = model::passwordChanged,
                     purpose = SensitiveFieldPurpose.CREDENTIAL,
                     label = stringResource(Res.string.field_password),
-                    placeholder = stringResource(Res.string.field_password_placeholder),
+                    placeholder = "",
                     reveal = LumeRevealLabels(
                         show = stringResource(Res.string.field_password_show_spoken),
                         hide = stringResource(Res.string.field_password_hide_spoken),
