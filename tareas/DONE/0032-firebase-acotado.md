@@ -1,10 +1,12 @@
 # 0032 · Firebase acotado — Crashlytics, Analytics, Remote Config, Messaging y App Distribution
 
-> **Estado:** PENDING (abierta 2026-10-13) · ADR-0052 · deroga ADR-0051 · reemplaza el punto 1 de ADR-0038
+> **Estado:** DONE (abierta y cerrada 2026-10-13) · ADR-0052 · deroga ADR-0051 · reemplaza el punto 1 de ADR-0038
 >
-> **Avance 2026-10-13:** hechos los puntos 1 a 6 y el 8 —doctrina, gates con sus cebos, `core/telemetry`, los dos
-> lados y el script de App Distribution—, verificados sin configuración en el simulador y el emulador. **Falta el 7, el
-> push**, y lo que necesita del autor.
+> **Cierre:** hechos los puntos 1 a 6 y el 8: la doctrina, los gates con sus cebos (120 en el ensayo), `core/telemetry`,
+> los dos lados y el script de App Distribution. Están verificados sin configuración en el simulador y el emulador, con
+> los tests de Android y de iOS en verde. **El punto 7, el push, pasó a la tarea `0012`** (FREEZE) por decisión del autor
+> del mismo día: espera al backend. Ahí quedó también cuándo se pide el permiso: al reservar la primera hora.
+> Nada llegó todavía a una consola de Firebase: espera lo que se necesita del autor (abajo).
 
 ## De dónde sale
 

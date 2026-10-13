@@ -45,6 +45,16 @@
    dentro de la app sigue visible. La pantalla tiene que dejar claro que oponerse a un canal no apaga la
    información dentro de la app, ni borra su contacto.
 
+## El push, desde ADR-0052 (decisiones del autor del 2026-10-13)
+
+- **El cliente del push espera aquí, con el backend.** Firebase ya está en el build (ADR-0052) y las condiciones de
+  ADR-0038 §3 siguen: payload sólo de datos con el texto de la app, token después del login y borrado en el logout,
+  sin métricas de entrega. Pero el autor eligió no construir la mitad cliente mientras el token no tenga a dónde ir.
+- **El permiso de notificaciones se pide al reservar la primera hora**, justo después de a3, para los recordatorios de
+  esa cita. Nunca al abrir la app ni al terminar el acceso. Configuración sigue pudiendo cambiarlo.
+- En iOS hará falta el entitlement `aps-environment` y activar Push Notifications en el App ID del portal de Apple;
+  sin eso, un build a dispositivo no firma.
+
 ## Qué NO hacer
 
 - Componer reagendar con dos llamadas. La constitución lo prohíbe, y el backend va a publicar la

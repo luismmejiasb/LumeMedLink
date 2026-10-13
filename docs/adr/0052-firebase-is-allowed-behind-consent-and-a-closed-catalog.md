@@ -74,6 +74,9 @@ So the suite is allowed, and what it may carry is closed in code and asserted by
    - There is no token before login, and the token is deleted at logout.
    - Delivery metrics are not exported.
    - The token reaches the backend only when its endpoint exists, and requests to the backend are paused.
+   - **The client half waits with the backend** (the author's call, 2026-10-13): it is built in task `0012`, not
+     before. The notification permission is asked right after the first booking (a3), for that appointment's
+     reminders — never at launch.
 7. **App Distribution is a release tool, not a library.**
    - Builds are uploaded with the Firebase CLI.
    - No tester SDK ships in the binary.

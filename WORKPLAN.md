@@ -76,7 +76,7 @@
   pacientes), recuperación y enrolamiento mediado por la clínica. Es el punto 3 de ADR-0006, lo
   único que sigue vigente de ella, y no se descubre dentro de una slice de feature.
 - S2.2+ · Perfil del paciente y sus citas, contra el contrato ya publicado. *(2026-10-12: la UI completa del paciente y del médico existe contra un guion, ADR-0046, tarea `0030` cerrada; verificada en iOS y Android. Conectarla al contrato espera al backend: pedidos `0002`, `0007` y `0008` respondidos, pausa de pedidos del autor.)*
-- **Firebase acotado** (ADR-0052, 2026-10-13, deroga ADR-0051): Crashlytics, Analytics con catálogo cerrado y Remote Config, con consentimiento, en los dos lados (tarea `0032`). Pendiente: el push (mitad cliente), App Distribution, y del autor el proyecto de Firebase, la llave de APNs y la línea del aviso de privacidad. El pedido `0009` quedó retirado.
+- **Firebase acotado** (ADR-0052, 2026-10-13, deroga ADR-0051): Crashlytics, Analytics con catálogo cerrado y Remote Config, con consentimiento, en los dos lados (tarea `0032`). Tarea `0032` cerrada, con App Distribution por script. El push espera al backend en la tarea `0012`. Del autor: el proyecto de Firebase, la llave de APNs y la línea del aviso de privacidad. El pedido `0009` quedó retirado.
   - **Reservar trae un 409 que sólo este cliente puede explicar** *(recibido del backend el
     2026-09-21, contrato 0.50.0, su ADR-0051)*. Una paciente puede reservar con varios médicos pero
     **nunca dos a la misma hora**, y el servidor lo rechaza **sin poder decir dónde está el choque**:
