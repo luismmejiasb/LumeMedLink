@@ -103,7 +103,7 @@ internal fun <T> CareLoadView(
         when (load) {
             // Only until the stand-in is read, which the script answers at once: the kit's generic rows, still no
             // spinner.
-            CareLoad.Loading -> LumeSkeleton(LumeSkeletonShape.List(rows = STAND_IN_ROWS))
+            CareLoad.Loading -> LumeSkeleton(shape = LumeSkeletonShape.List(rows = STAND_IN_ROWS))
             is CareLoad.Failed -> {
                 val offline = load.failure == CareFailure.Offline
                 // e6: the dark band first, then the state — a reader hears the band as it appears.
