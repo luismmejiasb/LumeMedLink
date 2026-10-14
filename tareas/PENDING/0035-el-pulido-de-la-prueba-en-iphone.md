@@ -51,3 +51,4 @@ El autor probó la app en su iPhone (iOS 27) y trajo once puntos de pulido. Seis
 - `SettingsTest`: las rutas, la confirmación, el tema y el idioma persistidos y borrados por el wipe, y las licencias.
 - En el device: cambiar el tema y el idioma, y que la app entera cambie sin perder la pestaña.
 - En el device: pegar un número con su prefijo (+56, +58, 00…) en el celular del registro y en el cambio de teléfono — el país cambia solo y el número queda agrupado por el país nuevo (kit 0b549c4). Los tests del kit suponen que el pegar de iOS llega como un solo cambio; eso no se ha visto.
+- En el device (de la tarea 0034): con la latencia del guion subida en una build local, cada pestaña, el detalle y el cambio de cita esperan como la forma de su pantalla, sin indicador. Incluye las estrellas, el rótulo de la tarjeta, el callout y la tira de días y horas.

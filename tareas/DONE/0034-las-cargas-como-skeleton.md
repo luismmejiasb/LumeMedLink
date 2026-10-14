@@ -1,7 +1,7 @@
 # 0034 · Las cargas como skeleton de su pantalla
 
-> **Estado:** PENDING (abierta 2026-10-13) · ADR-0055 · **Cableada** con el `LumePlaceholder` del kit (`b6cfabe`). Falta:
-> cubrir dos componentes en el kit y verlo en iOS y en las pantallas empujadas.
+> **Estado:** DONE (2026-10-14) · ADR-0055 · Cableada con el `LumePlaceholder` del kit (`b6cfabe`), y los huecos del kit
+> cerrados después (`e21be8f`, `af334de`, `bd0737a`). Lo que queda por ver en el iPhone pasó a la tarea 0035.
 
 ## De dónde sale
 
@@ -44,3 +44,15 @@ botones con su indicador.
   - **Faltan en el kit:** el rótulo en mayúsculas de la tarjeta y las estrellas de la valoración, que todavía se dibujan
     con su contenido.
   - Las otras pestañas cargan junto con Inicio al entrar, y no se alcanzaron a capturar esperando.
+
+## Cierre 2026-10-14
+
+La ficha se había quedado atrás del código. El autor lo notó.
+- Los dos componentes que faltaban en el kit ya están. El rótulo de la tarjeta y las estrellas se dibujan bajo el
+  placeholder desde `e21be8f`.
+- El kit cubrió además lo que pedían las pantallas empujadas:
+  - el ícono del callout del detalle (`af334de`);
+  - la tira de días y la grilla de horas del cambio de cita (`bd0737a`).
+- `96f1738` dejó apiladas las piezas de una pantalla empujada bajo el placeholder.
+- No se vio en iOS, ni las pestañas que no son Inicio esperando. Esa revisión pasó a la tarea 0035, que ya es la ronda
+  en el iPhone, para no tener dos tareas abiertas por la misma prueba.
