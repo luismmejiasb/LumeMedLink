@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The handoff's brand mark (Handoff/02-Assets/marca/lumemedlink-appicon.svg), its 132-unit artboard without the blue
+     square, which is the background layer. The shield (96 units tall) is scaled to the adaptive icon's 66 dp safe zone
+     and centred, so no launcher mask clips it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.6875"
+        android:scaleY="0.6875"
+        android:translateX="8.625"
+        android:translateY="7.25">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M66,20 L104,35 V69 C104,94 87,110 66,116 C45,110 28,94 28,69 V35 Z" />
+        <path
+            android:fillColor="@color/ic_launcher_background"
+            android:pathData="M53,42 L57,42 A4,4 0 0,1 61,46 L61,74 A4,4 0 0,0 65,78 L85,78 A4,4 0 0,1 89,82 L89,86 A4,4 0 0,1 85,90 L53,90 A4,4 0 0,1 49,86 L49,46 A4,4 0 0,1 53,42 Z" />
+        <path
+            android:fillColor="#91A8F2"
+            android:pathData="M73,48 H77 A3,3 0 0,1 80,51 V69 A3,3 0 0,1 77,72 H73 A3,3 0 0,1 70,69 V51 A3,3 0 0,1 73,48 Z" />
+        <path
+            android:fillColor="#91A8F2"
+            android:pathData="M66,55 H84 A3,3 0 0,1 87,58 V62 A3,3 0 0,1 84,65 H66 A3,3 0 0,1 63,62 V58 A3,3 0 0,1 66,55 Z" />
+    </group>
+</vector>
