@@ -11,8 +11,11 @@ El autor probó la app en su iPhone (iOS 27) y trajo once puntos de pulido. Seis
 
 ### En el kit (derivado por SendMessage el 2026-10-13)
 
-1. `LumeSheet` aparece y se cierra sin animación en el device. Se pide la curva del sheet nativo.
-2. El sheet de la foto deja un espacio abajo por el que se ve el fondo.
+1. `LumeSheet` aparece y se cierra sin animación en el device. Se pide la curva del sheet nativo. **Hecho** en el
+   kit `f3375e5`: la transición llegaba ya terminada al primer cuadro del `Popup`. Ahora es un resorte, y lo mismo
+   en `LumeAlert` y en el panel del selector. Falta verlo en el device.
+2. El sheet de la foto deja un espacio abajo por el que se ve el fondo. **Hecho** en el kit `f3375e5`: un `Popup` de
+   iOS se queda dentro del área segura, y ahora ocupa la pantalla entera. Falta verlo en el device.
 3. `LumePhoneField` no tiene «continuar» en iOS, porque el teclado telefónico no tiene tecla de retorno. Hace falta
    la barra del teclado.
 4. Un toque en un espacio vacío suelta el foco de cualquier campo, en todas las pantallas.
@@ -23,9 +26,12 @@ El autor probó la app en su iPhone (iOS 27) y trajo once puntos de pulido. Seis
 
 1. **Hecho**: Configuración tiene Apariencia, Idioma, Privacidad (con el switch de telemetría), Términos, Licencias
    generadas, el copyright y la versión al pie, y la confirmación de «Cerrar sesión» (ADR-0057).
-2. Los sheets para editar teléfono y correo, verificados con un código por SMS y por correo antes del cambio. Son una
-   maqueta, sin pedidos al backend (memoria del autor, 2026-10-11).
-3. El ícono de la app en iOS y Android, desde `Handoff/02-Assets/marca/lumemedlink-appicon.svg`.
+2. **Hecho** (`76e27a3`): los sheets para editar teléfono y correo. El perfil cambia sólo después de confirmar el
+   código enviado al contacto **nuevo**. Son una maqueta, sin pedidos al backend (memoria del autor, 2026-10-11): el
+   contrato vive en `PatientCareGateway` y lo cumple el guion. Los contadores de reenvío subieron a
+   `core/screen/Countdown.kt`, porque ahora los usan dos áreas.
+3. **Hecho**: el ícono de la app desde `Handoff/02-Assets/marca/lumemedlink-appicon.svg`. En iOS (`ca53951`) es un PNG
+   de 1024 sin canal alfa. En Android (`cf6fd63`) es adaptativo y vectorial, con el escudo dentro de la zona segura.
 4. Cuando llegue el punto 5 del kit, migrar `PatientMainHost`, `SearchHost` y `AccessHost` al host del kit y borrar
    sus `AnimatedContent`.
 
