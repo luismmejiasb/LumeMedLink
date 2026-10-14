@@ -96,8 +96,11 @@ internal enum class SettingsEntry {
 internal fun SettingsScreen(
     model: SettingsViewModel,
     photo: ProfilePhotoModel,
-    onEditPhone: (PatientProfile) -> Unit,
-    onEditEmail: (PatientProfile) -> Unit,
+    /** Null while contact changes are off (ADR-0060): the phone and the e-mail are shown without a pencil. */
+    onEditPhone: ((PatientProfile) -> Unit)?,
+    onEditEmail: ((PatientProfile) -> Unit)?,
+    /** Whether «Mis valoraciones» is listed: off with the ratings feature. */
+    showsRatings: Boolean,
     onEntry: (SettingsEntry) -> Unit,
 ) {
     val load by model.state.collectAsState()
@@ -153,9 +156,9 @@ internal fun SettingsScreen(
                     )
                 }
                 LumeList(
-                    items = listOf(
+                    items = listOfNotNull(
                         SettingsEntry.REMINDERS,
-                        SettingsEntry.RATINGS,
+                        SettingsEntry.RATINGS.takeIf { showsRatings },
                         SettingsEntry.COMPLAINTS,
                     ),
                     key = { it },
@@ -311,8 +314,8 @@ private enum class ProfileField { RUT, PHONE, EMAIL }
 @Composable
 private fun ProfileFields(
     profile: PatientProfile,
-    onEditPhone: (PatientProfile) -> Unit,
-    onEditEmail: (PatientProfile) -> Unit,
+    onEditPhone: ((PatientProfile) -> Unit)?,
+    onEditEmail: ((PatientProfile) -> Unit)?,
 ) {
     LumeList(items = ProfileField.entries, key = { it }, scrolls = false, chrome = LumeListChrome.OpenRuled) { field ->
         when (field) {
@@ -325,23 +328,27 @@ private fun ProfileFields(
             ProfileField.PHONE -> LumeListRow(
                 title = stringResource(Res.string.settings_phone),
                 description = profile.mobile?.display ?: stringResource(Res.string.settings_not_recorded),
-                trailing = LumeListAccessory.Button(
-                    LumeIcon.Edit,
-                    stringResource(Res.string.settings_edit_phone),
-                    LumeListButtonLook.Accent,
-                    onClick = { onEditPhone(profile) },
-                ),
+                trailing = onEditPhone?.let { edit ->
+                    LumeListAccessory.Button(
+                        LumeIcon.Edit,
+                        stringResource(Res.string.settings_edit_phone),
+                        LumeListButtonLook.Accent,
+                        onClick = { edit(profile) },
+                    )
+                } ?: LumeListAccessory.None,
                 textStyle = LumeListRowTextStyle.LabelOverValue,
             )
             ProfileField.EMAIL -> LumeListRow(
                 title = stringResource(Res.string.settings_email),
                 description = profile.email?.value ?: stringResource(Res.string.settings_not_recorded),
-                trailing = LumeListAccessory.Button(
-                    LumeIcon.Edit,
-                    stringResource(Res.string.settings_edit_email),
-                    LumeListButtonLook.Accent,
-                    onClick = { onEditEmail(profile) },
-                ),
+                trailing = onEditEmail?.let { edit ->
+                    LumeListAccessory.Button(
+                        LumeIcon.Edit,
+                        stringResource(Res.string.settings_edit_email),
+                        LumeListButtonLook.Accent,
+                        onClick = { edit(profile) },
+                    )
+                } ?: LumeListAccessory.None,
                 textStyle = LumeListRowTextStyle.LabelOverValue,
             )
         }

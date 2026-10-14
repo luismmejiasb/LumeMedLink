@@ -14,6 +14,8 @@ import com.luismejias.lumemedlink.core.care.AppointmentStatus
 internal fun SearchHost(
     model: SearchViewModel,
     onBooked: (status: AppointmentStatus, showAppointments: Boolean) -> Unit,
+    /** Whether a result offers «Agendar» (ADR-0060). */
+    canBook: Boolean,
 ) {
     val routes by model.flow.routes.collectAsState()
     val back: () -> Unit = { model.flow.back() }
@@ -28,7 +30,7 @@ internal fun SearchHost(
             )
             SearchRoute.SPECIALTY -> SpecialtyScreen(model, back)
             SearchRoute.COMMUNE -> CommuneScreen(model, back)
-            SearchRoute.RESULTS -> ResultsScreen(model, back)
+            SearchRoute.RESULTS -> ResultsScreen(model, back, canBook)
             SearchRoute.FILTERS -> FiltersScreen(model, back)
             SearchRoute.AVAILABILITY -> AvailabilityScreen(model, back)
             SearchRoute.SCHEDULE -> ScheduleScreen(model, back)

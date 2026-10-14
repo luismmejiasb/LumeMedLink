@@ -107,7 +107,7 @@ internal fun slotText(slot: Slot, today: CalendarDate): String =
  * (request 0008 §4). «Agendar» and the doctor's row both open a1.
  */
 @Composable
-internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
+internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit, canBook: Boolean) {
     val load by model.results.state.collectAsState()
     val standIn by model.results.standIn.collectAsState()
     val criteria by model.criteria.collectAsState()
@@ -227,14 +227,15 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit) {
             )
             if (shown.isEmpty()) LumeCallout(text = stringResource(Res.string.results_filtered_empty))
             shown.forEach { entry ->
-                DoctorResultCard(entry, content.today) { model.launch { schedule(entry) } }
+                val book = if (canBook) ({ model.launch { schedule(entry) } }) else null
+                DoctorResultCard(entry, content.today, book)
             }
         }
     }
 }
 
 @Composable
-private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook: () -> Unit) {
+private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook: (() -> Unit)?) {
     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
         LumeStack(alignment = LumeStackAlignment.Fill, spacing = { medium }) {
             DoctorIdentity(entry.doctor, listOf(entry.doctor.specialty)) { DoctorRating(entry) }
@@ -254,12 +255,15 @@ private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook
                         weight = LumeTextWeight.Strong,
                     )
                 }
-                LumeButton(
-                    content = LumeButtonContent.Title(stringResource(Res.string.results_book)),
-                    size = LumeButtonSize.Card,
-                    state = if (entry.nextSlot != null) LumeFieldState.Enabled else LumeFieldState.Disabled,
-                    onClick = onBook,
-                )
+                // Booking off (ADR-0060): the directory still shows the doctor and the next hour, with no door to it.
+                if (onBook != null) {
+                    LumeButton(
+                        content = LumeButtonContent.Title(stringResource(Res.string.results_book)),
+                        size = LumeButtonSize.Card,
+                        state = if (entry.nextSlot != null) LumeFieldState.Enabled else LumeFieldState.Disabled,
+                        onClick = onBook,
+                    )
+                }
             }
         }
     }

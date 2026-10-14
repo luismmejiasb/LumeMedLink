@@ -56,7 +56,13 @@ private enum class ProfileEntry { RATINGS, CORRECTIONS }
  * nothing yet; the camera button opens the photo's flow (k1–k4). «Abrir LumeMed» is not here (the author's call).
  */
 @Composable
-internal fun DoctorProfileScreen(model: DoctorProfileViewModel, photo: ProfilePhotoModel, onSignOut: () -> Unit) {
+internal fun DoctorProfileScreen(
+    model: DoctorProfileViewModel,
+    photo: ProfilePhotoModel,
+    onSignOut: () -> Unit,
+    /** Whether the switch that shares the doctor's contact is shown (ADR-0060). */
+    showsShare: Boolean,
+) {
     val load by model.state.collectAsState()
     val standIn by model.standIn.collectAsState()
     LumeContainer(scroll = LumeContainerScroll.Scrollable) {
@@ -64,7 +70,7 @@ internal fun DoctorProfileScreen(model: DoctorProfileViewModel, photo: ProfilePh
             CareLoadView(load, standIn, onRetry = model::refresh, spacing = { large }) { profile ->
                 ProfileHeader(profile, photo)
                 ProfileFields(profile)
-                ShareRow(profile, onShare = { share -> model.launch { shareContact(share) } })
+                if (showsShare) ShareRow(profile, onShare = { share -> model.launch { shareContact(share) } })
                 ProfileEntries(profile)
                 SignOut(onSignOut)
             }

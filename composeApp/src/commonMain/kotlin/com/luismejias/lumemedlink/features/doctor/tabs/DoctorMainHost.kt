@@ -106,11 +106,12 @@ internal fun DoctorMainHost(
     val contact = rememberDeviceContact()
     val available by features.available.collectAsState()
     val visibleTabs = visibleDoctorTabs(available)
+    val can = doctorActions(available)
     val chosen by tabs.selected.collectAsState()
     val selected = shownDoctorTab(chosen, visibleTabs)
     val agendaLoad by agenda.state.collectAsState()
     val profileLoad by profile.state.collectAsState()
-    val waiting = (agendaLoad as? CareLoad.Ready)?.content?.requests?.size ?: 0
+    val waiting = if (can.answerRequests) (agendaLoad as? CareLoad.Ready)?.content?.requests?.size ?: 0 else 0
     val doctor = (profileLoad as? CareLoad.Ready)?.content?.doctor
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -119,9 +120,14 @@ internal fun DoctorMainHost(
             LocalLumeToastHostState provides toasts,
         ) {
             when (selected) {
-                DoctorTab.AGENDA -> AgendaScreen(agenda, doctor, onProfile = { tabs.show(DoctorTab.SETTINGS) })
+                DoctorTab.AGENDA -> AgendaScreen(
+                    agenda,
+                    doctor,
+                    onProfile = { tabs.show(DoctorTab.SETTINGS) },
+                    showsRequests = can.answerRequests,
+                )
                 DoctorTab.PATIENTS -> DoctorPatientsScreen(patients, onCall = contact::dial, onMail = contact::mail)
-                DoctorTab.SETTINGS -> DoctorProfileScreen(profile, photo, onSignOut)
+                DoctorTab.SETTINGS -> DoctorProfileScreen(profile, photo, onSignOut, showsShare = can.shareContact)
             }
         }
         val agendaItem = LumeTabBarItem(

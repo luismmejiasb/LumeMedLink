@@ -32,6 +32,7 @@ import com.luismejias.lumemedlink.core.care.ContactKind
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.PatientProfile
 import com.luismejias.lumemedlink.core.care.RatingPrompt
 import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
@@ -182,6 +183,7 @@ internal fun PatientMainHost(
     val changeDone by change.done.collectAsState()
     val available by features.available.collectAsState()
     val visibleTabs = visiblePatientTabs(available)
+    val can = patientActions(available)
     val chosen by tabs.selected.collectAsState()
     val selected = shownPatientTab(chosen, visibleTabs)
     val settingsRoute = settingsRoutes.lastOrNull().takeIf { selected == PatientTab.SETTINGS }
@@ -277,7 +279,8 @@ internal fun PatientMainHost(
                             today = care.today(),
                             onDirections = openDirections,
                             onCall = contact::dial,
-                            onBookAgain = { appointment ->
+                            canChange = can.changeAppointments,
+                            onBookAgain = { appointment: PatientAppointment ->
                                 change.launch {
                                     doctorToBookAgain(appointment)?.let { doctor ->
                                         back()
@@ -285,10 +288,10 @@ internal fun PatientMainHost(
                                         search.launch { schedule(doctor) }
                                     }
                                 }
-                            },
-                            onRate = { appointment, stars ->
+                            }.onlyIf(can.book),
+                            onRate = { appointment: PatientAppointment, stars: Int ->
                                 rate.open(RatingPrompt(appointment.id, appointment.doctor, appointment.date), stars)
-                            },
+                            }.onlyIf(can.rate),
                         )
                         ChangeRoute.RESCHEDULE -> RescheduleScreen(change, toasts, care.today())
                         ChangeRoute.CANCEL -> CancelScreen(change, care.today())
@@ -298,33 +301,42 @@ internal fun PatientMainHost(
                         PatientTab.HOME -> HomeScreen(
                             model = home,
                             onDirections = openDirections,
-                            onChangeOrCancel = { appointment -> change.launch { openOptions(appointment) } },
+                            onChangeOrCancel = { appointment: PatientAppointment ->
+                                change.launch { openOptions(appointment) }
+                            }.onlyIf(can.changeAppointments),
                             onOpenAppointment = { appointment -> change.launch { openDetail(appointment) } },
-                            onRate = rate::open,
-                            onSearch = { tabs.show(PatientTab.SEARCH) },
-                            onNotices = {},
+                            onRate = rate::open.onlyIf(can.rate),
+                            onSearch = { tabs.show(PatientTab.SEARCH) }.onlyIf(can.search),
+                            onNotices = {}.onlyIf(can.notices),
                             onProfile = { tabs.show(PatientTab.SETTINGS) },
                         )
-                        PatientTab.SEARCH -> SearchHost(search, onBooked)
+                        PatientTab.SEARCH -> SearchHost(search, onBooked, canBook = can.book)
                         PatientTab.APPOINTMENTS -> AppointmentsScreen(
                             model = appointments,
                             onOpen = { appointment -> change.launch { openDetail(appointment) } },
-                            onChange = { appointment -> change.launch { changeTime(appointment) } },
-                            onCancel = change::cancelAppointment,
-                            onSearch = { tabs.show(PatientTab.SEARCH) },
+                            onChange = { appointment: PatientAppointment ->
+                                change.launch { changeTime(appointment) }
+                            }.onlyIf(can.changeAppointments),
+                            onCancel = change::cancelAppointment.onlyIf(can.changeAppointments),
+                            onSearch = { tabs.show(PatientTab.SEARCH) }.onlyIf(can.search),
                         )
                         PatientTab.DOCTORS -> MyDoctorsScreen(
                             model = doctors,
                             onOpen = {},
                             onCall = contact::dial,
                             onMail = contact::mail,
-                            onSearch = { tabs.show(PatientTab.SEARCH) },
+                            onSearch = { tabs.show(PatientTab.SEARCH) }.onlyIf(can.search),
                         )
                         PatientTab.SETTINGS -> SettingsScreen(
                             model = settings,
                             photo = photo,
-                            onEditPhone = { profile -> contactChange.open(ContactKind.PHONE, profile) },
-                            onEditEmail = { profile -> contactChange.open(ContactKind.EMAIL, profile) },
+                            onEditPhone = { profile: PatientProfile ->
+                                contactChange.open(ContactKind.PHONE, profile)
+                            }.onlyIf(can.changeContact),
+                            onEditEmail = { profile: PatientProfile ->
+                                contactChange.open(ContactKind.EMAIL, profile)
+                            }.onlyIf(can.changeContact),
+                            showsRatings = can.rate,
                             onEntry = { if (it == SettingsEntry.SIGN_OUT) onSignOut() },
                         )
                     }

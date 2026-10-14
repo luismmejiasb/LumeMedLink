@@ -75,9 +75,11 @@ import org.jetbrains.compose.resources.stringResource
 internal fun AppointmentsScreen(
     model: AppointmentsViewModel,
     onOpen: (PatientAppointment) -> Unit,
-    onChange: (PatientAppointment) -> Unit,
-    onCancel: (PatientAppointment) -> Unit,
-    onSearch: () -> Unit,
+    /** Null while changes are off (ADR-0060): the card shows no «Cambiar» nor «Cancelar». */
+    onChange: ((PatientAppointment) -> Unit)?,
+    onCancel: ((PatientAppointment) -> Unit)?,
+    /** Null while the directory is off: no way into «Buscar» is drawn. */
+    onSearch: (() -> Unit)?,
 ) {
     val load by model.state.collectAsState()
     val standIn by model.standIn.collectAsState()
@@ -89,13 +91,15 @@ internal fun AppointmentsScreen(
                 LumeNavBar(
                     title = stringResource(Res.string.appointments_title),
                     titleStyle = LumeNavBarTitleStyle.Root,
-                    actions = listOf(
-                        LumeNavBarAction.Glyph(
-                            LumeIcon.Calendar,
-                            stringResource(Res.string.schedule_title),
-                            LumeNavBarActionEmphasis.Accent,
-                            onClick = onSearch,
-                        ),
+                    actions = listOfNotNull(
+                        onSearch?.let {
+                            LumeNavBarAction.Glyph(
+                                LumeIcon.Calendar,
+                                stringResource(Res.string.schedule_title),
+                                LumeNavBarActionEmphasis.Accent,
+                                onClick = it,
+                            )
+                        },
                     ),
                 )
             },
@@ -137,7 +141,7 @@ internal fun AppointmentsScreen(
                         } else {
                             null
                         },
-                        action = if (segment == AppointmentsSegment.UPCOMING) {
+                        action = if (segment == AppointmentsSegment.UPCOMING && onSearch != null) {
                             LumeButtonContent.Title(stringResource(Res.string.search_doctor))
                         } else {
                             null
@@ -174,8 +178,8 @@ private fun AppointmentCard(
     today: CalendarDate,
     actionable: Boolean,
     onOpen: (PatientAppointment) -> Unit,
-    onChange: (PatientAppointment) -> Unit,
-    onCancel: (PatientAppointment) -> Unit,
+    onChange: ((PatientAppointment) -> Unit)?,
+    onCancel: ((PatientAppointment) -> Unit)?,
 ) {
     // The whole card opens the detail (the author, 2026-10-13: «al tocar cualquier parte de la card»); its two buttons
     // keep their own touch.
@@ -214,7 +218,7 @@ private fun AppointmentCard(
                     text = stringResource(Res.string.appointments_requested_note),
                     color = LumeTextColor.Secondary,
                 )
-                actionable -> LumeStack(
+                actionable && onChange != null && onCancel != null -> LumeStack(
                     axis = LumeStackAxis.Horizontal,
                     style = LumeStackStyle.Fixed,
                     alignment = LumeStackAlignment.Fill,

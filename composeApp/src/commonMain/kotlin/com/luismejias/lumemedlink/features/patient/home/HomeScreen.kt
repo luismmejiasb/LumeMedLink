@@ -79,11 +79,12 @@ import org.jetbrains.compose.resources.stringResource
 internal fun HomeScreen(
     model: HomeViewModel,
     onDirections: (PatientAppointment) -> Unit,
-    onChangeOrCancel: (PatientAppointment) -> Unit,
+    /** Each of these four is null while its feature is off (ADR-0060), and its door is not drawn. */
+    onChangeOrCancel: ((PatientAppointment) -> Unit)?,
     onOpenAppointment: (PatientAppointment) -> Unit,
-    onRate: (RatingPrompt, Int) -> Unit,
-    onSearch: () -> Unit,
-    onNotices: () -> Unit,
+    onRate: ((RatingPrompt, Int) -> Unit)?,
+    onSearch: (() -> Unit)?,
+    onNotices: (() -> Unit)?,
     onProfile: () -> Unit,
 ) {
     val load by model.state.collectAsState()
@@ -111,7 +112,9 @@ internal fun HomeScreen(
                             icon = LumeIcon.Calendar,
                             title = stringResource(Res.string.home_empty_title),
                             message = stringResource(Res.string.home_empty_body),
-                            action = LumeButtonContent.Title(stringResource(Res.string.search_doctor)),
+                            action = onSearch?.let {
+                                LumeButtonContent.Title(stringResource(Res.string.search_doctor))
+                            },
                             onAction = onSearch,
                         )
                     }
@@ -138,7 +141,8 @@ internal fun HomeScreen(
                         )
                     }
                 }
-                home.rating?.let { RatingCard(it, onRate) }
+                val rating = home.rating
+                if (rating != null && onRate != null) RatingCard(rating, onRate)
                 TabBarClearance()
             }
         }
@@ -150,19 +154,22 @@ internal fun HomeScreen(
  * the name is the kit's text in one colour until the handoff's whole logotype arrives as artwork.
  */
 @Composable
-private fun HomeBar(home: HomeContent, onNotices: () -> Unit, onProfile: () -> Unit) {
+private fun HomeBar(home: HomeContent, onNotices: (() -> Unit)?, onProfile: () -> Unit) {
     val name = stringResource(Res.string.app_name)
+    val bell = onNotices?.let {
+        LumeNavBarAction.Glyph(
+            LumeIcon.Bell,
+            stringResource(Res.string.home_notices),
+            unread = if (home.unreadNotices) stringResource(Res.string.home_notices_new) else null,
+            onClick = it,
+        )
+    }
     LumeNavBar(
         brand = painterResource(Res.drawable.lumemedlink_icon),
         brandDescription = name,
         brandName = name,
-        actions = listOf(
-            LumeNavBarAction.Glyph(
-                LumeIcon.Bell,
-                stringResource(Res.string.home_notices),
-                unread = if (home.unreadNotices) stringResource(Res.string.home_notices_new) else null,
-                onClick = onNotices,
-            ),
+        actions = listOfNotNull(
+            bell,
             LumeNavBarAction.Initials(home.initials, stringResource(Res.string.home_profile), onClick = onProfile),
         ),
     )
@@ -173,7 +180,7 @@ private fun NextAppointmentCard(
     next: PatientAppointment,
     home: HomeContent,
     onDirections: (PatientAppointment) -> Unit,
-    onChangeOrCancel: (PatientAppointment) -> Unit,
+    onChangeOrCancel: ((PatientAppointment) -> Unit)?,
 ) {
     val relative = relativeDayText(next.date, home.today)
     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Solid, inset = LumeCardInset.Feature) {
@@ -228,13 +235,15 @@ private fun NextAppointmentCard(
                     width = LumeButtonWidth.Fill,
                     onClick = { onDirections(next) },
                 )
-                LumeButton(
-                    content = LumeButtonContent.Title(stringResource(Res.string.home_change_or_cancel)),
-                    emphasis = LumeButtonEmphasis.Outline,
-                    size = LumeButtonSize.Pair,
-                    width = LumeButtonWidth.Fill,
-                    onClick = { onChangeOrCancel(next) },
-                )
+                if (onChangeOrCancel != null) {
+                    LumeButton(
+                        content = LumeButtonContent.Title(stringResource(Res.string.home_change_or_cancel)),
+                        emphasis = LumeButtonEmphasis.Outline,
+                        size = LumeButtonSize.Pair,
+                        width = LumeButtonWidth.Fill,
+                        onClick = { onChangeOrCancel(next) },
+                    )
+                }
             }
         }
     }

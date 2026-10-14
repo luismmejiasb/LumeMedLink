@@ -93,8 +93,12 @@ internal fun AppointmentDetailScreen(
     today: CalendarDate,
     onDirections: (PatientAppointment) -> Unit,
     onCall: (String) -> Unit,
-    onBookAgain: (PatientAppointment) -> Unit,
-    onRate: (PatientAppointment, Int) -> Unit,
+    /** Whether cancelling, withdrawing and moving are on (ADR-0060); off, the upcoming detail has no actions. */
+    canChange: Boolean,
+    /** Null while booking is off: a past appointment offers no «Agendar de nuevo». */
+    onBookAgain: ((PatientAppointment) -> Unit)?,
+    /** Null while ratings are off: no rating section is drawn. */
+    onRate: ((PatientAppointment, Int) -> Unit)?,
 ) {
     val load by model.detail.state.collectAsState()
     val standIn by model.detail.standIn.collectAsState()
@@ -102,7 +106,7 @@ internal fun AppointmentDetailScreen(
     PushedScreen(
         title = stringResource(Res.string.detail_title),
         onBack = model::back,
-        action = { ready?.let { DetailActions(it, model, onBookAgain) } },
+        action = { ready?.let { DetailActions(it, model, canChange, onBookAgain) } },
     ) {
         CareLoadView(load, standIn, onRetry = {
             ready?.appointment?.let { appointment -> model.launch { detail.load(appointment) } }
@@ -131,8 +135,10 @@ internal fun AppointmentDetailScreen(
                 )
             }
             if (appointment.status == AppointmentStatus.COMPLETED) {
-                LumeEyebrow(stringResource(Res.string.detail_rating))
-                RatingCard(content.rating, onRate = { stars -> onRate(appointment, stars) })
+                if (onRate != null) {
+                    LumeEyebrow(stringResource(Res.string.detail_rating))
+                    RatingCard(content.rating, onRate = { stars -> onRate(appointment, stars) })
+                }
                 LumeCallout(runs = stringResource(Res.string.detail_clinical).richRuns())
             }
         }
@@ -267,9 +273,15 @@ private fun RatingCard(rating: SentRating?, onRate: (Int) -> Unit) {
 }
 
 @Composable
-private fun DetailActions(content: DetailContent, model: ChangeViewModel, onBookAgain: (PatientAppointment) -> Unit) {
+private fun DetailActions(
+    content: DetailContent,
+    model: ChangeViewModel,
+    canChange: Boolean,
+    onBookAgain: ((PatientAppointment) -> Unit)?,
+) {
     val appointment = content.appointment
     if (appointment.status !in UPCOMING) {
+        if (onBookAgain == null) return
         LumeButton(
             content = LumeButtonContent.Title(stringResource(Res.string.detail_book_again)),
             size = LumeButtonSize.Bar,
@@ -278,6 +290,7 @@ private fun DetailActions(content: DetailContent, model: ChangeViewModel, onBook
         )
         return
     }
+    if (!canChange) return
     val options = content.options
     LumeStack(axis = LumeStackAxis.Horizontal, style = LumeStackStyle.Paired) {
         LumeButton(

@@ -59,3 +59,22 @@ in the app.
   role. Pre-auth screens are not features of this gate.
 - A Remote Config outage leaves the app as compiled. Turning a feature off in an emergency needs Remote Config to
   answer; a forced closure of the whole app stays `/v1/app-availability`'s job (§8.15).
+
+## Note (2026-10-14) — the gate inside the screens
+
+The tabs were the first doors; the rest landed with task `0036`. `patientActions` and `doctorActions` read the
+available features into what each screen may offer, and the host hands a screen no callback for an action that is off,
+so the screen draws no button for it:
+
+- moving, cancelling and withdrawing an appointment, on «Inicio», «Mis citas», the options sheet and the detail;
+- booking, in the directory's results and as «Agendar de nuevo», which also needs the directory;
+- every «Buscar un médico» outside its own tab;
+- rating, on «Inicio» and in the detail, and «Mis valoraciones» in «Configuración»;
+- the bell on «Inicio»;
+- the phone's and the e-mail's pencils;
+- the doctor's waiting requests, with the tab's badge, and the contact-sharing switch.
+
+A link that opens a screen goes through the same host, so it finds the same doors closed. The two functions are tested
+over each feature on its own. What is not tested is the host passing their answer to every screen: there is no Compose
+UI test in this repo, and a gate that greps the host's call sites would assert a shape, not the mechanism (ADR-0029).
+That wiring stays a review item. `PROFILE_EDIT` has no door yet: the app does not edit the address.

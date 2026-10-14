@@ -91,7 +91,13 @@ internal fun visitKindText(kind: VisitKind): String = stringResource(
  * overbooking and statistics stay in LumeMed. Never a clinical reason: the visit kind is a closed list.
  */
 @Composable
-internal fun AgendaScreen(model: AgendaViewModel, doctor: CareDoctor?, onProfile: () -> Unit) {
+internal fun AgendaScreen(
+    model: AgendaViewModel,
+    doctor: CareDoctor?,
+    onProfile: () -> Unit,
+    /** Whether the requests waiting for an answer are shown (ADR-0060). */
+    showsRequests: Boolean,
+) {
     val load by model.state.collectAsState()
     val standIn by model.standIn.collectAsState()
     val failure by model.failure.collectAsState()
@@ -120,7 +126,8 @@ internal fun AgendaScreen(model: AgendaViewModel, doctor: CareDoctor?, onProfile
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
             CareLoadView(load, standIn, onRetry = model::refresh) { content ->
                 WeekStrip(content, model)
-                content.requests.firstOrNull()?.let { RequestCard(it, content.requests.size, model) }
+                val first = content.requests.firstOrNull()
+                if (showsRequests && first != null) RequestCard(first, content.requests.size, model)
                 DayCard(content)
                 LumeText(
                     text = stringResource(Res.string.doctor_agenda_note),

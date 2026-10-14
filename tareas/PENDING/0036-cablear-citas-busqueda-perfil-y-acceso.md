@@ -176,7 +176,9 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
   - El binario de Release no contiene la dirección local y el de Debug sí.
   - **No verificado:** el flujo completo en el simulador. No hay cómo tocar la pantalla del simulador desde aquí, y
     tampoco hay un target de UI tests.
+- **El gate dentro de las pantallas, hecho** (nota del 2026-10-14 en la ADR-0060): cada acción del paciente y del
+  médico tiene su puerta cerrada cuando su funcionalidad está apagada. Las funciones puras están probadas; que el host
+  las pase a cada pantalla queda para revisión, sin test de UI.
 - **Falta:**
-  - el gate dentro de las pantallas;
   - la fase B, que ahora incluye el reingreso con clave y TOTP antes de cambiar un contacto;
   - la foto, cuando la plataforma construya el pedido `0015`.

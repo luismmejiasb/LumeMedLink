@@ -64,7 +64,8 @@ internal fun MyDoctorsScreen(
     onOpen: (MyDoctor) -> Unit,
     onCall: (String) -> Unit,
     onMail: (String) -> Unit,
-    onSearch: () -> Unit,
+    /** Null while the directory is off (ADR-0060): the empty state offers no search. */
+    onSearch: (() -> Unit)?,
 ) {
     val load by model.state.collectAsState()
     val standIn by model.standIn.collectAsState()
@@ -82,7 +83,7 @@ internal fun MyDoctorsScreen(
                         icon = LumeIcon.PersonFill,
                         title = stringResource(Res.string.doctors_empty_title),
                         message = stringResource(Res.string.doctors_empty_body),
-                        action = LumeButtonContent.Title(stringResource(Res.string.search_doctor)),
+                        action = onSearch?.let { LumeButtonContent.Title(stringResource(Res.string.search_doctor)) },
                         onAction = onSearch,
                     )
                 } else {
