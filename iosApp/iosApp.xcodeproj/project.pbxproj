@@ -16,6 +16,7 @@
 		1A000000000000000000002A /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 1A0000000000000000000025 /* FirebaseAnalyticsCore */; };
 		1A000000000000000000002B /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 1A0000000000000000000026 /* FirebaseRemoteConfig */; };
 		1A000000000000000000002C /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 1A0000000000000000000027 /* FirebaseMessaging */; };
+		1A000000000000000000002E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A000000000000000000002D /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		1A0000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A0000000000000000000016 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
 		1A0000000000000000000020 /* FirebaseHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseHost.swift; sourceTree = "<group>"; };
+		1A000000000000000000002D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +69,7 @@
 				1A0000000000000000000008 /* AppDelegate.swift */,
 				1A0000000000000000000020 /* FirebaseHost.swift */,
 				1A0000000000000000000019 /* KotlinFrameworkStamp.swift */,
+				1A000000000000000000002D /* Assets.xcassets */,
 				1A0000000000000000000009 /* Info.plist */,
 				1A0000000000000000000016 /* iosApp.entitlements */,
 			);
@@ -143,6 +146,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A000000000000000000002E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -249,6 +253,7 @@
 		1A0000000000000000000014 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -278,6 +283,7 @@
 		1A0000000000000000000015 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
