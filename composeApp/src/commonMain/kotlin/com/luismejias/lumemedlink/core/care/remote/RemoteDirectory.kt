@@ -22,10 +22,16 @@ import com.luismejias.lumemedlink.core.networking.contract.SearchDirectoryDto
 import com.luismejias.lumemedlink.shared.AppError
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
 private val MIDNIGHT = ClockTime(0, 0)
+
+/** How far ahead a result looks for its next free hour: the design's «próximo mes», inside the contract's 62 days. */
+private const val NEXT_SLOT_DAYS = 30
 
 /**
  * Search to booking over the contract (task `0036`): the platform's catalogs, `searchDirectory`, a professional's free
@@ -36,6 +42,7 @@ internal class RemoteDirectory(
     private val contract: ContractClient,
     private val specialtyNames: SpecialtyNames,
     private val zones: PlaceZones = PlaceZones(),
+    private val today: () -> CalendarDate = ClinicWallClock(zones.fallback)::today,
 ) : DirectoryGateway {
     private val communeCatalog = ReadOnce(emptyMap()) {
         val regions = contract.call(ContractOperations.LIST_REGIONS).associate { it.code to it.name }
@@ -65,15 +72,35 @@ internal class RemoteDirectory(
             .sortedBy { it.name }
     }
 
-    /** One result per bookable place of each professional in [communeCode]: booking names the place. */
+    /**
+     * One result per bookable place of each professional in [communeCode]: booking names the place. Each carries its
+     * next free hour in the coming [NEXT_SLOT_DAYS] days, read from the same availability the calendar shows, all at
+     * once: the contract publishes no «next available», and an empty answer reads «no times» on screen.
+     */
     override suspend fun search(specialtyCode: String, communeCode: String): CareResult<List<DirectoryDoctor>> =
         careRead {
             val names = specialtyNames.all()
             val commune = communeCatalog.get()[communeCode]?.name.orEmpty()
-            contract.call(
+            val found = contract.call(
                 ContractOperations.SEARCH_DIRECTORY,
                 SearchDirectoryDto(specialtyCode = specialtyCode, communeCode = communeCode),
             ).onEach { it.learnZones() }.flatMap { entry -> entry.inCommune(communeCode, commune, names) }
+            val from = today()
+            coroutineScope {
+                found.map { result ->
+                    async {
+                        val slots =
+                            availability(result.doctor.id, result.locationId, from, from.plusDays(NEXT_SLOT_DAYS))
+                        result.copy(
+                            nextSlot = (slots as? CareResult.Ok)?.value?.minWithOrNull(
+                                compareBy({
+                                    it.date
+                                }, { it.start }),
+                            ),
+                        )
+                    }
+                }.awaitAll()
+            }
         }
 
     /** The design's e5 has no contract: no commune is offered as near. */

@@ -61,7 +61,11 @@ private class Directory(private val routes: Map<String, Pair<HttpStatusCode, Str
         val contract = ContractClient(
             lumeHttpClient("https://api.test.lume", engine, Mute(), securityEvents = NO_SECURITY_EVENTS),
         )
-        return RemoteDirectory(contract, SpecialtyNames(contract), PlaceZones(TimeZone.of("America/Santiago")))
+        return RemoteDirectory(
+            contract,
+            SpecialtyNames(contract),
+            PlaceZones(TimeZone.of("America/Santiago")),
+        ) { CalendarDate(2026, 10, 19) }
     }
 }
 
@@ -101,9 +105,18 @@ class RemoteDirectoryTest {
     }
 
     @Test
-    fun aResultIsOneBookablePlaceInTheCommuneWithTheDoctorsWords() = runTest {
+    fun aResultIsOneBookablePlaceInTheCommuneWithTheDoctorsWordsAndItsNextFreeHour() = runTest {
+        val directory = Directory(
+            CATALOGS + mapOf(
+                "GET /v1/directory/professionals/pro-1/availability" to (
+                    HttpStatusCode.OK to
+                        """[{"startsAt":"2026-10-21T13:00:00.000Z","endsAt":"2026-10-21T13:30:00.000Z"},
+                        {"startsAt":"2026-10-20T12:00:00.000Z","endsAt":"2026-10-20T12:30:00.000Z"}]"""
+                    ),
+            ),
+        )
         val results = assertIs<CareResult.Ok<List<DirectoryDoctor>>>(
-            Directory(CATALOGS).gateway().search("MEDICINA_FAMILIAR", "13101"),
+            directory.gateway().search("MEDICINA_FAMILIAR", "13101"),
         ).value
         val one = results.single()
         assertEquals("Dra. Ana Sintética", one.doctor.displayName)
@@ -111,6 +124,11 @@ class RemoteDirectoryTest {
         assertEquals("loc-1", one.locationId)
         assertEquals("Santiago", one.commune)
         assertEquals(4.5 to 12, one.rating to one.ratingCount)
+        assertEquals(
+            Slot(CalendarDate(2026, 10, 20), ClockTime(9, 0), 30),
+            one.nextSlot,
+            "the earliest, not the first sent",
+        )
     }
 
     @Test
