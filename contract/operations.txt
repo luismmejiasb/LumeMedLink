@@ -23,3 +23,4 @@ disownMyContactChange           profile
 check                           platform
 report                          platform
 devToken                        dev
+listSpecialties                 directory

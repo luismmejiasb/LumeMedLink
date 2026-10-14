@@ -19,6 +19,9 @@ ktlint = "14.2.0"
 ktor = "3.5.2"
 kotlinxCoroutines = "1.11.0"
 kotlinxSerialization = "1.11.0"
+# The clinic's wall clock from a UTC instant, across DST and countries (ADR-0063). Resolved against Maven Central on
+# 2026-10-14: 0.8.0 is the newest release; the `-0.6.x-compat` twin is for code that still uses the old Instant.
+kotlinxDatetime = "0.8.0"
 
 androidMinSdk = "26"
 androidCompileSdk = "36"
@@ -70,6 +73,7 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 # Firebase, the five products ADR-0052 allows (2026-10-13). The BoM pins every member; its 35.0.0 was the
 # maven-metadata `<release>` on dl.google.com that day. Analytics ships without the advertising ID (the manifest removes
 # AD_ID and turns its collection off). App Distribution is NOT here: it is a release tool run by the CLI, not a library.

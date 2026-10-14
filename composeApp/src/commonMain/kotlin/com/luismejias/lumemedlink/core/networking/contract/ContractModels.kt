@@ -727,6 +727,27 @@ internal data class SharedProfessionalContactListDtoItemsItem(
 }
 
 @Serializable
+internal data class SpecialtyDto(
+    val code: String,
+    val name: String,
+    /**
+     * Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values:
+     * MEDICAL, DENTAL, PHARMACEUTICAL, BIOCHEMICAL, NURSING. The profession whose certification system lists the
+     * specialty (D.S. 8/2013).
+     */
+    val profession: String,
+    val nidCode: String?,
+    /**
+     * The decree no longer certifies this specialty, but certifications granted under it stay in force for a time,
+     * so a clinician who holds one is still recordable: `specialtyCode` accepts it like any other. Offer it only to
+     * a clinician who already holds it, and show it as a former specialty; do not offer it for a new certification.
+     */
+    val isSuppressed: Boolean,
+) {
+    override fun toString(): String = "SpecialtyDto"
+}
+
+@Serializable
 internal data class UpdateSelfProfileDto(
     val email: String? = null,
     val phone: String? = null,

@@ -82,6 +82,8 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            // The clinic's wall clock (ADR-0063): instants become dates and hours inside core/, never on a screen.
+            implementation(libs.kotlinx.datetime)
         }
 
         commonTest.dependencies {

@@ -438,4 +438,22 @@ internal object ContractOperations {
         request = DevTokenRequestDto.serializer(),
         response = DevTokenDto.serializer(),
     )
+
+    /**
+     * The specialties of D.S. 8/2013 (the list in the first paragraph of its art. 2), whole or one profession's,
+     * ordered by profession then name. `code` is the exact value `specialtyCode` accepts on a professional profile;
+     * `nidCode` is the MINSAL NID interoperability code where the NID list carries the same concept.
+     * **`isSuppressed` marks a specialty the decree no longer certifies** (0.71.0): it stays in the list, and
+     * `specialtyCode` still accepts it, because certifications granted under it remain in force for a time. Show it
+     * as a former specialty and offer it only to a clinician who already holds it.
+     */
+    val LIST_SPECIALTIES: ContractOperation<Unit, List<SpecialtyDto>> = ContractOperation(
+        id = "listSpecialties",
+        verb = ContractVerb.GET,
+        path = "/v1/reference/specialties",
+        pathParameters = listOf(),
+        query = listOf(ContractQuery("profession", required = false)),
+        request = Unit.serializer(),
+        response = ListSerializer(SpecialtyDto.serializer()),
+    )
 }
