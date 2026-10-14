@@ -47,11 +47,13 @@
         android:theme="@style/Theme.LumeMedLink">
         <!-- Firebase starts when the app says so, never at process launch (ADR-0038 §3, ADR-0052 §8): the provider
              that would initialize it before any code of ours runs is removed, and core/telemetry initializes it with
-             the options the build generated — or not at all, when the build carried no configuration. -->
+             the options the build generated — or not at all, when the build carried no configuration. Lint's
+             MissingClass does not apply to a node that only removes: this one declares nothing that must load. -->
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"
             android:authorities="${applicationId}.firebaseinitprovider"
-            tools:node="remove" />
+            tools:node="remove"
+            tools:ignore="MissingClass" />
 
         <!-- Everything off from the factory (ADR-0052 §2). Crashlytics and Analytics turn on only through the person's
              consent, at runtime; the rest never turns on. -->
