@@ -21,6 +21,18 @@ internal value class CancelMyAppointmentDtoCancellationReason(val wire: String) 
 /** A value of the contract's vocabulary; an unknown one stays as sent. */
 @Serializable
 @JvmInline
+internal value class DevTokenRequestDtoClient(val wire: String) {
+    companion object {
+        val CLINICIAN: DevTokenRequestDtoClient = DevTokenRequestDtoClient("CLINICIAN")
+        val LUMEMEDLINK: DevTokenRequestDtoClient = DevTokenRequestDtoClient("LUMEMEDLINK")
+        val PATIENT: DevTokenRequestDtoClient = DevTokenRequestDtoClient("PATIENT")
+        val LINK_CLINICIAN: DevTokenRequestDtoClient = DevTokenRequestDtoClient("LINK_CLINICIAN")
+    }
+}
+
+/** A value of the contract's vocabulary; an unknown one stays as sent. */
+@Serializable
+@JvmInline
 internal value class EnrolPhoneDtoClient(val wire: String) {
     companion object {
         val LUMEMEDLINK_IOS: EnrolPhoneDtoClient = EnrolPhoneDtoClient("LUMEMEDLINK_IOS")
@@ -181,6 +193,25 @@ internal data class ClosedPeriodDto(
     val endsAt: String,
 ) {
     override fun toString(): String = "ClosedPeriodDto"
+}
+
+@Serializable
+internal data class DevTokenDto(
+    val token: String,
+) {
+    override fun toString(): String = "DevTokenDto"
+}
+
+@Serializable
+internal data class DevTokenRequestDto(
+    /** A subject the platform's seed created. */
+    val userId: String,
+    val tenantId: String? = null,
+    val client: DevTokenRequestDtoClient,
+    /** The TOTP code, once the subject has enrolled one. */
+    val code: String? = null,
+) {
+    override fun toString(): String = "DevTokenRequestDto"
 }
 
 @Serializable

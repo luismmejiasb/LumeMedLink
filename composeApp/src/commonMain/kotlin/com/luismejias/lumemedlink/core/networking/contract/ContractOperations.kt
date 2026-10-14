@@ -427,4 +427,15 @@ internal object ContractOperations {
         request = ReportSecurityEventDto.serializer(),
         response = Unit.serializer(),
     )
+
+    /** A token minted by the local platform for a seeded subject (dev-patient, dev-doctor-link). Local only. */
+    val DEV_TOKEN: ContractOperation<DevTokenRequestDto, DevTokenDto> = ContractOperation(
+        id = "devToken",
+        verb = ContractVerb.POST,
+        path = "/dev/token",
+        pathParameters = listOf(),
+        query = listOf(),
+        request = DevTokenRequestDto.serializer(),
+        response = DevTokenDto.serializer(),
+    )
 }

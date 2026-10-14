@@ -28,6 +28,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CONTRACT = ROOT / "contract" / "openapi.json"
 ALLOWLIST = ROOT / "contract" / "operations.txt"
+# The dev-only token route the platform leaves out of its contract on purpose (ADR-0061 point 5, ADR-0062). Merged in,
+# never into the vendored file, so the pin keeps proving the platform's bytes.
+DEV_AUTH = ROOT / "contract" / "dev-auth.json"
+DEV_PATHS = ("/dev/token",)
 PACKAGE = "com.luismejias.lumemedlink.core.networking.contract"
 DEFAULT_OUT = ROOT / "composeApp/src/commonMain/kotlin" / pathlib.Path(*PACKAGE.split("."))
 ALLOWED_PREFIXES = ("/v1/patient/", "/v1/directory/", "/v1/reference/")
@@ -55,7 +59,7 @@ def fail(message: str) -> None:
 
 
 def allowed_path(path: str) -> bool:
-    return path in ALLOWED_EXACT or path.startswith(ALLOWED_PREFIXES)
+    return path in ALLOWED_EXACT or path in DEV_PATHS or path.startswith(ALLOWED_PREFIXES)
 
 
 def read_allowlist() -> list[str]:
@@ -303,6 +307,17 @@ def main() -> int:
     parser.add_argument("--out", type=pathlib.Path, default=DEFAULT_OUT)
     args = parser.parse_args()
     spec = json.loads(CONTRACT.read_text())
+    dev = json.loads(DEV_AUTH.read_text())
+    for path in dev["paths"]:
+        if path not in DEV_PATHS or path in spec["paths"]:
+            print(f"generate-contract: REFUSED — dev-auth.json may add only {DEV_PATHS}, and none the contract has", file=sys.stderr)
+            return 1
+    spec["paths"] = {**spec["paths"], **dev["paths"]}
+    clash = set(dev["components"]["schemas"]) & set(spec["components"]["schemas"])
+    if clash:
+        print(f"generate-contract: REFUSED — dev-auth.json redefines {sorted(clash)}", file=sys.stderr)
+        return 1
+    spec["components"]["schemas"] = {**spec["components"]["schemas"], **dev["components"]["schemas"]}
     if not str(spec.get("openapi", "")).startswith("3.0"):
         print(f"generate-contract: REFUSED — OpenAPI {spec.get('openapi')} is not 3.0", file=sys.stderr)
         return 1

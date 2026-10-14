@@ -1,8 +1,8 @@
 # ADR-0059 — The patient's session policy
 
-- **Status**: **Proposed** (2026-10-14). It is the successor of ADR-0003 that ADR-0006 point 3 requires before any
-  patient session code. Points 1–5 compose decisions already accepted elsewhere; point 6 is new and waits for the
-  author. Until the author accepts it, no patient session code is written (task `0028` stays frozen).
+- **Status**: Accepted (2026-10-14), the author's decision by form: an absolute lifetime of **7 days**. It is the
+  successor of ADR-0003 that ADR-0006 point 3 requires before any patient session code. Points 1–5 compose decisions
+  already accepted elsewhere; point 6 is the author's.
 - **Supersedes**: ADR-0003's «patients: deliberately undecided».
 - **Related**: ADR-0005, ADR-0011, ADR-0014, ADR-0032, ADR-0034, ADR-0036, ADR-0037, ADR-0041, ADR-0058; backend
   `ADR-0035` (patient tier, TOTP), `ADR-0037` (one phone), `ADR-0070` (token lifetime).
@@ -34,14 +34,14 @@ is the shared phone (§8.17).
    | refresh rejected | the session's entry only (ADR-0036, ADR-0037 point 5) | sign-in, the rest goes at the next `establishSession` |
    | `session_superseded` | everything | a screen that says another phone signed in (ADR-0041) |
    | unlock ceiling reached | everything | sign-in |
-   | absolute lifetime reached (point 6) | the session's entry | sign-in with TOTP |
+   | 7 days since sign-in (point 6) | the session's entry | sign-in with TOTP |
 
-6. **Proposed, for the author: an absolute lifetime of 30 days.** Past it, the person signs in again with password and
-   TOTP, whatever the refreshes did. A shared phone (§8.17) should not keep a patient signed in forever behind only a
-   biometric that the family may share. The number is the author's call.
+6. **An absolute lifetime of 7 days** (the author, by form, over the 30 that were proposed). Past it, the person signs
+   in again with password and TOTP, whatever the refreshes did. A shared phone (§8.17) should not keep a patient
+   signed in behind only a biometric that the family may share, and the author chose the banking apps' rhythm.
 
 ## Consequences
 
-- When the author accepts it, task `0028` can be unfrozen as soon as the backend builds requests `0010` and `0011`.
+- Task `0028` can be unfrozen as soon as the backend builds requests `0010` and `0011`.
 - Point 2 constrains the choice of the IdP client, which ADR-0058 defers to its own ADR.
 - Re-entry without biometric hardware stays task `0026` (frozen); this ADR does not change it.

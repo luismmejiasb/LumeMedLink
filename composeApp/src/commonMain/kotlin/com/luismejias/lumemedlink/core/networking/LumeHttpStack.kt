@@ -89,11 +89,14 @@ internal fun lumeHttpClient(
     logSink: NetworkLogSink,
     tokenProvider: TokenProvider? = null,
     securityEvents: SecurityEventEmitter,
+    /** [TransportPolicy.HttpsOnly] unless a debug host app chose the local backend (ADR-0062). */
+    transport: TransportPolicy = TransportPolicy.HttpsOnly,
 ): HttpClient {
-    require(baseUrl.startsWith("https://")) {
-        "LumeHttpStack is https-only and fails closed: refused to build over '$baseUrl' (ADR-0004)."
+    val base = Url(baseUrl)
+    require(transportAllows(transport, base.protocol.name, base.host)) {
+        "LumeHttpStack is https-only and fails closed: refused to build over '$baseUrl' (ADR-0004, ADR-0062)."
     }
-    val allowedOrigin = Url(baseUrl).let { Origin(it.protocol.name, it.host, it.port) }
+    val allowedOrigin = Origin(base.protocol.name, base.host, base.port)
     return HttpClient(engine) {
         followRedirects = false
         expectSuccess = false
@@ -226,7 +229,9 @@ private fun lumeStackGuard(
     }
 
     onRequest { request, _ ->
-        check(request.url.protocol == URLProtocol.HTTPS) {
+        // https, or the one scheme the base URL was allowed to have (ADR-0062): plain http only when the stack was
+        // built for the local backend, and the origin check below pins the host as well.
+        check(request.url.protocol == URLProtocol.HTTPS || request.url.protocol.name == allowedOrigin.scheme) {
             "LumeHttpStack is https-only and fails closed: refused ${request.url.protocol.name}://"
         }
         // The ORIGIN, not just the scheme. The message names no host: an error string is a

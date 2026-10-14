@@ -1,0 +1,45 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "The platform's dev-only token route (ADR-0061 point 5, ADR-0062)",
+    "version": "local",
+    "description": "The platform excludes POST /dev/token from its contract on purpose (ApiExcludeController in apps/api/src/auth/dev/dev-token.controller.ts). It answers only when AUTH_DEV_MODE is on, and 404 otherwise. This file describes it so the generator can type it; only a debug build's local environment calls it."
+  },
+  "paths": {
+    "/dev/token": {
+      "post": {
+        "operationId": "devToken",
+        "summary": "A token minted by the local platform for a seeded subject (dev-patient, dev-doctor-link). Local only.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DevTokenRequestDto" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "The token.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DevTokenDto" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DevTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string", "description": "A subject the platform's seed created." },
+          "tenantId": { "type": "string", "format": "uuid" },
+          "client": { "type": "string", "enum": ["CLINICIAN", "LUMEMEDLINK", "PATIENT", "LINK_CLINICIAN"] },
+          "code": { "type": "string", "description": "The TOTP code, once the subject has enrolled one." }
+        },
+        "required": ["userId", "client"]
+      },
+      "DevTokenDto": {
+        "type": "object",
+        "properties": { "token": { "type": "string" } },
+        "required": ["token"]
+      }
+    }
+  }
+}
