@@ -1,6 +1,6 @@
 # 0035 · El pulido de la prueba en iPhone
 
-> **Estado:** PENDING (abierta 2026-10-13) · ADR-0057 · Lo de la app está en curso. Lo del kit está derivado a
+> **Estado:** PENDING (abierta 2026-10-13) · ADR-0057 · Todo construido; **falta verlo en el device**. Lo del kit está derivado a
 > `lumeuicomposer-*` (su `tareas/DONE/0058` y siguientes).
 
 ## De dónde sale
@@ -21,7 +21,8 @@ El autor probó la app en su iPhone (iOS 27) y trajo once puntos de pulido. Seis
    llevan el Done del sistema, que avanza en un `LumeForm` o termina. Nada que cambiar en la app; falta verlo en el device.
 4. Un toque en un espacio vacío suelta el foco de cualquier campo, en todas las pantallas.
    **Hecho** en el kit `b8184f8` (`lumeReleasesFocusOnTap()`), y aplicado una vez en la raíz de `App()`.
-5. Una pila de navegación con push y pop como los de iOS, y el gesto de volver interactivo.
+5. Una pila de navegación con push y pop como los de iOS, y el gesto de volver interactivo. **Hecho** en el kit `227a717`
+   (`LumeNavigationStack`).
 6. `LumeCard(onClick)`. **Hecho** en el kit `76ad95c`, y ya consumido por la tarjeta de «Mis citas».
 
 ### En la app
@@ -34,8 +35,9 @@ El autor probó la app en su iPhone (iOS 27) y trajo once puntos de pulido. Seis
    `core/screen/Countdown.kt`, porque ahora los usan dos áreas.
 3. **Hecho**: el ícono de la app desde `Handoff/02-Assets/marca/lumemedlink-appicon.svg`. En iOS (`ca53951`) es un PNG
    de 1024 sin canal alfa. En Android (`cf6fd63`) es adaptativo y vectorial, con el escudo dentro de la zona segura.
-4. Cuando llegue el punto 5 del kit, migrar `PatientMainHost`, `SearchHost` y `AccessHost` al host del kit y borrar
-   sus `AnimatedContent`.
+4. **Hecho**: `PatientMainHost` (la raíz de la pestaña, el detalle y el cambio de la cita, y las páginas de
+   Configuración), `SearchHost` y `AccessHost` usan `LumeNavigationStack`, y sus `AnimatedContent` se borraron. En el
+   ingreso, el arrastre del borde vuelve sólo donde la ruta permite volver.
 
 ## Qué NO hacer
 

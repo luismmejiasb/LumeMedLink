@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.lume.uicomposer.components.LocalLumeToastHostState
 import cl.lume.uicomposer.components.LumeCountBadge
 import cl.lume.uicomposer.components.LumeFloatingTabBarClearance
+import cl.lume.uicomposer.components.LumeNavigationStack
 import cl.lume.uicomposer.components.LumeTabBar
 import cl.lume.uicomposer.components.LumeTabBarItem
 import cl.lume.uicomposer.components.LumeTabBarStyle
@@ -67,6 +68,7 @@ import com.luismejias.lumemedlink.features.patient.settings.ContactChangeSheet
 import com.luismejias.lumemedlink.features.patient.settings.ContactChangeViewModel
 import com.luismejias.lumemedlink.features.patient.settings.SettingsEntry
 import com.luismejias.lumemedlink.features.patient.settings.SettingsPage
+import com.luismejias.lumemedlink.features.patient.settings.SettingsRoute
 import com.luismejias.lumemedlink.features.patient.settings.SettingsScreen
 import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
 import com.luismejias.lumemedlink.resources.Res
@@ -105,6 +107,15 @@ internal class PatientTabsViewModel : ViewModel() {
     fun show(tab: PatientTab) {
         current.value = tab
     }
+}
+
+/** What the patient's stack holds: a tab's root, and what it pushed. */
+private sealed interface PatientScreen {
+    data class Tab(val tab: PatientTab) : PatientScreen
+
+    data class Change(val route: ChangeRoute) : PatientScreen
+
+    data class Settings(val route: SettingsRoute) : PatientScreen
 }
 
 /**
@@ -209,6 +220,11 @@ internal fun PatientMainHost(
             change.openDirections(appointment)
         }
     }
+    val patientStack = buildList {
+        add(PatientScreen.Tab(selected))
+        settingsRoute?.let { settingsRoutes.forEach { add(PatientScreen.Settings(it)) } }
+        changeRoutes.forEach { add(PatientScreen.Change(it)) }
+    }
     val showsTabBar =
         changeRoute == null &&
             settingsRoute == null &&
@@ -221,60 +237,71 @@ internal fun PatientMainHost(
             LocalTabBarClearance provides if (showsTabBar) LumeFloatingTabBarClearance else 0.dp,
             LocalLumeToastHostState provides toasts,
         ) {
-            when {
-                changeRoute == ChangeRoute.DETAIL -> AppointmentDetailScreen(
-                    model = change,
-                    today = care.today(),
-                    onDirections = openDirections,
-                    onCall = contact::dial,
-                    onBookAgain = { appointment ->
-                        change.launch {
-                            doctorToBookAgain(appointment)?.let { doctor ->
-                                back()
-                                tabs.show(PatientTab.SEARCH)
-                                search.launch { schedule(doctor) }
-                            }
-                        }
-                    },
-                    onRate = { appointment, stars ->
-                        rate.open(RatingPrompt(appointment.id, appointment.doctor, appointment.date), stars)
-                    },
-                )
-                changeRoute == ChangeRoute.RESCHEDULE -> RescheduleScreen(change, toasts, care.today())
-                changeRoute == ChangeRoute.CANCEL -> CancelScreen(change, care.today())
-                settingsRoute != null -> SettingsPage(settingsRoute, settings)
-                selected == PatientTab.HOME -> HomeScreen(
-                    model = home,
-                    onDirections = openDirections,
-                    onChangeOrCancel = { appointment -> change.launch { openOptions(appointment) } },
-                    onOpenAppointment = { appointment -> change.launch { openDetail(appointment) } },
-                    onRate = rate::open,
-                    onSearch = { tabs.show(PatientTab.SEARCH) },
-                    onNotices = {},
-                    onProfile = { tabs.show(PatientTab.SETTINGS) },
-                )
-                selected == PatientTab.SEARCH -> SearchHost(search, onBooked)
-                selected == PatientTab.APPOINTMENTS -> AppointmentsScreen(
-                    model = appointments,
-                    onOpen = { appointment -> change.launch { openDetail(appointment) } },
-                    onChange = { appointment -> change.launch { changeTime(appointment) } },
-                    onCancel = change::cancelAppointment,
-                    onSearch = { tabs.show(PatientTab.SEARCH) },
-                )
-                selected == PatientTab.DOCTORS -> MyDoctorsScreen(
-                    model = doctors,
-                    onOpen = {},
-                    onCall = contact::dial,
-                    onMail = contact::mail,
-                    onSearch = { tabs.show(PatientTab.SEARCH) },
-                )
-                else -> SettingsScreen(
-                    model = settings,
-                    photo = photo,
-                    onEditPhone = { profile -> contactChange.open(ContactKind.PHONE, profile) },
-                    onEditEmail = { profile -> contactChange.open(ContactKind.EMAIL, profile) },
-                    onEntry = { if (it == SettingsEntry.SIGN_OUT) onSignOut() },
-                )
+            // One stack for the patient (kit 227a717): the tab's root, then what it pushed — an appointment's
+            // detail and its change, or Configuración's pages. A tab switch replaces the root without a movement.
+            LumeNavigationStack(
+                stack = patientStack,
+                onBack = { if (changeRoutes.isNotEmpty()) change.back() else settings.back() },
+            ) { screen ->
+                when (screen) {
+                    is PatientScreen.Change -> when (screen.route) {
+                        ChangeRoute.DETAIL -> AppointmentDetailScreen(
+                            model = change,
+                            today = care.today(),
+                            onDirections = openDirections,
+                            onCall = contact::dial,
+                            onBookAgain = { appointment ->
+                                change.launch {
+                                    doctorToBookAgain(appointment)?.let { doctor ->
+                                        back()
+                                        tabs.show(PatientTab.SEARCH)
+                                        search.launch { schedule(doctor) }
+                                    }
+                                }
+                            },
+                            onRate = { appointment, stars ->
+                                rate.open(RatingPrompt(appointment.id, appointment.doctor, appointment.date), stars)
+                            },
+                        )
+                        ChangeRoute.RESCHEDULE -> RescheduleScreen(change, toasts, care.today())
+                        ChangeRoute.CANCEL -> CancelScreen(change, care.today())
+                    }
+                    is PatientScreen.Settings -> SettingsPage(screen.route, settings)
+                    is PatientScreen.Tab -> when (screen.tab) {
+                        PatientTab.HOME -> HomeScreen(
+                            model = home,
+                            onDirections = openDirections,
+                            onChangeOrCancel = { appointment -> change.launch { openOptions(appointment) } },
+                            onOpenAppointment = { appointment -> change.launch { openDetail(appointment) } },
+                            onRate = rate::open,
+                            onSearch = { tabs.show(PatientTab.SEARCH) },
+                            onNotices = {},
+                            onProfile = { tabs.show(PatientTab.SETTINGS) },
+                        )
+                        PatientTab.SEARCH -> SearchHost(search, onBooked)
+                        PatientTab.APPOINTMENTS -> AppointmentsScreen(
+                            model = appointments,
+                            onOpen = { appointment -> change.launch { openDetail(appointment) } },
+                            onChange = { appointment -> change.launch { changeTime(appointment) } },
+                            onCancel = change::cancelAppointment,
+                            onSearch = { tabs.show(PatientTab.SEARCH) },
+                        )
+                        PatientTab.DOCTORS -> MyDoctorsScreen(
+                            model = doctors,
+                            onOpen = {},
+                            onCall = contact::dial,
+                            onMail = contact::mail,
+                            onSearch = { tabs.show(PatientTab.SEARCH) },
+                        )
+                        PatientTab.SETTINGS -> SettingsScreen(
+                            model = settings,
+                            photo = photo,
+                            onEditPhone = { profile -> contactChange.open(ContactKind.PHONE, profile) },
+                            onEditEmail = { profile -> contactChange.open(ContactKind.EMAIL, profile) },
+                            onEntry = { if (it == SettingsEntry.SIGN_OUT) onSignOut() },
+                        )
+                    }
+                }
             }
         }
         if (showsTabBar) {

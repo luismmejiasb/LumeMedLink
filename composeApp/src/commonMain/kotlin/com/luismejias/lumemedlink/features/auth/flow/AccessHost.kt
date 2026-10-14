@@ -1,21 +1,11 @@
 package com.luismejias.lumemedlink.features.auth.flow
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.IntOffset
 import cl.lume.uicomposer.components.LumeAlert
 import cl.lume.uicomposer.components.LumeAlertAction
-import cl.lume.uicomposer.foundations.LumeTheme
-import cl.lume.uicomposer.foundations.lumeAnimationsEnabled
+import cl.lume.uicomposer.components.LumeNavigationStack
 import cl.lume.uicomposer.tokens.LumeStatusStyle
 import com.luismejias.lumemedlink.core.device.rememberDeviceSettings
 import com.luismejias.lumemedlink.features.auth.recovery.NewPasswordScreen
@@ -39,9 +29,6 @@ import com.luismejias.lumemedlink.resources.unavailable_body
 import com.luismejias.lumemedlink.resources.unavailable_title
 import org.jetbrains.compose.resources.stringResource
 
-/** Each move slides a third of the width: a hint of direction, not a page turn. */
-private const val DRIFT_DIVISOR = 3
-
 /**
  * The access flow, full screen as the design draws it: the top route, forward moves entering from the trailing
  * side and back moves from the leading one, a back disc only where the route allows it, and one alert for a
@@ -56,32 +43,22 @@ internal fun AccessHost(
     val attempt by viewModel.attempt.collectAsState()
     val flow = attempt.flow
     val routes by flow.routes.collectAsState()
-    val move by flow.lastMove.collectAsState()
     val unavailable by flow.unavailable.collectAsState()
     val retryEpoch by flow.retryEpoch.collectAsState()
     val account by attempt.createdAccount.collectAsState()
     val settings = rememberDeviceSettings()
-    val duration = LumeTheme.current.motion.appear
-    val animates = lumeAnimationsEnabled()
     val clock = viewModel.clock
 
-    AnimatedContent(
-        targetState = routes.last(),
-        transitionSpec = {
-            val sign = if (move == AccessMove.FORWARD) 1 else -1
-            if (!animates) {
-                fadeIn(snap()) togetherWith fadeOut(snap())
-            } else {
-                (
-                    fadeIn(tween(duration)) +
-                        slideInHorizontally(tween<IntOffset>(duration)) { sign * it / DRIFT_DIVISOR }
-                    ) togetherWith (
-                    fadeOut(tween(duration)) +
-                        slideOutHorizontally(tween<IntOffset>(duration)) { -sign * it / DRIFT_DIVISOR }
-                    )
+    // The kit's stack draws push and pop as iOS does (kit 227a717). Its edge drag on iOS goes back only where the
+    // route allows it, as the back disc does.
+    LumeNavigationStack(
+        stack = routes,
+        onBack = {
+            when {
+                routes.last().allowsBack -> flow.back()
+                routes.size == 1 && routes.last() == AccessRoute.WELCOME -> onCancel?.invoke()
             }
         },
-        label = "access-route",
     ) { route ->
         val back: (() -> Unit)? = when {
             route.allowsBack -> ({ flow.back() })
