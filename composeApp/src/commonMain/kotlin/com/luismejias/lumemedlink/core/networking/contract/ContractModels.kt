@@ -773,6 +773,26 @@ internal data class SpecialtyDto(
 }
 
 @Serializable
+internal data class TerritorialCommuneDto(
+    val code: String,
+    val provinceCode: String,
+    val provinceName: String,
+    val regionCode: String,
+    val name: String,
+) {
+    override fun toString(): String = "TerritorialCommuneDto"
+}
+
+@Serializable
+internal data class TerritorialRegionDto(
+    val code: String,
+    val name: String,
+    val abbreviation: String,
+) {
+    override fun toString(): String = "TerritorialRegionDto"
+}
+
+@Serializable
 internal data class UpdateSelfProfileDto(
     val email: String? = null,
     val phone: String? = null,

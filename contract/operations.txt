@@ -25,3 +25,5 @@ report                          platform
 devToken                        dev
 listSpecialties                 directory
 getMyRole                       access
+listCommunes                    directory
+listRegions                     directory

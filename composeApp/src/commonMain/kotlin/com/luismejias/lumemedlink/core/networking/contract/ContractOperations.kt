@@ -476,4 +476,29 @@ internal object ContractOperations {
         request = Unit.serializer(),
         response = MyRoleDto.serializer(),
     )
+
+    /**
+     * The communes of Chile (346) with their province and region codes, or only those of `?region=`. The commune
+     * code is what `communeCode` accepts on a patient or a practice location.
+     */
+    val LIST_COMMUNES: ContractOperation<Unit, List<TerritorialCommuneDto>> = ContractOperation(
+        id = "listCommunes",
+        verb = ContractVerb.GET,
+        path = "/v1/reference/communes",
+        pathParameters = listOf(),
+        query = listOf(ContractQuery("region", required = false)),
+        request = Unit.serializer(),
+        response = ListSerializer(TerritorialCommuneDto.serializer()),
+    )
+
+    /** The 16 regions of Chile (SUBDERE Código Único Territorial), with the official abbreviation. */
+    val LIST_REGIONS: ContractOperation<Unit, List<TerritorialRegionDto>> = ContractOperation(
+        id = "listRegions",
+        verb = ContractVerb.GET,
+        path = "/v1/reference/regions",
+        pathParameters = listOf(),
+        query = listOf(),
+        request = Unit.serializer(),
+        response = ListSerializer(TerritorialRegionDto.serializer()),
+    )
 }

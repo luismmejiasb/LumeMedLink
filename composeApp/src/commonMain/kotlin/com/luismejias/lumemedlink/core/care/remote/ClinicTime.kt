@@ -40,6 +40,18 @@ internal fun instantOf(date: CalendarDate, time: ClockTime, zone: TimeZone): Str
     LocalDateTime(date.year, date.month, date.day, time.hour, time.minute).toInstant(zone).toString()
 
 /**
+ * Every day of [zone]'s calendar that the period from [startsAt] to [endsAt] (exclusive) touches. Compared as
+ * instants, never as text: the contract writes `…00.000Z` and this app `…00Z`, and as strings those order backwards.
+ */
+internal fun daysTouched(startsAt: String, endsAt: String, zone: TimeZone): List<CalendarDate> {
+    val first = wallTimeOf(startsAt, zone).date
+    val end = Instant.parse(endsAt)
+    return generateSequence(first) { it.plusDays(1) }
+        .takeWhile { it == first || LocalDateTime(it.year, it.month, it.day, 0, 0).toInstant(zone) < end }
+        .toList()
+}
+
+/**
  * [minutes] after [instant], as an instant: a duration counts on the timeline, not on the wall clock, so an hour that
  * crosses a change of offset still lasts what it lasts.
  */
