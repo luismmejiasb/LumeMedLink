@@ -102,3 +102,29 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
   el punto 2 de la ADR-0058 de este repo. El backend lo dejó como tarea con preguntas: proveedor de identidad, revisión
   legal y menores. Mientras no exista, la cuenta sigue naciendo del código de la clínica. Cuando se construya, se
   enmiendan la ADR-0058 y la §1.2 de la constitución.
+
+## Avance 2026-10-14 (tarde) — primera corrida real
+
+- **Contrato 0.130.0** (commit `510efe8f` de la plataforma). Respondió los pedidos `0011`, `0013` y `0014` y la forma
+  de elegir lado (`0075`).
+- **Cableado en debug contra la plataforma local** (ADR-0062):
+  - el reloj de la clínica;
+  - las citas: listar, cancelar, retirar y reagendar;
+  - la búsqueda con reserva: catálogos, resultados con su próxima hora, cupos, días cerrados, reservar y profesional
+    por id.
+  - Perfil, valoraciones, avisos y el lado del médico siguen contra el guion, detrás de su interfaz.
+- **Verificado en el emulador del repo** (`LumeMedLink_API27`), contra el backend que levantó la sesión de la
+  plataforma:
+  - «Mis citas» lista las dos citas sembradas de `dev-patient`;
+  - Medicina interna › Providencia encuentra a la profesional con «Mañana · 09:00»;
+  - reservar crea la cita, moverla a las 10:00 es una sola `rescheduleMyAppointment`, y cancelarla la deja en
+    «Canceladas».
+- **Defectos encontrados por la corrida, corregidos:**
+  - `414b85a`: el motor OkHttp sólo aceptaba TLS, una segunda negativa debajo del stack.
+  - `eb75712`: la próxima hora vacía se leía como «sin horas».
+- **Falta:**
+  - el perfil, con el cambio aplicado en todas las clínicas;
+  - el entorno local en iOS (Swift `#if DEBUG` y ATS sólo en Debug);
+  - el gate dentro de las pantallas;
+  - la fase B (acceso real), que espera el pedido `0010` y un proyecto de Identity Platform.
+- **Decisión de LumeMed, informada el 2026-10-14:** la secretaria queda fuera del MVP.
