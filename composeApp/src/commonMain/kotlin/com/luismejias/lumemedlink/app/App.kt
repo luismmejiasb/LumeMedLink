@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.lume.uicomposer.foundations.LumeBrand
 import cl.lume.uicomposer.foundations.LumeTheme
+import cl.lume.uicomposer.foundations.lumeReleasesFocusOnTap
 import cl.lume.uicomposer.tokens.LumeCanvas
 import cl.lume.uicomposer.tokens.LumeFieldLook
 import cl.lume.uicomposer.tokens.LumeNeutrals
@@ -294,6 +295,10 @@ public fun App() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            // A tap no control takes lets go of any field and its keyboard, on every screen
+                            // (the author, 2026-10-13; kit b8184f8). A sheet does it on its own: a popup is
+                            // beyond this root.
+                            .lumeReleasesFocusOnTap()
                             // Observes pointer activity on the INITIAL pass without consuming it, so the
                             // inactivity window slides while the doctor is actually using the app. Recording
                             // activity can never unlock (InactivityLock enforces that) — it only postpones.

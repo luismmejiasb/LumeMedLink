@@ -19,6 +19,7 @@ El autor probó la app en su iPhone (iOS 27) y trajo once puntos de pulido. Seis
 3. `LumePhoneField` no tiene «continuar» en iOS, porque el teclado telefónico no tiene tecla de retorno. Hace falta
    la barra del teclado.
 4. Un toque en un espacio vacío suelta el foco de cualquier campo, en todas las pantallas.
+   **Hecho** en el kit `b8184f8` (`lumeReleasesFocusOnTap()`), y aplicado una vez en la raíz de `App()`.
 5. Una pila de navegación con push y pop como los de iOS, y el gesto de volver interactivo.
 6. `LumeCard(onClick)`. **Hecho** en el kit `76ad95c`, y ya consumido por la tarjeta de «Mis citas».
 
