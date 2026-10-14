@@ -116,7 +116,7 @@ internal fun RateSheet(model: RateViewModel, onComplaint: () -> Unit) {
     LumeSheet(
         visible = shown != null,
         onDismiss = model::dismiss,
-        title = doctor?.let { stringResource(titleFor(it.title), it.displayName) }.orEmpty(),
+        title = doctor?.let { stringResource(titleFor(it.displayName.substringBefore(" ")), it.displayName) }.orEmpty(),
         subtitle = shown?.let {
             stringResource(Res.string.rate_subtitle, dayMonthText(it.prompt.date), it.prompt.doctor.specialty)
         },
@@ -252,6 +252,7 @@ private fun RateActions(model: RateViewModel) {
  * «con el Dr.», «con la Dra.»: Spanish puts the article before the server's title, and only these two say which one.
  * Any other title reads without it.
  */
+/** The article «el»/«la» from the name's first word, «Dr.» or «Dra.»; neither when it is not a title. */
 private fun titleFor(title: String): StringResource = when (title.trim().trimEnd('.').lowercase()) {
     "dr" -> Res.string.rate_title_him
     "dra" -> Res.string.rate_title_her

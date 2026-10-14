@@ -30,21 +30,28 @@ internal sealed interface CareResult<out T> {
 }
 
 /**
- * A professional as the patient sees them. [title] and [specialty] are the server's own words ("Dra.",
- * "Medicina Familiar": `professionalTitle` and the specialty catalog), never translated by the app.
+ * A professional as the patient sees them. [displayName] and [specialty] are the server's own words («Dra. Mariana
+ * Rendón»: the contract's `professionalName`; «Medicina Familiar»: the specialty catalog), never translated or
+ * rebuilt by the app. The specialty is shown after sign-in only (ADR-0063).
  */
-internal data class CareDoctor(
-    val id: String,
-    val title: String,
-    val givenName: String,
-    val familyName: String,
-    val specialty: String,
-) {
-    val displayName: String get() = "$title $givenName $familyName"
+internal data class CareDoctor(val id: String, val displayName: String, val specialty: String) {
+    /** The design's parts, for what still has them (the script): «Dra.» «Mariana» «Rendón». */
+    constructor(id: String, title: String, givenName: String, familyName: String, specialty: String) :
+        this(id, listOf(title, givenName, familyName).filter { it.isNotBlank() }.joinToString(" "), specialty)
 
-    val initials: String get() = "${givenName.first()}${familyName.first()}".uppercase()
+    /** The first letters of the first and last names, a title («Dr.», «Dra.») left out; «?» when there are none. */
+    val initials: String get() = doctorInitials(displayName)
 
     override fun toString(): String = "CareDoctor(redacted)"
+}
+
+/** [CareDoctor.initials], pure for its test. */
+internal fun doctorInitials(name: String): String {
+    val words = name.split(' ').filter { it.isNotBlank() && !it.endsWith('.') }
+    if (words.isEmpty()) return "?"
+    val first = words.first().first()
+    val last = words.last().first()
+    return (if (words.size == 1) "$first" else "$first$last").uppercase()
 }
 
 /**

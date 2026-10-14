@@ -1,6 +1,7 @@
 package com.luismejias.lumemedlink.core.networking
 
 import com.luismejias.lumemedlink.core.networking.contract.ContractOperation
+import com.luismejias.lumemedlink.shared.AppError
 import io.ktor.client.HttpClient
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
@@ -11,12 +12,15 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.encodeURLPathPart
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 /**
  * Calls one operation of the contract over the hardened stack (ADR-0004, ADR-0061). The route, the body's type and the
  * answer's type come from the generated [ContractOperation]; the stack, built by [lumeHttpClient], brings the origin
  * pinning, the token, the redacted log and the mapping of every non-2xx to [AppErrorException].
+ *
+ * An answer this build cannot decode is [AppError.Unexpected], like any other answer it cannot use.
  *
  * A wrong path or query parameter is a programming error and throws [IllegalArgumentException] before anything is sent.
  * Its message names the operation and the parameter, never a value: a value may be personal data (§8.1).
@@ -36,7 +40,14 @@ internal class ContractClient(private val http: HttpClient) {
         }
         // An operation that answers nothing still decodes through its own serializer, so no cast is needed.
         val text = if (operation.response.isUnit()) EMPTY_OBJECT else response.bodyAsText()
-        return contractJson.decodeFromString(operation.response, text)
+        return try {
+            contractJson.decodeFromString(operation.response, text)
+        } catch (@Suppress("SwallowedException") unreadable: SerializationException) {
+            // A 2xx this build cannot read — a field it requires missing, a shape that changed — is the server
+            // answering something the app cannot use: the stack's own error, never an exception that escapes every
+            // caller's handling. Its message names no field and no value (the exception's would, §8.1).
+            throw AppErrorException(AppError.Unexpected(status = response.status.value, problemType = null))
+        }
     }
 
     /** The same, for an operation that takes no body. */

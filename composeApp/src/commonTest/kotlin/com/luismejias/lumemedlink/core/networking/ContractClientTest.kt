@@ -6,6 +6,7 @@ import com.luismejias.lumemedlink.core.networking.contract.CancelMyAppointmentDt
 import com.luismejias.lumemedlink.core.networking.contract.ContractOperations
 import com.luismejias.lumemedlink.core.networking.contract.HolidayDto
 import com.luismejias.lumemedlink.core.networking.contract.ReportSecurityEventDtoKind
+import com.luismejias.lumemedlink.shared.AppError
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
@@ -148,6 +149,20 @@ class ContractClientTest {
         assertFailsWith<AppErrorException> {
             client.call(ContractOperations.LIST_HOLIDAYS, query = mapOf("from" to "2026-10-01", "to" to "2026-10-31"))
         }
+    }
+
+    @Test
+    fun anAnswerThisBuildCannotDecodeIsTheStacksUnexpectedNeverALooseException() = runTest {
+        val client = clientAnswering(Seen(), HttpStatusCode.OK, """[{"startsAt":"2026-10-15T12:00:00.000Z"}]""")
+        val refused = assertFailsWith<AppErrorException> {
+            client.call(
+                ContractOperations.GET_DIRECTORY_AVAILABILITY,
+                path = mapOf("professionalId" to "p-1"),
+                query = mapOf("locationId" to "l-1", "from" to "2026-10-15", "to" to "2026-10-15"),
+            )
+        }
+        assertEquals(AppError.Unexpected(status = 200, problemType = null), refused.error)
+        assertFalse(refused.message.contains("endsAt"), "the missing field leaked into the message")
     }
 
     @Test
