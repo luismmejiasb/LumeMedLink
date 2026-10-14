@@ -49,6 +49,8 @@ jobs:
         run: Scripts/check-forbidden-patterns.sh
       - name: Gate — dependency allowlist (§8.8)
         run: Scripts/check-dependency-allowlist.sh
+      - name: Gate — the contract's client is the pinned contract and its allowlist (ADR-0061)
+        run: Scripts/check-contract.sh
       - name: Gate — every form step is a LumeForm (ADR-0054)
         run: Scripts/check-form-steps.sh
       - name: Gate — the licences list says what ships

@@ -380,6 +380,29 @@ d.mkdir(parents=True, exist_ok=True)
     "fun stash(c: Context, t: String) {\n"
     "    c.getSharedPreferences(\"s\", Context.MODE_PRIVATE).edit().putString(\"t\", t).apply()\n}\n")
 '
+# ── ADR-0061: the contract's client is the pinned contract and the allowlist, and nothing else ──────
+bait "the vendored contract edited by hand" check-contract.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "contract/openapi.json"
+f.write_text(f.read_text() + " ")
+'
+bait "the generated client edited by hand" check-contract.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/networking/contract/ContractOperations.kt"
+f.write_text(f.read_text().replace("\"/v1/me\"", "\"/v1/me/everything\"", 1))
+'
+bait "a clinical operation added to the allowlist" check-contract.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "contract/operations.txt"
+f.write_text(f.read_text() + "recordDiagnosis                 appointments\n")
+'
+bait "a route written by hand, without its leading slash" check-contract.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/networking"
+(d / "Handmade.kt").write_text(
+    "package com.luismejias.lumemedlink.core.networking\n\n"
+    "internal const val HANDMADE = \"v1/orgs/t/patients\"\n")
+'
 # ── ADR-0054: every form step is a LumeForm, so a field inside a LumeContainer is red ─────────────────
 bait "a field drawn straight inside a LumeContainer" check-form-steps.sh '
 import sys, pathlib

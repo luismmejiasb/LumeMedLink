@@ -1,38 +1,14 @@
 package com.luismejias.lumemedlink.core.security
 
+import com.luismejias.lumemedlink.core.networking.ContractClient
 import com.luismejias.lumemedlink.core.networking.NetworkLogSink
+import com.luismejias.lumemedlink.core.networking.contract.ContractOperations
+import com.luismejias.lumemedlink.core.networking.contract.ReportSecurityEventDto
 import com.luismejias.lumemedlink.core.networking.lumeHttpClient
-import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlin.coroutines.cancellation.CancellationException
-
-/** The path the family's platform already serves (§8.16). Relative: the stack pins the origin. */
-private const val SECURITY_EVENTS_PATH = "v1/security-events"
-
-/**
- * The only thing that crosses the wire, and the reason it is a type.
- *
- * One field, and its type is the closed enum. There is no `message`, no `detail`, no `context` —
- * not because callers are trusted to leave them empty, but because a channel that *accepts* free
- * text is the channel that eventually carries "unlock failed for Dr. Pérez, patient 11111111-1"
- * into a server log (ADR-0023). Adding a field here is a visible decision, which is the point.
- *
- * The field name `kind` is no longer a guess: it was read from contract 0.32.0 on 2026-09-07. The
- * VALUE was a guess, and it was wrong — this used to serialize [SecurityEventKind] straight onto the
- * wire, and not one of this app's six names exists in the platform's set. Since the reporter never
- * throws by doctrine, every event would have been rejected with 400 **in silence**. The wire type is
- * now [PlatformSecurityEventKind], which is the platform's vocabulary and not ours to extend.
- */
-@Serializable
-private data class SecurityEventBody(@SerialName("kind") val kind: PlatformSecurityEventKind)
 
 /**
  * Posts a security event to the platform over the hardened stack (§8.16, ADR-0023).
@@ -66,16 +42,17 @@ internal class HttpSecurityEventReporter(baseUrl: String, engine: HttpClientEngi
      * The channel builds its OWN client, so no caller can hand it one that reports the stack's events back into it:
      * behind a captive portal each report would be an interstitial that reports itself, without end.
      */
-    private val client: HttpClient = lumeHttpClient(baseUrl, engine, logSink, securityEvents = OWN_TRANSPORT_EVENTS)
+    private val contract =
+        ContractClient(lumeHttpClient(baseUrl, engine, logSink, securityEvents = OWN_TRANSPORT_EVENTS))
 
     override suspend fun report(kind: SecurityEventKind) {
         try {
             // Translated, never our own name: the platform's vocabulary is closed (see `toPlatformKind`).
             val platformKind = kind.toPlatformKind()
-            client.post(SECURITY_EVENTS_PATH) {
-                contentType(ContentType.Application.Json)
-                setBody(SecurityEventBody(platformKind))
-            }
+            // The body is the contract's own type (ADR-0061): one field, the closed kind. There is no `message`, no
+            // `detail` — a channel that accepts free text is the one that eventually carries a name into a server log
+            // (ADR-0023), and the contract does not offer one.
+            contract.call(ContractOperations.REPORT, ReportSecurityEventDto(platformKind))
             // Cancellation is re-thrown BEFORE the catch-all. Swallowing it would break structured
             // concurrency (§6): the caller's scope is being torn down and this would pretend
             // otherwise. It is also not a security event — reporting every screen the doctor
