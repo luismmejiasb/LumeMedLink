@@ -702,7 +702,7 @@ swap("configureSession { applyLumeSessionPosture() }", "configureSession { }")
 p.write_text(s)
 '
 bait "production builds an engine of its own beside the measured one" check-network-posture.sh "$POSTURE_EDIT"'
-swap("HttpClientEngine = lumeDarwinEngine()", "HttpClientEngine = Darwin.create { }")
+swap("platformHttpEngine(): HttpClientEngine = lumeDarwinEngine()", "platformHttpEngine(): HttpClientEngine = Darwin.create { }")
 p.write_text(s)
 '
 
@@ -1032,7 +1032,7 @@ bait "every build type made debuggable, release included" check-release-hardenin
 import sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "androidApp/build.gradle.kts"
 s = p.read_text()
-anchor = "    buildFeatures { compose = true }"
+anchor = "    buildFeatures {\n"
 assert s.count(anchor) == 1
 p.write_text(s.replace(anchor, "    buildTypes.configureEach { isDebuggable = true }\n\n" + anchor))
 '
