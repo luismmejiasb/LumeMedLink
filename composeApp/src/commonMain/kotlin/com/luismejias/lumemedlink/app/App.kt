@@ -37,6 +37,10 @@ import com.luismejias.lumemedlink.core.appearance.ThemeChoice
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
+import com.luismejias.lumemedlink.core.features.FeatureGate
+import com.luismejias.lumemedlink.core.features.RemoteConfigFlagSource
+import com.luismejias.lumemedlink.core.features.Role
+import com.luismejias.lumemedlink.core.features.SessionRoleSource
 import com.luismejias.lumemedlink.core.input.FieldClipboardPolicy
 import com.luismejias.lumemedlink.core.links.LinkAudience
 import com.luismejias.lumemedlink.core.links.LinkSession
@@ -127,9 +131,15 @@ public fun App() {
     LaunchedEffect(appearance) { appearance.restore() }
     val theme by appearance.theme.collectAsState()
     val language by appearance.language.collectAsState()
+    // What the person may see (ADR-0060): the role opens a feature, a Remote Config flag closes it. The role is the
+    // access flow's answer until `/v1/me` has one (backend request 0011).
+    val roles = remember { SessionRoleSource() }
+    val flags = remember(telemetry) { RemoteConfigFlagSource(telemetry) }
+    val gateScope = rememberCoroutineScope()
+    val features = remember(roles, flags, gateScope) { FeatureGate(roles, flags, gateScope) }
     LaunchedEffect(telemetryConsent) {
         telemetryConsent.restore()
-        telemetry.refreshFlags()
+        flags.refresh()
     }
     // Links and notification taps (ADR-0053): one slot behind the lock, one resolver, and the host in front opens it.
     val links = viewModel { LinksViewModel() }.center(telemetry::log)
@@ -189,6 +199,14 @@ public fun App() {
             null -> null
         }
         links.sessionChanged(LinkSession(role = role, unlocked = role != null && !(hasSession && locked)))
+    }
+    // The role follows whoever the access flow let in; at sign-out it goes before anything else does.
+    LaunchedEffect(accessFinished) {
+        when (accessFinished) {
+            AccessRole.PATIENT -> roles.signedIn(Role.PATIENT)
+            AccessRole.DOCTOR -> roles.signedIn(Role.DOCTOR)
+            null -> roles.signedOut()
+        }
     }
     var returns by remember { mutableStateOf(0) }
 
@@ -257,6 +275,8 @@ public fun App() {
     }
 
     suspend fun endSession() {
+        // Nothing role-gated outlives the session for a frame (ADR-0060): the role goes before the wipe begins.
+        roles.signedOut()
         // The contract itself lives in core/session so a test can reach every branch of it; what
         // stays here is the shell's reaction (ADR-0014, amended 2026-09-21). The four steps used to
         // be this inline sequence, which meant the first throw skipped the rest and the shell's
@@ -326,7 +346,9 @@ public fun App() {
                                         logEvent = telemetry::log,
                                         link = linkToOpen,
                                         onLinkOpened = links::landed,
+                                        features = features,
                                         onSignOut = {
+                                            roles.signedOut()
                                             links.forget()
                                             patientScope.reset()
                                             access.restart()
@@ -340,7 +362,9 @@ public fun App() {
                                         care = doctorCare,
                                         link = linkToOpen,
                                         onLinkOpened = links::landed,
+                                        features = features,
                                         onSignOut = {
+                                            roles.signedOut()
                                             links.forget()
                                             doctorScope.reset()
                                             access.restart()

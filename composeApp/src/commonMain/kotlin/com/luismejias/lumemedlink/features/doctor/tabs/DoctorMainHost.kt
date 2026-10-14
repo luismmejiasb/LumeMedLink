@@ -25,6 +25,8 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.DoctorCareGateway
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberPhotoPicker
+import com.luismejias.lumemedlink.core.features.Feature
+import com.luismejias.lumemedlink.core.features.FeatureGate
 import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
@@ -50,6 +52,21 @@ import org.jetbrains.compose.resources.stringResource
 
 internal enum class DoctorTab { AGENDA, PATIENTS, SETTINGS }
 
+/** The feature a tab shows (ADR-0060); `null` for «Configuración», which is always there. */
+internal fun DoctorTab.feature(): Feature? = when (this) {
+    DoctorTab.AGENDA -> Feature.DOCTOR_AGENDA
+    DoctorTab.PATIENTS -> Feature.DOCTOR_PATIENTS
+    DoctorTab.SETTINGS -> null
+}
+
+/** The tabs [available] lets the doctor see, in the design's order. «Configuración» is always among them. */
+internal fun visibleDoctorTabs(available: Set<Feature>): List<DoctorTab> =
+    DoctorTab.entries.filter { tab -> tab.feature()?.let { it in available } ?: true }
+
+/** [selected] while it is visible; otherwise the first tab still shown. */
+internal fun shownDoctorTab(selected: DoctorTab, visible: List<DoctorTab>): DoctorTab =
+    if (selected in visible) selected else visible.first()
+
 /** Which of the doctor's three sections is in front (ADR-0045: one stack per tab, each only its root today). */
 internal class DoctorTabsViewModel : ViewModel() {
     private val current = MutableStateFlow(DoctorTab.AGENDA)
@@ -67,6 +84,8 @@ internal class DoctorTabsViewModel : ViewModel() {
 @Composable
 internal fun DoctorMainHost(
     care: DoctorCareGateway,
+    /** What the doctor may see (ADR-0060). */
+    features: FeatureGate,
     onSignOut: () -> Unit,
     /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
     link: DeepLink? = null,
@@ -85,7 +104,10 @@ internal fun DoctorMainHost(
     }
     val toasts = rememberLumeToastHostState()
     val contact = rememberDeviceContact()
-    val selected by tabs.selected.collectAsState()
+    val available by features.available.collectAsState()
+    val visibleTabs = visibleDoctorTabs(available)
+    val chosen by tabs.selected.collectAsState()
+    val selected = shownDoctorTab(chosen, visibleTabs)
     val agendaLoad by agenda.state.collectAsState()
     val profileLoad by profile.state.collectAsState()
     val waiting = (agendaLoad as? CareLoad.Ready)?.content?.requests?.size ?: 0
@@ -102,21 +124,26 @@ internal fun DoctorMainHost(
                 DoctorTab.SETTINGS -> DoctorProfileScreen(profile, photo, onSignOut)
             }
         }
-        LumeTabBar(
-            items = listOf(
-                LumeTabBarItem(
-                    LumeIcon.Calendar,
-                    stringResource(Res.string.doctor_tab_agenda),
-                    badge = LumeCountBadge(
-                        waiting,
-                        pluralStringResource(Res.plurals.doctor_requests_badge, waiting, waiting),
-                    ),
-                ),
-                LumeTabBarItem(LumeIcon.People, stringResource(Res.string.doctor_tab_patients)),
-                LumeTabBarItem(LumeIcon.Gear, stringResource(Res.string.doctor_tab_settings)),
+        val agendaItem = LumeTabBarItem(
+            LumeIcon.Calendar,
+            stringResource(Res.string.doctor_tab_agenda),
+            badge = LumeCountBadge(
+                waiting,
+                pluralStringResource(Res.plurals.doctor_requests_badge, waiting, waiting),
             ),
-            selected = selected.ordinal,
-            onSelect = { tabs.show(DoctorTab.entries[it]) },
+        )
+        val patientsItem = LumeTabBarItem(LumeIcon.People, stringResource(Res.string.doctor_tab_patients))
+        val settingsItem = LumeTabBarItem(LumeIcon.Gear, stringResource(Res.string.doctor_tab_settings))
+        LumeTabBar(
+            items = visibleTabs.map { tab ->
+                when (tab) {
+                    DoctorTab.AGENDA -> agendaItem
+                    DoctorTab.PATIENTS -> patientsItem
+                    DoctorTab.SETTINGS -> settingsItem
+                }
+            },
+            selected = visibleTabs.indexOf(selected),
+            onSelect = { tabs.show(visibleTabs[it]) },
             modifier = Modifier.align(Alignment.BottomCenter),
             style = LumeTabBarStyle.Floating,
         )

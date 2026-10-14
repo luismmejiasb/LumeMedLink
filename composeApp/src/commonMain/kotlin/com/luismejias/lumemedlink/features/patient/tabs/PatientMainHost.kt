@@ -37,6 +37,8 @@ import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberDirections
 import com.luismejias.lumemedlink.core.device.rememberPhotoPicker
+import com.luismejias.lumemedlink.core.features.Feature
+import com.luismejias.lumemedlink.core.features.FeatureGate
 import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
@@ -96,6 +98,22 @@ import org.jetbrains.compose.resources.stringResource
 /** The patient's five sections, in the design's order (p1, p2, p5, p6, p7). */
 internal enum class PatientTab { HOME, SEARCH, APPOINTMENTS, DOCTORS, SETTINGS }
 
+/** The feature a tab shows (ADR-0060); `null` for the shell's tabs, which are always there. */
+internal fun PatientTab.feature(): Feature? = when (this) {
+    PatientTab.HOME, PatientTab.SETTINGS -> null
+    PatientTab.SEARCH -> Feature.DOCTOR_SEARCH
+    PatientTab.APPOINTMENTS -> Feature.APPOINTMENTS
+    PatientTab.DOCTORS -> Feature.MY_DOCTORS
+}
+
+/** The tabs [available] lets the patient see, in the design's order. */
+internal fun visiblePatientTabs(available: Set<Feature>): List<PatientTab> =
+    PatientTab.entries.filter { tab -> tab.feature()?.let { it in available } ?: true }
+
+/** [selected] while it is visible; «Inicio» once its feature is switched off under the person. */
+internal fun shownPatientTab(selected: PatientTab, visible: List<PatientTab>): PatientTab =
+    if (selected in visible) selected else PatientTab.HOME
+
 /**
  * Which section is in front (ADR-0045: one stack per tab over LumeTabBar). Each tab is only its root today;
  * the stacks arrive with the flows that push onto them (search → booking, an appointment's detail).
@@ -129,6 +147,8 @@ internal fun PatientMainHost(
     consent: TelemetryConsent,
     appearance: Appearance,
     logEvent: (AnalyticsEvent) -> Unit,
+    /** What the patient may see (ADR-0060). */
+    features: FeatureGate,
     onSignOut: () -> Unit,
     /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
     link: DeepLink? = null,
@@ -156,7 +176,10 @@ internal fun PatientMainHost(
     val changeRoute = changeRoutes.lastOrNull()
     val changeSheet by change.sheet.collectAsState()
     val changeDone by change.done.collectAsState()
-    val selected by tabs.selected.collectAsState()
+    val available by features.available.collectAsState()
+    val visibleTabs = visiblePatientTabs(available)
+    val chosen by tabs.selected.collectAsState()
+    val selected = shownPatientTab(chosen, visibleTabs)
     val settingsRoute = settingsRoutes.lastOrNull().takeIf { selected == PatientTab.SETTINGS }
     val appointmentsLoad by appointments.state.collectAsState()
     val awaiting = (appointmentsLoad as? CareLoad.Ready)?.content?.awaiting ?: 0
@@ -305,23 +328,30 @@ internal fun PatientMainHost(
             }
         }
         if (showsTabBar) {
-            LumeTabBar(
-                items = listOf(
-                    LumeTabBarItem(LumeIcon.Home, stringResource(Res.string.tab_home)),
-                    LumeTabBarItem(LumeIcon.Search, stringResource(Res.string.tab_search)),
-                    LumeTabBarItem(
-                        LumeIcon.Calendar,
-                        stringResource(Res.string.tab_appointments),
-                        badge = LumeCountBadge(
-                            awaiting,
-                            pluralStringResource(Res.plurals.tab_pending_badge, awaiting, awaiting),
-                        ),
-                    ),
-                    LumeTabBarItem(LumeIcon.Doctors, stringResource(Res.string.tab_doctors)),
-                    LumeTabBarItem(LumeIcon.Gear, stringResource(Res.string.tab_settings)),
+            val homeItem = LumeTabBarItem(LumeIcon.Home, stringResource(Res.string.tab_home))
+            val searchItem = LumeTabBarItem(LumeIcon.Search, stringResource(Res.string.tab_search))
+            val appointmentsItem = LumeTabBarItem(
+                LumeIcon.Calendar,
+                stringResource(Res.string.tab_appointments),
+                badge = LumeCountBadge(
+                    awaiting,
+                    pluralStringResource(Res.plurals.tab_pending_badge, awaiting, awaiting),
                 ),
-                selected = selected.ordinal,
-                onSelect = { tabs.show(PatientTab.entries[it]) },
+            )
+            val doctorsItem = LumeTabBarItem(LumeIcon.Doctors, stringResource(Res.string.tab_doctors))
+            val settingsItem = LumeTabBarItem(LumeIcon.Gear, stringResource(Res.string.tab_settings))
+            LumeTabBar(
+                items = visibleTabs.map { tab ->
+                    when (tab) {
+                        PatientTab.HOME -> homeItem
+                        PatientTab.SEARCH -> searchItem
+                        PatientTab.APPOINTMENTS -> appointmentsItem
+                        PatientTab.DOCTORS -> doctorsItem
+                        PatientTab.SETTINGS -> settingsItem
+                    }
+                },
+                selected = visibleTabs.indexOf(selected),
+                onSelect = { tabs.show(visibleTabs[it]) },
                 modifier = Modifier.align(Alignment.BottomCenter),
                 style = LumeTabBarStyle.Floating,
             )

@@ -13,7 +13,7 @@ private const val GRANTED = "granted"
  * starts without the last one's choice. Every change reaches [telemetry] at once, and [restore] hands it the stored
  * choice at launch — both SDKs start off, by manifest and plist, until this says otherwise.
  */
-internal class TelemetryConsent(private val store: SecureStore, private val telemetry: Telemetry) {
+internal class TelemetryConsent(private val store: SecureStore, private val telemetry: TelemetryCollection) {
     /** Whether the person consented. An unreadable store reads as "no": never collect on doubt. */
     @Suppress("SwallowedException")
     suspend fun granted(): Boolean = try {
