@@ -71,3 +71,9 @@ internal fun NSURLSessionConfiguration.applyLumeSessionPosture() {
     setHTTPCookieStorage(null)
     setHTTPShouldSetCookies(false)
 }
+
+/**
+ * The same engine: on iOS what lets the local backend's plain http through is ATS's `NSAllowsLocalNetworking`, which a
+ * Debug-only build phase writes (ADR-0062). The session posture stays the main engine's.
+ */
+internal actual fun localBackendHttpEngine(): HttpClientEngine = lumeDarwinEngine()

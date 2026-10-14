@@ -10,8 +10,8 @@ import com.luismejias.lumemedlink.core.networking.DevTokenProvider
 import com.luismejias.lumemedlink.core.networking.DiscardingNetworkLogSink
 import com.luismejias.lumemedlink.core.networking.NetworkLogSink
 import com.luismejias.lumemedlink.core.networking.TransportPolicy
+import com.luismejias.lumemedlink.core.networking.localBackendHttpEngine
 import com.luismejias.lumemedlink.core.networking.lumeHttpClient
-import com.luismejias.lumemedlink.core.networking.platformHttpEngine
 import com.luismejias.lumemedlink.core.security.SecurityEventEmitter
 import io.ktor.client.engine.HttpClientEngine
 
@@ -27,7 +27,7 @@ internal class LocalPatientBackend(
     baseUrl: String,
     securityEvents: SecurityEventEmitter,
     logSink: NetworkLogSink = DiscardingNetworkLogSink,
-    engine: HttpClientEngine = platformHttpEngine(),
+    engine: HttpClientEngine = localBackendHttpEngine(),
 ) {
     // The token's own stack has no token provider: it IS how the token is fetched (DevTokenProvider's KDoc).
     private val tokens = DevTokenProvider(

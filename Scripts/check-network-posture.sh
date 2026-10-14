@@ -156,6 +156,18 @@ for dir in androidApp/src/release androidApp/src/main; do
     done
 done
 
+# ── 2c. The engine without TLS is the local backend's alone (ADR-0062) ──────────────────────────
+# platformHttpEngine() refuses plain http underneath the stack. localBackendHttpEngine() lets it through, so it may be
+# built by LocalPatientBackend and nowhere else; comments are blanked by the tokenizer (ADR-0029).
+LOCAL_ENGINE_OWNER="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/care/remote/LocalPatientBackend.kt"
+for f in $(find composeApp/src -path '*Test*' -prune -o -name '*.kt' -print 2>/dev/null); do
+    [ "$f" = "$LOCAL_ENGINE_OWNER" ] && continue
+    case "$f" in *PlatformHttpEngine*.kt) continue ;; esac
+    hit=$(python3 Scripts/lib/uncomment.py --lang c "$f" 2>/dev/null | grep -n 'localBackendHttpEngine' || true)
+    [ -n "$hit" ] && fail "network: $f builds the engine without TLS" \
+        "Only LocalPatientBackend may build localBackendHttpEngine() (ADR-0062)." "$hit"
+done
+
 # ── 3. iOS: the NSURLSession posture (F12; ADR-0016, amended 2026-10-07; task 0004) ─────────────
 # Until 2026-10-07 nothing gated this half: the line that keeps the bearer token out of
 # Library/Caches had no test and no gate, though its KDoc offered itself as a seam for both.

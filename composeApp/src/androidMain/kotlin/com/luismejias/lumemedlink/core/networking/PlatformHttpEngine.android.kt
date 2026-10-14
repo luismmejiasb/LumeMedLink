@@ -21,3 +21,12 @@ internal actual fun platformHttpEngine(): HttpClientEngine = OkHttp.create {
         )
     }
 }
+
+/**
+ * OkHttp's plain-http spec, and only it (ADR-0062): the main engine's TLS list refuses http by design, which is why the
+ * first local run read as «no connection». Only `LocalPatientBackend` builds this, and the stack above it allows
+ * http toward 10.0.2.2, localhost and 127.0.0.1 alone.
+ */
+internal actual fun localBackendHttpEngine(): HttpClientEngine = OkHttp.create {
+    config { connectionSpecs(listOf(ConnectionSpec.CLEARTEXT)) }
+}

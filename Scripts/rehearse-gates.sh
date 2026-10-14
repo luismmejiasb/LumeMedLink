@@ -396,6 +396,14 @@ import sys, pathlib
 f = pathlib.Path(sys.argv[1]) / "androidApp/src/release/kotlin/com/luismejias/lumemedlink/android/BuildEnvironment.kt"
 f.write_text(f.read_text().replace("AppEnvironment.Script", "AppEnvironment.localBackend(\"http://10.0.2.2:3000\")"))
 '
+bait "the engine without TLS built outside the local backend" check-network-posture.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/care"
+(d / "Elsewhere.kt").write_text(
+    "package com.luismejias.lumemedlink.core.care\n\n"
+    "import com.luismejias.lumemedlink.core.networking.localBackendHttpEngine\n\n"
+    "internal val ELSEWHERE = localBackendHttpEngine()\n")
+'
 bait "a release variant with a network config of its own" check-network-posture.sh '
 import sys, pathlib
 d = pathlib.Path(sys.argv[1]) / "androidApp/src/release/res/xml"
