@@ -9,7 +9,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** The patient the platform's seed creates for local work (`apps/api/src/dev/seed-patient-tier.ts`). Synthetic. */
+/**
+ * The patient the platform's seed creates for local work (`apps/api/src/dev/seed-patient-tier.ts`). Synthetic. Its
+ * twin `dev-doctor-link` opens the doctor's side.
+ */
 internal const val DEV_PATIENT = "dev-patient"
 
 /**
@@ -23,8 +26,8 @@ internal const val DEV_PATIENT = "dev-patient"
 internal class DevTokenProvider(
     private val contract: ContractClient,
     private val subject: String = DEV_PATIENT,
-    /** `PATIENT` until the platform's single LumeMedLink tenant (its answer to request `0011`) is in its seed. */
-    private val client: DevTokenRequestDtoClient = DevTokenRequestDtoClient.PATIENT,
+    /** LumeMedLink's one IdP tenant (the platform's answer `0074` to request `0011`, contract 0.128.0). */
+    private val client: DevTokenRequestDtoClient = DevTokenRequestDtoClient.LUMEMEDLINK,
 ) : TokenProvider {
     private val current = MutableStateFlow<String?>(null)
     private val fetching = Mutex()

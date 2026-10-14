@@ -10797,6 +10797,64 @@
         ]
       }
     },
+    "/v1/me/role": {
+      "get": {
+        "description": "Which side of the app this account opens (ADR-0101, 0.128.0), for a client with one door: LumeMedLink signs patients and clinicians in through the same screen and the same IdP tenant, and asks this right after. `CLINICIAN` for a clinical-app token and for a LumeMedLink account LumeMed staff linked to a clinician (`linkIdentity`, ADR-0090) — the link wins when the same person is also somebody's patient. `PATIENT` for a LumeMedLink account enrolled with a clinic's code. `NONE` for one that is neither yet, or suspended: it redeems a code (`redeemPatientEnrolment`) or opens nothing.\n\n**It decides what you draw, never what you may do**: every route still refuses what is not this account's. It needs no `X-Lume-Installation`, since it is how you learn which phone enrolment to call (`enrolMyPatientPhone` or `enrolMyPhone`).",
+        "operationId": "getMyRole",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyRoleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/v1/orgs/{tenantId}/medical-files": {
       "post": {
         "description": "Authorize an upload and return a short-lived signed URL (≤15 min). The record is created PENDING; the client then PUTs the bytes directly to object storage. No bytes pass through this API. Refused with `quota_exceeded` when the declared size would take the organisation over its storage ceiling.",
@@ -14436,16 +14494,6 @@
           },
           "401": {
             "description": "Unauthorized (`unauthorized`)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found (`not_provisioned`)",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20828,7 +20876,7 @@
     },
     "/v1/platform/overbook-policy": {
       "post": {
-        "description": "Set how many overbooks a professional may hold on one day (ADR-0100). Append-only: every change is a new row and the history is the audit trail. It takes effect on the next overbook and never cancels one already booked: lowering it below what a day holds only refuses the next.\n\nUntil the first call the limit is 0: no overbook at all, which is what existed before. The number is yours to set.",
+        "description": "Set how many overbooks a professional may hold on one day (ADR-0100). Append-only: every change is a new row and the history is the audit trail. It takes effect on the next overbook and never cancels one already booked: lowering it below what a day holds only refuses the next.\n\nUntil the first call the limit is 2 a day, the number the author set to start with.",
         "operationId": "setOverbookPolicy",
         "parameters": [],
         "requestBody": {
@@ -22358,7 +22406,7 @@
   "info": {
     "title": "lumemed-cloud API",
     "description": "Backend contract for the Lume Cloud medical platform. Errors are RFC 9457 problem+json. A string's `minLength` and `maxLength` count UTF-16 code units, as JavaScript counts them: a character outside the Basic Multilingual Plane, such as most emoji, counts two, and an emoji built from several characters (a flag, a skin tone) counts each of them. Count the same way before sending, or a text within a limit counted another way is refused with 400.",
-    "version": "0.127.0",
+    "version": "0.128.0",
     "contact": {}
   },
   "tags": [
@@ -29501,6 +29549,18 @@
           "profile",
           "platformRole",
           "recordWindows"
+        ]
+      },
+      "MyRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: CLINICIAN, PATIENT, NONE. `CLINICIAN`: a clinician — the clinical app, or a LumeMedLink account LumeMed staff linked to one. `PATIENT`: a LumeMedLink account enrolled as a patient. `NONE`: a LumeMedLink account that is neither yet (it redeems a clinic's code first), or a suspended one. Treat a value you do not know as `NONE`, and open nothing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
         ]
       },
       "RequestUploadDto": {

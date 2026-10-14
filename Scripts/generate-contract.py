@@ -34,7 +34,8 @@ DEV_AUTH = ROOT / "contract" / "dev-auth.json"
 DEV_PATHS = ("/dev/token",)
 PACKAGE = "com.luismejias.lumemedlink.core.networking.contract"
 DEFAULT_OUT = ROOT / "composeApp/src/commonMain/kotlin" / pathlib.Path(*PACKAGE.split("."))
-ALLOWED_PREFIXES = ("/v1/patient/", "/v1/directory/", "/v1/reference/")
+# `/v1/me/` is the caller's own account: its role, MFA, devices and phone. Checked on 0.128.0: nothing clinical under it.
+ALLOWED_PREFIXES = ("/v1/patient/", "/v1/directory/", "/v1/reference/", "/v1/me/")
 # Two platform routes every app tier has, by their exact path: the kill switch (§8.15) and the security-event channel
 # (ADR-0023). Exact, so that `/v1/platform/security-events`, the platform's own trail, stays out.
 ALLOWED_EXACT = ("/v1/me", "/v1/patient", "/v1/app-availability", "/v1/security-events")

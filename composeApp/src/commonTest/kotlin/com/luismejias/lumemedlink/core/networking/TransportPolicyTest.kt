@@ -81,7 +81,7 @@ class DevTokenProviderTest {
         assertEquals("dev-token-1", tokens.token())
         assertEquals("dev-token-1", tokens.token())
         assertEquals(1, fetches)
-        assertEquals("""{"userId":"dev-patient","client":"PATIENT"}""", lastBody)
+        assertEquals("""{"userId":"dev-patient","client":"LUMEMEDLINK"}""", lastBody)
     }
 
     @Test

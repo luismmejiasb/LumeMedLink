@@ -1,6 +1,6 @@
 # The platform's contract, vendored byte-identical (ADR-0061). Scripts/check-contract.sh fails when the file does not
 # match this hash. To update: copy packages/contracts/openapi.json from lumemed-cloud-platform, write its new hash,
 # commit and version here, and run Scripts/generate-contract.py.
-sha256=28b2fc73f8bed803ef712d17c6b86c9eaa68ade9d59cb282023741b993dfb951
-version=0.127.0
-platform_commit=0ef9599f953fe9e79160f2e1b9be980f32fe3a0d
+sha256=f120f1bcea26b948991f84097747176cdb374e5c01a0b391182028bbde0e3fb7
+version=0.128.0
+platform_commit=66ae82849008de29b0e82412522d8aa427f164d2

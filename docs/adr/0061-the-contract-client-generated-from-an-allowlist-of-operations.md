@@ -27,7 +27,8 @@ decode. The contract's statuses are an open vocabulary, and LumeMed reads an unk
 2. **An allowlist names every operation the app may call**: `contract/operations.txt`, one `operationId` per line,
    each with the area that uses it. An operation outside `/v1/patient/`, `/v1/directory/`, `/v1/reference/` and
    `/v1/me` is refused by the generator itself, so that the boundary is a property of the build, not of good intentions.
-   Two platform routes are allowed by their **exact** path, because every tier has them: `/v1/app-availability` (the
+   `/v1/me/` is allowed as a prefix since contract 0.128.0 (`getMyRole`): everything under it is the caller's own
+   account, its role, MFA, devices and phone, and nothing clinical. Two platform routes are allowed by their **exact** path, because every tier has them: `/v1/app-availability` (the
    kill switch, §8.15) and `/v1/security-events` (ADR-0023). The platform's own trail under `/v1/platform/` stays out.
 3. **Our own generator**, `Scripts/generate-contract.py`, emits only what the allowlist reaches:
    - `@Serializable` data classes, `internal`, for every reachable schema;
