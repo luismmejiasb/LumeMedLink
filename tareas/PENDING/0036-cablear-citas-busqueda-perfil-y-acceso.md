@@ -128,3 +128,20 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
   - el gate dentro de las pantallas;
   - la fase B (acceso real), que espera el pedido `0010` y un proyecto de Identity Platform.
 - **Decisión de LumeMed, informada el 2026-10-14:** la secretaria queda fuera del MVP.
+
+## Avance 2026-10-14 (noche) — el perfil, y la foto
+
+- **Perfil cableado, sólo lectura** (`RemoteProfile`, `listMyPatientProfiles`):
+  - Se muestra uno: el de la clínica primera por nombre y luego por id, nunca por el orden del servidor.
+  - El teléfono, el correo y el RUT pueden faltar; se dicen «Sin registrar», nunca se inventan.
+  - «Cuenta verificada» no aparece: el contrato no afirma ninguna verificación.
+- **El cambio de contacto sigue contra el guion.** `updateMyPatientProfile` aplica el cambio en el acto, sin código,
+  y eso contradice la decisión del autor. Se cablea cuando la plataforma termine el pedido `0012` (su tarea `0145`).
+  La dirección no se edita en esta app.
+- **La foto de perfil** (decisión del autor por formulario: la ven el paciente y sus médicos, y llega por la API):
+  - ADR-0064, que enmienda la §2 de la ADR-0050;
+  - pedido `0015` a la plataforma, enviado a su sesión.
+- **El lockfile de `androidApp`** no tenía `kotlinx-datetime` para `debugLintChecksClasspath`, y `./gradlew build`
+  fallaba desde `1bf3257`. Se regeneró con `build --write-locks` (ADR-0018).
+- **El lint de Android estaba rojo desde `a16c0a6`**, y nadie lo veía porque `build` se caía antes en el lockfile:
+  `MissingClass` sobre el `<provider>` de Firebase que el manifiesto elimina. Se ignora sólo en ese nodo.

@@ -46,12 +46,12 @@ class ContactChangeTest {
         change.send()
         assertEquals(ContactChangeStep.CODE, change.state.value?.step)
         assertEquals("+56 9 1234 5678", change.state.value?.destination?.replace(' ', ' '))
-        assertEquals("+56987654321", profile().mobile.e164, "nothing changes before the code")
+        assertEquals("+56987654321", profile().mobile?.e164, "nothing changes before the code")
         change.codeChanged(AccessScript.SMS_CODE)
         change.confirm()
         assertNull(change.state.value)
         assertEquals(ContactKind.PHONE, change.done.value)
-        assertEquals("+56912345678", profile().mobile.e164)
+        assertEquals("+56912345678", profile().mobile?.e164)
     }
 
     @Test
@@ -61,7 +61,7 @@ class ContactChangeTest {
         change.send()
         change.codeChanged(AccessScript.SMS_CODE)
         change.confirm()
-        assertEquals("nueva.direccion@correo.cl", profile().email.value)
+        assertEquals("nueva.direccion@correo.cl", profile().email?.value)
         assertEquals(ContactKind.EMAIL, change.done.value)
     }
 
@@ -82,7 +82,7 @@ class ContactChangeTest {
         change.codeChanged(AccessScript.SMS_CODE)
         change.confirm()
         assertTrue(change.state.value?.expired == true, "a spent code stays spent")
-        assertEquals("+56987654321", profile().mobile.e164)
+        assertEquals("+56987654321", profile().mobile?.e164)
     }
 
     @Test
@@ -98,7 +98,7 @@ class ContactChangeTest {
         assertFalse(change.state.value?.expired == true)
         change.codeChanged(AccessScript.SMS_CODE)
         change.confirm()
-        assertEquals("+56912345678", profile().mobile.e164)
+        assertEquals("+56912345678", profile().mobile?.e164)
     }
 
     @Test

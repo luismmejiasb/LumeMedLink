@@ -48,6 +48,7 @@ import com.luismejias.lumemedlink.resources.settings_edit_phone
 import com.luismejias.lumemedlink.resources.settings_email
 import com.luismejias.lumemedlink.resources.settings_language
 import com.luismejias.lumemedlink.resources.settings_licenses
+import com.luismejias.lumemedlink.resources.settings_not_recorded
 import com.luismejias.lumemedlink.resources.settings_phone
 import com.luismejias.lumemedlink.resources.settings_privacy
 import com.luismejias.lumemedlink.resources.settings_privacy_body
@@ -317,13 +318,13 @@ private fun ProfileFields(
         when (field) {
             ProfileField.RUT -> LumeListRow(
                 title = stringResource(Res.string.settings_rut),
-                description = profile.rut.display,
+                description = profile.rut?.display ?: stringResource(Res.string.settings_not_recorded),
                 trailing = LumeListAccessory.Icon(LumeIcon.Lock, ""),
                 textStyle = LumeListRowTextStyle.LabelOverValue,
             )
             ProfileField.PHONE -> LumeListRow(
                 title = stringResource(Res.string.settings_phone),
-                description = profile.mobile.display,
+                description = profile.mobile?.display ?: stringResource(Res.string.settings_not_recorded),
                 trailing = LumeListAccessory.Button(
                     LumeIcon.Edit,
                     stringResource(Res.string.settings_edit_phone),
@@ -334,7 +335,7 @@ private fun ProfileFields(
             )
             ProfileField.EMAIL -> LumeListRow(
                 title = stringResource(Res.string.settings_email),
-                description = profile.email.value,
+                description = profile.email?.value ?: stringResource(Res.string.settings_not_recorded),
                 trailing = LumeListAccessory.Button(
                     LumeIcon.Edit,
                     stringResource(Res.string.settings_edit_email),

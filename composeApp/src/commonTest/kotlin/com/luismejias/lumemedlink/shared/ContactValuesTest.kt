@@ -32,6 +32,23 @@ class ContactValuesTest {
     }
 
     @Test
+    fun aStoredChileanMobileKeepsItsGroupingAndAnyOtherNumberIsShownWhole() {
+        assertEquals(
+            "+56 9 8765 4321".replace(" ", PhoneNumber.NO_BREAK),
+            PhoneNumber.stored("+56987654321")?.display,
+        )
+        assertEquals("+56227654321", PhoneNumber.stored("+56227654321")?.display, "a landline: no dial code guessed")
+        assertEquals("+5491123456789", PhoneNumber.stored("+5491123456789")?.display)
+        assertEquals(
+            "•••• 4321".replace(" ", PhoneNumber.NO_BREAK),
+            PhoneNumber.stored("+56227654321")?.masked,
+        )
+        listOf("56987654321", "987654321", "+56 9 8765 4321", "+123", "+1234567890123456", "").forEach {
+            assertNull(PhoneNumber.stored(it), it)
+        }
+    }
+
+    @Test
     fun anEmailNeedsANameAndADomain() {
         assertNotNull(EmailAddress.parse("camila.soto@correo.cl"))
         assertNull(EmailAddress.parse("camila.soto@correo"))

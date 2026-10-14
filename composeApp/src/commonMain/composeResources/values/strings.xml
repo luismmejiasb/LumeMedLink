@@ -272,6 +272,7 @@
     <string name="settings_rut">RUT</string>
     <string name="settings_phone">Teléfono</string>
     <string name="settings_email">Correo</string>
+    <string name="settings_not_recorded">Sin registrar</string>
     <string name="settings_edit_phone">Editar teléfono</string>
     <string name="settings_edit_email">Editar correo</string>
     <string name="settings_rut_locked">El RUT no se edita</string>

@@ -13,6 +13,9 @@ internal class PhoneNumber private constructor(val e164: String, private val dia
 
     private val chilean: Boolean get() = dialCode == CHILE
 
+    /** A stored number whose country this app cannot split off (see [stored]): shown whole, never regrouped. */
+    private val unsplit: Boolean get() = dialCode.isEmpty()
+
     /**
      * "+56 9 •••• 4321": the last four digits only, for "Te enviamos un código al …" (2c). Its spaces do not break, so
      * a sentence never splits the number across two lines (seen on the emulator, 2026-10-13).
@@ -20,16 +23,20 @@ internal class PhoneNumber private constructor(val e164: String, private val dia
     val masked: String
         get() {
             val tail = e164.takeLast(MASK_TAIL)
-            val parts = if (chilean) listOf(CHILE, "9", "••••", tail) else listOf(dialCode, "••••", tail)
+            val parts = when {
+                chilean -> listOf(CHILE, "9", "••••", tail)
+                unsplit -> listOf("••••", tail)
+                else -> listOf(dialCode, "••••", tail)
+            }
             return parts.joinToString(NO_BREAK)
         }
 
     /** "+56 9 8765 4321": the whole number, for the owner's own profile (p7). Kept on one line, as [masked]. */
     val display: String
-        get() = if (chilean) {
-            (listOf(CHILE, "9") + national.drop(1).chunked(MASK_TAIL)).joinToString(NO_BREAK)
-        } else {
-            dialCode + NO_BREAK + national
+        get() = when {
+            chilean -> (listOf(CHILE, "9") + national.drop(1).chunked(MASK_TAIL)).joinToString(NO_BREAK)
+            unsplit -> e164
+            else -> dialCode + NO_BREAK + national
         }
 
     override fun equals(other: Any?): Boolean = other is PhoneNumber && other.e164 == e164
@@ -71,6 +78,18 @@ internal class PhoneNumber private constructor(val e164: String, private val dia
             }
             if (national.length != SUBSCRIBER_DIGITS + 1 || national.first() != '9') return null
             return PhoneNumber("$CHILE$national", CHILE)
+        }
+
+        /**
+         * A number as the platform stores it, E.164 (`+56912345678`): a Chilean mobile keeps its grouping; any other
+         * number is kept whole, because where its dial code ends is the country's rule, not this app's to guess.
+         * `null` when the value is not E.164 at all.
+         */
+        fun stored(e164: String): PhoneNumber? {
+            val digits = e164.removePrefix("+")
+            if (!e164.startsWith("+") || !digits.all { it.isDigit() }) return null
+            if (digits.length < SHORTEST_NATIONAL + 1 || digits.length > E164_DIGITS) return null
+            return chileanMobile(e164) ?: PhoneNumber(e164, "")
         }
 
         /**

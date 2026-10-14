@@ -263,6 +263,7 @@
     <string name="settings_rut">RUT</string>
     <string name="settings_phone">Phone</string>
     <string name="settings_email">Email</string>
+    <string name="settings_not_recorded">Not recorded</string>
     <string name="settings_edit_phone">Edit phone</string>
     <string name="settings_edit_email">Edit email</string>
     <string name="settings_rut_locked">The RUT can’t be edited</string>

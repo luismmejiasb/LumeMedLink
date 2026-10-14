@@ -93,9 +93,9 @@ internal class ContactChangeViewModel(private val care: ContactChangeGateway) : 
         current.value = ContactChangeState(
             kind = kind,
             current = when (kind) {
-                ContactKind.PHONE -> profile.mobile.e164
-                ContactKind.EMAIL -> profile.email.value.lowercase()
-            },
+                ContactKind.PHONE -> profile.mobile?.e164
+                ContactKind.EMAIL -> profile.email?.value?.lowercase()
+            }.orEmpty(),
         )
     }
 

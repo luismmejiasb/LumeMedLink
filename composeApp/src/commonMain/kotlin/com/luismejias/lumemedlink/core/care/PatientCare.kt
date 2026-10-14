@@ -153,16 +153,22 @@ internal data class MyDoctor(val doctor: CareDoctor, val attentions: Int, val ph
     override fun toString(): String = "MyDoctor(attentions=$attentions)"
 }
 
-/** The account holder (p7). The contract has a profile PER CLINIC and no RUT in it (request 0008 §1). */
+/**
+ * The account holder (p7). The contract has a profile PER CLINIC (`listMyPatientProfiles`); the app shows one (the
+ * author, 2026-10-14). A clinic may hold no phone or no e-mail for the person, so either may be missing, and so may a
+ * RUT the app cannot read: each is shown as not recorded, never invented.
+ */
 internal data class PatientProfile(
     val givenNames: String,
     val familyNames: String,
-    val rut: ChileanRut,
-    val mobile: PhoneNumber,
-    val email: EmailAddress,
+    val rut: ChileanRut?,
+    val mobile: PhoneNumber?,
+    val email: EmailAddress?,
+    /** «Cuenta verificada»: only when something states it. The contract states no such thing today. */
     val verified: Boolean,
 ) {
-    val initials: String get() = "${givenNames.first()}${familyNames.first()}".uppercase()
+    val initials: String get() = listOf(givenNames, familyNames).mapNotNull { it.trim().firstOrNull() }
+        .joinToString("").uppercase()
 
     override fun toString(): String = "PatientProfile(redacted)"
 }
