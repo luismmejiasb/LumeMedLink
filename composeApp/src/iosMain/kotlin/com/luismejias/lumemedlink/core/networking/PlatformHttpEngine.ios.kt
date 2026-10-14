@@ -73,7 +73,9 @@ internal fun NSURLSessionConfiguration.applyLumeSessionPosture() {
 }
 
 /**
- * The same engine: on iOS what lets the local backend's plain http through is ATS's `NSAllowsLocalNetworking`, which a
- * Debug-only build phase writes (ADR-0062). The session posture stays the main engine's.
+ * The same engine. ATS lets plain http to `localhost` and to an IP address through without any key, and still refuses
+ * it toward a domain (measured on the simulator, 2026-10-14; ADR-0062's amendment), so the host needs no ATS exception.
+ * What keeps a Release build off the local backend is the Swift host naming it only under `#if DEBUG`. The session
+ * posture stays the main engine's.
  */
 internal actual fun localBackendHttpEngine(): HttpClientEngine = lumeDarwinEngine()

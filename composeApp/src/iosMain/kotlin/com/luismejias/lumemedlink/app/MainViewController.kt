@@ -21,7 +21,9 @@ import platform.UIKit.UIViewController
 // lines under «Crear cuenta». So the view itself does nothing on focus.
 //
 // [firebase] is the Swift host's Firebase (ADR-0052 §8), or null when the build carried no GoogleService-Info.plist.
+// [environment] is the host's, by build configuration (ADR-0062): the local platform only under `#if DEBUG`.
 @Suppress("ktlint:standard:function-naming")
-public fun MainViewController(firebase: FirebaseBridge?): UIViewController = ComposeUIViewController(
-    configure = { onFocusBehavior = OnFocusBehavior.DoNothing },
-) { CompositionLocalProvider(LocalFirebaseBridge provides firebase) { App() } }
+public fun MainViewController(firebase: FirebaseBridge?, environment: AppEnvironment): UIViewController =
+    ComposeUIViewController(
+        configure = { onFocusBehavior = OnFocusBehavior.DoNothing },
+    ) { CompositionLocalProvider(LocalFirebaseBridge provides firebase) { App(environment) } }

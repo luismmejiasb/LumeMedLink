@@ -25,7 +25,18 @@ struct iOSApp: App {
 /// Firebase is configured here, once, or not at all when the build carried no configuration (ADR-0052 §8).
 struct ComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController(firebase: FirebaseHost.configured())
+        MainViewControllerKt.MainViewController(firebase: FirebaseHost.configured(), environment: Self.environment)
+    }
+
+    /// Where the data comes from, by build configuration (ADR-0062). A Debug build talks to the platform on this
+    /// Mac, which the simulator reaches as `localhost`; a Release build carries no local address at all, and
+    /// `check-network-posture.sh` fails one that does.
+    private static var environment: AppEnvironment {
+        #if DEBUG
+        return AppEnvironment.companion.localBackend(baseUrl: "http://localhost:3000")
+        #else
+        return AppEnvironment.companion.Script
+        #endif
     }
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }

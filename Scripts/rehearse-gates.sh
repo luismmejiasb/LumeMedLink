@@ -706,6 +706,28 @@ swap("platformHttpEngine(): HttpClientEngine = lumeDarwinEngine()", "platformHtt
 p.write_text(s)
 '
 
+# ── The Swift host names the local backend only under #if DEBUG (ADR-0062 amendment, 2026-10-14) ──
+SWIFT_HOST_EDIT='
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/iOSApp.swift"
+s = p.read_text()
+local = "return AppEnvironment.companion.localBackend(baseUrl: \"http://localhost:3000\")"
+script = "return AppEnvironment.companion.Script"
+assert s.count(local) == 1 and s.count(script) == 1, "bait anchor not found"
+'
+bait "the Swift host picks the local backend in the Release branch" check-network-posture.sh "$SWIFT_HOST_EDIT"'
+s = s.replace(local, "@@L").replace(script, local).replace("@@L", script)
+p.write_text(s)
+'
+bait "the Swift host picks the local backend with no #if at all" check-network-posture.sh "$SWIFT_HOST_EDIT"'
+s = s.replace("#if DEBUG\n", "").replace("#else\n", "").replace("#endif\n", "").replace(script, "")
+p.write_text(s)
+'
+bait "the Swift host picks the local backend under #if !DEBUG" check-network-posture.sh "$SWIFT_HOST_EDIT"'
+assert s.count("#if DEBUG") == 1
+p.write_text(s.replace("#if DEBUG", "#if !DEBUG"))
+'
+
 # ── Deep links (F17, task 0011): https only, App Links verified — and the iOS half finally baited ──
 LINK_EDIT='
 import sys, pathlib

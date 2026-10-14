@@ -53,3 +53,19 @@ platform needs one honest place where plain http is allowed, and it must not be 
   dead. It is retired then, with its gates' baits.
 - Proxy debugging (Charles, mitmproxy) stays impossible on every build, as ADR-0016 decided. This ADR allows
   cleartext toward a local host; it does not trust any user CA.
+
+## Amendment (2026-10-14) — iOS needs no ATS exception
+
+Point 4's iOS half is withdrawn before it was built. Measured on the simulator (iOS 26.5), from the Debug host whose
+Info.plist has no `NSAppTransportSecurity` key: `http://localhost:3000` and `http://127.0.0.1:3000` are reached, and
+`http://example.com` is refused with `NSURLErrorAppTransportSecurityRequiresSecureConnection`. So ATS is active, and it
+already exempts a local name and an IP address. No build phase writes `NSAllowsLocalNetworking`, and the source
+Info.plist stays without an ATS key, as `check-ios-host.sh` requires.
+
+What keeps a Release build off the local backend is therefore the Swift host alone: it calls
+`AppEnvironment.localBackend` only in the positive branch of `#if DEBUG`. `check-network-posture.sh` (section 2d)
+refuses the call anywhere else, with comments and string literals blanked by the tokenizer, and its bait is in
+`rehearse-gates.sh`. Point 6's line about a guarded build phase is withdrawn with it.
+
+Not measured: a physical iPhone. It reaches the Mac only by its network address, which ATS exempts as an IP, but no
+device run has been made.

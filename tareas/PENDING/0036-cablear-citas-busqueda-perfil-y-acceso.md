@@ -167,8 +167,16 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
   fallaba desde `1bf3257`. Se regeneró con `build --write-locks` (ADR-0018).
 - **El lint de Android estaba rojo desde `a16c0a6`**, y nadie lo veía porque `build` se caía antes en el lockfile:
   `MissingClass` sobre el `<provider>` de Firebase que el manifiesto elimina. Se ignora sólo en ese nodo.
+- **El entorno local en iOS, cableado:**
+  - El host Swift pasa `localBackend("http://localhost:3000")` sólo bajo `#if DEBUG`; Release pasa el guion.
+  - ATS no necesita excepción. Medido en el simulador con una sonda temporal: `localhost` y `127.0.0.1` pasan sin
+    clave ATS, y `http://example.com` se rechaza con -1022. Va como enmienda de la ADR-0062; ningún paso de build
+    escribe `NSAllowsLocalNetworking`.
+  - Gate 2d de `check-network-posture.sh` con tres cebos.
+  - El binario de Release no contiene la dirección local y el de Debug sí.
+  - **No verificado:** el flujo completo en el simulador. No hay cómo tocar la pantalla del simulador desde aquí, y
+    tampoco hay un target de UI tests.
 - **Falta:**
-  - el entorno local en iOS;
   - el gate dentro de las pantallas;
   - la fase B, que ahora incluye el reingreso con clave y TOTP antes de cambiar un contacto;
   - la foto, cuando la plataforma construya el pedido `0015`.

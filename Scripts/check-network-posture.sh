@@ -168,6 +168,33 @@ for f in $(find composeApp/src -path '*Test*' -prune -o -name '*.kt' -print 2>/d
         "Only LocalPatientBackend may build localBackendHttpEngine() (ADR-0062)." "$hit"
 done
 
+# ── 2d. iOS: the Swift host names the local backend only in a Debug build (ADR-0062) ───────────
+# ATS lets plain http to localhost and to an IP through without any key (measured 2026-10-14; ADR-0062's amendment), so
+# what keeps a Release build off the local backend is the host never naming it outside `#if DEBUG`. Comments and string
+# literals are blanked by the tokenizer (ADR-0029); the call must sit in the positive branch of a bare `#if DEBUG`.
+for f in $(find iosApp -name '*.swift' 2>/dev/null); do
+    verdict=$(python3 Scripts/lib/uncomment.py --lang c --strip-strings "$f" 2>/dev/null | python3 -c '
+import re, sys
+stack = []  # one frame per open #if: is this branch the positive branch of a bare `#if DEBUG`?
+problems = []
+for number, line in enumerate(sys.stdin, 1):
+    code = line.strip()
+    if code.startswith("#if"):
+        stack.append(code == "#if DEBUG")
+    elif code.startswith("#elseif") or code.startswith("#else"):
+        if stack:
+            stack[-1] = False
+    elif code.startswith("#endif"):
+        if stack:
+            stack.pop()
+    elif re.search(r"\blocalBackend\s*\(", code) and not any(stack):
+        problems.append(f"{number}: {code}")
+print("; ".join(problems))
+')
+    [ -n "$verdict" ] && fail "network: $f names the local backend outside #if DEBUG" \
+        "A Release build must not compile AppEnvironment.localBackend (ADR-0062)." "$verdict"
+done
+
 # ── 3. iOS: the NSURLSession posture (F12; ADR-0016, amended 2026-10-07; task 0004) ─────────────
 # Until 2026-10-07 nothing gated this half: the line that keeps the bearer token out of
 # Library/Caches had no test and no gate, though its KDoc offered itself as a seam for both.
