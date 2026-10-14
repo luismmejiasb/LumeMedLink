@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The DEBUG variant's network security posture (ADR-0062). It replaces main's in debug builds only; release keeps
+  main's, which denies cleartext everywhere (ADR-0016).
+
+  The one difference: plain http toward the platform on the developer's own computer, by the three names a device
+  gives it, and nothing else. No LAN address, no subdomains, no user CA, no <debug-overrides>: proxy debugging stays
+  impossible here too, as ADR-0016 decided. Scripts/check-network-posture.sh holds this file to exactly that.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

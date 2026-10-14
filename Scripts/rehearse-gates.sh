@@ -380,6 +380,28 @@ d.mkdir(parents=True, exist_ok=True)
     "fun stash(c: Context, t: String) {\n"
     "    c.getSharedPreferences(\"s\", Context.MODE_PRIVATE).edit().putString(\"t\", t).apply()\n}\n")
 '
+# ── ADR-0062: plain http from debug builds, to the local backend, and nowhere else ──────────────
+bait "the debug network config opens a LAN address" check-network-posture.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "androidApp/src/debug/res/xml/network_security_config.xml"
+f.write_text(f.read_text().replace(">127.0.0.1<", ">192.168.1.20<"))
+'
+bait "the debug network config lets a local name carry subdomains" check-network-posture.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "androidApp/src/debug/res/xml/network_security_config.xml"
+f.write_text(f.read_text().replace("<domain includeSubdomains=\"false\">localhost", "<domain includeSubdomains=\"true\">localhost"))
+'
+bait "a release build chooses the local backend" check-network-posture.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "androidApp/src/release/kotlin/com/luismejias/lumemedlink/android/BuildEnvironment.kt"
+f.write_text(f.read_text().replace("AppEnvironment.Script", "AppEnvironment.localBackend(\"http://10.0.2.2:3000\")"))
+'
+bait "a release variant with a network config of its own" check-network-posture.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "androidApp/src/release/res/xml"
+d.mkdir(parents=True, exist_ok=True)
+(d / "network_security_config.xml").write_text("<network-security-config/>")
+'
 # ── ADR-0061: the contract's client is the pinned contract and the allowlist, and nothing else ──────
 bait "the vendored contract edited by hand" check-contract.sh '
 import sys, pathlib

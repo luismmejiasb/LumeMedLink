@@ -39,10 +39,19 @@ android {
             // Explicit so nobody reads the absence as a claim. A debug build IS debuggable, IS
             // reachable by run-as, and must never carry a real doctor's token.
             isDebuggable = true
+            // The platform on the developer's computer (ADR-0062). The emulator's name for it by default; a physical
+            // phone passes -Plume.localBackend=http://localhost:3000 after `adb reverse tcp:3000 tcp:3000`. Release
+            // has no such field, and its BuildEnvironment.kt has no URL.
+            val localBackend = providers.gradleProperty("lume.localBackend").orElse("http://10.0.2.2:3000").get()
+            buildConfigField("String", "LUME_LOCAL_BACKEND", "\"$localBackend\"")
         }
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        // Only for the debug build's local backend above (ADR-0062).
+        buildConfig = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

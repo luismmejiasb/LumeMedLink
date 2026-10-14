@@ -85,6 +85,7 @@ class MainActivity : FragmentActivity() {
         // (core/input/StructureExport.kt says why).
         window.decorView.denyAutofillExport()
         denyContentCapture()
-        setContent { CompositionLocalProvider(LocalAndroidPhotoHost provides photoHost) { App() } }
+        // The build type chooses where the data comes from (ADR-0062): src/debug and src/release each say it once.
+        setContent { CompositionLocalProvider(LocalAndroidPhotoHost provides photoHost) { App(buildEnvironment()) } }
     }
 }

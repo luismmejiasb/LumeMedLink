@@ -35,8 +35,10 @@ import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.appearance.ProvideAppLanguage
 import com.luismejias.lumemedlink.core.appearance.ThemeChoice
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
+import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
+import com.luismejias.lumemedlink.core.care.remote.LocalPatientBackend
 import com.luismejias.lumemedlink.core.features.FeatureGate
 import com.luismejias.lumemedlink.core.features.RemoteConfigFlagSource
 import com.luismejias.lumemedlink.core.features.Role
@@ -116,7 +118,10 @@ private object AbsentUnlockGate : UnlockGate {
  * the design system's tokens.
  */
 @Composable
-public fun App() {
+public fun App(
+    /** Where the data comes from, chosen by the host app by build type (ADR-0062); the script by default. */
+    environment: AppEnvironment = AppEnvironment.Script,
+) {
     // What must outlive a rotation lives here; what holds the Activity does not (task 0009, ADR-0039).
     val shell = viewModel { ShellViewModel() }
     // The access flow (ADR-0044) runs against the SCRIPT of a contract that does not exist yet — chosen here and
@@ -155,7 +160,7 @@ public fun App() {
     // The patient's main app (ADR-0046), against the SCRIPT of the design; its ViewModels live in a store of
     // their own that a sign-out empties.
     val patientScope = viewModel { SessionScope() }
-    val patientCare = remember { ScriptedPatientCare() }
+    val patientScript = remember { ScriptedPatientCare() }
     val doctorScope = viewModel(key = "doctor-scope") { SessionScope() }
     val doctorCare = remember { ScriptedDoctorCare() }
     val unlockGate = rememberUnlockGate(secureStore) ?: AbsentUnlockGate
@@ -173,6 +178,26 @@ public fun App() {
     // (no base URL is configured and no auth flow exists to give it a token). Named so the next
     // reader sees a wire to connect, not a channel to write.
     val securityEvents = remember { NoOpSecurityEventReporter }
+    // A debug build's local platform (ADR-0062) serves what the contract has today: the clinic's clock and the
+    // appointments. Every other capability stays on the script until it is wired (task 0036). Without an environment,
+    // the whole patient's side is the script, as before.
+    val localPatient = remember(environment) {
+        environment.localBackend?.let { LocalPatientBackend(it, securityEvents.emittingIn(scope)) }
+    }
+    val patientCare: PatientCareGateway = remember(patientScript, localPatient) {
+        localPatient?.let { local ->
+            ComposedPatientCare(
+                clock = local.clock,
+                profile = patientScript,
+                appointments = local.appointments,
+                changes = local.changes,
+                doctors = patientScript,
+                ratings = patientScript,
+                notices = patientScript,
+                contact = patientScript,
+            )
+        } ?: patientScript
+    }
     val sessionLock = remember(unlockGate, secureStore, securityEvents, shell) {
         // The attempt count lives in the store, not in this object: `remember` does not survive the
         // process, and a ceiling that resets when the process dies is not a ceiling (ADR-0034). The
@@ -340,7 +365,7 @@ public fun App() {
                                 AccessRole.PATIENT -> InSessionScope(patientScope) {
                                     PatientMainHost(
                                         care = patientCare,
-                                        directory = patientCare,
+                                        directory = patientScript,
                                         consent = telemetryConsent,
                                         appearance = appearance,
                                         logEvent = telemetry::log,

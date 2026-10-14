@@ -106,6 +106,56 @@ if [ -f "androidApp/src/main/res/xml/network_security_config_debug.xml" ]; then
          "Debuggable builds would silently load it instead (ADR-0016)."
 fi
 
+# ── 2b. The debug variant's config, and who may build the local environment (ADR-0062) ────────
+# A debug build reaches the platform on the developer's computer over plain http, toward three names only. The file
+# that allows it is PARSED (ADR-0029): its own comment says what it permits, and a grep would read that as config.
+DEBUG_NSC="androidApp/src/debug/res/xml/network_security_config.xml"
+if [ -f "$DEBUG_NSC" ]; then
+    verdict=$(python3 - "$DEBUG_NSC" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+LOCAL = {"10.0.2.2", "localhost", "127.0.0.1"}
+try:
+    root = ET.parse(sys.argv[1]).getroot()
+except ET.ParseError as error:
+    print(f"unparseable: {error}"); sys.exit(0)
+problems = []
+base = root.find("base-config")
+if base is None or base.get("cleartextTrafficPermitted") != "false":
+    problems.append("base-config does not deny cleartext")
+anchors = [c.get("src") for c in root.iter("certificates")]
+if anchors != ["system"]:
+    problems.append(f"trust anchors are {anchors}, not the system's alone")
+if root.find("debug-overrides") is not None:
+    problems.append("<debug-overrides> present")
+for config in root.findall("domain-config"):
+    if config.get("cleartextTrafficPermitted") != "true":
+        problems.append("a domain-config that is not the local cleartext one")
+    for domain in config.iter("domain"):
+        if (domain.text or "").strip() not in LOCAL:
+            problems.append(f"cleartext toward {(domain.text or '').strip()!r}, not a local name")
+        if domain.get("includeSubdomains") != "false":
+            problems.append(f"{(domain.text or '').strip()!r} without includeSubdomains=false")
+print("; ".join(problems))
+PY
+)
+    [ -n "$verdict" ] && fail "network: the debug config allows more than the local backend" \
+        "Debug may reach 10.0.2.2, localhost and 127.0.0.1 over http, nothing else (ADR-0062)." "$verdict"
+fi
+# No other variant may carry a config of its own: release takes main's, which denies cleartext.
+others=$(find androidApp/src -path androidApp/src/main -prune -o -path androidApp/src/debug -prune -o \
+    -name 'network_security_config*.xml' -print 2>/dev/null)
+[ -n "$others" ] && fail "network: a variant other than debug has its own network config" \
+    "Release must take main's, which denies cleartext (ADR-0016, ADR-0062)." "$others"
+# The local environment is built from src/debug alone: neither release nor main may name it or a plain-http URL.
+for dir in androidApp/src/release androidApp/src/main; do
+    for f in $(find "$dir" -name '*.kt' 2>/dev/null); do
+        hit=$(python3 Scripts/lib/uncomment.py --lang c "$f" 2>/dev/null | grep -nE 'localBackend\(|"http://' || true)
+        [ -n "$hit" ] && fail "network: $f can reach the local backend" \
+            "Only androidApp/src/debug chooses AppEnvironment.localBackend (ADR-0062)." "$hit"
+    done
+done
+
 # ── 3. iOS: the NSURLSession posture (F12; ADR-0016, amended 2026-10-07; task 0004) ─────────────
 # Until 2026-10-07 nothing gated this half: the line that keeps the bearer token out of
 # Library/Caches had no test and no gate, though its KDoc offered itself as a seam for both.
