@@ -34,18 +34,19 @@ private const val MINUTES_PER_HOUR = 60
 /**
  * The patient's appointments over the contract (task `0036`): `listMyAppointments`, `cancelMyAppointment`,
  * `withdrawMyAppointmentRequest` and `rescheduleMyAppointment`, never composed from two writes (T7). Every hour is
- * shown on the clinic's wall clock ([zone], ADR-0063), and the specialty's name comes from the platform's catalog.
+ * shown on its place's wall clock ([zones], ADR-0063), and the specialty's name comes from the platform's catalog.
  */
 internal class RemoteAppointments(
     private val contract: ContractClient,
     private val specialties: SpecialtyNames,
-    private val zone: TimeZone = TimeZone.of(CLINIC_ZONE_UNTIL_CONTRACT),
+    private val zones: PlaceZones = PlaceZones(),
 ) : AppointmentsSource,
     AppointmentChanges {
     override suspend fun appointments(): CareResult<List<PatientAppointment>> = careRead {
         val names = specialties.all()
         contract.call(ContractOperations.LIST_MY_APPOINTMENTS)
-            .map { it.toPatientAppointment(zone, names) }
+            .onEach { zones.learn(it.locationId, it.timeZone) }
+            .map { it.toPatientAppointment(zones.fallback, names) }
             .sortedWith(compareBy({ it.date }, { it.start }))
     }
 
@@ -76,9 +77,8 @@ internal class RemoteAppointments(
     }
 
     /**
-     * One atomic operation, never a cancel plus a booking (T7). The appointment must say its place: until the contract
-     * publishes `locationId` on an appointment (backend request `0014`), a move cannot be asked for, and it says so
-     * without calling.
+     * One atomic operation, never a cancel plus a booking (T7). The appointment must say its place (`locationId`,
+     * since 0.130.0): a home visit or a call has none, cannot be moved to a place's hour, and says so without calling.
      */
     override suspend fun reschedule(
         appointment: PatientAppointment,
@@ -88,7 +88,8 @@ internal class RemoteAppointments(
     ): ChangeResult {
         if (appointment.locationId.isBlank()) return ChangeResult.Failed(ChangeFailure.Unavailable)
         return careChange {
-            val starts = instantOf(slot.date, slot.start, zone)
+            // Back to UTC on the clock the hour was shown on: the place's.
+            val starts = instantOf(slot.date, slot.start, zones.of(appointment.locationId))
             val ends = instantPlusMinutes(starts, slot.minutes)
             val moved = contract.call(
                 ContractOperations.RESCHEDULE_MY_APPOINTMENT,
@@ -101,7 +102,8 @@ internal class RemoteAppointments(
                 ),
                 path = mapOf("id" to appointment.id),
             )
-            ChangeResult.Moved(moved.toPatientAppointment(zone, specialties.all()))
+            zones.learn(moved.locationId, moved.timeZone)
+            ChangeResult.Moved(moved.toPatientAppointment(zones.fallback, specialties.all()))
         }
     }
 }
@@ -115,10 +117,11 @@ private fun ChangeReason.wire(): String = name
  * not know is [AppointmentStatus.OTHER], shown without a verdict.
  */
 internal fun PatientAppointmentDto.toPatientAppointment(
-    zone: TimeZone,
+    fallbackZone: TimeZone,
     specialties: Map<String, String>,
 ): PatientAppointment {
-    val wall = wallTimeOf(startsAt, zone)
+    // The place's own zone, since 0.130.0; the fallback only when the contract names none (ADR-0063).
+    val wall = wallTimeOf(startsAt, zoneOf(timeZone, fallbackZone))
     return PatientAppointment(
         id = id,
         doctor = CareDoctor(
@@ -134,6 +137,8 @@ internal fun PatientAppointmentDto.toPatientAppointment(
             address = locationAddress?.let { listOfNotNull(it.street, it.streetNumber).joinToString(" ") }.orEmpty(),
             detail = listOfNotNull(locationLabel, clinicName).distinct().joinToString(" · "),
         ),
+        // Null for a home visit or a call: such an hour cannot be moved to another of a place's hours.
+        locationId = locationId.orEmpty(),
         // A cutoff the contract cannot state (the professional's profile is gone) cancels as «until the start».
         changeCutoffMinutes = (cancelCutoffHours ?: 0) * MINUTES_PER_HOUR,
     )

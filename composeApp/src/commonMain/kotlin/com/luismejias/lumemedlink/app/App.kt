@@ -178,9 +178,9 @@ public fun App(
     // (no base URL is configured and no auth flow exists to give it a token). Named so the next
     // reader sees a wire to connect, not a channel to write.
     val securityEvents = remember { NoOpSecurityEventReporter }
-    // A debug build's local platform (ADR-0062) serves what the contract has today: the clinic's clock and the
-    // appointments. Every other capability stays on the script until it is wired (task 0036). Without an environment,
-    // the whole patient's side is the script, as before.
+    // A debug build's local platform (ADR-0062) serves what the contract has today: the clinic's clock, the
+    // appointments, and search to booking. Every other capability stays on the script until it is wired (task
+    // 0036). Without an environment, the whole patient's side is the script, as before.
     val localPatient = remember(environment) {
         environment.localBackend?.let { LocalPatientBackend(it, securityEvents.emittingIn(scope)) }
     }
@@ -365,7 +365,7 @@ public fun App(
                                 AccessRole.PATIENT -> InSessionScope(patientScope) {
                                     PatientMainHost(
                                         care = patientCare,
-                                        directory = patientScript,
+                                        directory = localPatient?.directory ?: patientScript,
                                         consent = telemetryConsent,
                                         appearance = appearance,
                                         logEvent = telemetry::log,

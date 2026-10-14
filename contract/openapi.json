@@ -18545,6 +18545,74 @@
         ]
       }
     },
+    "/v1/directory/professionals/{professionalId}": {
+      "get": {
+        "description": "One professional of the directory by its id (since 0.130.0): the shape of a `searchDirectory` item. What «book again» opens from an appointment's `professionalId`, without searching by name, which a namesake or a corrected name answers with somebody else. The same projection and the same rule: a professional who opted out of the directory, or whose profile is gone, is a **404**, indistinguishable from one who never existed.",
+        "operationId": "getDirectoryProfessional",
+        "parameters": [
+          {
+            "name": "professionalId",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id: from a search, an appointment card or the contacts.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryEntryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "directory"
+        ]
+      }
+    },
     "/v1/directory/professionals/{professionalId}/availability": {
       "get": {
         "description": "Free slots for one professional at one of their places. **A slot carries a start and an end and nothing else** — this is not the clinic’s agenda with fields removed, and that emptiness is the security property: there is no field here to leak.\n\nIt takes the two opaque ids a search returned and resolves the clinic server-side, so the tenant never appears in a request or a response. A professional who opted out is a **404**, indistinguishable from one who never existed. A range wider than 62 days is refused rather than truncated, because a truncated agenda looks exactly like a full one. **A national holiday’s weekly hours are absent from the result unless the professional opened it** (since 0.89.0, ADR-0086 §1: a holiday nobody answered is closed to them, and `listHolidays` names it), **but extra hours the professional declared on it are offered** (since 0.91.0, ADR-0086 §4: their slots join the weekly ones on any day), so a holiday with slots is open, whatever `listHolidays` says. The hours inside a declared absence are absent too (0.51.0). **Slots step the slot plus the professional’s break**, and a slot within the break of a booked appointment is absent too (since 0.90.0, ADR-0086 §2).\n\n**Being away is not a 404 any more (0.73.0, ADR-0062).** Until then a professional who was away vanished from the directory and from this route; now they stay findable, their hours inside the absence are simply not offered, and `listDirectoryClosedPeriods` says when they are away.",
@@ -22406,7 +22474,7 @@
   "info": {
     "title": "lumemed-cloud API",
     "description": "Backend contract for the Lume Cloud medical platform. Errors are RFC 9457 problem+json. A string's `minLength` and `maxLength` count UTF-16 code units, as JavaScript counts them: a character outside the Basic Multilingual Plane, such as most emoji, counts two, and an emoji built from several characters (a flag, a skin tone) counts each of them. Count the same way before sending, or a text within a limit counted another way is refused with 400.",
-    "version": "0.129.0",
+    "version": "0.130.0",
     "contact": {}
   },
   "tags": [
@@ -32893,6 +32961,10 @@
                 },
                 "bookable": {
                   "type": "boolean"
+                },
+                "timeZone": {
+                  "description": "IANA zone of this place's wall clock, e.g. America/Santiago (since 0.130.0): draw the slots of `getDirectoryAvailability` and the periods of `listDirectoryClosedPeriods` in it, never in the phone's zone. The value the practice's agenda gives.",
+                  "type": "string"
                 }
               },
               "required": [
@@ -32900,7 +32972,8 @@
                 "name",
                 "communeCode",
                 "regionCode",
-                "bookable"
+                "bookable",
+                "timeZone"
               ]
             }
           },
@@ -33229,6 +33302,16 @@
             ],
             "nullable": true
           },
+          "locationId": {
+            "description": "The place of this hour by the id the directory publishes (`DirectoryEntryDto.locations[].id`; since 0.130.0): what `rescheduleMyAppointment` and `getDirectoryAvailability` take to move it within the same place. `null` for a home visit or a call, and for a place the professional no longer takes bookings at through the directory — then do not offer a move.",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "timeZone": {
+            "description": "IANA zone of the clinic's wall clock, e.g. America/Santiago (since 0.130.0): draw `startsAt` and `endsAt` in it, never in the phone's zone. The same value `AgendaDto.timeZone` gives the practice.",
+            "type": "string"
+          },
           "cancelCutoffHours": {
             "description": "How many hours before the start you may still cancel or move this hour yourself (since 0.102.0); past it, `cancelMyAppointment` and `rescheduleMyAppointment` answer `cancellation_window_closed` and the practice must do it. `0` means until the start. `null` when the professional's profile is gone: cancelling then works as `0` (until the start), and moving is refused, because there is no agenda left to move the hour into.",
             "type": "integer",
@@ -33306,6 +33389,8 @@
           "specialtyCode",
           "professionalId",
           "locationAddress",
+          "locationId",
+          "timeZone",
           "cancelCutoffHours",
           "closedAt",
           "cancellationReason",

@@ -17,6 +17,13 @@ import kotlin.time.Instant
  */
 internal const val CLINIC_ZONE_UNTIL_CONTRACT = "America/Santiago"
 
+/**
+ * The zone the contract names for a place (`timeZone`, since 0.130.0 — backend request `0013`), or [fallback] when it
+ * names none or one this platform does not know. The fallback is the constant above, and only the fallback.
+ */
+internal fun zoneOf(name: String?, fallback: TimeZone): TimeZone =
+    name?.let { runCatching { TimeZone.of(it) }.getOrNull() } ?: fallback
+
 /** One instant on a clinic's wall clock: its date and its hour, as the design draws them. */
 internal data class WallTime(val date: CalendarDate, val time: ClockTime)
 

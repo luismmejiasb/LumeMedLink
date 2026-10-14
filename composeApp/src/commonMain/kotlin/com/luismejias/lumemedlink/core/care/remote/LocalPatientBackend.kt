@@ -3,6 +3,7 @@ package com.luismejias.lumemedlink.core.care.remote
 import com.luismejias.lumemedlink.core.care.AppointmentChanges
 import com.luismejias.lumemedlink.core.care.AppointmentsSource
 import com.luismejias.lumemedlink.core.care.ClinicClock
+import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.networking.AccountSide
 import com.luismejias.lumemedlink.core.networking.ContractClient
 import com.luismejias.lumemedlink.core.networking.DevTokenProvider
@@ -18,8 +19,9 @@ import io.ktor.client.engine.HttpClientEngine
  * The patient's side as the platform on the developer's computer serves it (ADR-0062): plain http to a local host, the
  * dev token for `dev-patient`, synthetic data from the platform's seed. Only a debug build's environment builds one.
  *
- * What it serves today is what the contract has (task `0036`): the clinic's clock and the appointments. The rest of the
- * patient's side stays on the script until its capability is wired, so the composition root composes the two.
+ * What it serves today is what the contract has (task `0036`): the clinic's clock, the appointments, and search to
+ * booking. The rest of the patient's side stays on the script until its capability is wired, so the composition root
+ * composes the two.
  */
 internal class LocalPatientBackend(
     baseUrl: String,
@@ -51,9 +53,14 @@ internal class LocalPatientBackend(
             AccountSide.PATIENT,
         ),
     )
-    private val remoteAppointments = RemoteAppointments(contract, SpecialtyNames(contract))
+    private val specialties = SpecialtyNames(contract)
+
+    // One map of each place's zone for both: an hour shown from the directory is moved or booked on the same clock.
+    private val zones = PlaceZones()
+    private val remoteAppointments = RemoteAppointments(contract, specialties, zones)
 
     val clock: ClinicClock = ClinicWallClock()
     val appointments: AppointmentsSource = remoteAppointments
     val changes: AppointmentChanges = remoteAppointments
+    val directory: DirectoryGateway = RemoteDirectory(contract, specialties, zones)
 }

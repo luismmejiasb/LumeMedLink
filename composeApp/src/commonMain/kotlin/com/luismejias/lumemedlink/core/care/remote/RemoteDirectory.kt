@@ -3,7 +3,6 @@ package com.luismejias.lumemedlink.core.care.remote
 import com.luismejias.lumemedlink.core.care.BookingFailure
 import com.luismejias.lumemedlink.core.care.BookingResult
 import com.luismejias.lumemedlink.core.care.CareDoctor
-import com.luismejias.lumemedlink.core.care.CareFailure
 import com.luismejias.lumemedlink.core.care.CarePlace
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.ClosedDay
@@ -25,20 +24,18 @@ import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.datetime.TimeZone
 
 private val MIDNIGHT = ClockTime(0, 0)
 
 /**
  * Search to booking over the contract (task `0036`): the platform's catalogs, `searchDirectory`, a professional's free
- * hours and closed periods, the holidays, and `bookMyAppointment` with its key. Hours are on the clinic's wall clock
- * ([zone], ADR-0063). What the contract does not have stays honest: no nearby communes (the design's e5) and no
- * professional by id (backend request `0014`).
+ * hours and closed periods, the holidays, and `bookMyAppointment` with its key. Hours are on each place's wall clock
+ * ([zones], ADR-0063). What the contract does not have stays honest: no nearby communes (the design's e5).
  */
 internal class RemoteDirectory(
     private val contract: ContractClient,
     private val specialtyNames: SpecialtyNames,
-    private val zone: TimeZone = TimeZone.of(CLINIC_ZONE_UNTIL_CONTRACT),
+    private val zones: PlaceZones = PlaceZones(),
 ) : DirectoryGateway {
     private val communeCatalog = ReadOnce(emptyMap()) {
         val regions = contract.call(ContractOperations.LIST_REGIONS).associate { it.code to it.name }
@@ -76,16 +73,30 @@ internal class RemoteDirectory(
             contract.call(
                 ContractOperations.SEARCH_DIRECTORY,
                 SearchDirectoryDto(specialtyCode = specialtyCode, communeCode = communeCode),
-            ).flatMap { entry -> entry.inCommune(communeCode, commune, names) }
+            ).onEach { it.learnZones() }.flatMap { entry -> entry.inCommune(communeCode, commune, names) }
         }
 
     /** The design's e5 has no contract: no commune is offered as near. */
     override suspend fun nearbyCommunes(specialtyCode: String, communeCode: String): CareResult<List<NearbyCommune>> =
         CareResult.Ok(emptyList())
 
-    /** No professional by id until the contract has one (backend request `0014`): «Agendar de nuevo» says it cannot. */
-    override suspend fun doctor(doctorId: String): CareResult<DirectoryDoctor?> =
-        CareResult.Failed(CareFailure.Unavailable)
+    /**
+     * The professional by id (`getDirectoryProfessional`, since 0.130.0), at their first bookable place: «Agendar de
+     * nuevo». `null` when they are no longer in the directory, or take no bookings anywhere.
+     */
+    override suspend fun doctor(doctorId: String): CareResult<DirectoryDoctor?> = try {
+        val names = specialtyNames.all()
+        val entry = contract.call(
+            ContractOperations.GET_DIRECTORY_PROFESSIONAL,
+            path = mapOf("professionalId" to doctorId),
+        ).also { it.learnZones() }
+        val place = entry.locations.firstOrNull { it.bookable }
+        val commune = place?.communeCode?.let { communeCatalog.get()[it]?.name }.orEmpty()
+        CareResult.Ok(place?.let { entry.atPlace(it.id, it.name, commune, names) })
+    } catch (refused: AppErrorException) {
+        currentCoroutineContext().ensureActive()
+        if (refused.error == AppError.NotFound) CareResult.Ok(null) else CareResult.Failed(refused.error.careFailure())
+    }
 
     override suspend fun availability(
         doctorId: String,
@@ -98,7 +109,7 @@ internal class RemoteDirectory(
             path = mapOf("professionalId" to doctorId),
             query = window(locationId, from, to),
         ).map { slot ->
-            val wall = wallTimeOf(slot.startsAt, zone)
+            val wall = wallTimeOf(slot.startsAt, zones.of(locationId))
             Slot(wall.date, wall.time, minutesBetween(slot.startsAt, slot.endsAt))
         }
     }
@@ -117,7 +128,9 @@ internal class RemoteDirectory(
             ContractOperations.LIST_DIRECTORY_CLOSED_PERIODS,
             path = mapOf("professionalId" to doctorId),
             query = window(locationId, from, to),
-        ).flatMap { daysTouched(it.startsAt, it.endsAt, zone) }.map { ClosedDay(it, ClosedKind.NO_ATTENTION) }
+        ).flatMap {
+            daysTouched(it.startsAt, it.endsAt, zones.of(locationId))
+        }.map { ClosedDay(it, ClosedKind.NO_ATTENTION) }
         val holidays = contract.call(
             ContractOperations.LIST_HOLIDAYS,
             query = mapOf("from" to from.iso(), "to" to to.iso()),
@@ -126,7 +139,7 @@ internal class RemoteDirectory(
     }
 
     override suspend fun book(doctorId: String, locationId: String, slot: Slot, clientId: String): BookingResult = try {
-        val starts = instantOf(slot.date, slot.start, zone)
+        val starts = instantOf(slot.date, slot.start, zones.of(locationId))
         val booked = contract.call(
             ContractOperations.BOOK_MY_APPOINTMENT,
             BookPatientAppointmentDto(
@@ -137,7 +150,8 @@ internal class RemoteDirectory(
                 clientId = clientId,
             ),
         )
-        BookingResult.Booked(booked.toPatientAppointment(zone, specialtyNames.all()))
+        zones.learn(booked.locationId, booked.timeZone)
+        BookingResult.Booked(booked.toPatientAppointment(zones.fallback, specialtyNames.all()))
     } catch (refused: AppErrorException) {
         currentCoroutineContext().ensureActive()
         BookingResult.Failed(refused.error.bookingFailure())
@@ -146,28 +160,35 @@ internal class RemoteDirectory(
     /** [from] through [to], both included, as the contract's window: from the first day's start to the next day's. */
     private fun window(locationId: String, from: CalendarDate, to: CalendarDate): Map<String, String> = mapOf(
         "locationId" to locationId,
-        "from" to instantOf(from, MIDNIGHT, zone),
-        "to" to instantOf(to.plusDays(1), MIDNIGHT, zone),
+        "from" to instantOf(from, MIDNIGHT, zones.of(locationId)),
+        "to" to instantOf(to.plusDays(1), MIDNIGHT, zones.of(locationId)),
     )
 
+    private fun DirectoryEntryDto.learnZones() = locations.forEach { zones.learn(it.id, it.timeZone) }
+
     private fun DirectoryEntryDto.inCommune(code: String, commune: String, names: Map<String, String>) =
-        locations.filter { it.bookable && it.communeCode == code }.map { place ->
-            DirectoryDoctor(
-                doctor = CareDoctor(
-                    id = id,
-                    displayName = listOfNotNull(professionalTitle, givenName, familyName).joinToString(" "),
-                    specialty = specialtyCode?.let(names::get).orEmpty(),
-                ),
-                locationId = place.id,
-                commune = commune,
-                place = CarePlace(address = "", detail = place.name),
-                rating = rating?.average,
-                ratingCount = rating?.count ?: 0,
-                // No contract (request 0008 §4): the design's attentions and next hour are not published.
-                attentions = 0,
-                nextSlot = null,
-            )
-        }
+        locations.filter { it.bookable && it.communeCode == code }.map { atPlace(it.id, it.name, commune, names) }
+
+    private fun DirectoryEntryDto.atPlace(
+        placeId: String,
+        placeName: String,
+        commune: String,
+        names: Map<String, String>,
+    ) = DirectoryDoctor(
+        doctor = CareDoctor(
+            id = id,
+            displayName = listOfNotNull(professionalTitle, givenName, familyName).joinToString(" "),
+            specialty = specialtyCode?.let(names::get).orEmpty(),
+        ),
+        locationId = placeId,
+        commune = commune,
+        place = CarePlace(address = "", detail = placeName),
+        rating = rating?.average,
+        ratingCount = rating?.count ?: 0,
+        // No contract (request 0008 §4): the design's attentions and next hour are not published.
+        attentions = 0,
+        nextSlot = null,
+    )
 }
 
 /** The contract's 409s on a booking, as the design names them. */

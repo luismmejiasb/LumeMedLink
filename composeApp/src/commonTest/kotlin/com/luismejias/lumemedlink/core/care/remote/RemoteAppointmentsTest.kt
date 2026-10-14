@@ -47,6 +47,7 @@ private fun appointmentJson(
     status: String,
     specialtyCode: String? = "MEDICINA_FAMILIAR",
     professionalName: String? = "Dra. Ana Sintética",
+    locationId: String = "null",
 ): String {
     fun q(value: String?) = value?.let { "\"$it\"" } ?: "null"
     return """{"id":"$id","clinicName":"Centro Sintético","professionalName":${q(professionalName)},
@@ -56,7 +57,8 @@ private fun appointmentJson(
         "regionCode":null,"postalCode":null},
         "cancelCutoffHours":24,"closedAt":null,"cancellationReason":null,"cancelledBy":null,"cancelledAt":null,
         "rescheduledFromId":null,"rescheduledBy":null,"rescheduleReason":null,"requestExpiresAt":null,
-        "requestedBy":null,"confirmedBy":null,"confirmedAt":null}"""
+        "requestedBy":null,"confirmedBy":null,"confirmedAt":null,"locationId":$locationId,
+        "timeZone":"America/Santiago"}"""
 }
 
 private class Backend(
@@ -85,7 +87,7 @@ private class Backend(
         val contract = ContractClient(
             lumeHttpClient("https://api.test.lume", engine, Silent(), securityEvents = NO_SECURITY_EVENTS),
         )
-        return RemoteAppointments(contract, SpecialtyNames(contract), SANTIAGO)
+        return RemoteAppointments(contract, SpecialtyNames(contract), PlaceZones(SANTIAGO))
     }
 }
 

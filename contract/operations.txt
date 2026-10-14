@@ -27,3 +27,4 @@ listSpecialties                 directory
 getMyRole                       access
 listCommunes                    directory
 listRegions                     directory
+getDirectoryProfessional        directory

@@ -2,7 +2,6 @@ package com.luismejias.lumemedlink.core.care.remote
 
 import com.luismejias.lumemedlink.core.care.BookingFailure
 import com.luismejias.lumemedlink.core.care.BookingResult
-import com.luismejias.lumemedlink.core.care.CareFailure
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.ClosedDay
 import com.luismejias.lumemedlink.core.care.ClosedKind
@@ -36,8 +35,10 @@ private class Mute : NetworkLogSink {
 /** A professional of the directory, synthetic (§9), with a bookable place in 13101 and one closed in 13114. */
 private const val ENTRY = """{"id":"pro-1","givenName":"Ana","familyName":"Sintética","specialtyCode":"MEDICINA_FAMILIAR",
     "professionalTitle":"Dra.","rating":{"average":4.5,"count":12},
-    "locations":[{"id":"loc-1","name":"Sede Norte","communeCode":"13101","regionCode":"13","bookable":true},
-                 {"id":"loc-2","name":"Sede Sur","communeCode":"13114","regionCode":"13","bookable":false}]}"""
+    "locations":[{"id":"loc-1","name":"Sede Norte","communeCode":"13101","regionCode":"13","bookable":true,
+                  "timeZone":"America/Santiago"},
+                 {"id":"loc-2","name":"Sede Sur","communeCode":"13114","regionCode":"13","bookable":false,
+                  "timeZone":"America/Santiago"}]}"""
 
 private const val SPECIALTIES = """[{"code":"MEDICINA_FAMILIAR","name":"Medicina Familiar","profession":"MEDICINE",
     "nidCode":null,"isSuppressed":false},{"code":"ANTIGUA","name":"Antigua","profession":"MEDICINE","nidCode":null,
@@ -60,7 +61,7 @@ private class Directory(private val routes: Map<String, Pair<HttpStatusCode, Str
         val contract = ContractClient(
             lumeHttpClient("https://api.test.lume", engine, Mute(), securityEvents = NO_SECURITY_EVENTS),
         )
-        return RemoteDirectory(contract, SpecialtyNames(contract), TimeZone.of("America/Santiago"))
+        return RemoteDirectory(contract, SpecialtyNames(contract), PlaceZones(TimeZone.of("America/Santiago")))
     }
 }
 
@@ -180,9 +181,20 @@ class RemoteDirectoryTest {
     }
 
     @Test
-    fun whatTheContractDoesNotHaveIsSaidNotInvented() = runTest {
-        val gateway = Directory(CATALOGS).gateway()
-        assertEquals(CareResult.Ok(emptyList()), gateway.nearbyCommunes("MEDICINA_FAMILIAR", "13101"))
-        assertEquals(CareResult.Failed(CareFailure.Unavailable), gateway.doctor("pro-1"))
+    fun nearbyCommunesHaveNoContractAndAreNotInvented() = runTest {
+        assertEquals(
+            CareResult.Ok(emptyList()),
+            Directory(CATALOGS).gateway().nearbyCommunes("MEDICINA_FAMILIAR", "13101"),
+        )
+    }
+
+    @Test
+    fun aProfessionalByIdIsAtTheirFirstBookablePlaceAndGoneIsNull() = runTest {
+        val found = Directory(
+            CATALOGS + mapOf("GET /v1/directory/professionals/pro-1" to (HttpStatusCode.OK to ENTRY)),
+        ).gateway().doctor("pro-1")
+        val doctor = assertIs<CareResult.Ok<DirectoryDoctor?>>(found).value
+        assertEquals("loc-1" to "Santiago", doctor?.locationId to doctor?.commune)
+        assertEquals(CareResult.Ok(null), Directory(CATALOGS).gateway().doctor("pro-gone"))
     }
 }
