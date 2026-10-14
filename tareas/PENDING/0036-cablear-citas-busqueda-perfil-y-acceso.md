@@ -79,3 +79,26 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
 - La corrida contra el backend local: listar, cancelar, reagendar, buscar, reservar y editar el perfil con
   `dev-patient`.
 - En el device: lo mismo, con `DEV_SERVER_ON_NETWORK` del backend.
+
+## Avance 2026-10-14
+
+- **Pasos 1 a 4, hechos:**
+  - `21c8264`: ADRs y pedidos.
+  - `0c53865`: `FeatureGate` y las pestañas de los dos lados.
+  - `b0be877`: una interfaz por capacidad.
+  - `33df731`: el cliente generado, con 20 operaciones, `ContractClient` y `check-contract.sh` con cuatro cebos.
+  - El reporter de eventos de seguridad ya usa el cliente generado: su DTO y su vocabulario escritos a mano
+    desaparecieron.
+- **Falta el gate dentro de cada pantalla** (cambios de cita, reserva, valorar, cambio de contacto, avisos; solicitudes
+  y compartir contacto del médico). Se hace al cablear cada área, para no tocar esas pantallas dos veces.
+- **Bloquea el paso 6, decisión del autor:** el stack sólo acepta `https`, y el backend local corre en
+  `http://localhost:3000`.
+- **El backend respondió los pedidos:**
+  - `0011` lo construye ya;
+  - `0010` lo resuelve sin auth casero: el IdP guarda la clave, el TOTP y el freno, y el backend sólo convierte el RUT
+    con un hash con llave;
+  - `0012` va después del `0011`.
+- **El autor decidió en la sesión del backend el autorregistro con selfie** (como Alemana Go). Reabre T5 y choca con
+  el punto 2 de la ADR-0058 de este repo. El backend lo dejó como tarea con preguntas: proveedor de identidad, revisión
+  legal y menores. Mientras no exista, la cuenta sigue naciendo del código de la clínica. Cuando se construya, se
+  enmiendan la ADR-0058 y la §1.2 de la constitución.
