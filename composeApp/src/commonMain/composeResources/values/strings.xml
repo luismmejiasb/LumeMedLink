@@ -99,7 +99,7 @@
 
     <!-- 1c · Quick sign-in -->
     <string name="quick_title">Ingresa más rápido</string>
-    <string name="quick_body">La próxima vez usa Face ID o tu huella en vez de la contraseña. Puedes cambiarlo en Ajustes.</string>
+    <string name="quick_body">La próxima vez entras con Face ID o tu huella en vez de la contraseña.</string>
     <string name="quick_privacy">Tu rostro o huella nunca salen del teléfono. La app solo recibe la confirmación.</string>
     <string name="quick_activate">Activar ingreso rápido</string>
     <string name="quick_activating">Activando…</string>

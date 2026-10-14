@@ -90,7 +90,7 @@
 
     <!-- 1c · Quick sign-in -->
     <string name="quick_title">Sign in faster</string>
-    <string name="quick_body">Next time, use Face ID or your fingerprint instead of your password. You can change this in Settings.</string>
+    <string name="quick_body">Next time, you sign in with Face ID or your fingerprint instead of your password.</string>
     <string name="quick_privacy">Your face or fingerprint never leaves the phone. The app only receives the confirmation.</string>
     <string name="quick_activate">Turn on quick sign-in</string>
     <string name="quick_activating">Turning on…</string>
