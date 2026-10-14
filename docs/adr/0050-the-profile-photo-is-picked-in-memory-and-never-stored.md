@@ -1,7 +1,8 @@
 # ADR-0050 — The profile photo is picked in memory and never stored
 
 - **Status**: Accepted (2026-10-11) — the author's decision of this date, for k1–k4: build the photo flow in full as a
-  mock, in memory.
+  mock, in memory. **Amended by ADR-0064 (2026-10-14)**: the photo goes to the platform through the API once the
+  contract has it (backend request `0015`); §2's «never uploaded» ends then.
 - **Related**: ADR-0007, ADR-0046 (deviation 6), ADR-0022 (at-rest bytes), constitution §8.5 and §8.13; task `0030`.
 
 ## Context
