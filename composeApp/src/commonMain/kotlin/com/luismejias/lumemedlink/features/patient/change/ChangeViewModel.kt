@@ -2,12 +2,19 @@ package com.luismejias.lumemedlink.features.patient.change
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.luismejias.lumemedlink.core.care.AppointmentChanges
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
+import com.luismejias.lumemedlink.core.care.AppointmentsSource
 import com.luismejias.lumemedlink.core.care.CareResult
+import com.luismejias.lumemedlink.core.care.ClinicClock
+import com.luismejias.lumemedlink.core.care.DirectoryAvailability
 import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
+import com.luismejias.lumemedlink.core.care.DirectorySearch
+import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
@@ -34,15 +41,27 @@ internal sealed interface ChangeDone {
     data object Cancelled : ChangeDone
 }
 
+/** What an appointment's flow reads and writes, each capability on its own (interface segregation, task 0036). */
+internal class ChangeSources(
+    val clock: ClinicClock,
+    val appointments: AppointmentsSource,
+    val changes: AppointmentChanges,
+    val doctors: MyDoctorsSource,
+    val ratings: RatingsGateway,
+    val availability: DirectoryAvailability,
+    val directory: DirectorySearch,
+)
+
+/** Every source of the flow from what implements all of them: the script, for the stand-in and the tests. */
+internal fun changeSourcesOf(care: PatientCareGateway, directory: DirectoryGateway): ChangeSources =
+    ChangeSources(care, care, care, care, care, directory, directory)
+
 /**
  * One appointment's flow — its detail (c1–c3) and «Tu próxima cita» (f1–f4) — reached from Inicio and from Mis citas,
  * so the tab host owns one (ADR-0045: a flow's state lives in its own owner, not in a screen).
  */
-internal class ChangeViewModel(
-    private val care: PatientCareGateway,
-    private val directory: DirectoryGateway,
-    logEvent: (AnalyticsEvent) -> Unit = {},
-) : ViewModel() {
+internal class ChangeViewModel(private val sources: ChangeSources, logEvent: (AnalyticsEvent) -> Unit = {}) :
+    ViewModel() {
     private val shownSheet = MutableStateFlow<ChangeSheet?>(null)
     val sheet: StateFlow<ChangeSheet?> = shownSheet.asStateFlow()
 
@@ -53,11 +72,15 @@ internal class ChangeViewModel(
     private val finished = MutableStateFlow<ChangeDone?>(null)
     val done: StateFlow<ChangeDone?> = finished.asStateFlow()
 
-    val reschedule = RescheduleModel(care, directory, logEvent) {
-        standInPatientCare().let { stand -> RescheduleModel(stand, stand) }
+    val reschedule = with(sources) {
+        RescheduleModel(clock, appointments, changes, availability, logEvent) {
+            standInPatientCare().let { stand -> RescheduleModel(stand, stand, stand, stand) }
+        }
     }
-    val cancel = CancelModel(care, logEvent)
-    val detail = DetailModel(care) { DetailModel(standInPatientCare()) }
+    val cancel = CancelModel(sources.changes, logEvent)
+    val detail = DetailModel(sources.clock, sources.doctors, sources.ratings) {
+        standInPatientCare().let { stand -> DetailModel(stand, stand, stand) }
+    }
 
     /** Runs a step in this ViewModel's scope — a screen never owns the work it starts. */
     fun launch(step: suspend ChangeViewModel.() -> Unit) {
@@ -70,9 +93,10 @@ internal class ChangeViewModel(
 
     /** f2. The practice's phone is read only to offer it once the window has closed. */
     suspend fun openOptions(appointment: PatientAppointment) {
-        val phone = (care.myDoctors() as? CareResult.Ok)?.value
+        val phone = (sources.doctors.myDoctors() as? CareResult.Ok)?.value
             ?.firstOrNull { it.doctor.id == appointment.doctor.id }?.phone
-        shownSheet.value = ChangeSheet.Options(changeOptionsFor(appointment, care.today(), care.now(), phone))
+        val clock = sources.clock
+        shownSheet.value = ChangeSheet.Options(changeOptionsFor(appointment, clock.today(), clock.now(), phone))
     }
 
     fun dismissSheet() {
@@ -117,7 +141,7 @@ internal class ChangeViewModel(
      * the gateway lists them, or nothing opens: a link grants navigation, never access. `false` when it is not there.
      */
     suspend fun openDetailFor(ref: OpaqueRef): Boolean {
-        val mine = (care.appointments() as? CareResult.Ok)?.value ?: return false
+        val mine = (sources.appointments.appointments() as? CareResult.Ok)?.value ?: return false
         val appointment = mine.firstOrNull { it.id == ref.value } ?: return false
         openDetail(appointment)
         return true
@@ -142,7 +166,7 @@ internal class ChangeViewModel(
 
     /** c3's «Agendar de nuevo»: the same doctor as the directory lists them today, or null when they are not listed. */
     suspend fun doctorToBookAgain(appointment: PatientAppointment): DirectoryDoctor? =
-        (directory.doctor(appointment.doctor.id) as? CareResult.Ok)?.value
+        (sources.directory.doctor(appointment.doctor.id) as? CareResult.Ok)?.value
 
     private fun push(route: ChangeRoute) {
         stack.value = stack.value.filterNot { it == route } + route

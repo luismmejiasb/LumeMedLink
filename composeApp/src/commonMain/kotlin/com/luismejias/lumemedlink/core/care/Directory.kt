@@ -59,7 +59,8 @@ internal sealed interface BookingResult {
     data class Failed(val failure: BookingFailure) : BookingResult
 }
 
-internal interface DirectoryGateway {
+/** Finding a professional: by specialty and commune, and one by id. */
+internal interface DirectorySearch {
     suspend fun specialties(): CareResult<List<Specialty>>
 
     /** Only communes where the specialty has professionals ("Solo se listan comunas con médicos…", e3). */
@@ -69,6 +70,12 @@ internal interface DirectoryGateway {
 
     suspend fun nearbyCommunes(specialtyCode: String, communeCode: String): CareResult<List<NearbyCommune>>
 
+    /** A doctor as the directory lists them, for c3's «Agendar de nuevo»; null when they no longer take bookings. */
+    suspend fun doctor(doctorId: String): CareResult<DirectoryDoctor?>
+}
+
+/** When a professional attends: free hours and closed days. */
+internal interface DirectoryAvailability {
     /** Free hours from [from] to [to], both included. */
     suspend fun availability(
         doctorId: String,
@@ -77,9 +84,6 @@ internal interface DirectoryGateway {
         to: CalendarDate,
     ): CareResult<List<Slot>>
 
-    /** [clientId] names THIS booking: a retry with it answers the same appointment, never a second one. */
-    suspend fun book(doctorId: String, locationId: String, slot: Slot, clientId: String): BookingResult
-
     /** The days between [from] and [to] the doctor does not attend at [locationId], and why (f3). */
     suspend fun closedDays(
         doctorId: String,
@@ -87,7 +91,16 @@ internal interface DirectoryGateway {
         from: CalendarDate,
         to: CalendarDate,
     ): CareResult<List<ClosedDay>>
-
-    /** A doctor as the directory lists them, for c3's «Agendar de nuevo»; null when they no longer take bookings. */
-    suspend fun doctor(doctorId: String): CareResult<DirectoryDoctor?>
 }
+
+/** Booking an hour. */
+internal interface BookingGateway {
+    /** [clientId] names THIS booking: a retry with it answers the same appointment, never a second one. */
+    suspend fun book(doctorId: String, locationId: String, slot: Slot, clientId: String): BookingResult
+}
+
+/** The whole directory at once, for what implements all of it: the script and the composition root (task 0036). */
+internal interface DirectoryGateway :
+    DirectorySearch,
+    DirectoryAvailability,
+    BookingGateway

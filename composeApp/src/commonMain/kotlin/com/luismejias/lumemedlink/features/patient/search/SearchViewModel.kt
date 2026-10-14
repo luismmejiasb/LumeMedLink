@@ -2,10 +2,15 @@ package com.luismejias.lumemedlink.features.patient.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.luismejias.lumemedlink.core.care.AppointmentsSource
+import com.luismejias.lumemedlink.core.care.BookingGateway
 import com.luismejias.lumemedlink.core.care.CareResult
+import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.Commune
+import com.luismejias.lumemedlink.core.care.DirectoryAvailability
 import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
+import com.luismejias.lumemedlink.core.care.DirectorySearch
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.care.Specialty
@@ -16,15 +21,25 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/** What Buscar reads and writes, each capability on its own (interface segregation, task 0036). */
+internal class SearchSources(
+    val clock: ClinicClock,
+    val appointments: AppointmentsSource,
+    val directory: DirectorySearch,
+    val availability: DirectoryAvailability,
+    val booking: BookingGateway,
+)
+
+/** Every source of Buscar from what implements all of them: the script, for the stand-in and the tests. */
+internal fun searchSourcesOf(care: PatientCareGateway, directory: DirectoryGateway): SearchSources =
+    SearchSources(care, care, directory, directory, directory)
+
 /**
  * Buscar's owner (ADR-0045): the tab's stack and every screen's model on it, from the search (p2) to the
  * booking (a2). Each step is a suspend function a test can call; the screens launch them.
  */
-internal class SearchViewModel(
-    private val care: PatientCareGateway,
-    private val directory: DirectoryGateway,
-    logEvent: (AnalyticsEvent) -> Unit = {},
-) : ViewModel() {
+internal class SearchViewModel(sources: SearchSources, logEvent: (AnalyticsEvent) -> Unit = {}) : ViewModel() {
+    private val directory = sources.directory
     val flow = SearchFlow()
 
     private val chosen = MutableStateFlow(SearchCriteria())
@@ -40,13 +55,13 @@ internal class SearchViewModel(
             chosen.value.specialty?.let { standInPatientCare().communes(it.code) } ?: CareResult.Ok(emptyList())
         },
     ) { listOf(it.name) }
-    val results = ResultsModel(directory, care::today) {
+    val results = ResultsModel(directory, sources.clock::today) {
         standInPatientCare().let { stand -> ResultsModel(stand, stand::today) }
     }
-    val schedule = ScheduleModel(directory, care::appointments, care::today) {
+    val schedule = ScheduleModel(sources.availability, sources.appointments::appointments, sources.clock::today) {
         standInPatientCare().let { stand -> ScheduleModel(stand, stand::appointments, stand::today) }
     }
-    val booking = BookingModel(directory, logEvent)
+    val booking = BookingModel(sources.booking, logEvent)
 
     /** Runs a step of the flow in this ViewModel's scope — a screen never owns the work it starts. */
     fun launch(step: suspend SearchViewModel.() -> Unit) {

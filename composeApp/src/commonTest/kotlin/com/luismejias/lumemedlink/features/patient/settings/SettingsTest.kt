@@ -29,8 +29,11 @@ internal fun settingsModel(
     care: PatientCareGateway,
     store: MemorySecureStore = MemorySecureStore(),
     licenses: String = "Alpha\tMIT License\nBeta\tApache License 2.0\n",
-): SettingsViewModel =
-    SettingsViewModel(care, TelemetryConsent(store, RecordedTelemetry()), Appearance(store)) { licenses }
+): SettingsViewModel = SettingsViewModel(
+    care.settingsSources(),
+    TelemetryConsent(store, RecordedTelemetry()),
+    Appearance(store),
+) { licenses }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsTest {

@@ -5,6 +5,7 @@ import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.links.DeepLinkEntry
 import com.luismejias.lumemedlink.features.patient.change.ChangeRoute
 import com.luismejias.lumemedlink.features.patient.change.ChangeViewModel
+import com.luismejias.lumemedlink.features.patient.change.changeSourcesOf
 import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 import com.luismejias.lumemedlink.features.patient.tabs.PatientTab
 import com.luismejias.lumemedlink.features.patient.tabs.PatientTabsViewModel
@@ -27,7 +28,7 @@ import kotlin.test.assertTrue
 class PatientLinksTest {
     private val care = ScriptedPatientCare(latency = {})
     private val tabs = PatientTabsViewModel()
-    private val change = ChangeViewModel(care, care)
+    private val change = ChangeViewModel(changeSourcesOf(care, care))
     private val rate = RateViewModel(care)
 
     @BeforeTest

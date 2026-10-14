@@ -12,6 +12,7 @@ import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsView
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeContent
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
+import com.luismejias.lumemedlink.features.patient.home.homeSources
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
 import com.luismejias.lumemedlink.features.patient.parts.cancelled
 import com.luismejias.lumemedlink.features.patient.parts.past
@@ -47,7 +48,7 @@ class PatientTabsTest {
 
     @Test
     fun inicioLeadsWithTheConfirmedAppointmentAndListsTheRequestApart() = runTest {
-        val home = HomeViewModel(design).also { it.load() }
+        val home = HomeViewModel(design.homeSources()).also { it.load() }
         val content = assertIs<CareLoad.Ready<HomeContent>>(home.state.value).content
         assertEquals("p-rendon", content.next?.doctor?.id)
         assertEquals(listOf("p-pinto"), content.waiting.map { it.doctor.id })
@@ -57,7 +58,8 @@ class PatientTabsTest {
 
     @Test
     fun inicioWithNothingBookedHasNoHeroCard() = runTest {
-        val home = HomeViewModel(ScriptedPatientCare(world = CareWorld.EMPTY, latency = {})).also { it.load() }
+        val empty = ScriptedPatientCare(world = CareWorld.EMPTY, latency = {})
+        val home = HomeViewModel(empty.homeSources()).also { it.load() }
         val content = (home.state.value as CareLoad.Ready).content
         assertNull(content.next)
         assertTrue(content.waiting.isEmpty())
@@ -67,8 +69,9 @@ class PatientTabsTest {
     @Test
     fun offlineIsTheStateNotAnEmptyScreen() = runTest {
         val offline = ScriptedPatientCare(failure = CareFailure.Offline, latency = {})
-        assertEquals(CareLoad.Failed(CareFailure.Offline), HomeViewModel(offline).also { it.load() }.state.value)
-        val appointments = AppointmentsViewModel(offline).also { it.load() }
+        val home = HomeViewModel(offline.homeSources()).also { it.load() }
+        assertEquals(CareLoad.Failed(CareFailure.Offline), home.state.value)
+        val appointments = AppointmentsViewModel(offline, offline).also { it.load() }
         assertEquals(CareLoad.Failed(CareFailure.Offline), appointments.state.value)
         assertEquals(CareLoad.Failed(CareFailure.Offline), MyDoctorsViewModel(offline).also { it.load() }.state.value)
         assertEquals(
@@ -81,7 +84,7 @@ class PatientTabsTest {
 
     @Test
     fun theBadgeCountsOnlyRequestsStillWaiting() = runTest {
-        val content = (AppointmentsViewModel(design).also { it.load() }.state.value as CareLoad.Ready).content
+        val content = (AppointmentsViewModel(design, design).also { it.load() }.state.value as CareLoad.Ready).content
         assertEquals(1, content.awaiting)
         assertEquals(2, content.upcoming.size)
         assertEquals(listOf(AppointmentStatus.COMPLETED, AppointmentStatus.COMPLETED), content.past.map { it.status })

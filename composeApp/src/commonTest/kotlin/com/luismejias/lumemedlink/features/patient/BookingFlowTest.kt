@@ -13,6 +13,7 @@ import com.luismejias.lumemedlink.features.patient.search.SearchRoute
 import com.luismejias.lumemedlink.features.patient.search.SearchSort
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
 import com.luismejias.lumemedlink.features.patient.search.calendarMonth
+import com.luismejias.lumemedlink.features.patient.search.searchSourcesOf
 import com.luismejias.lumemedlink.shared.ClockTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,7 +34,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookingFlowTest {
     private val script = ScriptedPatientCare(latency = {})
-    private val model = SearchViewModel(script, script)
+    private val model = SearchViewModel(searchSourcesOf(script, script))
 
     @BeforeTest
     fun mainDispatcher() = Dispatchers.setMain(StandardTestDispatcher())

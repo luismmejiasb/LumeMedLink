@@ -18,6 +18,7 @@ import com.luismejias.lumemedlink.features.patient.change.ChangeViewModel
 import com.luismejias.lumemedlink.features.patient.change.MoveOutcome
 import com.luismejias.lumemedlink.features.patient.change.MoveTile
 import com.luismejias.lumemedlink.features.patient.change.changeOptionsFor
+import com.luismejias.lumemedlink.features.patient.change.changeSourcesOf
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
 import kotlinx.coroutines.CompletableDeferred
@@ -43,7 +44,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChangeFlowTest {
     private val script = ScriptedPatientCare(latency = {})
-    private val model = ChangeViewModel(script, script)
+    private val model = ChangeViewModel(changeSourcesOf(script, script))
 
     @BeforeTest
     fun mainDispatcher() = Dispatchers.setMain(StandardTestDispatcher())
@@ -147,7 +148,7 @@ class ChangeFlowTest {
     @Test
     fun offlineACancelIsRefusedNowAndNeverQueued() = runTest {
         val offline = ScriptedPatientCare(failure = CareFailure.Offline, latency = {})
-        val flow = ChangeViewModel(offline, offline)
+        val flow = ChangeViewModel(changeSourcesOf(offline, offline))
         flow.cancelAppointment(appointment(RENDON))
         flow.cancel.submit()
         assertEquals(CancelOutcome.Refused(ChangeFailure.Offline), flow.cancel.state.value?.outcome)
@@ -208,7 +209,7 @@ class ChangeFlowTest {
                 }
             },
         )
-        val flow = ChangeViewModel(slow, slow)
+        val flow = ChangeViewModel(changeSourcesOf(slow, slow))
         val rendon = appointment("a-rendon-0916")
         val pinto = appointment("a-pinto-0921")
 

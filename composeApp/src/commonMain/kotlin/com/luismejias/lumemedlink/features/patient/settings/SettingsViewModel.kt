@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.appearance.LanguageChoice
 import com.luismejias.lumemedlink.core.appearance.ThemeChoice
+import com.luismejias.lumemedlink.core.care.AppointmentsSource
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
+import com.luismejias.lumemedlink.core.care.PatientProfileSource
+import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.StandIn
@@ -43,9 +46,19 @@ internal data class SettingsContent(
     override fun toString(): String = "SettingsContent(redacted)"
 }
 
+/** What Configuración reads, each capability on its own (interface segregation, task 0036). */
+internal class SettingsSources(
+    val profile: PatientProfileSource,
+    val appointments: AppointmentsSource,
+    val ratings: RatingsGateway,
+)
+
+/** Every source of Configuración from one implementation of all of them: the script, for the stand-in and the tests. */
+internal fun PatientCareGateway.settingsSources(): SettingsSources = SettingsSources(this, this, this)
+
 /** Configuración's owner (ADR-0045). */
 internal class SettingsViewModel(
-    private val care: PatientCareGateway,
+    private val sources: SettingsSources,
     private val consent: TelemetryConsent,
     private val appearance: Appearance,
     /** The generated licences file, read from the app's resources. */
@@ -124,15 +137,15 @@ internal class SettingsViewModel(
     }
 
     suspend fun load() {
-        standInContent.fill { read(standInPatientCare()) }
+        standInContent.fill { read(standInPatientCare().settingsSources()) }
         current.markLoading()
-        current.value = read(care)
+        current.value = read(sources)
     }
 
-    private suspend fun read(care: PatientCareGateway): CareLoad<SettingsContent> {
-        val profile = care.profile()
-        val policy = care.policy()
-        val ratings = care.sentRatingCount()
+    private suspend fun read(sources: SettingsSources): CareLoad<SettingsContent> {
+        val profile = sources.profile.profile()
+        val policy = sources.appointments.policy()
+        val ratings = sources.ratings.sentRatingCount()
         return allOf(profile, policy, ratings) {
             SettingsContent(
                 profile = profile.ok,

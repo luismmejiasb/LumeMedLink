@@ -1,11 +1,13 @@
 package com.luismejias.lumemedlink.features.patient.search
 
 import com.luismejias.lumemedlink.core.care.BookingFailure
+import com.luismejias.lumemedlink.core.care.BookingGateway
 import com.luismejias.lumemedlink.core.care.BookingResult
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.Commune
+import com.luismejias.lumemedlink.core.care.DirectoryAvailability
 import com.luismejias.lumemedlink.core.care.DirectoryDoctor
-import com.luismejias.lumemedlink.core.care.DirectoryGateway
+import com.luismejias.lumemedlink.core.care.DirectorySearch
 import com.luismejias.lumemedlink.core.care.NearbyCommune
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.Slot
@@ -128,7 +130,7 @@ internal data class ResultsContent(
 }
 
 internal class ResultsModel(
-    private val directory: DirectoryGateway,
+    private val directory: DirectorySearch,
     private val today: () -> CalendarDate,
     private val standInModel: (() -> ResultsModel)? = null,
 ) {
@@ -266,7 +268,7 @@ internal data class ScheduleContent(
 }
 
 internal class ScheduleModel(
-    private val directory: DirectoryGateway,
+    private val directory: DirectoryAvailability,
     private val ownAppointments: suspend () -> CareResult<List<PatientAppointment>>,
     private val today: () -> CalendarDate,
     private val standInModel: (() -> ScheduleModel)? = null,
@@ -344,7 +346,7 @@ internal data class BookingState(val doctor: DirectoryDoctor, val slot: Slot, va
 
 @OptIn(ExperimentalUuidApi::class)
 internal class BookingModel(
-    private val directory: DirectoryGateway,
+    private val directory: BookingGateway,
     private val logEvent: (AnalyticsEvent) -> Unit = {},
 ) {
     private val current = MutableStateFlow<BookingState?>(null)

@@ -2,8 +2,9 @@ package com.luismejias.lumemedlink.features.patient.appointments
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.luismejias.lumemedlink.core.care.AppointmentsSource
+import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.PatientAppointment
-import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.StandIn
@@ -39,7 +40,8 @@ internal data class AppointmentsContent(
 }
 
 /** Mis citas' owner (ADR-0045). Its count also feeds the tab bar's badge. */
-internal class AppointmentsViewModel(private val care: PatientCareGateway) : ViewModel() {
+internal class AppointmentsViewModel(private val clock: ClinicClock, private val appointments: AppointmentsSource) :
+    ViewModel() {
     private val current = MutableStateFlow<CareLoad<AppointmentsContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<AppointmentsContent>> = current.asStateFlow()
 
@@ -63,16 +65,16 @@ internal class AppointmentsViewModel(private val care: PatientCareGateway) : Vie
     }
 
     suspend fun load() {
-        standInContent.fill { read(standInPatientCare()) }
+        standInContent.fill { standInPatientCare().let { read(it, it) } }
         current.markLoading()
-        current.value = read(care)
+        current.value = read(clock, appointments)
     }
 
-    private suspend fun read(care: PatientCareGateway): CareLoad<AppointmentsContent> {
-        val appointments = care.appointments()
-        val policy = care.policy()
+    private suspend fun read(clock: ClinicClock, source: AppointmentsSource): CareLoad<AppointmentsContent> {
+        val appointments = source.appointments()
+        val policy = source.policy()
         return allOf(appointments, policy) {
-            val today = care.today()
+            val today = clock.today()
             AppointmentsContent(
                 today = today,
                 upcoming = appointments.ok.upcoming(today),

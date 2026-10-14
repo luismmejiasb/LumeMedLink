@@ -3,7 +3,7 @@ package com.luismejias.lumemedlink.features.patient.doctors
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.MyDoctor
-import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.StandIn
@@ -32,7 +32,7 @@ internal data class MyDoctorsContent(val all: List<MyDoctor>, val query: String 
 }
 
 /** Mis médicos' owner (ADR-0045). The filter runs here, over what was read — no request per keystroke. */
-internal class MyDoctorsViewModel(private val care: PatientCareGateway) : ViewModel() {
+internal class MyDoctorsViewModel(private val care: MyDoctorsSource) : ViewModel() {
     private val current = MutableStateFlow<CareLoad<MyDoctorsContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<MyDoctorsContent>> = current.asStateFlow()
 

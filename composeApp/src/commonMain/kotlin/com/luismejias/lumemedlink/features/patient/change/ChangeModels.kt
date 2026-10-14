@@ -1,15 +1,19 @@
 package com.luismejias.lumemedlink.features.patient.change
 
+import com.luismejias.lumemedlink.core.care.AppointmentChanges
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
+import com.luismejias.lumemedlink.core.care.AppointmentsSource
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.ChangeFailure
 import com.luismejias.lumemedlink.core.care.ChangeReason
 import com.luismejias.lumemedlink.core.care.ChangeResult
+import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.ClosedDay
 import com.luismejias.lumemedlink.core.care.ClosedKind
-import com.luismejias.lumemedlink.core.care.DirectoryGateway
+import com.luismejias.lumemedlink.core.care.DirectoryAvailability
+import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.PatientAppointment
-import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.care.SentRating
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.screen.CareLoad
@@ -132,8 +136,10 @@ internal data class RescheduleContent(
 
 @OptIn(ExperimentalUuidApi::class)
 internal class RescheduleModel(
-    private val care: PatientCareGateway,
-    private val directory: DirectoryGateway,
+    private val clock: ClinicClock,
+    private val appointments: AppointmentsSource,
+    private val changes: AppointmentChanges,
+    private val availability: DirectoryAvailability,
     private val logEvent: (AnalyticsEvent) -> Unit = {},
     private val standInModel: (() -> RescheduleModel)? = null,
 ) {
@@ -156,12 +162,12 @@ internal class RescheduleModel(
             } ?: CareLoad.Loading
         }
         current.value = CareLoad.Loading
-        val from = care.today()
+        val from = clock.today()
         val to = from.plusDays(HORIZON_DAYS)
         val doctor = appointment.doctor.id
-        val free = directory.availability(doctor, appointment.locationId, from, to)
-        val closed = directory.closedDays(doctor, appointment.locationId, from, to)
-        val own = care.appointments()
+        val free = availability.availability(doctor, appointment.locationId, from, to)
+        val closed = availability.closedDays(doctor, appointment.locationId, from, to)
+        val own = appointments.appointments()
         current.value = allOf(free, closed, own) {
             val mine = own.ok.upcoming(from)
             val slots = free.ok.filterNot { slot -> mine.any { it.date == slot.date && it.start == slot.start } }
@@ -182,7 +188,7 @@ internal class RescheduleModel(
     suspend fun submit() {
         val ready = (current.value as? CareLoad.Ready)?.content ?: return
         val slot = ready.slot ?: return
-        val result = care.reschedule(ready.appointment, slot, RESCHEDULE_REASON, clientId)
+        val result = changes.reschedule(ready.appointment, slot, RESCHEDULE_REASON, clientId)
         if (result is ChangeResult.Moved) logEvent(AnalyticsEvent.APPOINTMENT_RESCHEDULED)
         update {
             when (result) {
@@ -239,7 +245,10 @@ internal data class CancelState(
     override fun toString(): String = "CancelState(choice=$choice, outcome=${outcome?.let { it::class.simpleName }})"
 }
 
-internal class CancelModel(private val care: PatientCareGateway, private val logEvent: (AnalyticsEvent) -> Unit = {}) {
+internal class CancelModel(
+    private val changes: AppointmentChanges,
+    private val logEvent: (AnalyticsEvent) -> Unit = {},
+) {
     private val current = MutableStateFlow<CancelState?>(null)
     val state: StateFlow<CancelState?> = current.asStateFlow()
 
@@ -258,9 +267,9 @@ internal class CancelModel(private val care: PatientCareGateway, private val log
     suspend fun submit() {
         val state = current.value ?: return
         val result = if (state.appointment.status == AppointmentStatus.REQUESTED) {
-            care.withdraw(state.appointment)
+            changes.withdraw(state.appointment)
         } else {
-            care.cancel(state.appointment, state.choice?.reason ?: ChangeReason.OTHER)
+            changes.cancel(state.appointment, state.choice?.reason ?: ChangeReason.OTHER)
         }
         if (result !is ChangeResult.Failed) logEvent(AnalyticsEvent.APPOINTMENT_CANCELLED)
         current.value = state.copy(
@@ -295,7 +304,9 @@ internal data class DetailContent(
 }
 
 internal class DetailModel(
-    private val care: PatientCareGateway,
+    private val clock: ClinicClock,
+    private val doctors: MyDoctorsSource,
+    private val ratings: RatingsGateway,
     private val standInModel: (() -> DetailModel)? = null,
 ) {
     private val current = MutableStateFlow<CareLoad<DetailContent>>(CareLoad.Loading)
@@ -319,9 +330,9 @@ internal class DetailModel(
         val shown = (current.value as? CareLoad.Ready)?.content?.appointment?.id
         // Reading the same appointment again (after f5) keeps it on screen; another one starts from the spinner.
         if (shown != appointment.id) current.value = CareLoad.Loading
-        val doctors = care.myDoctors()
+        val doctors = doctors.myDoctors()
         val rating = if (appointment.status == AppointmentStatus.COMPLETED) {
-            care.ratingFor(appointment.id)
+            ratings.ratingFor(appointment.id)
         } else {
             CareResult.Ok(null)
         }
@@ -330,7 +341,7 @@ internal class DetailModel(
             val phone = doctors.ok.firstOrNull { it.doctor.id == appointment.doctor.id }?.phone
             DetailContent(
                 appointment = appointment,
-                options = changeOptionsFor(appointment, care.today(), care.now(), phone),
+                options = changeOptionsFor(appointment, clock.today(), clock.now(), phone),
                 phone = phone,
                 rating = rating.ok,
             )

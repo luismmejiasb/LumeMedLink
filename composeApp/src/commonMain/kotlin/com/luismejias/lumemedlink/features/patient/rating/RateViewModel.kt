@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.CareFailure
 import com.luismejias.lumemedlink.core.care.CareResult
-import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.RatingAspect
 import com.luismejias.lumemedlink.core.care.RatingDraft
 import com.luismejias.lumemedlink.core.care.RatingPrompt
+import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -78,10 +78,8 @@ internal data class RateState(
  * f5's owner, opened from Inicio's stars or from an attended visit's (c3). PROVISIONAL (ADR-0046): the free text is the
  * design's, by the author's call for this mock; the contract will carry stars and closed reasons only.
  */
-internal class RateViewModel(
-    private val care: PatientCareGateway,
-    private val logEvent: (AnalyticsEvent) -> Unit = {},
-) : ViewModel() {
+internal class RateViewModel(private val care: RatingsGateway, private val logEvent: (AnalyticsEvent) -> Unit = {}) :
+    ViewModel() {
     private val current = MutableStateFlow<RateState?>(null)
     val state: StateFlow<RateState?> = current.asStateFlow()
 

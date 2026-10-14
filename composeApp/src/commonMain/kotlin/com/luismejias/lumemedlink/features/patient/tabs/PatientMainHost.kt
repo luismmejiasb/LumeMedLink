@@ -58,14 +58,17 @@ import com.luismejias.lumemedlink.features.patient.change.ChangeViewModel
 import com.luismejias.lumemedlink.features.patient.change.DirectionsSheet
 import com.luismejias.lumemedlink.features.patient.change.OptionsSheet
 import com.luismejias.lumemedlink.features.patient.change.RescheduleScreen
+import com.luismejias.lumemedlink.features.patient.change.changeSourcesOf
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsScreen
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeScreen
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
+import com.luismejias.lumemedlink.features.patient.home.homeSources
 import com.luismejias.lumemedlink.features.patient.rating.RateSheet
 import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 import com.luismejias.lumemedlink.features.patient.search.SearchHost
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
+import com.luismejias.lumemedlink.features.patient.search.searchSourcesOf
 import com.luismejias.lumemedlink.features.patient.settings.ContactChangeSheet
 import com.luismejias.lumemedlink.features.patient.settings.ContactChangeViewModel
 import com.luismejias.lumemedlink.features.patient.settings.SettingsEntry
@@ -73,6 +76,7 @@ import com.luismejias.lumemedlink.features.patient.settings.SettingsPage
 import com.luismejias.lumemedlink.features.patient.settings.SettingsRoute
 import com.luismejias.lumemedlink.features.patient.settings.SettingsScreen
 import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
+import com.luismejias.lumemedlink.features.patient.settings.settingsSources
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.booked_toast
 import com.luismejias.lumemedlink.resources.cancelled_toast
@@ -155,17 +159,17 @@ internal fun PatientMainHost(
     onLinkOpened: () -> Unit = {},
 ) {
     val tabs = viewModel { PatientTabsViewModel() }
-    val home = viewModel { HomeViewModel(care) }
-    val search = viewModel { SearchViewModel(care, directory, logEvent) }
-    val appointments = viewModel { AppointmentsViewModel(care) }
+    val home = viewModel { HomeViewModel(care.homeSources()) }
+    val search = viewModel { SearchViewModel(searchSourcesOf(care, directory), logEvent) }
+    val appointments = viewModel { AppointmentsViewModel(care, care) }
     val doctors = viewModel { MyDoctorsViewModel(care) }
     val settings = viewModel {
-        SettingsViewModel(care, consent, appearance) { Res.readBytes(LICENSES_FILE).decodeToString() }
+        SettingsViewModel(care.settingsSources(), consent, appearance) { Res.readBytes(LICENSES_FILE).decodeToString() }
     }
     val settingsRoutes by settings.routes.collectAsState()
     val contactChange = viewModel { ContactChangeViewModel(care) }
     val contactDone by contactChange.done.collectAsState()
-    val change = viewModel { ChangeViewModel(care, directory, logEvent) }
+    val change = viewModel { ChangeViewModel(changeSourcesOf(care, directory), logEvent) }
     val rate = viewModel { RateViewModel(care, logEvent) }
     val photo = viewModel { ProfilePhotoModel() }
     val picker = rememberPhotoPicker(photo::picked)

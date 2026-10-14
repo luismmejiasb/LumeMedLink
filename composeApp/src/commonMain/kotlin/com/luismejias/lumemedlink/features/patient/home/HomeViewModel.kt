@@ -3,9 +3,14 @@ package com.luismejias.lumemedlink.features.patient.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
+import com.luismejias.lumemedlink.core.care.AppointmentsSource
+import com.luismejias.lumemedlink.core.care.ClinicClock
+import com.luismejias.lumemedlink.core.care.NoticesSource
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
+import com.luismejias.lumemedlink.core.care.PatientProfileSource
 import com.luismejias.lumemedlink.core.care.RatingPrompt
+import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.StandIn
@@ -36,8 +41,20 @@ internal data class HomeContent(
     override fun toString(): String = "HomeContent(redacted)"
 }
 
+/** What Inicio reads, each capability on its own (interface segregation, task 0036). */
+internal class HomeSources(
+    val clock: ClinicClock,
+    val profile: PatientProfileSource,
+    val appointments: AppointmentsSource,
+    val ratings: RatingsGateway,
+    val notices: NoticesSource,
+)
+
+/** Every source of Inicio from one implementation of all of them: the script, for the stand-in and the tests. */
+internal fun PatientCareGateway.homeSources(): HomeSources = HomeSources(this, this, this, this, this)
+
 /** Inicio's owner (ADR-0045: a ViewModel per tab root). */
-internal class HomeViewModel(private val care: PatientCareGateway) : ViewModel() {
+internal class HomeViewModel(private val sources: HomeSources) : ViewModel() {
     private val current = MutableStateFlow<CareLoad<HomeContent>>(CareLoad.Loading)
     val state: StateFlow<CareLoad<HomeContent>> = current.asStateFlow()
 
@@ -54,18 +71,18 @@ internal class HomeViewModel(private val care: PatientCareGateway) : ViewModel()
     }
 
     suspend fun load() {
-        standInContent.fill { read(standInPatientCare()) }
+        standInContent.fill { read(standInPatientCare().homeSources()) }
         current.markLoading()
-        current.value = read(care)
+        current.value = read(sources)
     }
 
-    private suspend fun read(care: PatientCareGateway): CareLoad<HomeContent> {
-        val profile = care.profile()
-        val appointments = care.appointments()
-        val ratings = care.ratingPrompts()
-        val notices = care.hasUnreadNotices()
+    private suspend fun read(sources: HomeSources): CareLoad<HomeContent> {
+        val profile = sources.profile.profile()
+        val appointments = sources.appointments.appointments()
+        val ratings = sources.ratings.ratingPrompts()
+        val notices = sources.notices.hasUnreadNotices()
         return allOf(profile, appointments, ratings, notices) {
-            val today = care.today()
+            val today = sources.clock.today()
             val ahead = appointments.ok.upcoming(today)
             HomeContent(
                 givenNames = profile.ok.givenNames,

@@ -3,10 +3,10 @@ package com.luismejias.lumemedlink.features.patient.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.ContactChangeFailure
+import com.luismejias.lumemedlink.core.care.ContactChangeGateway
 import com.luismejias.lumemedlink.core.care.ContactChangeResult
 import com.luismejias.lumemedlink.core.care.ContactCodeDispatch
 import com.luismejias.lumemedlink.core.care.ContactKind
-import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
 import com.luismejias.lumemedlink.shared.EmailAddress
 import com.luismejias.lumemedlink.shared.PhoneNumber
@@ -78,7 +78,7 @@ internal data class ContactChangeState(
  * The phone's and the email's change sheets (task 0035). Scripted (ADR-0046): there is no contract for it, and none is
  * asked for while the patient's app is a mock (the author, 2026-10-11).
  */
-internal class ContactChangeViewModel(private val care: PatientCareGateway) : ViewModel() {
+internal class ContactChangeViewModel(private val care: ContactChangeGateway) : ViewModel() {
     private val current = MutableStateFlow<ContactChangeState?>(null)
 
     /** The open change, or `null` when no sheet is up. */

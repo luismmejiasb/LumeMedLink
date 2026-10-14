@@ -188,37 +188,30 @@ internal sealed interface ContactChangeResult<out T> {
     data class Failed(val failure: ContactChangeFailure) : ContactChangeResult<Nothing>
 }
 
-/** Everything the five tab roots read. */
-internal interface PatientCareGateway {
+/** The clinic's wall calendar and clock: what every date and every change window is measured against. */
+internal interface ClinicClock {
     /** Today on the clinic's wall calendar — the device does not get to say what day it is for a slot. */
     fun today(): CalendarDate
 
-    suspend fun profile(): CareResult<PatientProfile>
+    /** The clinic's wall clock now: with [today], what a change window is measured against. */
+    fun now(): ClockTime
+}
 
+/** The patient's profile, as the app shows it. */
+internal interface PatientProfileSource {
+    suspend fun profile(): CareResult<PatientProfile>
+}
+
+/** The patient's appointments, and the clinic's rules for changing them. */
+internal interface AppointmentsSource {
     /** Upcoming and past, in date order. */
     suspend fun appointments(): CareResult<List<PatientAppointment>>
 
-    suspend fun ratingPrompts(): CareResult<List<RatingPrompt>>
-
-    suspend fun myDoctors(): CareResult<List<MyDoctor>>
-
     suspend fun policy(): CareResult<CarePolicy>
+}
 
-    /** "3 enviadas" (p7). No contract (request 0008 §4). */
-    suspend fun sentRatingCount(): CareResult<Int>
-
-    /** Whether something waits behind the bell (p1). No contract (request 0008 §5). */
-    suspend fun hasUnreadNotices(): CareResult<Boolean>
-
-    /** The rating sent for an attended appointment, or null when there is none yet (c3 then offers the stars). */
-    suspend fun ratingFor(appointmentId: String): CareResult<SentRating?>
-
-    /** Sends a rating for an attended appointment (f5). */
-    suspend fun rate(appointmentId: String, draft: RatingDraft): CareResult<Unit>
-
-    /** The clinic's wall clock now: with [today], what a change window is measured against. */
-    fun now(): ClockTime
-
+/** Changing an appointment: moving, cancelling, withdrawing a request. */
+internal interface AppointmentChanges {
     /**
      * Moves [appointment] to [slot] — the contract's ONE atomic operation, never a cancel plus a booking (T7).
      * [clientId] is this move's key, reused by every retry of it, so a dropped answer never makes a third write.
@@ -235,7 +228,35 @@ internal interface PatientCareGateway {
 
     /** Withdraws a request the practice has not answered: the contract's own verb, allowed at any time (spec f2). */
     suspend fun withdraw(appointment: PatientAppointment): ChangeResult
+}
 
+/** The professionals who saw the patient. */
+internal interface MyDoctorsSource {
+    suspend fun myDoctors(): CareResult<List<MyDoctor>>
+}
+
+/** Rating an attention, and what was rated. */
+internal interface RatingsGateway {
+    suspend fun ratingPrompts(): CareResult<List<RatingPrompt>>
+
+    /** "3 enviadas" (p7). No contract (request 0008 §4). */
+    suspend fun sentRatingCount(): CareResult<Int>
+
+    /** The rating sent for an attended appointment, or null when there is none yet (c3 then offers the stars). */
+    suspend fun ratingFor(appointmentId: String): CareResult<SentRating?>
+
+    /** Sends a rating for an attended appointment (f5). */
+    suspend fun rate(appointmentId: String, draft: RatingDraft): CareResult<Unit>
+}
+
+/** The patient's notices. */
+internal interface NoticesSource {
+    /** Whether something waits behind the bell (p1). No contract (request 0008 §5). */
+    suspend fun hasUnreadNotices(): CareResult<Boolean>
+}
+
+/** Changing the phone or the e-mail, verified by a code before it lands. */
+internal interface ContactChangeGateway {
     /**
      * Sends a code to [mobile], the number that would replace the profile's. Nothing changes until
      * [confirmContactChange].
@@ -252,3 +273,17 @@ internal interface PatientCareGateway {
     /** The pending change lands when [code] is the one sent; the profile then reads the new contact. */
     suspend fun confirmContactChange(code: String): ContactChangeResult<Unit>
 }
+
+/**
+ * Every capability of the patient's side at once. Only what implements all of them names it: the script and the
+ * composition root. A screen depends on the capabilities it uses, never on this (interface segregation, task 0036).
+ */
+internal interface PatientCareGateway :
+    ClinicClock,
+    PatientProfileSource,
+    AppointmentsSource,
+    AppointmentChanges,
+    MyDoctorsSource,
+    RatingsGateway,
+    NoticesSource,
+    ContactChangeGateway
