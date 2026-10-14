@@ -17,7 +17,8 @@ El autor probó la app en su iPhone (iOS 27) y trajo once puntos de pulido. Seis
 2. El sheet de la foto deja un espacio abajo por el que se ve el fondo. **Hecho** en el kit `f3375e5`: un `Popup` de
    iOS se queda dentro del área segura, y ahora ocupa la pantalla entera. Falta verlo en el device.
 3. `LumePhoneField` no tiene «continuar» en iOS, porque el teclado telefónico no tiene tecla de retorno. Hace falta
-   la barra del teclado.
+   la barra del teclado. **Hecho** en el kit `e247cf7`: los teclados de teléfono, número y decimal (y el del código)
+   llevan el Done del sistema, que avanza en un `LumeForm` o termina. Nada que cambiar en la app; falta verlo en el device.
 4. Un toque en un espacio vacío suelta el foco de cualquier campo, en todas las pantallas.
    **Hecho** en el kit `b8184f8` (`lumeReleasesFocusOnTap()`), y aplicado una vez en la raíz de `App()`.
 5. Una pila de navegación con push y pop como los de iOS, y el gesto de volver interactivo.
