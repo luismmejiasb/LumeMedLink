@@ -25,6 +25,7 @@ import cl.lume.uicomposer.components.LumeToastHost
 import cl.lume.uicomposer.components.rememberLumeToastHostState
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeStatusStyle
+import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
@@ -62,6 +63,7 @@ import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 import com.luismejias.lumemedlink.features.patient.search.SearchHost
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
 import com.luismejias.lumemedlink.features.patient.settings.SettingsEntry
+import com.luismejias.lumemedlink.features.patient.settings.SettingsPage
 import com.luismejias.lumemedlink.features.patient.settings.SettingsScreen
 import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
 import com.luismejias.lumemedlink.resources.Res
@@ -109,6 +111,7 @@ internal fun PatientMainHost(
     care: PatientCareGateway,
     directory: DirectoryGateway,
     consent: TelemetryConsent,
+    appearance: Appearance,
     logEvent: (AnalyticsEvent) -> Unit,
     onSignOut: () -> Unit,
     /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
@@ -120,7 +123,10 @@ internal fun PatientMainHost(
     val search = viewModel { SearchViewModel(care, directory, logEvent) }
     val appointments = viewModel { AppointmentsViewModel(care) }
     val doctors = viewModel { MyDoctorsViewModel(care) }
-    val settings = viewModel { SettingsViewModel(care, consent) }
+    val settings = viewModel {
+        SettingsViewModel(care, consent, appearance) { Res.readBytes(LICENSES_FILE).decodeToString() }
+    }
+    val settingsRoutes by settings.routes.collectAsState()
     val change = viewModel { ChangeViewModel(care, directory, logEvent) }
     val rate = viewModel { RateViewModel(care, logEvent) }
     val photo = viewModel { ProfilePhotoModel() }
@@ -133,6 +139,7 @@ internal fun PatientMainHost(
     val changeSheet by change.sheet.collectAsState()
     val changeDone by change.done.collectAsState()
     val selected by tabs.selected.collectAsState()
+    val settingsRoute = settingsRoutes.lastOrNull().takeIf { selected == PatientTab.SETTINGS }
     val appointmentsLoad by appointments.state.collectAsState()
     val awaiting = (appointmentsLoad as? CareLoad.Ready)?.content?.awaiting ?: 0
     val searchRoutes by search.flow.routes.collectAsState()
@@ -186,7 +193,10 @@ internal fun PatientMainHost(
             change.openDirections(appointment)
         }
     }
-    val showsTabBar = changeRoute == null && (selected != PatientTab.SEARCH || searchRoutes.last().showsTabBar)
+    val showsTabBar =
+        changeRoute == null &&
+            settingsRoute == null &&
+            (selected != PatientTab.SEARCH || searchRoutes.last().showsTabBar)
 
     Box(modifier = Modifier.fillMaxSize()) {
         // The bar floats over the content, which scrolls under it: each screen leaves the kit's clearance at its end.
@@ -216,6 +226,7 @@ internal fun PatientMainHost(
                 )
                 changeRoute == ChangeRoute.RESCHEDULE -> RescheduleScreen(change, toasts, care.today())
                 changeRoute == ChangeRoute.CANCEL -> CancelScreen(change, care.today())
+                settingsRoute != null -> SettingsPage(settingsRoute, settings)
                 selected == PatientTab.HOME -> HomeScreen(
                     model = home,
                     onDirections = openDirections,
@@ -301,3 +312,6 @@ internal fun PatientMainHost(
         )
     }
 }
+
+/** «Licencias», generated from the lockfiles (Scripts/generate-licenses.py). */
+private const val LICENSES_FILE = "files/licenses.tsv"

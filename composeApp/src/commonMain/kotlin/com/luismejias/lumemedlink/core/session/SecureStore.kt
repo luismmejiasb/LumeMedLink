@@ -61,4 +61,11 @@ internal enum class SecureStoreKey(val storageKey: String) {
      * it, and the next person on a shared phone starts without it.
      */
     TELEMETRY_CONSENT("telemetry_consent_v1"),
+
+    /**
+     * The theme and the language chosen in Configuración, when not the phone's. Not secrets either: here so the
+     * logout erases them with everything else, and a shared phone's next person starts on the phone's own.
+     */
+    APPEARANCE_THEME("appearance_theme_v1"),
+    APPEARANCE_LANGUAGE("appearance_language_v1"),
 }

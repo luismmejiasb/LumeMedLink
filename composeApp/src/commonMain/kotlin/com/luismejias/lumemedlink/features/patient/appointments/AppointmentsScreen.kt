@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
@@ -176,13 +177,15 @@ private fun AppointmentCard(
     onChange: (PatientAppointment) -> Unit,
     onCancel: (PatientAppointment) -> Unit,
 ) {
-    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
+    // The whole card opens the detail (the author, 2026-10-13: «al tocar cualquier parte de la card»); its two buttons
+    // keep their own touch.
+    val open = remember(appointment, onOpen) { { onOpen(appointment) } }
+    LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled, onClick = open) {
         LumeStack(alignment = LumeStackAlignment.Start, spacing = { medium }) {
             LumeList(
                 items = listOf(appointment),
                 key = { it.id },
                 style = LumeListStyle.Embedded,
-                onRowTap = onOpen,
             ) {
                 LumeListRow(
                     textStyle = LumeListRowTextStyle.Strong,

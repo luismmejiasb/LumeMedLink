@@ -1,5 +1,6 @@
 package com.luismejias.lumemedlink.app
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -29,6 +30,9 @@ import cl.lume.uicomposer.tokens.LumeFieldLook
 import cl.lume.uicomposer.tokens.LumeNeutrals
 import cl.lume.uicomposer.tokens.LumeRadius
 import cl.lume.uicomposer.tokens.LumeTypography
+import com.luismejias.lumemedlink.core.appearance.Appearance
+import com.luismejias.lumemedlink.core.appearance.ProvideAppLanguage
+import com.luismejias.lumemedlink.core.appearance.ThemeChoice
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
@@ -117,6 +121,11 @@ public fun App() {
     // build's configuration it is the unconfigured no-op, and the app runs as before.
     val telemetry = rememberTelemetry()
     val telemetryConsent = remember(secureStore, telemetry) { TelemetryConsent(secureStore, telemetry) }
+    // The theme and the language chosen in Configuración, read before anything is drawn in them (2026-10-13).
+    val appearance = remember(secureStore) { Appearance(secureStore) }
+    LaunchedEffect(appearance) { appearance.restore() }
+    val theme by appearance.theme.collectAsState()
+    val language by appearance.language.collectAsState()
     LaunchedEffect(telemetryConsent) {
         telemetryConsent.restore()
         telemetry.refreshFlags()
@@ -254,6 +263,8 @@ public fun App() {
         val outcome = performLogout(sessionManager, secureStore, unlockGate, sessionLock)
         // The wipe took the consent; Firebase follows it now rather than at the next launch (ADR-0052 §2).
         telemetryConsent.restore()
+        // And the theme and the language go back to the phone's with it.
+        appearance.restore()
         if (!outcome.complete) {
             // Ends the session anyway — fail closed — but the shell now KNOWS the erase was partial.
             // Telling the person is the login slice's job: this screen is a placeholder and a
@@ -271,91 +282,99 @@ public fun App() {
         locked = true
     }
 
-    LumeTheme(brand = LumeMedLinkBrand) {
-        FieldClipboardPolicy {
-            PrivacyScreenScaffold {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        // Observes pointer activity on the INITIAL pass without consuming it, so the
-                        // inactivity window slides while the doctor is actually using the app. Recording
-                        // activity can never unlock (InactivityLock enforces that) — it only postpones.
-                        .pointerInput(sessionLock) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    awaitPointerEvent(PointerEventPass.Initial)
-                                    sessionLock.recordActivity()
-                                    locked = sessionLock.isLocked()
+    val dark = when (theme) {
+        ThemeChoice.SYSTEM -> isSystemInDarkTheme()
+        ThemeChoice.LIGHT -> false
+        ThemeChoice.DARK -> true
+    }
+    LumeTheme(brand = LumeMedLinkBrand, dark = dark) {
+        ProvideAppLanguage(language.tag) {
+            FieldClipboardPolicy {
+                PrivacyScreenScaffold {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            // Observes pointer activity on the INITIAL pass without consuming it, so the
+                            // inactivity window slides while the doctor is actually using the app. Recording
+                            // activity can never unlock (InactivityLock enforces that) — it only postpones.
+                            .pointerInput(sessionLock) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        awaitPointerEvent(PointerEventPass.Initial)
+                                        sessionLock.recordActivity()
+                                        locked = sessionLock.isLocked()
+                                    }
                                 }
+                            },
+                    ) {
+                        // No session can begin from the access flow yet (ADR-0044): a patient lands in the scripted
+                        // main app (ADR-0046), a doctor in the pending one.
+                        val accessFlow = @Composable { onCancel: (() -> Unit)? ->
+                            val role = accessFinished
+                            when (role) {
+                                AccessRole.PATIENT -> InSessionScope(patientScope) {
+                                    PatientMainHost(
+                                        care = patientCare,
+                                        directory = patientCare,
+                                        consent = telemetryConsent,
+                                        appearance = appearance,
+                                        logEvent = telemetry::log,
+                                        link = linkToOpen,
+                                        onLinkOpened = links::landed,
+                                        onSignOut = {
+                                            links.forget()
+                                            patientScope.reset()
+                                            access.restart()
+                                            // A sign-out withdraws, as the logout's wipe does (ADR-0052 §2).
+                                            scope.launch { telemetryConsent.setGranted(false) }
+                                        },
+                                    )
+                                }
+                                AccessRole.DOCTOR -> InSessionScope(doctorScope) {
+                                    DoctorMainHost(
+                                        care = doctorCare,
+                                        link = linkToOpen,
+                                        onLinkOpened = links::landed,
+                                        onSignOut = {
+                                            links.forget()
+                                            doctorScope.reset()
+                                            access.restart()
+                                            scope.launch { telemetryConsent.setGranted(false) }
+                                        },
+                                    )
+                                }
+                                null -> AccessHost(viewModel = access, onCancel = onCancel)
                             }
-                        },
-                ) {
-                    // No session can begin from the access flow yet (ADR-0044): a patient lands in the scripted
-                    // main app (ADR-0046), a doctor in the pending one.
-                    val accessFlow = @Composable { onCancel: (() -> Unit)? ->
-                        val role = accessFinished
-                        when (role) {
-                            AccessRole.PATIENT -> InSessionScope(patientScope) {
-                                PatientMainHost(
-                                    care = patientCare,
-                                    directory = patientCare,
-                                    consent = telemetryConsent,
-                                    logEvent = telemetry::log,
-                                    link = linkToOpen,
-                                    onLinkOpened = links::landed,
-                                    onSignOut = {
-                                        links.forget()
-                                        patientScope.reset()
-                                        access.restart()
-                                        // A sign-out withdraws, as the logout's wipe does (ADR-0052 §2).
-                                        scope.launch { telemetryConsent.setGranted(false) }
-                                    },
-                                )
-                            }
-                            AccessRole.DOCTOR -> InSessionScope(doctorScope) {
-                                DoctorMainHost(
-                                    care = doctorCare,
-                                    link = linkToOpen,
-                                    onLinkOpened = links::landed,
-                                    onSignOut = {
-                                        links.forget()
-                                        doctorScope.reset()
-                                        access.restart()
-                                        scope.launch { telemetryConsent.setGranted(false) }
-                                    },
-                                )
-                            }
-                            null -> AccessHost(viewModel = access, onCancel = onCancel)
                         }
-                    }
-                    when (resolveDestination(hasSession, locked)) {
-                        AppDestination.Login -> accessFlow(null)
+                        when (resolveDestination(hasSession, locked)) {
+                            AppDestination.Login -> accessFlow(null)
 
-                        AppDestination.Locked -> if (reauthenticating) {
-                            accessFlow {
-                                shell.reauthenticating.value = false
-                                access.restart()
-                            }
-                        } else {
-                            UnlockScreen(
-                                retryEpoch = 0,
-                                onUnlock = { sessionLock.attemptUnlock() },
-                                onUnlocked = { locked = false },
-                                // Too many misses, a changed enrollment, or no biometrics at all: the
-                                // session ends and the doctor signs in again. Fail closed.
-                                onSessionEnded = { scope.launch { endSession() } },
-                                // A new sign-in replaces this session; establishSession erases it first.
-                                onUsePassword = {
+                            AppDestination.Locked -> if (reauthenticating) {
+                                accessFlow {
+                                    shell.reauthenticating.value = false
                                     access.restart()
-                                    shell.reauthenticating.value = true
-                                },
-                                onChangeAccount = { scope.launch { endSession() } },
+                                }
+                            } else {
+                                UnlockScreen(
+                                    retryEpoch = 0,
+                                    onUnlock = { sessionLock.attemptUnlock() },
+                                    onUnlocked = { locked = false },
+                                    // Too many misses, a changed enrollment, or no biometrics at all: the
+                                    // session ends and the doctor signs in again. Fail closed.
+                                    onSessionEnded = { scope.launch { endSession() } },
+                                    // A new sign-in replaces this session; establishSession erases it first.
+                                    onUsePassword = {
+                                        access.restart()
+                                        shell.reauthenticating.value = true
+                                    },
+                                    onChangeAccount = { scope.launch { endSession() } },
+                                )
+                            }
+
+                            AppDestination.Home -> HomeScreen(
+                                onSignOut = { scope.launch { endSession() } },
                             )
                         }
-
-                        AppDestination.Home -> HomeScreen(
-                            onSignOut = { scope.launch { endSession() } },
-                        )
                     }
                 }
             }

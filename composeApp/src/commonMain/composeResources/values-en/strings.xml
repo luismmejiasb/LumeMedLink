@@ -571,4 +571,32 @@
     <string name="sign_up_telemetry_statement">I allow collecting errors and usage statistics to improve my experience in the app · optional</string>
     <string name="settings_telemetry">Errors and statistics</string>
     <string name="settings_telemetry_body">Sent to Google, without your name or your appointments</string>
+    <!-- 2026-10-13 · Settings: appearance, language, privacy, terms, licences, footer -->
+    <string name="common_cancel">Cancel</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_body">What we keep, and errors and statistics</string>
+    <string name="settings_terms">Terms and conditions</string>
+    <string name="settings_licenses">Licenses</string>
+    <string name="settings_copyright">© %1$s LumeMedLink</string>
+    <string name="settings_version">Version %1$s (%2$s)</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_footnote">With “System”, the app follows the phone’s light or dark mode.</string>
+    <string name="language_system">System</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+    <string name="language_footnote">With “System”, the app uses the phone’s language, or Spanish if it is not one of these.</string>
+    <string name="choice_selected">selected</string>
+    <string name="sign_out_title">Sign out?</string>
+    <string name="sign_out_body">To come back in you will need your RUT and your password.</string>
+    <string name="legal_draft">Draft</string>
+    <string name="privacy_heading">What this app keeps</string>
+    <string name="privacy_body">LumeMedLink keeps only what serves your relationship with your doctors: your profile, your appointments and your contacts. Your medical record never passes through here.\n\nYour data travels encrypted, only to LumeMedLink’s servers. When you sign out, it is erased from this phone.</string>
+    <string name="privacy_telemetry_heading">Errors and statistics</string>
+    <string name="privacy_telemetry_body">It is optional. If you turn it on, the app sends Google crash reports and usage statistics, without your name or your appointments. You can turn it off at any time.</string>
+    <string name="terms_body">LumeMedLink lets you see and manage your appointments with the doctors who enrolled you.\n\nIt is not an emergency service: in an emergency, call 131.\n\nThe app does not deliver diagnoses, prescriptions or clinical documents; your doctor gives you those.</string>
+    <string name="licenses_intro">LumeMedLink is also made with these third-party libraries. Thanks to the people who write them.</string>
 </resources>

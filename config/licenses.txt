@@ -1,0 +1,42 @@
+# Who wrote what this app ships, and under which licence — read by Scripts/generate-licenses.py.
+#
+# One line per group (Gradle) or package identity (Swift, prefixed `spm:`): `prefix|project|licence`. The longest
+# prefix wins. A shipped group with no line FAILS the generator: a new dependency cannot reach the stores without
+# someone writing down its licence (the same door as config/dependency-allowlist.txt, which admits it).
+#
+# PROVISIONAL (author, 2026-10-13): the licence names are the projects' own declarations, written down by hand;
+# they are checked by the lawyer together with the legal texts before the stores (vault, legal review).
+androidx|Android Jetpack|Apache License 2.0
+org.jetbrains.compose|Compose Multiplatform|Apache License 2.0
+org.jetbrains.androidx|Compose Multiplatform|Apache License 2.0
+org.jetbrains.skiko|Skiko|Apache License 2.0
+org.jetbrains.kotlinx|Kotlin libraries (kotlinx)|Apache License 2.0
+org.jetbrains.kotlin|Kotlin standard library|Apache License 2.0
+org.jetbrains|JetBrains Java Annotations|Apache License 2.0
+io.ktor|Ktor|Apache License 2.0
+com.squareup.okhttp3|OkHttp|Apache License 2.0
+com.squareup.okio|Okio|Apache License 2.0
+com.google.firebase|Firebase Android SDK|Apache License 2.0
+com.google.android.gms|Google Play services|Android Software Development Kit License
+com.google.android.datatransport|Google Data Transport|Apache License 2.0
+com.google.guava|Guava|Apache License 2.0
+com.google.errorprone|Error Prone annotations|Apache License 2.0
+com.google.j2objc|J2ObjC annotations|Apache License 2.0
+com.google.code.findbugs|JSR 305 annotations|BSD 3-Clause License
+org.checkerframework|Checker Framework qualifiers|MIT License
+javax.inject|javax.inject|Apache License 2.0
+org.jspecify|JSpecify|Apache License 2.0
+org.slf4j|SLF4J|MIT License
+spm:firebase-ios-sdk|Firebase iOS SDK|Apache License 2.0
+spm:abseil-cpp-binary|Abseil|Apache License 2.0
+spm:app-check|App Check|Apache License 2.0
+spm:google-ads-on-device-conversion-ios-sdk|Google Ads On-Device Conversion|Google Terms of Service
+spm:googleappmeasurement|Google App Measurement|Google Terms of Service
+spm:googledatatransport|Google Data Transport|Apache License 2.0
+spm:googleutilities|Google Utilities|Apache License 2.0
+spm:grpc-binary|gRPC|Apache License 2.0
+spm:gtm-session-fetcher|GTM Session Fetcher|Apache License 2.0
+spm:interop-ios-for-google-sdks|Interop for Google SDKs|Apache License 2.0
+spm:leveldb|LevelDB|BSD 3-Clause License
+spm:nanopb|nanopb|zlib License
+spm:promises|Promises|Apache License 2.0

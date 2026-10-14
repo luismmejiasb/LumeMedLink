@@ -333,6 +333,18 @@ lock = pathlib.Path(sys.argv[1]) / "composeApp/gradle.lockfile"
 lock.write_text(lock.read_text() + "com.google.android.gms:play-services-ads:24.0.0=androidRuntimeClasspath\n")
 '
 
+# «Licencias» is generated: a shipped group nobody named, and a list edited by hand, must both fail.
+bait "a shipped group with no licence line" check-licenses.sh '
+import sys, pathlib
+lock = pathlib.Path(sys.argv[1]) / "androidApp/gradle.lockfile"
+lock.write_text(lock.read_text() + "io.unnamed:thing:1.0.0=releaseRuntimeClasspath\n")
+'
+bait "the licences list edited by hand" check-licenses.sh '
+import sys, pathlib
+tsv = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/composeResources/files/licenses.tsv"
+tsv.write_text(tsv.read_text().replace("Ktor\tApache License 2.0\n", ""))
+'
+
 bait "a CI action pinned to a tag the denylist never named" check-dependency-allowlist.sh '
 import sys, pathlib, re
 p = pathlib.Path(sys.argv[1]) / ".github/workflows/ci.yml"

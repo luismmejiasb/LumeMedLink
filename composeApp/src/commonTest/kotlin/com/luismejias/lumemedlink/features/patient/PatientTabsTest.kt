@@ -8,9 +8,6 @@ import com.luismejias.lumemedlink.core.care.CareWorld
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
-import com.luismejias.lumemedlink.core.telemetry.MemorySecureStore
-import com.luismejias.lumemedlink.core.telemetry.RecordedTelemetry
-import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeContent
@@ -19,7 +16,7 @@ import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
 import com.luismejias.lumemedlink.features.patient.parts.cancelled
 import com.luismejias.lumemedlink.features.patient.parts.past
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
-import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
+import com.luismejias.lumemedlink.features.patient.settings.settingsModel
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
 import kotlinx.coroutines.Dispatchers
@@ -76,7 +73,7 @@ class PatientTabsTest {
         assertEquals(CareLoad.Failed(CareFailure.Offline), MyDoctorsViewModel(offline).also { it.load() }.state.value)
         assertEquals(
             CareLoad.Failed(CareFailure.Offline),
-            SettingsViewModel(offline, TelemetryConsent(MemorySecureStore(), RecordedTelemetry())).also {
+            settingsModel(offline).also {
                 it.load()
             }.state.value,
         )
@@ -113,7 +110,7 @@ class PatientTabsTest {
 
     @Test
     fun remindersReadLargestFirstAndNothingPersonalPrints() = runTest {
-        val settings = SettingsViewModel(design, TelemetryConsent(MemorySecureStore(), RecordedTelemetry())).also {
+        val settings = settingsModel(design).also {
             it.load()
         }
         val content = (settings.state.value as CareLoad.Ready).content

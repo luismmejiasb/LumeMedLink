@@ -580,4 +580,32 @@
     <string name="sign_up_telemetry_statement">Autorizo la recopilación de errores y estadísticas de uso para mejorar mi experiencia dentro de la app · opcional</string>
     <string name="settings_telemetry">Errores y estadísticas</string>
     <string name="settings_telemetry_body">Enviados a Google, sin tu nombre ni tus citas</string>
+    <!-- 2026-10-13 · Configuración: apariencia, idioma, privacidad, términos, licencias, pie -->
+    <string name="common_cancel">Cancelar</string>
+    <string name="settings_appearance">Apariencia</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_privacy">Privacidad</string>
+    <string name="settings_privacy_body">Qué guardamos, y errores y estadísticas</string>
+    <string name="settings_terms">Términos y condiciones</string>
+    <string name="settings_licenses">Licencias</string>
+    <string name="settings_copyright">© %1$s LumeMedLink</string>
+    <string name="settings_version">Versión %1$s (%2$s)</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_footnote">Con «Sistema», la app sigue el modo claro u oscuro del teléfono.</string>
+    <string name="language_system">Sistema</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+    <string name="language_footnote">Con «Sistema», la app usa el idioma del teléfono, o español si no es uno de estos.</string>
+    <string name="choice_selected">seleccionado</string>
+    <string name="sign_out_title">¿Cerrar sesión?</string>
+    <string name="sign_out_body">Para volver a entrar necesitarás tu RUT y tu contraseña.</string>
+    <string name="legal_draft">Borrador</string>
+    <string name="privacy_heading">Lo que guarda esta app</string>
+    <string name="privacy_body">LumeMedLink guarda sólo lo que sirve a tu relación con tus médicos: tu perfil, tus citas y tus contactos. Tu ficha clínica nunca pasa por aquí.\n\nTus datos viajan cifrados, sólo a los servidores de LumeMedLink. Al cerrar sesión, se borran de este teléfono.</string>
+    <string name="privacy_telemetry_heading">Errores y estadísticas</string>
+    <string name="privacy_telemetry_body">Es opcional. Si lo activas, la app envía a Google reportes de fallas y estadísticas de uso, sin tu nombre ni tus citas. Puedes desactivarlo cuando quieras.</string>
+    <string name="terms_body">LumeMedLink te permite ver y gestionar las citas con los médicos que te inscribieron.\n\nNo es un servicio de urgencias: ante una emergencia, llama al 131.\n\nLa app no entrega diagnósticos, recetas ni documentos clínicos; esos te los entrega tu médico.</string>
+    <string name="licenses_intro">LumeMedLink está hecha también con estas bibliotecas de terceros. Gracias a quienes las escriben.</string>
 </resources>
