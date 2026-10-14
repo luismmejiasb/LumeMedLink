@@ -39,6 +39,8 @@ ALLOWED_PREFIXES = ("/v1/patient/", "/v1/directory/", "/v1/reference/", "/v1/me/
 # Two platform routes every app tier has, by their exact path: the kill switch (§8.15) and the security-event channel
 # (ADR-0023). Exact, so that `/v1/platform/security-events`, the platform's own trail, stays out.
 ALLOWED_EXACT = ("/v1/me", "/v1/patient", "/v1/app-availability", "/v1/security-events")
+# Clinical content under an allowed prefix, refused by name (ADR-0001): the diagnosis catalog lives under /v1/reference/.
+CLINICAL_PREFIXES = ("/v1/reference/cie10",)
 UNSUPPORTED = ("oneOf", "allOf", "anyOf", "discriminator", "not")
 KOTLIN_KEYWORDS = {
     "as", "break", "class", "continue", "do", "else", "false", "for", "fun", "if", "in", "interface", "is", "null",
@@ -60,6 +62,8 @@ def fail(message: str) -> None:
 
 
 def allowed_path(path: str) -> bool:
+    if path.startswith(CLINICAL_PREFIXES):
+        return False
     return path in ALLOWED_EXACT or path in DEV_PATHS or path.startswith(ALLOWED_PREFIXES)
 
 
@@ -234,6 +238,8 @@ class Generator:
             if op_id not in found:
                 fail(f"operations.txt names {op_id}, which the contract does not have")
             verb, path, op, shared = found[op_id]
+            if path.startswith(CLINICAL_PREFIXES):
+                fail(f"{op_id} is {verb} {path}: clinical content, refused by name (ADR-0001)")
             if not allowed_path(path):
                 fail(f"{op_id} is {verb} {path}: outside /v1/patient, /v1/directory, /v1/reference, /v1/me and the two platform routes")
             params = shared + op.get("parameters", [])

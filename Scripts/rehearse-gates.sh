@@ -418,6 +418,11 @@ import sys, pathlib
 f = pathlib.Path(sys.argv[1]) / "contract/operations.txt"
 f.write_text(f.read_text() + "recordDiagnosis                 appointments\n")
 '
+bait "the diagnosis catalog added under an allowed prefix" check-contract.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "contract/operations.txt"
+f.write_text(f.read_text() + "searchCie10                     directory\n")
+'
 bait "a route written by hand, without its leading slash" check-contract.sh '
 import sys, pathlib
 d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/networking"
