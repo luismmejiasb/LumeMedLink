@@ -95,6 +95,16 @@ class DevTokenProviderTest {
     }
 
     @Test
+    fun renewingMintsANewTokenEvenWhileOneIsHeld() = runTest {
+        val tokens = provider()
+        tokens.token()
+        answer = HttpStatusCode.Created to """{"token":"dev-token-2"}"""
+        tokens.renew()
+        assertEquals("dev-token-2", tokens.token())
+        assertEquals(2, fetches, "the renewal fetched; the read after it did not")
+    }
+
+    @Test
     fun anUnreachablePlatformGivesNoTokenRatherThanAnError() = runTest {
         answer = HttpStatusCode.NotFound to ""
         assertNull(provider().token())

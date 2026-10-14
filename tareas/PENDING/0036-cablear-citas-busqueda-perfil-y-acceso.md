@@ -135,9 +135,31 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
   - Se muestra uno: el de la clínica primera por nombre y luego por id, nunca por el orden del servidor.
   - El teléfono, el correo y el RUT pueden faltar; se dicen «Sin registrar», nunca se inventan.
   - «Cuenta verificada» no aparece: el contrato no afirma ninguna verificación.
-- **El cambio de contacto sigue contra el guion.** `updateMyPatientProfile` aplica el cambio en el acto, sin código,
-  y eso contradice la decisión del autor. Se cablea cuando la plataforma termine el pedido `0012` (su tarea `0145`).
-  La dirección no se edita en esta app.
+- **El cambio de teléfono y de correo, cableado** (contrato 0.131.0, commit `90332cfa`; respuesta `0077` de la
+  plataforma al pedido `0012`):
+  - `RemoteContactChange` pide, reenvía y confirma la verificación. Un código escribe el contacto en todas las
+    clínicas a la vez.
+  - El `ticket` vive sólo en memoria, con la hoja abierta: `PendingContactChange` viaja en el reenvío y en la
+    confirmación, y no se imprime.
+  - El stack lee `attemptsLeft` del error de código incorrecto.
+  - Un `stale_write` se confirma otra vez con el mismo código, una sola vez.
+  - Pedir el cambio exige un ingreso de 5 minutos o menos (`ADR-0102` de la plataforma). En el backend local, un
+    token de desarrollo nuevo cumple esa condición. Con Identity Platform, la pantalla tendrá que pedir el reingreso
+    con clave y TOTP antes de abrirse: **queda para la fase B**. Hasta entonces, un ingreso viejo se dice «vuelve a
+    ingresar».
+  - `updateMyPatientProfile` no se llama: la dirección no se edita en esta app.
+- **Verificado en el emulador del repo**, contra la plataforma local 0.131.0 (commit `4f9f05b0`):
+  - Configuración muestra el perfil real de `dev-patient`.
+  - Cambiar el correo: el código llega a Mailpit, la confirmación escribe el dato y el perfil releído lo muestra.
+  - Cambiar el teléfono: el SMS queda en `/dev/sms` y el número cambia igual.
+  - Un código equivocado no gasta la solicitud: el correcto confirma después.
+  - Al final se devolvieron el correo y el teléfono de la siembra.
+- **No verificado:** el mensaje de código incorrecto. `uiautomator` no muestra el error del campo de código, aunque
+  `LumeOTPField` lo publica en su semántica, y `FLAG_SECURE` impide la captura de pantalla. Falta revisarlo con
+  TalkBack. Su lógica está cubierta por los tests del ViewModel y del gateway.
+- **Dos cebos del ensayo de gates no se aplicaban** desde `414b85a` y desde el `buildConfig` de la ADR-0062: sus
+  anclas dejaron de ser únicas o cambiaron de forma. `rehearse-gates.sh` lo dijo («2 of 138 baits WENT
+  UNDETECTED»). Se corrigieron las anclas, y los dos cebos vuelven a poner rojo su gate.
 - **La foto de perfil** (decisión del autor por formulario: la ven el paciente y sus médicos, y llega por la API):
   - ADR-0064, que enmienda la §2 de la ADR-0050;
   - pedido `0015` a la plataforma, enviado a su sesión.
@@ -145,3 +167,8 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
   fallaba desde `1bf3257`. Se regeneró con `build --write-locks` (ADR-0018).
 - **El lint de Android estaba rojo desde `a16c0a6`**, y nadie lo veía porque `build` se caía antes en el lockfile:
   `MissingClass` sobre el `<provider>` de Firebase que el manifiesto elimina. Se ignora sólo en ese nodo.
+- **Falta:**
+  - el entorno local en iOS;
+  - el gate dentro de las pantallas;
+  - la fase B, que ahora incluye el reingreso con clave y TOTP antes de cambiar un contacto;
+  - la foto, cuando la plataforma construya el pedido `0015`.

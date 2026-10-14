@@ -39,6 +39,17 @@ internal class DevTokenProvider(
         current.value = null
     }
 
+    /**
+     * A new token, the one held dropped. The platform reads a dev token's `auth_time` as the moment it was minted, so
+     * this is the local stand-in for signing in again (a change of contact asks for a recent sign-in).
+     */
+    suspend fun renew() {
+        fetching.withLock {
+            current.value = null
+            fetch()
+        }
+    }
+
     private suspend fun fetch(): String? = try {
         contract.call(ContractOperations.DEV_TOKEN, DevTokenRequestDto(userId = subject, client = client)).token
             .also { current.value = it }

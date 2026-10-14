@@ -179,8 +179,9 @@ public fun App(
     // reader sees a wire to connect, not a channel to write.
     val securityEvents = remember { NoOpSecurityEventReporter }
     // A debug build's local platform (ADR-0062) serves what the contract has today: the clinic's clock, the
-    // profile, the appointments, and search to booking. Every other capability stays on the script until it is
-    // wired (task 0036). Without an environment, the whole patient's side is the script, as before.
+    // profile and its change of contact, the appointments, and search to booking. Every other capability stays
+    // on the script until it is wired (task 0036). Without an environment, the whole patient's side is the
+    // script, as before.
     val localPatient = remember(environment) {
         environment.localBackend?.let { LocalPatientBackend(it, securityEvents.emittingIn(scope)) }
     }
@@ -194,7 +195,7 @@ public fun App(
                 doctors = patientScript,
                 ratings = patientScript,
                 notices = patientScript,
-                contact = patientScript,
+                contact = local.contact,
             )
         } ?: patientScript
     }

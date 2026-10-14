@@ -10,6 +10,9 @@ import com.luismejias.lumemedlink.shared.EmailAddress
 import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.delay
 
+/** The script's one pending contact change names itself: it keeps the change, the handle only points at it. */
+private const val SCRIPT_CHANGE_ID = "script"
+
 /** Which of the design's worlds the script plays: its sample patient, or one with nothing yet (e7, e8, e9). */
 internal enum class CareWorld { DESIGN, EMPTY }
 
@@ -224,36 +227,38 @@ internal class ScriptedPatientCare(
     override suspend fun requestEmailChange(email: EmailAddress): ContactChangeResult<ContactCodeDispatch> =
         contactAnswer { ContactChangeResult.Ok(sendContactCode(PendingContact(null, email, 0, 0))) }
 
-    override suspend fun resendContactCode(): ContactChangeResult<ContactCodeDispatch> = contactAnswer {
-        pendingContact?.let { ContactChangeResult.Ok(sendContactCode(it)) }
-            ?: ContactChangeResult.Failed(ContactChangeFailure.CodeExpired)
-    }
+    override suspend fun resendContactCode(change: PendingContactChange): ContactChangeResult<ContactCodeDispatch> =
+        contactAnswer {
+            pendingContact?.let { ContactChangeResult.Ok(sendContactCode(it)) }
+                ?: ContactChangeResult.Failed(ContactChangeFailure.CodeExpired)
+        }
 
-    override suspend fun confirmContactChange(code: String): ContactChangeResult<Unit> = contactAnswer {
-        val pending = pendingContact
-        when {
-            pending == null || clock.nowEpochMillis() >= pending.expiresAt || pending.attemptsLeft <= 0 ->
-                ContactChangeResult.Failed(ContactChangeFailure.CodeExpired)
-            code == AccessScript.SMS_CODE -> {
-                profile = profile.copy(
-                    mobile = pending.mobile ?: profile.mobile,
-                    email = pending.email ?: profile.email,
-                )
-                pendingContact = null
-                ContactChangeResult.Ok(Unit)
-            }
-            else -> {
-                pending.attemptsLeft -= 1
-                ContactChangeResult.Failed(
-                    if (pending.attemptsLeft > 0) {
-                        ContactChangeFailure.WrongCode(pending.attemptsLeft)
-                    } else {
-                        ContactChangeFailure.CodeExpired
-                    },
-                )
+    override suspend fun confirmContactChange(change: PendingContactChange, code: String): ContactChangeResult<Unit> =
+        contactAnswer {
+            val pending = pendingContact
+            when {
+                pending == null || clock.nowEpochMillis() >= pending.expiresAt || pending.attemptsLeft <= 0 ->
+                    ContactChangeResult.Failed(ContactChangeFailure.CodeExpired)
+                code == AccessScript.SMS_CODE -> {
+                    profile = profile.copy(
+                        mobile = pending.mobile ?: profile.mobile,
+                        email = pending.email ?: profile.email,
+                    )
+                    pendingContact = null
+                    ContactChangeResult.Ok(Unit)
+                }
+                else -> {
+                    pending.attemptsLeft -= 1
+                    ContactChangeResult.Failed(
+                        if (pending.attemptsLeft > 0) {
+                            ContactChangeFailure.WrongCode(pending.attemptsLeft)
+                        } else {
+                            ContactChangeFailure.CodeExpired
+                        },
+                    )
+                }
             }
         }
-    }
 
     /** Arms [pending] with a fresh code — the access script's lifetime, attempts and resend interval. */
     private fun sendContactCode(pending: PendingContact): ContactCodeDispatch {
@@ -261,7 +266,13 @@ internal class ScriptedPatientCare(
         pending.expiresAt = now + AccessScript.CODE_LIFETIME_MILLIS
         pending.attemptsLeft = AccessScript.CODE_ATTEMPTS
         pendingContact = pending
-        return ContactCodeDispatch(pending.expiresAt, now + AccessScript.RESEND_INTERVAL_MILLIS)
+        // The script keeps its own pending change; the handle only names it.
+        val value = pending.mobile?.e164 ?: pending.email?.value.orEmpty()
+        return ContactCodeDispatch(
+            pending.expiresAt,
+            now + AccessScript.RESEND_INTERVAL_MILLIS,
+            PendingContactChange(SCRIPT_CHANGE_ID, SCRIPT_CHANGE_ID, value),
+        )
     }
 
     private suspend fun <T> contactAnswer(answer: () -> ContactChangeResult<T>): ContactChangeResult<T> {

@@ -179,16 +179,40 @@ internal data class CarePolicy(val changeWindowHours: Int, val remindersHoursBef
 /** Which of the profile's contacts a change replaces: the mobile (verified by SMS) or the email (by mail). */
 internal enum class ContactKind { PHONE, EMAIL }
 
-/** A code went out to the new contact: until when it holds, and when another may be asked for. */
-internal data class ContactCodeDispatch(val expiresAtEpochMillis: Long, val resendAvailableAtEpochMillis: Long)
+/**
+ * One contact change asked for: what the resend and the confirmation must name. The platform answers [ticket] once and
+ * keeps only what it unlocks (its `ADR-0102`), so this lives in memory with the sheet, never in a log or on disk.
+ */
+internal class PendingContactChange(val id: String, val ticket: String, val value: String) {
+    override fun toString(): String = "PendingContactChange(redacted)"
+}
+
+/** A code went out to the new contact: until when it holds, when another may be asked for, and the change it is for. */
+internal data class ContactCodeDispatch(
+    val expiresAtEpochMillis: Long,
+    val resendAvailableAtEpochMillis: Long,
+    val change: PendingContactChange,
+)
 
 /** Why a contact change did not go through. */
 internal sealed interface ContactChangeFailure {
     /** The code did not match; [attemptsLeft] before it is spent. */
     data class WrongCode(val attemptsLeft: Int) : ContactChangeFailure
 
-    /** The code lapsed or was spent: a new one is needed. */
+    /** The code lapsed: a new one is needed. */
     data object CodeExpired : ContactChangeFailure
+
+    /** The change was confirmed elsewhere, spent or replaced: it must be asked for again from the start. */
+    data object Closed : ContactChangeFailure
+
+    /** Every clinic already holds that contact. */
+    data object Unchanged : ContactChangeFailure
+
+    /** Too many codes asked for: later, not now. */
+    data object LimitReached : ContactChangeFailure
+
+    /** The last sign-in is too old for a change of contact: the person signs in again first (the platform's 403). */
+    data object SignInAgain : ContactChangeFailure
 
     data object Offline : ContactChangeFailure
 
@@ -268,23 +292,22 @@ internal interface NoticesSource {
     suspend fun hasUnreadNotices(): CareResult<Boolean>
 }
 
-/** Changing the phone or the e-mail, verified by a code before it lands. */
+/**
+ * Changing the phone or the e-mail, verified by a code sent to the NEW contact before it lands, in every clinic at once
+ * (the platform's answer to request `0012`).
+ */
 internal interface ContactChangeGateway {
-    /**
-     * Sends a code to [mobile], the number that would replace the profile's. Nothing changes until
-     * [confirmContactChange].
-     * No contract (PROVISIONAL, ADR-0046): the script plays it.
-     */
+    /** Sends a code to [mobile], the number that would replace the profile's. Nothing changes until it is confirmed. */
     suspend fun requestPhoneChange(mobile: PhoneNumber): ContactChangeResult<ContactCodeDispatch>
 
     /** Sends a code to [email], the address that would replace the profile's; as [requestPhoneChange]. */
     suspend fun requestEmailChange(email: EmailAddress): ContactChangeResult<ContactCodeDispatch>
 
-    /** A new code for the change pending, the old one spent. */
-    suspend fun resendContactCode(): ContactChangeResult<ContactCodeDispatch>
+    /** A new code for [change], the old one spent. */
+    suspend fun resendContactCode(change: PendingContactChange): ContactChangeResult<ContactCodeDispatch>
 
-    /** The pending change lands when [code] is the one sent; the profile then reads the new contact. */
-    suspend fun confirmContactChange(code: String): ContactChangeResult<Unit>
+    /** The change lands with the code that reached the new contact. */
+    suspend fun confirmContactChange(change: PendingContactChange, code: String): ContactChangeResult<Unit>
 }
 
 /**

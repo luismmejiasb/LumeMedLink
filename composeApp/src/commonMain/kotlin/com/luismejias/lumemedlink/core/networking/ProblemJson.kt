@@ -21,6 +21,8 @@ internal data class ProblemJson(
     val status: Int? = null,
     val detail: String? = null,
     val instance: String? = null,
+    /** The tries a refused code leaves (the platform's `contact_verification_code_mismatch`): a count, never prose. */
+    val attemptsLeft: Int? = null,
 )
 
 /** Thrown by the stack for any non-2xx response, already mapped to the taxonomy. */
@@ -49,7 +51,7 @@ internal suspend fun HttpResponse.toAppError(): AppError {
     val problem = problemOrNull()
     return when (status.value) {
         401 -> AppError.AuthExpired
-        400, 422 -> AppError.Validation(problemType = problem?.type)
+        400, 422 -> AppError.Validation(problemType = problem?.type, attemptsLeft = problem?.attemptsLeft)
         404 -> AppError.NotFound
         408, 425, 429, in 500..599 -> AppError.Retryable(status = status.value)
         // A 3xx lands here too: redirects are never followed (ADR-0004), so one arriving is an

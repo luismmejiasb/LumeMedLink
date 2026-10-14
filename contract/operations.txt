@@ -28,3 +28,6 @@ getMyRole                       access
 listCommunes                    directory
 listRegions                     directory
 getDirectoryProfessional        directory
+requestMyContactVerification   profile
+resendMyContactVerification    profile
+confirmMyContactVerification   profile

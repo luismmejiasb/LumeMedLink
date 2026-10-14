@@ -622,6 +622,9 @@
     <string name="contact_code_body">Te enviamos un código a %1$s.</string>
     <string name="contact_confirm">Confirmar</string>
     <string name="contact_expired">El código venció. Pide uno nuevo.</string>
+    <string name="contact_limit">Pediste demasiados códigos. Inténtalo más tarde.</string>
+    <string name="contact_sign_in_again">Por seguridad, vuelve a ingresar con tu clave para cambiar tu contacto.</string>
+    <string name="contact_closed">Ese código ya no sirve. Envía uno nuevo.</string>
     <string name="contact_offline">Sin conexión. Inténtalo de nuevo.</string>
     <string name="contact_unavailable">No pudimos hacerlo ahora. Inténtalo más tarde.</string>
     <string name="contact_phone_done">Teléfono actualizado</string>

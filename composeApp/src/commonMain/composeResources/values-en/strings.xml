@@ -613,6 +613,9 @@
     <string name="contact_code_body">We sent a code to %1$s.</string>
     <string name="contact_confirm">Confirm</string>
     <string name="contact_expired">The code expired. Ask for a new one.</string>
+    <string name="contact_limit">You asked for too many codes. Try again later.</string>
+    <string name="contact_sign_in_again">For your security, sign in again with your password to change your contact.</string>
+    <string name="contact_closed">That code no longer works. Send a new one.</string>
     <string name="contact_offline">No connection. Try again.</string>
     <string name="contact_unavailable">We could not do it now. Try again later.</string>
     <string name="contact_phone_done">Phone updated</string>

@@ -3,10 +3,17 @@ package com.luismejias.lumemedlink.features.patient.settings
 import com.luismejias.lumemedlink.core.auth.AccessScript
 import com.luismejias.lumemedlink.core.care.CareFailure
 import com.luismejias.lumemedlink.core.care.CareResult
+import com.luismejias.lumemedlink.core.care.ContactChangeFailure
+import com.luismejias.lumemedlink.core.care.ContactChangeGateway
+import com.luismejias.lumemedlink.core.care.ContactChangeResult
+import com.luismejias.lumemedlink.core.care.ContactCodeDispatch
 import com.luismejias.lumemedlink.core.care.ContactKind
 import com.luismejias.lumemedlink.core.care.PatientProfile
+import com.luismejias.lumemedlink.core.care.PendingContactChange
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.core.session.Clock
+import com.luismejias.lumemedlink.shared.EmailAddress
+import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -130,6 +137,59 @@ class ContactChangeTest {
         change.send()
         assertEquals(ContactChangeTrouble.OFFLINE, change.state.value?.trouble)
         assertEquals(ContactChangeStep.ENTER, change.state.value?.step)
+    }
+
+    /** A gateway that sends codes and then refuses with [failure], as the platform's verification can. */
+    private class Refusing(private val failure: ContactChangeFailure) : ContactChangeGateway {
+        private val dispatch = ContactCodeDispatch(0, 0, PendingContactChange("v-1", "t-1", "+56912345678"))
+        val confirmed = mutableListOf<PendingContactChange>()
+
+        override suspend fun requestPhoneChange(mobile: PhoneNumber) = ContactChangeResult.Ok(dispatch)
+
+        override suspend fun requestEmailChange(email: EmailAddress) = ContactChangeResult.Ok(dispatch)
+
+        override suspend fun resendContactCode(change: PendingContactChange) = ContactChangeResult.Ok(dispatch)
+
+        override suspend fun confirmContactChange(
+            change: PendingContactChange,
+            code: String,
+        ): ContactChangeResult<Unit> {
+            confirmed += change
+            return ContactChangeResult.Failed(failure)
+        }
+    }
+
+    @Test
+    fun theConfirmationNamesTheChangeAskedForAndAClosedOneStartsAgainFromTheNewContact() = runTest(dispatcher) {
+        val gateway = Refusing(ContactChangeFailure.Closed)
+        val change = ContactChangeViewModel(gateway).also { it.open(ContactKind.PHONE, profile()) }
+        change.typedChanged("912345678")
+        change.send()
+        change.codeChanged("123456")
+        change.confirm()
+        assertEquals("v-1", gateway.confirmed.single().id)
+        val shown = change.state.value
+        assertEquals(ContactChangeStep.ENTER, shown?.step)
+        assertEquals(ContactChangeTrouble.CLOSED, shown?.trouble)
+        assertNull(shown?.dispatch, "the closed change is forgotten")
+        assertEquals("912345678", shown?.typed, "the new contact stays typed")
+    }
+
+    @Test
+    fun eachRefusalOfTheChangeIsSaidAndNothingLands() = runTest(dispatcher) {
+        listOf(
+            ContactChangeFailure.SignInAgain to ContactChangeTrouble.SIGN_IN_AGAIN,
+            ContactChangeFailure.LimitReached to ContactChangeTrouble.LIMIT,
+            ContactChangeFailure.Unchanged to ContactChangeTrouble.UNCHANGED,
+        ).forEach { (failure, trouble) ->
+            val change = ContactChangeViewModel(Refusing(failure)).also { it.open(ContactKind.PHONE, profile()) }
+            change.typedChanged("912345678")
+            change.send()
+            change.codeChanged("123456")
+            change.confirm()
+            assertEquals(trouble, change.state.value?.trouble, failure.toString())
+            assertNull(change.done.value)
+        }
     }
 
     @Test

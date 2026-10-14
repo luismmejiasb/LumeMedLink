@@ -25,7 +25,22 @@ private const val CONTACT_CODE_LENGTH = 6
 internal enum class ContactChangeStep { ENTER, CODE }
 
 /** What went wrong outside the code itself: the change could not be asked for or answered. */
-internal enum class ContactChangeTrouble { OFFLINE, UNAVAILABLE }
+internal enum class ContactChangeTrouble {
+    OFFLINE,
+    UNAVAILABLE,
+
+    /** Every clinic already holds that contact. */
+    UNCHANGED,
+
+    /** Too many codes asked for. */
+    LIMIT,
+
+    /** The last sign-in is too old for this change. */
+    SIGN_IN_AGAIN,
+
+    /** The change asked for was closed: it starts again from the new contact. */
+    CLOSED,
+}
 
 /**
  * One contact change, from the pencil to the confirmed code (the author, 2026-10-13: «verificados antes de hacer el
@@ -75,8 +90,9 @@ internal data class ContactChangeState(
 }
 
 /**
- * The phone's and the email's change sheets (task 0035). Scripted (ADR-0046): there is no contract for it, and none is
- * asked for while the patient's app is a mock (the author, 2026-10-11).
+ * The phone's and the email's change sheets (task 0035), over [ContactChangeGateway]: the platform's verification in a
+ * debug build's local environment, the script otherwise (task 0036). The change asked for
+ * ([ContactCodeDispatch.change]) lives here, with the sheet, and goes with it.
  */
 internal class ContactChangeViewModel(private val care: ContactChangeGateway) : ViewModel() {
     private val current = MutableStateFlow<ContactChangeState?>(null)
@@ -146,9 +162,9 @@ internal class ContactChangeViewModel(private val care: ContactChangeGateway) : 
 
     /** «Reenviar código»: a fresh code, the typed one and any expiry forgotten. */
     suspend fun resend() {
-        if (current.value?.step != ContactChangeStep.CODE) return
+        val change = current.value?.takeIf { it.step == ContactChangeStep.CODE }?.dispatch?.change ?: return
         edit { copy(sending = true, trouble = null) }
-        when (val result = care.resendContactCode()) {
+        when (val result = care.resendContactCode(change)) {
             is ContactChangeResult.Ok -> edit {
                 copy(sending = false, dispatch = result.value, code = "", wrongAttemptsLeft = null, expired = false)
             }
@@ -159,9 +175,10 @@ internal class ContactChangeViewModel(private val care: ContactChangeGateway) : 
     /** «Confirmar»: the change lands, the sheet closes, and [done] says which. */
     suspend fun confirm() {
         val shown = current.value ?: return
+        val change = shown.dispatch?.change ?: return
         if (!shown.canConfirm) return
         edit { copy(sending = true, trouble = null) }
-        when (val result = care.confirmContactChange(shown.code)) {
+        when (val result = care.confirmContactChange(change, shown.code)) {
             is ContactChangeResult.Ok -> {
                 current.value = null
                 landed.value = shown.kind
@@ -179,6 +196,18 @@ internal class ContactChangeViewModel(private val care: ContactChangeGateway) : 
                 wrongAttemptsLeft = null,
                 expired = true,
             )
+            ContactChangeFailure.Closed -> copy(
+                sending = false,
+                step = ContactChangeStep.ENTER,
+                dispatch = null,
+                code = "",
+                wrongAttemptsLeft = null,
+                expired = false,
+                trouble = ContactChangeTrouble.CLOSED,
+            )
+            ContactChangeFailure.Unchanged -> copy(sending = false, trouble = ContactChangeTrouble.UNCHANGED)
+            ContactChangeFailure.LimitReached -> copy(sending = false, trouble = ContactChangeTrouble.LIMIT)
+            ContactChangeFailure.SignInAgain -> copy(sending = false, trouble = ContactChangeTrouble.SIGN_IN_AGAIN)
             ContactChangeFailure.Offline -> copy(sending = false, trouble = ContactChangeTrouble.OFFLINE)
             ContactChangeFailure.Unavailable -> copy(sending = false, trouble = ContactChangeTrouble.UNAVAILABLE)
         }

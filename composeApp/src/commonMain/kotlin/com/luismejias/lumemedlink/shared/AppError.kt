@@ -14,9 +14,10 @@ internal sealed interface AppError {
 
     /**
      * 400/422 — the request was understood and refused. [problemType] is the contract's opaque
-     * problem-type URI, safe to branch on; never server prose.
+     * problem-type URI, safe to branch on; never server prose. [attemptsLeft] is the one count a refusal carries
+     * today: how many tries a wrong code leaves.
      */
-    data class Validation(val problemType: String?) : AppError
+    data class Validation(val problemType: String?, val attemptsLeft: Int? = null) : AppError
 
     /**
      * 404 — "not yours" as often as "does not exist" (backend ADR-0009 returns 404, never 403,

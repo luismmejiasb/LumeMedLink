@@ -18983,7 +18983,7 @@
     },
     "/v1/patient/profiles/{tenantId}": {
       "patch": {
-        "description": "Correct your e-mail, phone or address at ONE clinic. These four are the whole editable surface: a name or a date of birth is how that clinic knows whose record this is, and is refused by the database, not merely omitted from this schema.\n\n**Every change is announced** (`ADR-0057` §5, 0.63.0), in the same transaction: the clinic's professionals with an upcoming appointment with you are told what changed, inside their app, and you are told by e-mail that your contact data changed — when and where, not what. When the e-mail itself changes, the address you had is told as well. One notice waits at a time: a correction made while one is waiting adds nothing to it. Sending the values you already have announces nothing, and a phone that reads as one is kept as the practice keeps it (`+56 9 1234 5678` is `+56912345678`). A 409 `stale_write` means your contact changed at the same time from somewhere else, more than once: read your profiles again and send the correction again.\n\n**To clear a field, send it as `null` or list its name in `clearFields`** (0.77.0): the second is for a client whose encoder omits a property it holds as `nil`, so it could never say `null`. Both mean the same.",
+        "description": "Correct your address at ONE clinic, or clear your e-mail or phone there. These four are the whole editable surface: a name or a date of birth is how that clinic knows whose record this is, and is refused by the database, not merely omitted from this schema.\n\n**A NEW phone or e-mail is not written here** (`ADR-0102`, 0.131.0): it is a 422 `contact_needs_verification`. Verify it with `requestMyContactVerification` and `confirmMyContactVerification`, which write it at every clinic at once. Sending the value this clinic already holds, or `null`, is still accepted. Send only the fields you change: a phone read before a verification replaced it is a new phone now.\n\n**Every change is announced** (`ADR-0057` §5, 0.63.0), in the same transaction: the clinic's professionals with an upcoming appointment with you are told what changed, inside their app, and you are told by e-mail that your contact data changed — when and where, not what. When the e-mail itself changes, the address you had is told as well. One notice waits at a time: a correction made while one is waiting adds nothing to it. Sending the values you already have announces nothing, and a phone that reads as one is kept as the practice keeps it (`+56 9 1234 5678` is `+56912345678`). A 409 `stale_write` means your contact changed at the same time from somewhere else, more than once: read your profiles again and send the correction again.\n\n**To clear a field, send it as `null` or list its name in `clearFields`** (0.77.0): the second is for a client whose encoder omits a property it holds as `nil`, so it could never say `null`. Both mean the same.",
         "operationId": "updateMyPatientProfile",
         "parameters": [
           {
@@ -19087,7 +19087,7 @@
             }
           },
           "422": {
-            "description": "Unprocessable Content (`unprocessable`)",
+            "description": "Unprocessable Content (`unprocessable`)\n\nUnprocessable Content (`contact_needs_verification`)",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19997,6 +19997,423 @@
           },
           "404": {
             "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      }
+    },
+    "/v1/patient/contact-verifications": {
+      "post": {
+        "description": "Send a code to a new phone (by SMS) or a new e-mail. **Nothing is written yet**: `confirmMyContactVerification` writes the value at every clinic you are enrolled at, with one code. A request still open is replaced by this one.\n\n**It asks for a recent sign-in**: a token whose `auth_time` is more than 5 minutes old is a 403 `recent_sign_in_required`, and nothing is sent. Sign in again at the IdP (password and TOTP) and retry: the code to the new destination proves only that you receive there, and the sign-in proves it is you.\n\nA code lives 10 minutes; another may be asked 60 seconds after the last, 3 sends in all; 5 wrong codes spend the request; an account opens 5 requests a day. A 409 `contact_unchanged` means every clinic already holds that value. A 503 means the code could not be sent and the request still counts: try again later.\n\nThe platform keeps no copy of the value nor of the code: send the value again, exactly, with the `ticket` this answers, on the resend and the confirmation.",
+        "operationId": "requestMyContactVerification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestContactVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenedContactVerificationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`recent_sign_in_required`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`contact_unchanged`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`contact_verification_limit_reached`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable (`service_unavailable`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      }
+    },
+    "/v1/patient/contact-verifications/{verificationId}/resend": {
+      "post": {
+        "description": "A new code to the same destination; the one sent before stops working, and the wrong attempts already made still count. Not before `resendAvailableAt` (429 `contact_verification_too_soon`, which carries it). A value other than the one the request was opened for, or another `ticket`, is a 404: open a new request for it.",
+        "operationId": "resendMyContactVerification",
+        "parameters": [
+          {
+            "name": "verificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendContactVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactVerificationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`contact_verification_closed`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`contact_verification_too_soon`)\n\nToo Many Requests (`contact_verification_limit_reached`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable (`service_unavailable`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      }
+    },
+    "/v1/patient/contact-verifications/{verificationId}/confirm": {
+      "post": {
+        "description": "Write the new phone or e-mail at every clinic you are enrolled at where it differs, in one step, and answer your profiles. Each clinic is told as `updateMyPatientProfile` told it (ADR-0057 §5), and so are you.\n\nA wrong code (or `ticket`, or value) is a 422 `contact_verification_code_mismatch` with `attemptsLeft`; at 0 the request is spent. A code replaced by a resend while it was being confirmed is the same 422, not counted: send the newest. A 410 `contact_verification_expired` asks for a new code (`resendMyContactVerification`); a 409 `contact_verification_closed`, for a new request. A 409 `stale_write` means your contact changed at the same time from somewhere else: send the same code again.",
+        "operationId": "confirmMyContactVerification",
+        "parameters": [
+          {
+            "name": "verificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmContactVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SelfProfileDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`contact_verification_closed`)\n\nConflict (`stale_write`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone (`contact_verification_expired`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content (`contact_verification_code_mismatch`)",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22474,7 +22891,7 @@
   "info": {
     "title": "lumemed-cloud API",
     "description": "Backend contract for the Lume Cloud medical platform. Errors are RFC 9457 problem+json. A string's `minLength` and `maxLength` count UTF-16 code units, as JavaScript counts them: a character outside the Basic Multilingual Plane, such as most emoji, counts two, and an emoji built from several characters (a flag, a skin tone) counts each of them. Count the same way before sending, or a text within a limit counted another way is refused with 400.",
-    "version": "0.130.0",
+    "version": "0.131.0",
     "contact": {}
   },
   "tags": [
@@ -22737,7 +23154,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -32315,7 +32732,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -32443,7 +32860,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -32707,7 +33124,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -33546,6 +33963,168 @@
         "required": [
           "enrolled",
           "since"
+        ]
+      },
+      "RequestContactVerificationDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "description": "`PHONE` sends the code by SMS; `EMAIL`, by e-mail.",
+            "type": "string",
+            "enum": [
+              "PHONE",
+              "EMAIL"
+            ]
+          },
+          "value": {
+            "description": "The new phone (an E.164 phone with its country code, as `+56912345678`; separators are accepted and dropped) or the new e-mail, exactly as on the first step.",
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 320
+          }
+        },
+        "required": [
+          "channel",
+          "value"
+        ]
+      },
+      "OpenedContactVerificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The request. Resend and confirm name it.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PHONE, EMAIL. Where the code went.",
+            "type": "string"
+          },
+          "expiresAt": {
+            "description": "When the code last sent stops working. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string",
+            "format": "date-time"
+          },
+          "resendAvailableAt": {
+            "description": "When another code may be asked for. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string",
+            "format": "date-time"
+          },
+          "sendsLeft": {
+            "description": "Codes that can still be sent for this request; 0 means start a new one.",
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false
+          },
+          "attemptsLeft": {
+            "description": "Wrong codes this request still accepts before it is spent.",
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false
+          },
+          "ticket": {
+            "description": "Answered ONCE, here: send it with every resend and confirmation. It keys the only trace the platform keeps of the new value and the code, so whoever reads the database cannot recover either; lose it and open a new request. Keep it in memory, never in a log.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "expiresAt",
+          "resendAvailableAt",
+          "sendsLeft",
+          "attemptsLeft",
+          "ticket"
+        ]
+      },
+      "ResendContactVerificationDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "description": "The `ticket` `requestMyContactVerification` answered. The platform never stores it: without it the request cannot be used.",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          },
+          "value": {
+            "description": "The new phone (an E.164 phone with its country code, as `+56912345678`; separators are accepted and dropped) or the new e-mail, exactly as on the first step.",
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 320
+          }
+        },
+        "required": [
+          "ticket",
+          "value"
+        ]
+      },
+      "ContactVerificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The request. Resend and confirm name it.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PHONE, EMAIL. Where the code went.",
+            "type": "string"
+          },
+          "expiresAt": {
+            "description": "When the code last sent stops working. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string",
+            "format": "date-time"
+          },
+          "resendAvailableAt": {
+            "description": "When another code may be asked for. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string",
+            "format": "date-time"
+          },
+          "sendsLeft": {
+            "description": "Codes that can still be sent for this request; 0 means start a new one.",
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false
+          },
+          "attemptsLeft": {
+            "description": "Wrong codes this request still accepts before it is spent.",
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "expiresAt",
+          "resendAvailableAt",
+          "sendsLeft",
+          "attemptsLeft"
+        ]
+      },
+      "ConfirmContactVerificationDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "description": "The `ticket` `requestMyContactVerification` answered. The platform never stores it: without it the request cannot be used.",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          },
+          "value": {
+            "description": "The new phone (an E.164 phone with its country code, as `+56912345678`; separators are accepted and dropped) or the new e-mail, exactly as on the first step.",
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 320
+          },
+          "code": {
+            "description": "The 6 digits that reached the new destination.",
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          }
+        },
+        "required": [
+          "ticket",
+          "value",
+          "code"
         ]
       },
       "ContactChangeNoticePageDto": {

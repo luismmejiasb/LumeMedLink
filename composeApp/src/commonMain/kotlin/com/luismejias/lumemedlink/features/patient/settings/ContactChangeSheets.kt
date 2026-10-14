@@ -38,11 +38,13 @@ import com.luismejias.lumemedlink.core.session.SystemClock
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.code_wrong_attempts
 import com.luismejias.lumemedlink.resources.common_cancel
+import com.luismejias.lumemedlink.resources.contact_closed
 import com.luismejias.lumemedlink.resources.contact_code_body
 import com.luismejias.lumemedlink.resources.contact_confirm
 import com.luismejias.lumemedlink.resources.contact_email_body
 import com.luismejias.lumemedlink.resources.contact_email_title
 import com.luismejias.lumemedlink.resources.contact_expired
+import com.luismejias.lumemedlink.resources.contact_limit
 import com.luismejias.lumemedlink.resources.contact_new_email
 import com.luismejias.lumemedlink.resources.contact_new_phone
 import com.luismejias.lumemedlink.resources.contact_offline
@@ -51,6 +53,7 @@ import com.luismejias.lumemedlink.resources.contact_phone_title
 import com.luismejias.lumemedlink.resources.contact_same_email
 import com.luismejias.lumemedlink.resources.contact_same_phone
 import com.luismejias.lumemedlink.resources.contact_send
+import com.luismejias.lumemedlink.resources.contact_sign_in_again
 import com.luismejias.lumemedlink.resources.contact_unavailable
 import com.luismejias.lumemedlink.resources.field_code
 import com.luismejias.lumemedlink.resources.field_code_clear
@@ -86,12 +89,17 @@ internal fun ContactChangeSheet(model: ContactChangeViewModel) {
         shown.trouble?.let {
             LumeCallout(
                 text = stringResource(
-                    if (it ==
-                        ContactChangeTrouble.OFFLINE
-                    ) {
-                        Res.string.contact_offline
-                    } else {
-                        Res.string.contact_unavailable
+                    when (it) {
+                        ContactChangeTrouble.OFFLINE -> Res.string.contact_offline
+                        ContactChangeTrouble.UNAVAILABLE -> Res.string.contact_unavailable
+                        ContactChangeTrouble.UNCHANGED -> if (shown.kind == ContactKind.PHONE) {
+                            Res.string.contact_same_phone
+                        } else {
+                            Res.string.contact_same_email
+                        }
+                        ContactChangeTrouble.LIMIT -> Res.string.contact_limit
+                        ContactChangeTrouble.SIGN_IN_AGAIN -> Res.string.contact_sign_in_again
+                        ContactChangeTrouble.CLOSED -> Res.string.contact_closed
                     },
                 ),
                 style = LumeCalloutStyle.Error,
