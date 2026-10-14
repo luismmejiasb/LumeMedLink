@@ -240,6 +240,14 @@ f.write_text(s.replace(old, "if (false) {", 1))
 
 # The cover that follows screen capture (task 0017): stop observing it, or uncover on activation
 # regardless, and a recording carries the agenda off the phone with the app in front.
+# Two objects under one ID: the asset catalog that took a script phase's ID (2026-10-14).
+bait "two objects declared under one ID in the iOS project" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
+s = p.read_text()
+s = s.replace("/* End PBXFileReference section */", "\t\t1A0000000000000000000009 /* Twin.plist */ = {isa = PBXFileReference; path = Twin.plist; sourceTree = \"<group>\"; };\n/* End PBXFileReference section */", 1)
+p.write_text(s)
+'
 bait "the host stops observing screen capture" check-ios-host.sh '
 import sys, pathlib
 f = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/AppDelegate.swift"

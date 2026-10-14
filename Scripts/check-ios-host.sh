@@ -307,6 +307,12 @@ hits=$(swift_code 'print\(|NSLog\(|os_log\(|Logger\(')
 [ -n "$hits" ] && fail "ios-host: free-text logging in the host" \
     "There is ONE logging path with a closed vocabulary (§8.1, ADR-0020). Swift's print writes whatever it is handed." "$hits"
 
+# Every object in the project is declared ONCE under its ID (2026-10-14). The project is hand-numbered, and an asset
+# catalog given an ID a script phase already held passed every gate while Xcode refused to open the project at all.
+hits=$(grep -oE '^[[:space:]]*[0-9A-F]{24} /\*[^*]*\*/ = \{' "$PROJECT" | awk '{print $1}' | sort | uniq -d)
+[ -n "$hits" ] && fail "ios-host: two objects declared under one ID in the project" \
+    "Xcode refuses to open a project where two objects share an ID. Give the new one an unused ID." "$hits"
+
 if [ $FAIL -eq 0 ]; then
     echo "ios-host: OK"
 else
