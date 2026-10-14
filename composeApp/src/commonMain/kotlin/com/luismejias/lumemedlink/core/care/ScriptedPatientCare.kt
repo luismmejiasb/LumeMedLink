@@ -1,5 +1,8 @@
 package com.luismejias.lumemedlink.core.care
 
+import com.luismejias.lumemedlink.core.auth.AccessScript
+import com.luismejias.lumemedlink.core.session.Clock
+import com.luismejias.lumemedlink.core.session.SystemClock
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ChileanRut
 import com.luismejias.lumemedlink.shared.ClockTime
@@ -19,6 +22,8 @@ internal class ScriptedPatientCare(
     private val world: CareWorld = CareWorld.DESIGN,
     private val failure: CareFailure? = null,
     private val latency: suspend () -> Unit = { delay(LATENCY_MILLIS) },
+    /** What a contact change's code expiry is measured on (§6). */
+    private val clock: Clock = SystemClock,
 ) : PatientCareGateway,
     DirectoryGateway {
     /** What this run booked, by its client key: memory only, gone with the instance. */
@@ -32,6 +37,19 @@ internal class ScriptedPatientCare(
 
     /** What this run cancelled or withdrew, by appointment id. */
     private val cancelled = mutableSetOf<String>()
+
+    /** The profile as this run left it: a confirmed contact change replaces its number or its address. */
+    private var profile = PROFILE
+
+    /** The contact change waiting for its code, as a server would keep it. */
+    private var pendingContact: PendingContact? = null
+
+    private class PendingContact(
+        val mobile: PhoneNumber?,
+        val email: EmailAddress?,
+        var expiresAt: Long,
+        var attemptsLeft: Int,
+    )
 
     override fun today(): CalendarDate = TODAY
 
@@ -51,7 +69,7 @@ internal class ScriptedPatientCare(
     /** The design's status bar: 9:41. */
     override fun now(): ClockTime = NOW
 
-    override suspend fun profile(): CareResult<PatientProfile> = answer(PROFILE)
+    override suspend fun profile(): CareResult<PatientProfile> = answer(profile)
 
     override suspend fun appointments(): CareResult<List<PatientAppointment>> = answer(all())
 
@@ -198,6 +216,61 @@ internal class ScriptedPatientCare(
         refusal()?.let { return it }
         cancelled += appointment.id
         return ChangeResult.Done
+    }
+
+    override suspend fun requestPhoneChange(mobile: PhoneNumber): ContactChangeResult<ContactCodeDispatch> =
+        contactAnswer { ContactChangeResult.Ok(sendContactCode(PendingContact(mobile, null, 0, 0))) }
+
+    override suspend fun requestEmailChange(email: EmailAddress): ContactChangeResult<ContactCodeDispatch> =
+        contactAnswer { ContactChangeResult.Ok(sendContactCode(PendingContact(null, email, 0, 0))) }
+
+    override suspend fun resendContactCode(): ContactChangeResult<ContactCodeDispatch> = contactAnswer {
+        pendingContact?.let { ContactChangeResult.Ok(sendContactCode(it)) }
+            ?: ContactChangeResult.Failed(ContactChangeFailure.CodeExpired)
+    }
+
+    override suspend fun confirmContactChange(code: String): ContactChangeResult<Unit> = contactAnswer {
+        val pending = pendingContact
+        when {
+            pending == null || clock.nowEpochMillis() >= pending.expiresAt || pending.attemptsLeft <= 0 ->
+                ContactChangeResult.Failed(ContactChangeFailure.CodeExpired)
+            code == AccessScript.SMS_CODE -> {
+                profile = profile.copy(
+                    mobile = pending.mobile ?: profile.mobile,
+                    email = pending.email ?: profile.email,
+                )
+                pendingContact = null
+                ContactChangeResult.Ok(Unit)
+            }
+            else -> {
+                pending.attemptsLeft -= 1
+                ContactChangeResult.Failed(
+                    if (pending.attemptsLeft > 0) {
+                        ContactChangeFailure.WrongCode(pending.attemptsLeft)
+                    } else {
+                        ContactChangeFailure.CodeExpired
+                    },
+                )
+            }
+        }
+    }
+
+    /** Arms [pending] with a fresh code — the access script's lifetime, attempts and resend interval. */
+    private fun sendContactCode(pending: PendingContact): ContactCodeDispatch {
+        val now = clock.nowEpochMillis()
+        pending.expiresAt = now + AccessScript.CODE_LIFETIME_MILLIS
+        pending.attemptsLeft = AccessScript.CODE_ATTEMPTS
+        pendingContact = pending
+        return ContactCodeDispatch(pending.expiresAt, now + AccessScript.RESEND_INTERVAL_MILLIS)
+    }
+
+    private suspend fun <T> contactAnswer(answer: () -> ContactChangeResult<T>): ContactChangeResult<T> {
+        latency()
+        return failure?.let {
+            ContactChangeResult.Failed(
+                if (it == CareFailure.Offline) ContactChangeFailure.Offline else ContactChangeFailure.Unavailable,
+            )
+        } ?: answer()
     }
 
     /** The write's own wait, and the failure switch read as a write's failure. */

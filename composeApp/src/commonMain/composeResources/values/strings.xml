@@ -608,4 +608,21 @@
     <string name="privacy_telemetry_body">Es opcional. Si lo activas, la app envía a Google reportes de fallas y estadísticas de uso, sin tu nombre ni tus citas. Puedes desactivarlo cuando quieras.</string>
     <string name="terms_body">LumeMedLink te permite ver y gestionar las citas con los médicos que te inscribieron.\n\nNo es un servicio de urgencias: ante una emergencia, llama al 131.\n\nLa app no entrega diagnósticos, recetas ni documentos clínicos; esos te los entrega tu médico.</string>
     <string name="licenses_intro">LumeMedLink está hecha también con estas bibliotecas de terceros. Gracias a quienes las escriben.</string>
+    <!-- 2026-10-13 · Cambiar teléfono y correo, verificados con un código (tarea 0035) -->
+    <string name="contact_phone_title">Cambiar teléfono</string>
+    <string name="contact_email_title">Cambiar correo</string>
+    <string name="contact_phone_body">Te enviaremos un código por SMS al número nuevo. Tu teléfono cambia cuando lo confirmes.</string>
+    <string name="contact_email_body">Te enviaremos un código al correo nuevo. Tu correo cambia cuando lo confirmes.</string>
+    <string name="contact_new_phone">Teléfono nuevo</string>
+    <string name="contact_new_email">Correo nuevo</string>
+    <string name="contact_same_phone">Es tu teléfono actual.</string>
+    <string name="contact_same_email">Es tu correo actual.</string>
+    <string name="contact_send">Enviar código</string>
+    <string name="contact_code_body">Te enviamos un código a %1$s.</string>
+    <string name="contact_confirm">Confirmar</string>
+    <string name="contact_expired">El código venció. Pide uno nuevo.</string>
+    <string name="contact_offline">Sin conexión. Inténtalo de nuevo.</string>
+    <string name="contact_unavailable">No pudimos hacerlo ahora. Inténtalo más tarde.</string>
+    <string name="contact_phone_done">Teléfono actualizado</string>
+    <string name="contact_email_done">Correo actualizado</string>
 </resources>

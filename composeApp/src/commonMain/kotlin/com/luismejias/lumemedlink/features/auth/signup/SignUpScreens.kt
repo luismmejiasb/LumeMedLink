@@ -36,7 +36,9 @@ import com.luismejias.lumemedlink.core.input.SensitiveFieldFormat
 import com.luismejias.lumemedlink.core.input.SensitiveFieldPurpose
 import com.luismejias.lumemedlink.core.input.SensitivePhoneField
 import com.luismejias.lumemedlink.core.input.SensitiveTextField
+import com.luismejias.lumemedlink.core.screen.clockText
 import com.luismejias.lumemedlink.core.screen.richRuns
+import com.luismejias.lumemedlink.core.screen.secondsUntil
 import com.luismejias.lumemedlink.core.session.Clock
 import com.luismejias.lumemedlink.features.auth.flow.AccessBack
 import com.luismejias.lumemedlink.features.auth.flow.AccessHeader
@@ -46,9 +48,7 @@ import com.luismejias.lumemedlink.features.auth.flow.AccessTone
 import com.luismejias.lumemedlink.features.auth.flow.NewPasswordFields
 import com.luismejias.lumemedlink.features.auth.flow.OfflineBanner
 import com.luismejias.lumemedlink.features.auth.flow.ResultActions
-import com.luismejias.lumemedlink.features.auth.flow.clockText
 import com.luismejias.lumemedlink.features.auth.flow.initialsOf
-import com.luismejias.lumemedlink.features.auth.flow.secondsUntil
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.code_expired_body
 import com.luismejias.lumemedlink.resources.code_expired_change_phone

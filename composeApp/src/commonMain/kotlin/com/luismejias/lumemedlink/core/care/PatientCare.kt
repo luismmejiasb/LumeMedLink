@@ -163,6 +163,31 @@ internal data class PatientProfile(
 /** How far ahead a patient may still change or cancel ("hasta 24 h antes", p5): the practice's rule. */
 internal data class CarePolicy(val changeWindowHours: Int, val remindersHoursBefore: List<Int>)
 
+/** Which of the profile's contacts a change replaces: the mobile (verified by SMS) or the email (by mail). */
+internal enum class ContactKind { PHONE, EMAIL }
+
+/** A code went out to the new contact: until when it holds, and when another may be asked for. */
+internal data class ContactCodeDispatch(val expiresAtEpochMillis: Long, val resendAvailableAtEpochMillis: Long)
+
+/** Why a contact change did not go through. */
+internal sealed interface ContactChangeFailure {
+    /** The code did not match; [attemptsLeft] before it is spent. */
+    data class WrongCode(val attemptsLeft: Int) : ContactChangeFailure
+
+    /** The code lapsed or was spent: a new one is needed. */
+    data object CodeExpired : ContactChangeFailure
+
+    data object Offline : ContactChangeFailure
+
+    data object Unavailable : ContactChangeFailure
+}
+
+internal sealed interface ContactChangeResult<out T> {
+    data class Ok<T>(val value: T) : ContactChangeResult<T>
+
+    data class Failed(val failure: ContactChangeFailure) : ContactChangeResult<Nothing>
+}
+
 /** Everything the five tab roots read. */
 internal interface PatientCareGateway {
     /** Today on the clinic's wall calendar — the device does not get to say what day it is for a slot. */
@@ -210,4 +235,20 @@ internal interface PatientCareGateway {
 
     /** Withdraws a request the practice has not answered: the contract's own verb, allowed at any time (spec f2). */
     suspend fun withdraw(appointment: PatientAppointment): ChangeResult
+
+    /**
+     * Sends a code to [mobile], the number that would replace the profile's. Nothing changes until
+     * [confirmContactChange].
+     * No contract (PROVISIONAL, ADR-0046): the script plays it.
+     */
+    suspend fun requestPhoneChange(mobile: PhoneNumber): ContactChangeResult<ContactCodeDispatch>
+
+    /** Sends a code to [email], the address that would replace the profile's; as [requestPhoneChange]. */
+    suspend fun requestEmailChange(email: EmailAddress): ContactChangeResult<ContactCodeDispatch>
+
+    /** A new code for the change pending, the old one spent. */
+    suspend fun resendContactCode(): ContactChangeResult<ContactCodeDispatch>
+
+    /** The pending change lands when [code] is the one sent; the profile then reads the new contact. */
+    suspend fun confirmContactChange(code: String): ContactChangeResult<Unit>
 }

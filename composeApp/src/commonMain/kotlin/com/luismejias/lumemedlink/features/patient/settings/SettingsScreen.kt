@@ -95,8 +95,8 @@ internal enum class SettingsEntry {
 internal fun SettingsScreen(
     model: SettingsViewModel,
     photo: ProfilePhotoModel,
-    onEditPhone: () -> Unit,
-    onEditEmail: () -> Unit,
+    onEditPhone: (PatientProfile) -> Unit,
+    onEditEmail: (PatientProfile) -> Unit,
     onEntry: (SettingsEntry) -> Unit,
 ) {
     val load by model.state.collectAsState()
@@ -308,7 +308,11 @@ private enum class ProfileField { RUT, PHONE, EMAIL }
 
 /** p7's identity card: each datum's name small over its value, the RUT locked, the contact pencils to edit. */
 @Composable
-private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEditEmail: () -> Unit) {
+private fun ProfileFields(
+    profile: PatientProfile,
+    onEditPhone: (PatientProfile) -> Unit,
+    onEditEmail: (PatientProfile) -> Unit,
+) {
     LumeList(items = ProfileField.entries, key = { it }, scrolls = false, chrome = LumeListChrome.OpenRuled) { field ->
         when (field) {
             ProfileField.RUT -> LumeListRow(
@@ -324,7 +328,7 @@ private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEd
                     LumeIcon.Edit,
                     stringResource(Res.string.settings_edit_phone),
                     LumeListButtonLook.Accent,
-                    onClick = onEditPhone,
+                    onClick = { onEditPhone(profile) },
                 ),
                 textStyle = LumeListRowTextStyle.LabelOverValue,
             )
@@ -335,7 +339,7 @@ private fun ProfileFields(profile: PatientProfile, onEditPhone: () -> Unit, onEd
                     LumeIcon.Edit,
                     stringResource(Res.string.settings_edit_email),
                     LumeListButtonLook.Accent,
-                    onClick = onEditEmail,
+                    onClick = { onEditEmail(profile) },
                 ),
                 textStyle = LumeListRowTextStyle.LabelOverValue,
             )

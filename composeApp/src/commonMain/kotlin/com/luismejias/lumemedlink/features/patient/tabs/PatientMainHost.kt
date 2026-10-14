@@ -27,6 +27,7 @@ import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeStatusStyle
 import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
+import com.luismejias.lumemedlink.core.care.ContactKind
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
@@ -62,6 +63,8 @@ import com.luismejias.lumemedlink.features.patient.rating.RateSheet
 import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 import com.luismejias.lumemedlink.features.patient.search.SearchHost
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
+import com.luismejias.lumemedlink.features.patient.settings.ContactChangeSheet
+import com.luismejias.lumemedlink.features.patient.settings.ContactChangeViewModel
 import com.luismejias.lumemedlink.features.patient.settings.SettingsEntry
 import com.luismejias.lumemedlink.features.patient.settings.SettingsPage
 import com.luismejias.lumemedlink.features.patient.settings.SettingsScreen
@@ -69,6 +72,8 @@ import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.booked_toast
 import com.luismejias.lumemedlink.resources.cancelled_toast
+import com.luismejias.lumemedlink.resources.contact_email_done
+import com.luismejias.lumemedlink.resources.contact_phone_done
 import com.luismejias.lumemedlink.resources.directions_copied
 import com.luismejias.lumemedlink.resources.moved_toast
 import com.luismejias.lumemedlink.resources.rate_sent_toast
@@ -127,6 +132,8 @@ internal fun PatientMainHost(
         SettingsViewModel(care, consent, appearance) { Res.readBytes(LICENSES_FILE).decodeToString() }
     }
     val settingsRoutes by settings.routes.collectAsState()
+    val contactChange = viewModel { ContactChangeViewModel(care) }
+    val contactDone by contactChange.done.collectAsState()
     val change = viewModel { ChangeViewModel(care, directory, logEvent) }
     val rate = viewModel { RateViewModel(care, logEvent) }
     val photo = viewModel { ProfilePhotoModel() }
@@ -176,6 +183,15 @@ internal fun PatientMainHost(
         changeRoutes.lastOrNull()?.let { change.reloadDetail() }
         toasts.show(rateSentToast, LumeStatusStyle.Success)
         rate.sentSeen()
+    }
+    val phoneDoneToast = stringResource(Res.string.contact_phone_done)
+    val emailDoneToast = stringResource(Res.string.contact_email_done)
+    LaunchedEffect(contactDone) {
+        val kind = contactDone ?: return@LaunchedEffect
+        // Configuración reads the new contact, and Inicio's greeting stays as it was: neither draws the contact twice.
+        settings.refresh()
+        toasts.show(if (kind == ContactKind.PHONE) phoneDoneToast else emailDoneToast, LumeStatusStyle.Success)
+        contactChange.doneSeen()
     }
     LaunchedEffect(changeDone) {
         val done = changeDone ?: return@LaunchedEffect
@@ -255,8 +271,8 @@ internal fun PatientMainHost(
                 else -> SettingsScreen(
                     model = settings,
                     photo = photo,
-                    onEditPhone = {},
-                    onEditEmail = {},
+                    onEditPhone = { profile -> contactChange.open(ContactKind.PHONE, profile) },
+                    onEditEmail = { profile -> contactChange.open(ContactKind.EMAIL, profile) },
                     onEntry = { if (it == SettingsEntry.SIGN_OUT) onSignOut() },
                 )
             }
@@ -302,6 +318,7 @@ internal fun PatientMainHost(
             onDismiss = change::dismissSheet,
         )
         RateSheet(rate, onComplaint = {})
+        ContactChangeSheet(contactChange)
         ProfilePhotoFlow(photo, picker, toasts)
         // Above the floating bar, as k3 draws it, never over it.
         LumeToastHost(

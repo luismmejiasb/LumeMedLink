@@ -599,4 +599,21 @@
     <string name="privacy_telemetry_body">It is optional. If you turn it on, the app sends Google crash reports and usage statistics, without your name or your appointments. You can turn it off at any time.</string>
     <string name="terms_body">LumeMedLink lets you see and manage your appointments with the doctors who enrolled you.\n\nIt is not an emergency service: in an emergency, call 131.\n\nThe app does not deliver diagnoses, prescriptions or clinical documents; your doctor gives you those.</string>
     <string name="licenses_intro">LumeMedLink is also made with these third-party libraries. Thanks to the people who write them.</string>
+    <!-- 2026-10-13 · Change phone and email, verified with a code (task 0035) -->
+    <string name="contact_phone_title">Change phone</string>
+    <string name="contact_email_title">Change email</string>
+    <string name="contact_phone_body">We will text a code to the new number. Your phone changes when you confirm it.</string>
+    <string name="contact_email_body">We will send a code to the new email. Your email changes when you confirm it.</string>
+    <string name="contact_new_phone">New phone</string>
+    <string name="contact_new_email">New email</string>
+    <string name="contact_same_phone">This is your current phone.</string>
+    <string name="contact_same_email">This is your current email.</string>
+    <string name="contact_send">Send code</string>
+    <string name="contact_code_body">We sent a code to %1$s.</string>
+    <string name="contact_confirm">Confirm</string>
+    <string name="contact_expired">The code expired. Ask for a new one.</string>
+    <string name="contact_offline">No connection. Try again.</string>
+    <string name="contact_unavailable">We could not do it now. Try again later.</string>
+    <string name="contact_phone_done">Phone updated</string>
+    <string name="contact_email_done">Email updated</string>
 </resources>

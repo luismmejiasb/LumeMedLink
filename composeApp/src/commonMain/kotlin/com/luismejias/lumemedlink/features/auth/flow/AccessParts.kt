@@ -2,10 +2,7 @@ package com.luismejias.lumemedlink.features.auth.flow
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cl.lume.uicomposer.components.LumeBrandInk
@@ -36,7 +33,6 @@ import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.screen.SystemBack
-import com.luismejias.lumemedlink.core.session.Clock
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.app_name
 import com.luismejias.lumemedlink.resources.brand_link
@@ -49,15 +45,11 @@ import com.luismejias.lumemedlink.resources.lumemedlink_icon
 import com.luismejias.lumemedlink.resources.offline_body
 import com.luismejias.lumemedlink.resources.offline_title
 import com.luismejias.lumemedlink.resources.simbolo_enlace
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-
-private const val MILLIS_PER_SECOND = 1_000L
-private const val SECONDS_PER_MINUTE = 60L
 
 /** The tone of a screen's glyph tile: the accent, or the design's green for done and amber for wait. */
 internal enum class AccessTone { ACCENT, SUCCESS, WAIT }
@@ -184,32 +176,6 @@ internal fun AccessPrimaryButton(
             }
         },
     )
-}
-
-/**
- * Whole seconds until [untilEpochMillis] on [clock], ticking once a second and stopping at zero. `null` in, `null`
- * out. Read from the clock every tick rather than counted down, so a rotation or a slow frame cannot drift it.
- */
-@Composable
-internal fun secondsUntil(untilEpochMillis: Long?, clock: Clock): Long? {
-    if (untilEpochMillis == null) return null
-    fun remaining() =
-        ((untilEpochMillis - clock.nowEpochMillis()) + MILLIS_PER_SECOND - 1).coerceAtLeast(0) / MILLIS_PER_SECOND
-    var seconds by remember(untilEpochMillis) { mutableLongStateOf(remaining()) }
-    LaunchedEffect(untilEpochMillis) {
-        while (seconds > 0) {
-            delay(MILLIS_PER_SECOND)
-            seconds = remaining()
-        }
-    }
-    return seconds
-}
-
-/** "14:32" — minutes and seconds, the design's countdown format in both languages. */
-internal fun clockText(seconds: Long): String {
-    val minutes = seconds / SECONDS_PER_MINUTE
-    val rest = seconds % SECONDS_PER_MINUTE
-    return "$minutes:${rest.toString().padStart(2, '0')}"
 }
 
 /** The pair of actions at the foot of an outcome screen: a filled one, and a plain one under it. */
