@@ -100,3 +100,35 @@ class DevTokenProviderTest {
         assertNull(provider().token())
     }
 }
+
+/** The platform's 0075: a patient request says so, every time; a client that is no side's says nothing. */
+class AccountSideTest {
+    private suspend fun sideSent(side: AccountSide?): String? {
+        var seen: String? = "unset"
+        val engine = MockEngine { request ->
+            seen = request.headers[SIDE_HEADER]
+            respond("[]", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        val stack = lumeHttpClient(
+            "https://api.test.lume",
+            engine,
+            Quiet(),
+            securityEvents = NO_SECURITY_EVENTS,
+            side = side,
+        )
+        ContractClient(
+            stack,
+        ).call(com.luismejias.lumemedlink.core.networking.contract.ContractOperations.LIST_MY_APPOINTMENTS)
+        return seen
+    }
+
+    @Test
+    fun aPatientsClientSaysItsSideOnEveryRequest() = runTest {
+        assertEquals("PATIENT", sideSent(AccountSide.PATIENT))
+    }
+
+    @Test
+    fun aClientThatIsNoSidesSaysNothing() = runTest {
+        assertNull(sideSent(null))
+    }
+}

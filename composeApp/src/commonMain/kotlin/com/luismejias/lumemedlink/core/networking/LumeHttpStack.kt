@@ -13,6 +13,7 @@ import io.ktor.client.plugins.api.Send
 import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.header
 import io.ktor.client.statement.request
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -91,6 +92,8 @@ internal fun lumeHttpClient(
     securityEvents: SecurityEventEmitter,
     /** [TransportPolicy.HttpsOnly] unless a debug host app chose the local backend (ADR-0062). */
     transport: TransportPolicy = TransportPolicy.HttpsOnly,
+    /** The side every request of this client speaks for; none for a client that is not a side's (the token's own). */
+    side: AccountSide? = null,
 ): HttpClient {
     val base = Url(baseUrl)
     require(transportAllows(transport, base.protocol.name, base.host)) {
@@ -126,7 +129,10 @@ internal fun lumeHttpClient(
             exponentialDelay()
         }
 
-        defaultRequest { url(baseUrl) }
+        defaultRequest {
+            url(baseUrl)
+            side?.let { header(SIDE_HEADER, it.wire) }
+        }
 
         install(lumeStackGuard(allowedOrigin, logSink, tokenProvider, securityEvents))
 

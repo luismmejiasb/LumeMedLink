@@ -15951,7 +15951,7 @@
     },
     "/v1/platform/linked-identities": {
       "post": {
-        "description": "Link a LumeMedLink account to the clinician it belongs to: from then on its tokens act as that clinician, within the LumeMedLink allow-list (ADR-0036). Mediated by LumeMed staff, who verify by another channel that both accounts are one person (ADR-0090); a clinician never links themselves. One live link per account and per clinician: a second answers `conflict`. Every clinic where the clinician is a member is told in its own audit trail. Audited, the refusal included.",
+        "description": "Link a LumeMedLink account to the clinician it belongs to: from then on its tokens act as that clinician, within the LumeMedLink allow-list (ADR-0036). Mediated by LumeMed staff, who verify by another channel that both accounts are one person (ADR-0090); a clinician never links themselves. One live link per account and per clinician: a second answers `conflict`. **An account that already holds a patient account answers `link_subject_is_a_patient`** (ADR-0101, amended 0.129.0): linking it would hand a patient's account a clinician's reach. A clinician who is also a patient is linked first and enrols as a patient afterwards, and then chooses the side at sign-in (`getMyRole`, `X-Lume-Side`). Every clinic where the clinician is a member is told in its own audit trail. Audited, the refusal included.",
         "operationId": "linkIdentity",
         "parameters": [],
         "requestBody": {
@@ -16016,7 +16016,7 @@
             }
           },
           "409": {
-            "description": "Conflict (`conflict`)",
+            "description": "Conflict (`conflict`)\n\nConflict (`link_subject_is_a_patient`)",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22406,7 +22406,7 @@
   "info": {
     "title": "lumemed-cloud API",
     "description": "Backend contract for the Lume Cloud medical platform. Errors are RFC 9457 problem+json. A string's `minLength` and `maxLength` count UTF-16 code units, as JavaScript counts them: a character outside the Basic Multilingual Plane, such as most emoji, counts two, and an emoji built from several characters (a flag, a skin tone) counts each of them. Count the same way before sending, or a text within a limit counted another way is refused with 400.",
-    "version": "0.128.0",
+    "version": "0.129.0",
     "contact": {}
   },
   "tags": [
@@ -22669,7 +22669,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -29555,12 +29555,21 @@
         "type": "object",
         "properties": {
           "role": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: CLINICIAN, PATIENT, NONE. `CLINICIAN`: a clinician — the clinical app, or a LumeMedLink account LumeMed staff linked to one. `PATIENT`: a LumeMedLink account enrolled as a patient. `NONE`: a LumeMedLink account that is neither yet (it redeems a clinic's code first), or a suspended one. Treat a value you do not know as `NONE`, and open nothing.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: CLINICIAN, PATIENT, NONE. `CLINICIAN`: a clinician — the clinical app, or a LumeMedLink account LumeMed staff linked to one. `PATIENT`: a LumeMedLink account enrolled as a patient. `NONE`: a LumeMedLink account that is neither yet (it redeems a clinic's code first), or a suspended one. Treat a value you do not know as `NONE`, and open nothing. It is the side THIS request opened: with `X-Lume-Side: PATIENT` a linked account answers its patient side.",
             "type": "string"
+          },
+          "sides": {
+            "description": "Every side this account may open (ADR-0101, amended 0.129.0): `CLINICIAN` when it is linked to a clinician (or it is a clinical-app token), `PATIENT` when it is enrolled as a patient and not suspended. Empty for an account that is neither yet. **Two means the person may choose**: offer the choice after sign-in, and send `X-Lume-Side: PATIENT` on every request of the patient side; without it a linked account opens the clinician's side. **`CLINICIAN` alone still has a patient door**: a linked clinician who is also somebody's patient redeems the clinic's code with `X-Lume-Side: PATIENT` (`redeemPatientEnrolment`), and from then on both sides are listed.",
+            "type": "array",
+            "items": {
+              "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: CLINICIAN, PATIENT. A side the account may open.",
+              "type": "string"
+            }
           }
         },
         "required": [
-          "role"
+          "role",
+          "sides"
         ]
       },
       "RequestUploadDto": {
@@ -32238,7 +32247,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -32366,7 +32375,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -32630,7 +32639,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {

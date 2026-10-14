@@ -31,3 +31,13 @@ internal fun transportAllows(policy: TransportPolicy, scheme: String, host: Stri
     "http" -> policy == TransportPolicy.LocalCleartext && host in LOCAL_BACKEND_HOSTS
     else -> false
 }
+
+/**
+ * Which side of an account a request speaks for (the platform's answer `0075`, contract 0.129.0). A clinician linked
+ * to LumeMedLink who is also a patient opens the doctor's side unless every patient request says otherwise; the header
+ * only chooses among the sides the platform already gives the account, it grants nothing.
+ */
+internal enum class AccountSide(val wire: String) { PATIENT("PATIENT"), }
+
+/** The header that carries [AccountSide]. */
+internal const val SIDE_HEADER = "X-Lume-Side"

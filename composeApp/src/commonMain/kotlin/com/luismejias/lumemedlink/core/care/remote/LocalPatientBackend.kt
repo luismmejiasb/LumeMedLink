@@ -3,6 +3,7 @@ package com.luismejias.lumemedlink.core.care.remote
 import com.luismejias.lumemedlink.core.care.AppointmentChanges
 import com.luismejias.lumemedlink.core.care.AppointmentsSource
 import com.luismejias.lumemedlink.core.care.ClinicClock
+import com.luismejias.lumemedlink.core.networking.AccountSide
 import com.luismejias.lumemedlink.core.networking.ContractClient
 import com.luismejias.lumemedlink.core.networking.DevTokenProvider
 import com.luismejias.lumemedlink.core.networking.DiscardingNetworkLogSink
@@ -39,7 +40,16 @@ internal class LocalPatientBackend(
         ),
     )
     private val contract = ContractClient(
-        lumeHttpClient(baseUrl, engine, logSink, tokens, securityEvents, TransportPolicy.LocalCleartext),
+        lumeHttpClient(
+            baseUrl,
+            engine,
+            logSink,
+            tokens,
+            securityEvents,
+            TransportPolicy.LocalCleartext,
+            // A linked clinician who is also a patient opens the doctor's side without it (the platform's 0075).
+            AccountSide.PATIENT,
+        ),
     )
     private val remoteAppointments = RemoteAppointments(contract, SpecialtyNames(contract))
 
