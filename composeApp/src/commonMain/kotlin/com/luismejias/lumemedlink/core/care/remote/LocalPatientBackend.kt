@@ -5,6 +5,7 @@ import com.luismejias.lumemedlink.core.care.AppointmentsSource
 import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.ContactChangeGateway
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
+import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.PatientProfileSource
 import com.luismejias.lumemedlink.core.networking.AccountSide
 import com.luismejias.lumemedlink.core.networking.ContractClient
@@ -21,9 +22,8 @@ import io.ktor.client.engine.HttpClientEngine
  * The patient's side as the platform on the developer's computer serves it (ADR-0062): plain http to a local host, the
  * dev token for `dev-patient`, synthetic data from the platform's seed. Only a debug build's environment builds one.
  *
- * What it serves today is what the contract has (task `0036`): the clinic's clock, the profile and its change of
- * contact, the appointments, and search to booking. The rest of the patient's side stays on the script until its
- * capability is wired, so the composition root composes the two.
+ * It serves each capability the contract has; the properties below are the list (tasks `0036` and `0037`). The rest
+ * of the patient's side stays on the script until its capability is wired, so the composition root composes the two.
  */
 internal class LocalPatientBackend(
     baseUrl: String,
@@ -67,4 +67,5 @@ internal class LocalPatientBackend(
     val appointments: AppointmentsSource = remoteAppointments
     val changes: AppointmentChanges = remoteAppointments
     val directory: DirectoryGateway = RemoteDirectory(contract, specialties, zones)
+    val myDoctors: MyDoctorsSource = RemoteMyDoctors(contract, specialties, remoteAppointments)
 }

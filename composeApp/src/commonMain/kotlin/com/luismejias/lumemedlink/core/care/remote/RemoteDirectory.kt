@@ -204,7 +204,7 @@ internal class RemoteDirectory(
     ) = DirectoryDoctor(
         doctor = CareDoctor(
             id = id,
-            displayName = listOfNotNull(professionalTitle, givenName, familyName).joinToString(" "),
+            displayName = professionalDisplayName(professionalTitle, givenName, familyName),
             specialty = specialtyCode?.let(names::get).orEmpty(),
         ),
         locationId = placeId,
