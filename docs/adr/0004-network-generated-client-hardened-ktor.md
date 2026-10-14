@@ -1,6 +1,7 @@
 # ADR-0004 — Networking: generated contract client over one hardened Ktor stack
 
 - **Status:** Accepted · 2026-08-17
+- **Amended** (2026-10-14) by ADR-0061: the generator question is closed — our own, from an allowlist of operations.
 - **Related:** ADR-0004 de LumeMed and LumeNetworking's own constitution (the doctrine being
   mirrored); ADR-0027 de LumeMed (generated client, committed).
 

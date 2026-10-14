@@ -3,6 +3,7 @@
 - **Status**: Accepted (2026-10-11) — the author's answers of this date, in session.
   **Amended by ADR-0056 (2026-10-13):** the doctor-linking screens and the welcome screen's doctor link are removed; a
   doctor signs in with RUT and password like anybody, and the server says which app opens.
+- **Amended** (2026-10-14) by ADR-0058: the access flow stops being the handoff's provisional one; a patient signs in with RUT, password and TOTP, enrolled by a clinic's code.
 - **Supersedes**: ADR-0043 (the sign-in flow copied from LumeMed).
 - **Related**: ADR-0001, 0002, 0003, 0006, 0013, 0033, 0037, 0045; task `0029`; the handoff in
   `tareas/PENDING/Handoff/` (`03-Specs/1-Auth.md`); `ADR-0031 del backend` (T5), its tasks `0117`–`0120`.

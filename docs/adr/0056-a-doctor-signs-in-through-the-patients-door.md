@@ -3,6 +3,7 @@
 - **Status**: Accepted (2026-10-13), the author's decision by form. It amends ADR-0044: the doctor-linking screens
   (4a, 4a-e1, 4b, 4b-e1, 4c, and the «not linked» screen) are removed, and so is the «¿Eres médico?» link on the
   welcome screen.
+- **Amended** (2026-10-14) by ADR-0058: the role comes from `/v1/me` after one sign-in into one IdP tenant (backend request `0011`), not from a sign-in attempt.
 - **Related**: ADR-0044 (the access flow); ADR-0053 (links by audience).
 
 ## Context
