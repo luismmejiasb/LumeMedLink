@@ -380,6 +380,24 @@ d.mkdir(parents=True, exist_ok=True)
     "fun stash(c: Context, t: String) {\n"
     "    c.getSharedPreferences(\"s\", Context.MODE_PRIVATE).edit().putString(\"t\", t).apply()\n}\n")
 '
+# ── ADR-0054: every form step is a LumeForm, so a field inside a LumeContainer is red ─────────────────
+bait "a field drawn straight inside a LumeContainer" check-form-steps.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/patient/home"
+(d / "Step.kt").write_text(
+    "package com.luismejias.lumemedlink.features.patient.home\n\n"
+    "@Composable\ninternal fun Step(v: String) {\n"
+    "    LumeContainer(title = \"x\") {\n        SensitiveTextField(value = v, onValueChange = {})\n    }\n}\n")
+'
+bait "a field reached through a helper, inside a wrapper of LumeContainer" check-form-steps.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/patient/home"
+(d / "Step.kt").write_text(
+    "package com.luismejias.lumemedlink.features.patient.home\n\n"
+    "@Composable\nprivate fun Fields(v: String) = SensitivePhoneField(value = v)\n\n"
+    "@Composable\ninternal fun Step(v: String) {\n"
+    "    PushedScreen(title = \"x\", onBack = {}) { Fields(v) }\n}\n")
+'
 # ── P5 · ADR-0055: a screen waits as a skeleton, so a spinner in a feature is red ──────────────────
 bait "a spinner put back on a screen" check-forbidden-patterns.sh '
 import sys, pathlib

@@ -1,8 +1,7 @@
 # 0033 · Los pasos de formulario como `LumeForm`
 
-> **Estado:** PENDING (abierta 2026-10-13) · ADR-0054 · `LumeForm` llegó al kit el mismo día (`6d72255` de
-> LumeUIComposer). **Todas las pantallas con campos ya son `LumeForm`** (1b, 2a, 2b, 2c, 3a, 3b, 3c y las dos del
-> médico). Falta el gate del punto 3 y verlo en iOS.
+> **Estado:** DONE (2026-10-14) · ADR-0054 · Todas las pantallas con campos son `LumeForm`, y `check-form-steps.sh`
+> rechaza un campo dentro de `LumeContainer`. La revisión en iOS pasó a la tarea 0035.
 
 ## De dónde sale
 
@@ -81,3 +80,16 @@ regla en la constitución (§5).
 - **3a:** «Enviar código», que iba debajo del campo, pasó a la acción fija. Es un cambio de diseño que pide la regla.
 - **2c, 3b y el código del médico (también el ya usado):** pasaron a `LumeForm` con su `LumeStack`.
 - Vistas en el emulador: 1b, 2a y 3a, sin caídas. **Falta:** el gate del punto 3 y la verificación en iOS.
+
+## Cierre 2026-10-14
+
+- **El gate del punto 3:** `Scripts/check-form-steps.sh`, en CI.
+  - Rechaza un campo de `core/input` dentro de `LumeContainer` o de un envoltorio suyo, como `PushedScreen`.
+  - Ve el campo aunque llegue por un helper, como `NewPasswordFields`.
+  - Los comentarios y los strings se despojan con el tokenizador (ADR-0029). Hay dos cebos en `rehearse-gates.sh`, los
+    dos rojos.
+- **Lo que deja fuera, a propósito:**
+  - `SensitiveSearchField`: un buscador filtra una lista y no envía nada, así que no es un paso de formulario.
+  - Los sheets, que no son `LumeContainer`: sus campos se revisan a ojo.
+- **No se vio en iOS:** la cadena del teclado, la tecla «Continuar» y el pie bajo el teclado. Esa revisión pasó a la
+  tarea 0035.
