@@ -39,7 +39,6 @@ import com.luismejias.lumemedlink.core.care.NoticeMark
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
-import com.luismejias.lumemedlink.core.care.UnwiredRatings
 import com.luismejias.lumemedlink.core.care.remote.LocalPatientBackend
 import com.luismejias.lumemedlink.core.features.FeatureGate
 import com.luismejias.lumemedlink.core.features.RemoteConfigFlagSource
@@ -198,8 +197,7 @@ public fun App(
                 appointments = local.appointments,
                 changes = local.changes,
                 doctors = local.myDoctors,
-                // Not the design's: unwired, so every rating piece is left out (ADR-0067).
-                ratings = UnwiredRatings,
+                ratings = local.ratings,
                 notices = local.notices,
                 contact = local.contact,
             )

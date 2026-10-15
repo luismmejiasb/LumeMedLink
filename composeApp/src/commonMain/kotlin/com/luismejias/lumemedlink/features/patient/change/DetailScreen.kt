@@ -261,7 +261,6 @@ private fun RatingCard(rating: SentRating?, onRate: (Int) -> Unit) {
                 // Tapping a star opens f5 at that level (spec c3).
                 LumeRatingInput(0, onValueChange = onRate, label, describe, size = LumeRatingInputSize.Compact)
             }
-            rating?.comment?.let { LumeText(text = "«$it»") }
             rating?.let {
                 LumeText(
                     text = stringResource(Res.string.detail_rating_sent, dayMonthText(it.sentOn)),

@@ -557,13 +557,8 @@
     <string name="aspect_explained_clearly">Explicó con claridad</string>
     <string name="aspect_kind">Trato amable</string>
     <string name="aspect_solved_it">Resolvió mi problema</string>
-    <string name="aspect_other">Otro</string>
-    <string name="rate_other_placeholder">Escribe el aspecto</string>
-    <string name="rate_other_helper">Un título corto, en una línea.</string>
-    <string name="rate_other_counter">%1$d de %2$d caracteres</string>
-    <string name="rate_comment_placeholder">Cuéntanos más (opcional)</string>
-    <string name="rate_comment_helper">Se publica sin tu nombre. Nunca incluyas datos de tu salud.</string>
     <string name="rate_complaint">¿Fue algo grave? Puedes hacer un reclamo formal.</string>
+    <string name="rate_consent">Al enviar, aceptas que tu valoración se cuente en el promedio público de este médico. Ninguna consulta lee tu valoración, y puedes retirarla cuando quieras.</string>
     <string name="rate_complaint_action">Hacer un reclamo</string>
     <string name="rate_later">Ahora no</string>
     <string name="rate_send">Enviar valoración</string>

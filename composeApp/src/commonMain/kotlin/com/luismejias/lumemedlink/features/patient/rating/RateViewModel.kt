@@ -59,14 +59,11 @@ internal enum class RatingLevel(val aspects: List<RatingAspect>) {
     }
 }
 
-/** f5's sheet: the stars, the aspects of their level, «Otro» with its own words, and «Cuéntanos más». */
+/** f5's sheet: the stars and the aspects of their level. No free text: the contract takes none. */
 internal data class RateState(
     val prompt: RatingPrompt,
     val stars: Int,
     val aspects: Set<RatingAspect> = emptySet(),
-    val otherOn: Boolean = false,
-    val other: String = "",
-    val comment: String = "",
     val failure: CareFailure? = null,
 ) {
     val level: RatingLevel get() = RatingLevel.of(stars)
@@ -75,8 +72,8 @@ internal data class RateState(
 }
 
 /**
- * f5's owner, opened from Inicio's stars or from an attended visit's (c3). PROVISIONAL (ADR-0046): the free text is the
- * design's, by the author's call for this mock; the contract will carry stars and closed reasons only.
+ * f5's owner, opened from Inicio's stars or from an attended visit's (c3): stars and closed aspects, sent with the
+ * consent the sheet shows (`rateMyAttention`).
  */
 internal class RateViewModel(private val care: RatingsGateway, private val logEvent: (AnalyticsEvent) -> Unit = {}) :
     ViewModel() {
@@ -105,22 +102,10 @@ internal class RateViewModel(private val care: RatingsGateway, private val logEv
         copy(aspects = if (aspect in aspects) aspects - aspect else aspects + aspect)
     }
 
-    /** Unmarking «Otro» drops its field and its words (spec f5d). */
-    fun otherToggled() = update { copy(otherOn = !otherOn, other = "") }
-
-    fun otherChanged(text: String) = update { copy(other = text.take(OTHER_LIMIT)) }
-
-    fun commentChanged(text: String) = update { copy(comment = text) }
-
     suspend fun send() {
         update { copy(failure = null) }
         val state = current.value ?: return
-        val draft = RatingDraft(
-            stars = state.stars,
-            aspects = state.aspects,
-            other = state.other.trim().takeIf { state.otherOn && it.isNotEmpty() },
-            comment = state.comment.trim().takeIf { it.isNotEmpty() },
-        )
+        val draft = RatingDraft(stars = state.stars, aspects = state.aspects)
         val result = care.rate(state.prompt.appointmentId, draft)
         if (result is CareResult.Ok) logEvent(AnalyticsEvent.APPOINTMENT_RATED)
         // The answer belongs to the rating that was sent: if the sheet was closed and another opened meanwhile, it
@@ -154,8 +139,5 @@ internal class RateViewModel(private val care: RatingsGateway, private val logEv
 
     internal companion object {
         const val MAX_STARS = 5
-
-        /** «Máximo 40 caracteres, con contador» (spec f5d). */
-        const val OTHER_LIMIT = 40
     }
 }

@@ -548,13 +548,8 @@
     <string name="aspect_explained_clearly">Explained clearly</string>
     <string name="aspect_kind">Friendly manner</string>
     <string name="aspect_solved_it">Solved my problem</string>
-    <string name="aspect_other">Other</string>
-    <string name="rate_other_placeholder">Write the aspect</string>
-    <string name="rate_other_helper">A short title, on one line.</string>
-    <string name="rate_other_counter">%1$d of %2$d characters</string>
-    <string name="rate_comment_placeholder">Tell us more (optional)</string>
-    <string name="rate_comment_helper">Published without your name. Never include your health details.</string>
     <string name="rate_complaint">Was it serious? You can file a formal complaint.</string>
+    <string name="rate_consent">By sending, you agree that your rating counts in this doctor’s public average. No practice reads your rating, and you can withdraw it at any time.</string>
     <string name="rate_complaint_action">File a complaint</string>
     <string name="rate_later">Not now</string>
     <string name="rate_send">Send rating</string>

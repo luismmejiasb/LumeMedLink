@@ -65,7 +65,7 @@ internal class ScriptedPatientCare(
     override suspend fun rate(appointmentId: String, draft: RatingDraft): CareResult<Unit> {
         latency()
         failure?.let { return CareResult.Failed(it) }
-        rated[appointmentId] = SentRating(draft.stars, draft.comment, TODAY)
+        rated[appointmentId] = SentRating(draft.stars, TODAY)
         return CareResult.Ok(Unit)
     }
 
@@ -394,7 +394,7 @@ internal class ScriptedPatientCare(
          * c3's rating. The design's words name the visit's content, which this app does not carry (ADR-0001), so the
          * sample says something else.
          */
-        val RATINGS = mapOf("a-rendon-0902" to SentRating(5, "Muy clara y puntual.", TODAY.plusDays(-14)))
+        val RATINGS = mapOf("a-rendon-0902" to SentRating(5, TODAY.plusDays(-14)))
 
         /** Two notices as the platform words them: a reminder and a moved hour, newest first. Synthetic (§9). */
         val NOTICES = listOf(

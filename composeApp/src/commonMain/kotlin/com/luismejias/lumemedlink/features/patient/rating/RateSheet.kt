@@ -30,12 +30,11 @@ import cl.lume.uicomposer.components.LumeStackStyle
 import cl.lume.uicomposer.components.LumeText
 import cl.lume.uicomposer.components.LumeTextAlignment
 import cl.lume.uicomposer.components.LumeTextColor
+import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.components.LumeTextWeight
 import cl.lume.uicomposer.foundations.LumeIcon
 import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.RatingAspect
-import com.luismejias.lumemedlink.core.input.SensitiveWordsArea
-import com.luismejias.lumemedlink.core.input.SensitiveWordsField
 import com.luismejias.lumemedlink.core.screen.dayMonthText
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.aspect_clarity
@@ -46,7 +45,6 @@ import com.luismejias.lumemedlink.resources.aspect_long_wait
 import com.luismejias.lumemedlink.resources.aspect_moved_hour
 import com.luismejias.lumemedlink.resources.aspect_not_explained
 import com.luismejias.lumemedlink.resources.aspect_notice
-import com.luismejias.lumemedlink.resources.aspect_other
 import com.luismejias.lumemedlink.resources.aspect_punctuality
 import com.luismejias.lumemedlink.resources.aspect_solved_it
 import com.luismejias.lumemedlink.resources.aspect_unexpected_charge
@@ -55,10 +53,9 @@ import com.luismejias.lumemedlink.resources.aspect_visit_time
 import com.luismejias.lumemedlink.resources.rate_ask_bad
 import com.luismejias.lumemedlink.resources.rate_ask_fair
 import com.luismejias.lumemedlink.resources.rate_ask_good
-import com.luismejias.lumemedlink.resources.rate_comment_helper
-import com.luismejias.lumemedlink.resources.rate_comment_placeholder
 import com.luismejias.lumemedlink.resources.rate_complaint
 import com.luismejias.lumemedlink.resources.rate_complaint_action
+import com.luismejias.lumemedlink.resources.rate_consent
 import com.luismejias.lumemedlink.resources.rate_failed
 import com.luismejias.lumemedlink.resources.rate_label
 import com.luismejias.lumemedlink.resources.rate_later
@@ -68,9 +65,6 @@ import com.luismejias.lumemedlink.resources.rate_level_3
 import com.luismejias.lumemedlink.resources.rate_level_4
 import com.luismejias.lumemedlink.resources.rate_level_5
 import com.luismejias.lumemedlink.resources.rate_none
-import com.luismejias.lumemedlink.resources.rate_other_counter
-import com.luismejias.lumemedlink.resources.rate_other_helper
-import com.luismejias.lumemedlink.resources.rate_other_placeholder
 import com.luismejias.lumemedlink.resources.rate_send
 import com.luismejias.lumemedlink.resources.rate_subtitle
 import com.luismejias.lumemedlink.resources.rate_title
@@ -104,9 +98,10 @@ private val LEVEL_WORDS = listOf(
 )
 
 /**
- * f5a–f5d · Valorar la atención: the doctor, the stars at the level tapped, the aspects that level asks about, «Otro»
- * with its own line, «Cuéntanos más», and — when it went badly — the road to a formal complaint. PROVISIONAL
- * (ADR-0046): the free text is the design's, by the author's call; «Hacer un reclamo» opens nothing yet.
+ * f5a–f5d · Valorar la atención: the doctor, the stars at the level tapped, the aspects that level asks about, the
+ * consent the rating is sent with, and — when it went badly — the road to a formal complaint. No free text: the
+ * contract takes none, so the design's «Otro» and «Cuéntanos más» are gone (2026-10-15). «Hacer un reclamo» opens
+ * nothing yet.
  */
 @Composable
 internal fun RateSheet(model: RateViewModel, onComplaint: () -> Unit) {
@@ -161,25 +156,11 @@ internal fun RateSheet(model: RateViewModel, onComplaint: () -> Unit) {
             )
             AspectChips(level, shown, model)
         }
-        if (shown.otherOn) {
-            // Resolved on every key, since the sheet recomposes with each: what a reader hears instead of «30/40».
-            val counted = stringResource(Res.string.rate_other_counter, shown.other.length, RateViewModel.OTHER_LIMIT)
-            SensitiveWordsField(
-                value = shown.other,
-                onValueChange = model::otherChanged,
-                placeholder = stringResource(Res.string.rate_other_placeholder),
-                maxLength = RateViewModel.OTHER_LIMIT,
-                helper = stringResource(Res.string.rate_other_helper),
-                counter = { _, _ -> counted },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        SensitiveWordsArea(
-            value = shown.comment,
-            onValueChange = model::commentChanged,
-            placeholder = stringResource(Res.string.rate_comment_placeholder),
-            helper = stringResource(Res.string.rate_comment_helper),
-            modifier = Modifier.fillMaxWidth(),
+        // What sending means, before the button: the platform keeps this version with the rating as its record.
+        LumeText(
+            text = stringResource(Res.string.rate_consent),
+            style = LumeTextStyle.TextSmall,
+            color = LumeTextColor.Secondary,
         )
         // Inside the sheet: it draws over the screen, so a toast under it would never be seen.
         if (shown.failure != null) {
@@ -201,7 +182,7 @@ internal fun RateSheet(model: RateViewModel, onComplaint: () -> Unit) {
 }
 
 /**
- * The level's aspects, then «+ Otro», wrapping as the design lays them (f5). No air of their own: each chip's 48 touch
+ * The level's aspects, wrapping as the design lays them (f5). No air of their own: each chip's 48 touch
  * target already keeps the rows ~12 apart, the closest the kit allows to the design's ~10.
  */
 @Composable
@@ -217,15 +198,6 @@ private fun AspectChips(level: RatingLevel, state: RateState, model: RateViewMod
                 onClick = { model.aspectToggled(aspect) },
             )
         }
-        val other = stringResource(Res.string.aspect_other)
-        LumeFilterChip(
-            title = other,
-            isSelected = state.otherOn,
-            contentDescription = other,
-            icon = LumeIcon.Plus,
-            look = LumeFilterChipLook.WashedAdd,
-            onClick = model::otherToggled,
-        )
     }
 }
 

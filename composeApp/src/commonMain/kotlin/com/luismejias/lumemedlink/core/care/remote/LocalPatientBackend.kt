@@ -9,6 +9,7 @@ import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.NoticeMark
 import com.luismejias.lumemedlink.core.care.NoticesSource
 import com.luismejias.lumemedlink.core.care.PatientProfileSource
+import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.networking.AccountSide
 import com.luismejias.lumemedlink.core.networking.ContractClient
 import com.luismejias.lumemedlink.core.networking.DevTokenProvider
@@ -73,4 +74,5 @@ internal class LocalPatientBackend(
     val directory: DirectoryGateway = RemoteDirectory(contract, specialties, zones)
     val myDoctors: MyDoctorsSource = RemoteMyDoctors(contract, specialties, remoteAppointments)
     val notices: NoticesSource = RemoteNotices(contract, noticeMark)
+    val ratings: RatingsGateway = RemoteRatings(contract, remoteAppointments, zones)
 }

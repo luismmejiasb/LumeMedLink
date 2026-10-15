@@ -61,20 +61,9 @@ class RatingFlowTest {
     }
 
     @Test
-    fun otherHoldsFortyCharactersAndGoesAwayWithItsMark() = runTest {
-        model.open(prompt(), 3)
-        model.otherToggled()
-        model.otherChanged("x".repeat(60))
-        assertEquals(40, model.state.value?.other?.length)
-        model.otherToggled()
-        assertEquals("", model.state.value?.other, "unmarking «Otro» discards its words")
-    }
-
-    @Test
     fun aSentRatingLeavesInicioAndShowsOnTheVisit() = runTest {
         val prompt = prompt()
         model.open(prompt, 5)
-        model.commentChanged("Muy clara y puntual.")
         model.send()
         assertNull(model.state.value)
         assertTrue(model.sent.value)

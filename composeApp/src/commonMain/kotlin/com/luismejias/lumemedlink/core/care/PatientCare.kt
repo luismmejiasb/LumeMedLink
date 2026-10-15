@@ -97,17 +97,14 @@ internal data class RatingPrompt(val appointmentId: String, val doctor: CareDoct
     override fun toString(): String = "RatingPrompt(appointmentId=$appointmentId)"
 }
 
-/**
- * A rating the patient already sent for a visit (c3): the stars, their own words, and when. No contract (request 0008
- * §4). The words are the patient's; the author chose to show them (2026-10-11).
- */
-internal data class SentRating(val stars: Int, val comment: String?, val sentOn: CalendarDate) {
+/** A rating the patient already sent for a visit (c3): the stars and when. The contract keeps no words. */
+internal data class SentRating(val stars: Int, val sentOn: CalendarDate) {
     override fun toString(): String = "SentRating(stars=$stars)"
 }
 
 /**
  * What f5 asks about a visit, by how it went: what failed (1–2 stars), what to improve (3), what to highlight (4–5).
- * A closed list per level, plus «Otro» with the patient's own words. None names the visit's content (ADR-0001).
+ * A closed list per level, the contract's own. None names the visit's content (ADR-0001).
  */
 internal enum class RatingAspect {
     // 1–2 stars: what failed.
@@ -129,17 +126,10 @@ internal enum class RatingAspect {
 }
 
 /**
- * A rating the patient sends (f5). [other] is «Otro»'s short title (40 characters at most) and [comment]
- * «Cuéntanos más»: the patient's words, published without their name. PROVISIONAL (ADR-0046): the author chose the
- * design's free text for this mock; the contract the backend decided carries stars and closed reasons only (request
- * 0008).
+ * A rating the patient sends (f5): the stars and closed aspects, never free text — the contract takes none
+ * (`rateMyAttention`), so the design's «Otro» and «Cuéntanos más» are gone (the author's delegation, 2026-10-15).
  */
-internal data class RatingDraft(
-    val stars: Int,
-    val aspects: Set<RatingAspect>,
-    val other: String?,
-    val comment: String?,
-) {
+internal data class RatingDraft(val stars: Int, val aspects: Set<RatingAspect>) {
     override fun toString(): String = "RatingDraft(stars=$stars, aspects=${aspects.size})"
 }
 
