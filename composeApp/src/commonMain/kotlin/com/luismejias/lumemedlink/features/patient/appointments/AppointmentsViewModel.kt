@@ -3,15 +3,16 @@ package com.luismejias.lumemedlink.features.patient.appointments
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.AppointmentsSource
+import com.luismejias.lumemedlink.core.care.CarePolicy
 import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.PatientAppointment
+import com.luismejias.lumemedlink.core.care.secondary
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.PullRefresh
 import com.luismejias.lumemedlink.core.screen.StandIn
-import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
-import com.luismejias.lumemedlink.core.screen.ok
+import com.luismejias.lumemedlink.core.screen.toLoad
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
 import com.luismejias.lumemedlink.features.patient.parts.cancelled
 import com.luismejias.lumemedlink.features.patient.parts.past
@@ -32,8 +33,11 @@ internal data class AppointmentsContent(
     val upcoming: List<PatientAppointment>,
     val past: List<PatientAppointment>,
     val cancelled: List<PatientAppointment>,
-    /** "Puedes cambiar o cancelar hasta 24 h antes": the practice's window. */
-    val changeWindowHours: Int,
+    /**
+     * "Puedes cambiar o cancelar hasta 24 h antes": the practice's window. Null when it could not be read: a secondary
+     * read (ADR-0067), so the notice is left out and the appointments still show.
+     */
+    val changeWindowHours: Int?,
 ) {
     /** The tab's badge: requests still waiting for the practice. */
     val awaiting: Int get() = upcoming.awaitingConfirmation(today).size
@@ -83,18 +87,19 @@ internal class AppointmentsViewModel(private val clock: ClinicClock, private val
     /** Both reads run together, so a refusing backend costs one bounded retry, not two in a row. */
     private suspend fun read(clock: ClinicClock, source: AppointmentsSource): CareLoad<AppointmentsContent> =
         coroutineScope {
+            // The appointments are this screen's operation; the window is a note on them (ADR-0067).
             val appointmentsRead = async { source.appointments() }
-            val policyRead = async { source.policy() }
+            val window = async { secondary<CarePolicy?>(null) { source.policy() }?.changeWindowHours }
             val appointments = appointmentsRead.await()
-            val policy = policyRead.await()
-            allOf(appointments, policy) {
+            val windowHours = window.await()
+            appointments.toLoad { all ->
                 val today = clock.today()
                 AppointmentsContent(
                     today = today,
-                    upcoming = appointments.ok.upcoming(today),
-                    past = appointments.ok.past(today),
-                    cancelled = appointments.ok.cancelled(),
-                    changeWindowHours = policy.ok.changeWindowHours,
+                    upcoming = all.upcoming(today),
+                    past = all.past(today),
+                    cancelled = all.cancelled(),
+                    changeWindowHours = windowHours,
                 )
             }
         }

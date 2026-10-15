@@ -33,8 +33,10 @@ internal class RemoteMyDoctors(
         val names = async { specialties.all() }
         val appointmentsRead = async { appointments.appointments() }
         val contacts = async { careRead { contract.call(ContractOperations.LIST_MY_PROFESSIONAL_CONTACTS).items } }
+        // The contacts are the screen's operation; the visits only count and date them (ADR-0067). When they cannot
+        // be read, a doctor shows no count rather than a false zero.
         val attended = when (val read = appointmentsRead.await()) {
-            is CareResult.Failed -> return@coroutineScope read
+            is CareResult.Failed -> null
             is CareResult.Ok -> read.value.filter { it.status == AppointmentStatus.COMPLETED }.groupBy { it.doctor.id }
         }
         when (val items = contacts.await()) {
@@ -43,7 +45,7 @@ internal class RemoteMyDoctors(
                 val catalog = names.await()
                 CareResult.Ok(
                     items.value.groupBy { it.professionalId }
-                        .map { (id, entries) -> entries.toMyDoctor(id, attended[id].orEmpty(), catalog) },
+                        .map { (id, entries) -> entries.toMyDoctor(id, attended?.let { it[id].orEmpty() }, catalog) },
                 )
             }
         }
@@ -52,7 +54,7 @@ internal class RemoteMyDoctors(
 
 private fun List<SharedProfessionalContactListDtoItemsItem>.toMyDoctor(
     id: String,
-    attended: List<PatientAppointment>,
+    attended: List<PatientAppointment>?,
     specialties: Map<String, String>,
 ): MyDoctor {
     val first = first()
@@ -62,9 +64,9 @@ private fun List<SharedProfessionalContactListDtoItemsItem>.toMyDoctor(
             displayName = professionalDisplayName(first.givenName, first.familyName),
             specialty = firstNotNullOfOrNull { it.specialtyCode }?.let(specialties::get).orEmpty(),
         ),
-        attentions = attended.size,
+        attentions = attended?.size,
         phone = firstNotNullOfOrNull { it.phone },
         email = firstNotNullOfOrNull { it.email },
-        lastVisit = attended.maxOfOrNull { it.date },
+        lastVisit = attended?.maxOfOrNull { it.date },
     )
 }

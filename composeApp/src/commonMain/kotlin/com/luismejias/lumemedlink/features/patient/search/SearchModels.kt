@@ -12,12 +12,11 @@ import com.luismejias.lumemedlink.core.care.NearbyCommune
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.Slot
 import com.luismejias.lumemedlink.core.care.Specialty
+import com.luismejias.lumemedlink.core.care.secondary
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.StandIn
-import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.folded
 import com.luismejias.lumemedlink.core.screen.markLoading
-import com.luismejias.lumemedlink.core.screen.ok
 import com.luismejias.lumemedlink.core.screen.toLoad
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
@@ -162,12 +161,13 @@ internal class ResultsModel(
         }
         current.markLoading()
         val found = directory.search(specialty.code, commune.code)
+        // The search is this screen's operation; e5's nearby communes are a suggestion on an empty one (ADR-0067).
         val nearby = if ((found as? CareResult.Ok)?.value?.isEmpty() == true) {
-            directory.nearbyCommunes(specialty.code, commune.code)
+            secondary(emptyList()) { directory.nearbyCommunes(specialty.code, commune.code) }
         } else {
-            CareResult.Ok(emptyList())
+            emptyList()
         }
-        current.value = allOf(found, nearby) { ResultsContent(today(), found.ok, nearby.ok, filters) }
+        current.value = found.toLoad { ResultsContent(today(), it, nearby, filters) }
     }
 
     /** A new search starts from a clean slate: what the last one showed is not this one's. */
@@ -297,10 +297,11 @@ internal class ScheduleModel(
         val from = today().plusDays(1)
         val to = from.plusDays(HORIZON_DAYS)
         val free = directory.availability(doctor.doctor.id, doctor.locationId, from, to)
-        val own = ownAppointments()
-        current.value = allOf(free, own) {
-            val mine = own.ok.upcoming(today())
-            val slots = free.ok.filterNot { slot -> mine.any { it.date == slot.date && it.start == slot.start } }
+        // The free hours are this screen's operation; the person's own appointments only hide a taken hour, and the
+        // platform refuses a double booking anyway (ADR-0067).
+        val mine = secondary(emptyList()) { ownAppointments() }.upcoming(today())
+        current.value = free.toLoad { hours ->
+            val slots = hours.filterNot { slot -> mine.any { it.date == slot.date && it.start == slot.start } }
             val days = slots.map { it.date }.distinct()
             val day =
                 keepDay?.takeIf { it in days } ?: doctor.nextSlot?.date?.takeIf { it in days } ?: days.firstOrNull()

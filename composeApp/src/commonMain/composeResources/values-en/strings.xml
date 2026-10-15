@@ -218,6 +218,7 @@
     <string name="status_completed">Attended</string>
     <string name="status_cancelled">Cancelled</string>
     <string name="home_greeting">Hi, %1$s</string>
+    <string name="home_greeting_plain">Hello</string>
     <string name="home_notices">Notifications</string>
     <plurals name="home_notices_unread">
         <item quantity="one">%1$d unread</item>

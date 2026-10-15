@@ -170,18 +170,16 @@ internal fun SettingsScreen(
                         SettingsEntry.REMINDERS -> LumeListRow(
                             textStyle = LumeListRowTextStyle.Strong,
                             title = stringResource(Res.string.settings_reminders),
-                            description = remindersText(content.remindersHoursBefore),
+                            description = content.remindersHoursBefore?.let { remindersText(it) },
                             leading = LumeListAccessory.Tile(LumeIcon.Bell, LumeTileTint.Violet),
                             disclosure = true,
                         )
                         SettingsEntry.RATINGS -> LumeListRow(
                             textStyle = LumeListRowTextStyle.Strong,
                             title = stringResource(Res.string.settings_ratings),
-                            description = pluralStringResource(
-                                Res.plurals.settings_ratings_sent,
-                                content.sentRatings,
-                                content.sentRatings,
-                            ),
+                            description = content.sentRatings?.let {
+                                pluralStringResource(Res.plurals.settings_ratings_sent, it, it)
+                            },
                             leading = LumeListAccessory.Tile(LumeIcon.Star, LumeTileTint.Gold),
                             disclosure = true,
                         )

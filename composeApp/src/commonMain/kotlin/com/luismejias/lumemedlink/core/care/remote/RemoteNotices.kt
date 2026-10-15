@@ -4,6 +4,7 @@ import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.NoticeMark
 import com.luismejias.lumemedlink.core.care.NoticesSource
 import com.luismejias.lumemedlink.core.care.PatientNotice
+import com.luismejias.lumemedlink.core.care.secondary
 import com.luismejias.lumemedlink.core.networking.ContractClient
 import com.luismejias.lumemedlink.core.networking.contract.ContractOperations
 import kotlinx.datetime.TimeZone
@@ -28,9 +29,11 @@ internal class RemoteNotices(
     }
 
     override suspend fun notices(): CareResult<List<PatientNotice>> = careRead {
-        val clinics = contract.call(ContractOperations.LIST_MY_PATIENT_PROFILES).associate {
-            it.tenantId to
-                it.tenantName
+        // The inbox is the screen's operation; the clinics' names only label it (ADR-0067): unnamed when unreadable.
+        val clinics = secondary(emptyMap()) {
+            careRead {
+                contract.call(ContractOperations.LIST_MY_PATIENT_PROFILES).associate { it.tenantId to it.tenantName }
+            }
         }
         contract.call(ContractOperations.LIST_MY_NOTICES).items
             .map {

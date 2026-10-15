@@ -6,17 +6,20 @@ import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.appearance.LanguageChoice
 import com.luismejias.lumemedlink.core.appearance.ThemeChoice
 import com.luismejias.lumemedlink.core.care.AppointmentsSource
+import com.luismejias.lumemedlink.core.care.CarePolicy
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
 import com.luismejias.lumemedlink.core.care.PatientProfileSource
 import com.luismejias.lumemedlink.core.care.RatingsGateway
+import com.luismejias.lumemedlink.core.care.secondary
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.StandIn
-import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
-import com.luismejias.lumemedlink.core.screen.ok
+import com.luismejias.lumemedlink.core.screen.toLoad
 import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,8 +43,10 @@ internal fun parseLicenses(text: String): List<OpenSourceLicense> = text.lineSeq
 internal data class SettingsContent(
     val profile: PatientProfile,
     /** "24 h y 2 h antes", largest first. */
-    val remindersHoursBefore: List<Int>,
-    val sentRatings: Int,
+    /** Null when the practice's policy could not be read: a secondary read (ADR-0067), the row says nothing then. */
+    val remindersHoursBefore: List<Int>?,
+    /** Null when the count could not be read: the row says nothing then. */
+    val sentRatings: Int?,
 ) {
     override fun toString(): String = "SettingsContent(redacted)"
 }
@@ -142,16 +147,14 @@ internal class SettingsViewModel(
         current.value = read(sources)
     }
 
-    private suspend fun read(sources: SettingsSources): CareLoad<SettingsContent> {
-        val profile = sources.profile.profile()
-        val policy = sources.appointments.policy()
-        val ratings = sources.ratings.sentRatingCount()
-        return allOf(profile, policy, ratings) {
-            SettingsContent(
-                profile = profile.ok,
-                remindersHoursBefore = policy.ok.remindersHoursBefore.sortedDescending(),
-                sentRatings = ratings.ok,
-            )
-        }
+    /** The profile is this screen's operation; the reminders and the ratings sent are notes on its rows (ADR-0067). */
+    private suspend fun read(sources: SettingsSources): CareLoad<SettingsContent> = coroutineScope {
+        val profileRead = async { sources.profile.profile() }
+        val policy = async { secondary<CarePolicy?>(null) { sources.appointments.policy() } }
+        val ratings = async { secondary<Int?>(null) { sources.ratings.sentRatingCount() } }
+        val profile = profileRead.await()
+        val reminders = policy.await()?.remindersHoursBefore?.sortedDescending()
+        val sent = ratings.await()
+        profile.toLoad { SettingsContent(profile = it, remindersHoursBefore = reminders, sentRatings = sent) }
     }
 }

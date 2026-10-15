@@ -149,7 +149,8 @@ internal data class RatingDraft(
  */
 internal data class MyDoctor(
     val doctor: CareDoctor,
-    val attentions: Int,
+    /** Null when the visits could not be read: no count is shown rather than a false zero (ADR-0067). */
+    val attentions: Int?,
     val phone: String?,
     val email: String?,
     /** The day of the last completed visit — context for booking again (the author, 2026-10-15). Never its reason. */

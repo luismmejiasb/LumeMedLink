@@ -91,6 +91,8 @@ jobs:
         run: Scripts/check-logout-contract.sh
       - name: Gate — deep links, https only and verified (F17, §8.12)
         run: Scripts/check-deep-links.sh
+      - name: Gate — only a screen's own operation can fail it (ADR-0067)
+        run: Scripts/check-secondary-reads.sh
 
       # The number IS the address: the constitution and the author say "ADR-0029" and expect one
       # file to answer. Nothing in this repo READS docs/adr, docs/backend-requests or docs/bitacora,

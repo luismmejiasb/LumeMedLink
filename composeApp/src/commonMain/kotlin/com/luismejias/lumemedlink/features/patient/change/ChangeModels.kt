@@ -11,15 +11,16 @@ import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.ClosedDay
 import com.luismejias.lumemedlink.core.care.ClosedKind
 import com.luismejias.lumemedlink.core.care.DirectoryAvailability
+import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.care.SentRating
 import com.luismejias.lumemedlink.core.care.Slot
+import com.luismejias.lumemedlink.core.care.secondary
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.StandIn
-import com.luismejias.lumemedlink.core.screen.allOf
-import com.luismejias.lumemedlink.core.screen.ok
+import com.luismejias.lumemedlink.core.screen.toLoad
 import com.luismejias.lumemedlink.core.telemetry.AnalyticsEvent
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
 import com.luismejias.lumemedlink.shared.CalendarDate
@@ -166,13 +167,14 @@ internal class RescheduleModel(
         val to = from.plusDays(HORIZON_DAYS)
         val doctor = appointment.doctor.id
         val free = availability.availability(doctor, appointment.locationId, from, to)
-        val closed = availability.closedDays(doctor, appointment.locationId, from, to)
-        val own = appointments.appointments()
-        current.value = allOf(free, closed, own) {
-            val mine = own.ok.upcoming(from)
-            val slots = free.ok.filterNot { slot -> mine.any { it.date == slot.date && it.start == slot.start } }
+        // The free hours are this screen's operation; the closed days only mark the calendar and the person's own
+        // appointments only hide a taken hour (ADR-0067).
+        val closed = secondary(emptyList()) { availability.closedDays(doctor, appointment.locationId, from, to) }
+        val mine = secondary(emptyList()) { appointments.appointments() }.upcoming(from)
+        current.value = free.toLoad { hours ->
+            val slots = hours.filterNot { slot -> mine.any { it.date == slot.date && it.start == slot.start } }
             val day = slots.firstOrNull()?.date
-            RescheduleContent(appointment, slots, emptySet(), closed.ok, from, to, day, null)
+            RescheduleContent(appointment, slots, emptySet(), closed, from, to, day, null)
         }
     }
 
@@ -299,6 +301,11 @@ internal data class DetailContent(
     val phone: String?,
     /** c3: the rating already sent, or null to offer the stars. */
     val rating: SentRating?,
+    /**
+     * Whether [rating] could be read. When not, the rating section is left out rather than offering stars for a visit
+     * that may already be rated (ADR-0067).
+     */
+    val ratingKnown: Boolean = true,
 ) {
     override fun toString(): String = "DetailContent(status=${appointment.status})"
 }
@@ -330,24 +337,26 @@ internal class DetailModel(
         val shown = (current.value as? CareLoad.Ready)?.content?.appointment?.id
         // Reading the same appointment again (after f5) keeps it on screen; another one starts from the spinner.
         if (shown != appointment.id) current.value = CareLoad.Loading
-        val doctors = doctors.myDoctors()
+        // The appointment is already in hand, so this screen has nothing of its own to fail (ADR-0067): the doctor's
+        // phone and the rating are notes on it, each left out when it cannot be read.
+        val phone = secondary<List<MyDoctor>?>(null) { doctors.myDoctors() }
+            ?.firstOrNull { it.doctor.id == appointment.doctor.id }?.phone
         val rating = if (appointment.status == AppointmentStatus.COMPLETED) {
             ratings.ratingFor(appointment.id)
         } else {
             CareResult.Ok(null)
         }
         if (requested != appointment.id) return
-        val loaded = allOf(doctors, rating) {
-            val phone = doctors.ok.firstOrNull { it.doctor.id == appointment.doctor.id }?.phone
+        // A failed re-read of what is already shown keeps it: the rating went through, only the refresh did not.
+        if (rating is CareResult.Failed && shown == appointment.id) return
+        current.value = CareLoad.Ready(
             DetailContent(
                 appointment = appointment,
                 options = changeOptionsFor(appointment, clock.today(), clock.now(), phone),
                 phone = phone,
-                rating = rating.ok,
-            )
-        }
-        // A failed re-read of what is already shown keeps it: the rating went through, only the refresh did not.
-        if (loaded is CareLoad.Failed && shown == appointment.id) return
-        current.value = loaded
+                rating = (rating as? CareResult.Ok)?.value,
+                ratingKnown = rating is CareResult.Ok,
+            ),
+        )
     }
 }

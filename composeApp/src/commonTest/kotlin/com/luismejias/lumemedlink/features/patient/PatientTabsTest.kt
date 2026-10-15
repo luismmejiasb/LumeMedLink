@@ -1,9 +1,12 @@
 package com.luismejias.lumemedlink.features.patient
 
+import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
+import com.luismejias.lumemedlink.core.care.AppointmentsSource
 import com.luismejias.lumemedlink.core.care.CareDoctor
 import com.luismejias.lumemedlink.core.care.CareFailure
 import com.luismejias.lumemedlink.core.care.CarePlace
+import com.luismejias.lumemedlink.core.care.CarePolicy
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.CareWorld
 import com.luismejias.lumemedlink.core.care.NoticesSource
@@ -12,9 +15,12 @@ import com.luismejias.lumemedlink.core.care.RatingPrompt
 import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.telemetry.MemorySecureStore
+import com.luismejias.lumemedlink.core.telemetry.RecordedTelemetry
+import com.luismejias.lumemedlink.core.telemetry.TelemetryConsent
+import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsContent
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
-import com.luismejias.lumemedlink.features.patient.home.HomeContent
 import com.luismejias.lumemedlink.features.patient.home.HomeSources
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
 import com.luismejias.lumemedlink.features.patient.home.homeSources
@@ -23,6 +29,9 @@ import com.luismejias.lumemedlink.features.patient.parts.cancelled
 import com.luismejias.lumemedlink.features.patient.parts.isAhead
 import com.luismejias.lumemedlink.features.patient.parts.past
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
+import com.luismejias.lumemedlink.features.patient.settings.SettingsContent
+import com.luismejias.lumemedlink.features.patient.settings.SettingsSources
+import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
 import com.luismejias.lumemedlink.features.patient.settings.settingsModel
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
@@ -38,6 +47,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -55,7 +65,7 @@ class PatientTabsTest {
     @Test
     fun inicioLeadsWithTheConfirmedAppointmentAndListsTheRequestApart() = runTest {
         val home = HomeViewModel(design.homeSources()).also { it.load() }
-        val content = assertIs<CareLoad.Ready<HomeContent>>(home.state.value).content
+        val content = assertNotNull(home.state.value)
         assertEquals("p-rendon", content.next?.doctor?.id)
         assertEquals(listOf("p-pinto"), content.waiting.map { it.doctor.id })
         assertEquals("p-fuentes", content.rating?.doctor?.id)
@@ -66,7 +76,7 @@ class PatientTabsTest {
     fun inicioWithNothingBookedHasNoHeroCard() = runTest {
         val empty = ScriptedPatientCare(world = CareWorld.EMPTY, latency = {})
         val home = HomeViewModel(empty.homeSources()).also { it.load() }
-        val content = (home.state.value as CareLoad.Ready).content
+        val content = assertNotNull(home.state.value)
         assertNull(content.next)
         assertTrue(content.waiting.isEmpty())
         assertNull(content.rating)
@@ -91,7 +101,7 @@ class PatientTabsTest {
         val sources = design.homeSources().let { HomeSources(it.clock, it.profile, it.appointments, ratings, bell) }
         val home = HomeViewModel(sources)
         repeat(5) { home.load() }
-        val content = assertIs<CareLoad.Ready<HomeContent>>(home.state.value).content
+        val content = assertNotNull(home.state.value)
         assertEquals(0, content.unreadNotices, "a bell that cannot be read shows no badge")
         assertNull(content.rating, "a rating card that cannot be read is left out")
         assertEquals(3 to 3, bellAsked to ratingsAsked, "three misses in a row, then Inicio stops asking")
@@ -100,8 +110,11 @@ class PatientTabsTest {
     @Test
     fun offlineIsTheStateNotAnEmptyScreen() = runTest {
         val offline = ScriptedPatientCare(failure = CareFailure.Offline, latency = {})
-        val home = HomeViewModel(offline.homeSources()).also { it.load() }
-        assertEquals(CareLoad.Failed(CareFailure.Offline), home.state.value)
+        // Inicio has no operation of its own (ADR-0067): with everything failing it still stands, with nothing claimed.
+        val home = assertNotNull(HomeViewModel(offline.homeSources()).also { it.load() }.state.value)
+        assertNull(home.givenNames, "«Hola» alone")
+        assertFalse(home.appointmentsRead, "neither the hero card nor «no tienes citas»")
+        assertEquals(0, home.unreadNotices)
         val appointments = AppointmentsViewModel(offline, offline).also { it.load() }
         assertEquals(CareLoad.Failed(CareFailure.Offline), appointments.state.value)
         assertEquals(CareLoad.Failed(CareFailure.Offline), MyDoctorsViewModel(offline).also { it.load() }.state.value)
@@ -111,6 +124,32 @@ class PatientTabsTest {
                 it.load()
             }.state.value,
         )
+    }
+
+    @Test
+    fun aScreensSecondaryReadsNeverFailIt() = runTest {
+        // ADR-0067: each screen fails only on its own operation; the rest is left out.
+        val noPolicy = object : AppointmentsSource by design {
+            override suspend fun policy(): CareResult<CarePolicy> = CareResult.Failed(CareFailure.Unavailable)
+        }
+        val appointments = assertIs<CareLoad.Ready<AppointmentsContent>>(
+            AppointmentsViewModel(design, noPolicy).also { it.load() }.state.value,
+        ).content
+        assertNull(appointments.changeWindowHours, "the 24 h note is left out")
+        assertTrue(appointments.upcoming.isNotEmpty(), "and the appointments show")
+
+        val noRatings = object : RatingsGateway by design {
+            override suspend fun sentRatingCount(): CareResult<Int> = CareResult.Failed(CareFailure.Offline)
+        }
+        val settings = SettingsViewModel(
+            SettingsSources(design, noPolicy, noRatings),
+            TelemetryConsent(MemorySecureStore(), RecordedTelemetry()),
+            Appearance(MemorySecureStore()),
+        ) { "" }
+        settings.load()
+        val content = assertIs<CareLoad.Ready<SettingsContent>>(settings.state.value).content
+        assertNull(content.remindersHoursBefore)
+        assertNull(content.sentRatings)
     }
 
     @Test

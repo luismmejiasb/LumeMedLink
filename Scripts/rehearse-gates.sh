@@ -1152,6 +1152,39 @@ import sys, pathlib
 (pathlib.Path(sys.argv[1]) / "docs/bitacora/0099b-bait.md").write_text("# bait\n")
 '
 
+# ── Only a screen's own operation can fail it (ADR-0067) ─────────────────────────────────────────────
+bait "Inicio holds a CareLoad again, so it can fail" check-secondary-reads.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/patient/home/HomeViewModel.kt"
+s = p.read_text()
+assert "MutableStateFlow<HomeContent?>(null)" in s
+p.write_text(s.replace("MutableStateFlow<HomeContent?>(null)", "MutableStateFlow<CareLoad<HomeContent>>(CareLoad.Loading)"))
+'
+
+bait "the right state type, with the old line kept in a comment" check-secondary-reads.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/patient/home/HomeViewModel.kt"
+s = p.read_text()
+old = "    private val current = MutableStateFlow<HomeContent?>(null)"
+assert old in s
+p.write_text(s.replace(old, "    // MutableStateFlow<HomeContent?>(null)\n    private val current = MutableStateFlow<CareLoad<HomeContent>>(CareLoad.Loading)"))
+'
+
+bait "a screen joins a secondary read into its allOf again" check-secondary-reads.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/patient/appointments/AppointmentsViewModel.kt"
+s = p.read_text()
+p.write_text(s + "\nprivate fun bait() = com.luismejias.lumemedlink.core.screen.allOf() { 0 }\n")
+'
+
+bait "a file named in ALLOWED that no longer joins anything" check-secondary-reads.sh '
+import sys, pathlib, re
+p = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/features/doctor/agenda/AgendaViewModel.kt"
+s = p.read_text()
+assert "allOf(" in s
+p.write_text(s.replace("allOf(", "listOf("))
+'
+
 restore
 
 echo ""

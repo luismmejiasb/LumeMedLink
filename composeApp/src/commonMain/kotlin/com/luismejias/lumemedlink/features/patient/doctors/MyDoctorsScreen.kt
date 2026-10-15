@@ -10,6 +10,8 @@ import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
 import cl.lume.uicomposer.components.LumeButtonSize
 import cl.lume.uicomposer.components.LumeCallout
+import cl.lume.uicomposer.components.LumeCalloutStyle
+import cl.lume.uicomposer.components.LumeCalloutSurface
 import cl.lume.uicomposer.components.LumeCard
 import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeContainer
@@ -26,9 +28,6 @@ import cl.lume.uicomposer.components.LumeNavBarTitleStyle
 import cl.lume.uicomposer.components.LumeStack
 import cl.lume.uicomposer.components.LumeStackAlignment
 import cl.lume.uicomposer.components.LumeStackAxis
-import cl.lume.uicomposer.components.LumeText
-import cl.lume.uicomposer.components.LumeTextColor
-import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.input.SensitiveSearchField
@@ -98,6 +97,12 @@ internal fun MyDoctorsScreen(
                         clearLabel = stringResource(Res.string.common_search_clear),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // Under the search, as a grey note (the author, 2026-10-15), not at the foot of the list.
+                    LumeCallout(
+                        text = stringResource(Res.string.doctors_footer),
+                        style = LumeCalloutStyle.Neutral,
+                        surface = LumeCalloutSurface.Washed,
+                    )
                     if (content.shown.isEmpty()) {
                         LumeCallout(text = stringResource(Res.string.doctors_no_match))
                     }
@@ -113,11 +118,6 @@ internal fun MyDoctorsScreen(
                         }
                     }
                 }
-                LumeText(
-                    text = stringResource(Res.string.doctors_footer),
-                    style = LumeTextStyle.TextSmall,
-                    color = LumeTextColor.Secondary,
-                )
                 TabBarClearance()
             }
         }
@@ -136,8 +136,10 @@ private fun DoctorEntry(entry: MyDoctor, onCall: (String) -> Unit, onMail: (Stri
                 textStyle = LumeListRowTextStyle.Strong,
                 title = it.doctor.displayName,
                 description = listOfNotNull(
-                    "${it.doctor.specialty} · " +
-                        pluralStringResource(Res.plurals.doctors_attentions, it.attentions, it.attentions),
+                    listOfNotNull(
+                        it.doctor.specialty,
+                        it.attentions?.let { n -> pluralStringResource(Res.plurals.doctors_attentions, n, n) },
+                    ).joinToString(" · "),
                     it.lastVisit?.let { day -> stringResource(Res.string.last_visit, dayMonthYearText(day)) },
                 ).joinToString("\n"),
                 leading = doctorMarker(it.doctor),

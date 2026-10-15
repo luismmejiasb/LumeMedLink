@@ -42,6 +42,7 @@ import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.RatingPrompt
 import com.luismejias.lumemedlink.core.screen.AppointmentStatusTag
+import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.core.screen.CareLoadView
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.core.screen.careRefresh
@@ -58,6 +59,7 @@ import com.luismejias.lumemedlink.resources.home_directions
 import com.luismejias.lumemedlink.resources.home_empty_body
 import com.luismejias.lumemedlink.resources.home_empty_title
 import com.luismejias.lumemedlink.resources.home_greeting
+import com.luismejias.lumemedlink.resources.home_greeting_plain
 import com.luismejias.lumemedlink.resources.home_next
 import com.luismejias.lumemedlink.resources.home_next_today
 import com.luismejias.lumemedlink.resources.home_notices
@@ -90,8 +92,10 @@ internal fun HomeScreen(
     onNotices: (() -> Unit)?,
     onProfile: () -> Unit,
 ) {
-    val load by model.state.collectAsState()
+    val home by model.state.collectAsState()
     val standIn by model.standIn.collectAsState()
+    // Waiting or ready, never failed (ADR-0067): there is no error for Inicio to show, so the retry never draws.
+    val load = home?.let { CareLoad.Ready(it) } ?: CareLoad.Loading
     CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { home ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
@@ -102,14 +106,15 @@ internal fun HomeScreen(
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
                     LumeText(text = longDateText(home.today), color = LumeTextColor.Secondary)
                     LumeText(
-                        text = stringResource(Res.string.home_greeting, home.givenNames),
+                        text = home.givenNames?.let { stringResource(Res.string.home_greeting, it) }
+                            ?: stringResource(Res.string.home_greeting_plain),
                         style = LumeTextStyle.HeadingLarge,
                     )
                 }
                 val next = home.next
                 if (next != null) {
                     NextAppointmentCard(next, home, onDirections, onChangeOrCancel)
-                } else if (home.waiting.isEmpty()) {
+                } else if (home.appointmentsRead && home.waiting.isEmpty()) {
                     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Dashed) {
                         LumeEmptyState(
                             look = LumeEmptyStateLook.Tiled(),
@@ -178,7 +183,14 @@ private fun HomeBar(home: HomeContent, onNotices: (() -> Unit)?, onProfile: () -
         brandName = name,
         actions = listOfNotNull(
             bell,
-            LumeNavBarAction.Initials(home.initials, stringResource(Res.string.home_profile), onClick = onProfile),
+            home.initials?.let {
+                LumeNavBarAction.Initials(it, stringResource(Res.string.home_profile), onClick = onProfile)
+            }
+                ?: LumeNavBarAction.Glyph(
+                    LumeIcon.PersonFill,
+                    stringResource(Res.string.home_profile),
+                    onClick = onProfile,
+                ),
         ),
     )
 }

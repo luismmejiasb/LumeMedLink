@@ -136,7 +136,7 @@ internal fun AppointmentDetailScreen(
                 )
             }
             if (appointment.status == AppointmentStatus.COMPLETED) {
-                if (onRate != null) {
+                if (onRate != null && content.ratingKnown) {
                     LumeEyebrow(stringResource(Res.string.detail_rating))
                     RatingCard(content.rating, onRate = { stars -> onRate(appointment, stars) })
                 }

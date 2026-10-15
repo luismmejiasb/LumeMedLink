@@ -172,7 +172,7 @@ internal fun AppointmentsScreen(
 private fun AppointmentCard(
     appointment: PatientAppointment,
     today: CalendarDate,
-    changeWindowHours: Int,
+    changeWindowHours: Int?,
     actionable: Boolean,
     onOpen: (PatientAppointment) -> Unit,
     onChange: ((PatientAppointment) -> Unit)?,
@@ -218,11 +218,13 @@ private fun AppointmentCard(
                 actionable && onChange != null && onCancel != null -> {
                     // In the card it governs, not at the foot of the scroll where it went out of sight (the author,
                     // 2026-10-15).
-                    LumeCallout(
-                        runs = stringResource(Res.string.appointments_window, changeWindowHours).strongRuns(),
-                        style = LumeCalloutStyle.Info,
-                        surface = LumeCalloutSurface.Washed,
-                    )
+                    if (changeWindowHours != null) {
+                        LumeCallout(
+                            runs = stringResource(Res.string.appointments_window, changeWindowHours).strongRuns(),
+                            style = LumeCalloutStyle.Info,
+                            surface = LumeCalloutSurface.Washed,
+                        )
+                    }
                     ChangeButtons(appointment, onChange, onCancel)
                 }
             }

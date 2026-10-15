@@ -131,10 +131,14 @@ class RemoteMyDoctorsTest {
     }
 
     @Test
-    fun appointmentsThatCannotBeReadFailTheScreenRatherThanCountZero() = runTest {
-        assertEquals(
-            CareResult.Failed(CareFailure.Offline),
-            source("""{"items":[]}""", CareResult.Failed(CareFailure.Offline)).myDoctors(),
-        )
+    fun appointmentsThatCannotBeReadShowNoCountRatherThanAFalseZeroOrAFailedScreen() = runTest {
+        // ADR-0067: the contacts are the screen; the visits only count and date them.
+        val doctors = assertIs<CareResult.Ok<List<MyDoctor>>>(
+            source(
+                """{"items":[${contactJson("c-1", "pro-1", null, null)}]}""",
+                CareResult.Failed(CareFailure.Offline),
+            ).myDoctors(),
+        ).value
+        assertEquals(null to null, doctors.single().let { it.attentions to it.lastVisit })
     }
 }
