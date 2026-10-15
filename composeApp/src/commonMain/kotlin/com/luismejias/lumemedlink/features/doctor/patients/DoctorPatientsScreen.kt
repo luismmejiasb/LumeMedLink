@@ -31,6 +31,7 @@ import com.luismejias.lumemedlink.core.care.PatientContact
 import com.luismejias.lumemedlink.core.input.SensitiveSearchField
 import com.luismejias.lumemedlink.core.screen.CareLoadView
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
+import com.luismejias.lumemedlink.core.screen.dayMonthYearText
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_search_clear
 import com.luismejias.lumemedlink.resources.doctor_call_named
@@ -40,11 +41,14 @@ import com.luismejias.lumemedlink.resources.doctor_patients_none
 import com.luismejias.lumemedlink.resources.doctor_patients_note
 import com.luismejias.lumemedlink.resources.doctor_patients_search
 import com.luismejias.lumemedlink.resources.doctor_tab_patients
+import com.luismejias.lumemedlink.resources.doctors_attentions
+import com.luismejias.lumemedlink.resources.last_visit
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * m2 · Pacientes: the doctor's patients as contacts — a name, a phone, an address — never their record (§1.0).
+ * m2 · Pacientes: the doctor's patients as contacts — a name, a phone, an address, how many visits and the day of
+ * the last — never their record nor why they came (§1.0).
  * The address opens the mail app with it and nothing else (ADR-0047). PROVISIONAL (ADR-0046): against a script; the
  * roster is a tenant-scoped route of trap T11.
  */
@@ -119,7 +123,13 @@ private fun ContactRow(contact: PatientContact, onCall: (String) -> Unit, onMail
     }
     LumeListRow(
         title = contact.displayName,
-        description = contact.mobile?.display,
+        description = listOfNotNull(
+            contact.mobile?.display,
+            listOfNotNull(
+                pluralStringResource(Res.plurals.doctors_attentions, contact.visits, contact.visits),
+                contact.lastVisit?.let { stringResource(Res.string.last_visit, dayMonthYearText(it)) },
+            ).joinToString(" · "),
+        ).joinToString("\n"),
         leading = LumeListAccessory.Avatar(contact.initials, LumeTileTint.deterministic(contact.id)),
         trailing = when {
             call != null && mail != null -> LumeListAccessory.ButtonPair(call, mail)

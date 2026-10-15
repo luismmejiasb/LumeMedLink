@@ -4,13 +4,18 @@ import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.CareDoctor
 import com.luismejias.lumemedlink.core.care.CareFailure
 import com.luismejias.lumemedlink.core.care.CarePlace
+import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.CareWorld
+import com.luismejias.lumemedlink.core.care.NoticesSource
 import com.luismejias.lumemedlink.core.care.PatientAppointment
+import com.luismejias.lumemedlink.core.care.RatingPrompt
+import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
 import com.luismejias.lumemedlink.features.patient.appointments.AppointmentsViewModel
 import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeContent
+import com.luismejias.lumemedlink.features.patient.home.HomeSources
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
 import com.luismejias.lumemedlink.features.patient.home.homeSources
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
@@ -65,6 +70,31 @@ class PatientTabsTest {
         assertNull(content.next)
         assertTrue(content.waiting.isEmpty())
         assertNull(content.rating)
+    }
+
+    @Test
+    fun aFailingBellOrRatingCardLeavesInicioStandingAndStopsAfterThreeMisses() = runTest {
+        var bellAsked = 0
+        var ratingsAsked = 0
+        val bell = object : NoticesSource by design {
+            override suspend fun unreadNoticeCount(): CareResult<Int> {
+                bellAsked++
+                return CareResult.Failed(CareFailure.Unavailable)
+            }
+        }
+        val ratings = object : RatingsGateway by design {
+            override suspend fun ratingPrompts(): CareResult<List<RatingPrompt>> {
+                ratingsAsked++
+                return CareResult.Failed(CareFailure.Offline)
+            }
+        }
+        val sources = design.homeSources().let { HomeSources(it.clock, it.profile, it.appointments, ratings, bell) }
+        val home = HomeViewModel(sources)
+        repeat(5) { home.load() }
+        val content = assertIs<CareLoad.Ready<HomeContent>>(home.state.value).content
+        assertEquals(0, content.unreadNotices, "a bell that cannot be read shows no badge")
+        assertNull(content.rating, "a rating card that cannot be read is left out")
+        assertEquals(3 to 3, bellAsked to ratingsAsked, "three misses in a row, then Inicio stops asking")
     }
 
     @Test

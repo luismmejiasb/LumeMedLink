@@ -147,7 +147,14 @@ internal data class RatingDraft(
  * A professional who attended the patient (p6). The contact is null when they do not share it — the
  * contract's rule, once for all their patients. [attentions] has no contract field (request 0008 §3).
  */
-internal data class MyDoctor(val doctor: CareDoctor, val attentions: Int, val phone: String?, val email: String?) {
+internal data class MyDoctor(
+    val doctor: CareDoctor,
+    val attentions: Int,
+    val phone: String?,
+    val email: String?,
+    /** The day of the last completed visit — context for booking again (the author, 2026-10-15). Never its reason. */
+    val lastVisit: CalendarDate? = null,
+) {
     val sharesContact: Boolean get() = phone != null || email != null
 
     override fun toString(): String = "MyDoctor(attentions=$attentions)"
@@ -308,8 +315,11 @@ internal data class PatientNotice(
 
 /** The patient's notices: the bell on «Inicio» and the list behind it (task `0037`). */
 internal interface NoticesSource {
-    /** Whether a notice newer than the last one shown waits behind the bell (p1). */
-    suspend fun hasUnreadNotices(): CareResult<Boolean>
+    /**
+     * How many notices newer than the last one shown wait behind the bell (p1, the author's call of 2026-10-15: a
+     * count, not a dot). Counted on the inbox's first page, the newest; the bar shows a ceiling before a page ends.
+     */
+    suspend fun unreadNoticeCount(): CareResult<Int>
 
     /** The inbox, newest first: its first page, the platform's default size. */
     suspend fun notices(): CareResult<List<PatientNotice>>

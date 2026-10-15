@@ -21,7 +21,7 @@ internal fun AppError.problemCode(): String? = when (this) {
 
 /** What a failed read says to the design: no network, or something the app cannot use (never a code). */
 internal fun AppError.careFailure(): CareFailure =
-    if (this is AppError.Retryable && status == null) CareFailure.Offline else CareFailure.Unavailable
+    if (this is AppError.Retryable && offline) CareFailure.Offline else CareFailure.Unavailable
 
 /**
  * Runs a read and folds the stack's error into [CareResult]. A cancelled caller is not a failure: the stack reports a
@@ -48,5 +48,5 @@ internal fun AppError.changeFailure(): ChangeFailure = when (problemCode()) {
     // The hour was taken, closed or clashes with another of the patient's between reading and writing: the server
     // re-verifies it (409), and the design says the same thing for the three.
     "conflict", "booking_closed", "patient_unavailable" -> ChangeFailure.SlotTaken
-    else -> if (this is AppError.Retryable && status == null) ChangeFailure.Offline else ChangeFailure.Unavailable
+    else -> if (this is AppError.Retryable && offline) ChangeFailure.Offline else ChangeFailure.Unavailable
 }

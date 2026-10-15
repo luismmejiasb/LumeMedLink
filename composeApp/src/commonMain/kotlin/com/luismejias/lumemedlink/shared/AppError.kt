@@ -25,8 +25,13 @@ internal sealed interface AppError {
      */
     data object NotFound : AppError
 
-    /** Transient transport/server failure (408/425/429/5xx). A bounded retry may succeed. */
-    data class Retryable(val status: Int?) : AppError
+    /**
+     * Transient transport/server failure (408/425/429/5xx). A bounded retry may succeed. [offline] is true only when
+     * the PLATFORM said the device has no network: a server that refuses the connection or does not answer is a
+     * transport failure too, and saying «no internet» about it sent the person to check a phone that was fine
+     * (seen with the local backend down, 2026-10-15).
+     */
+    data class Retryable(val status: Int?, val offline: Boolean = false) : AppError
 
     /**
      * The stack itself refused to send the request — it was aimed at an origin other than the one

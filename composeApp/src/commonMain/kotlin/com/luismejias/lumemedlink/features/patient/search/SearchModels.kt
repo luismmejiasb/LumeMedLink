@@ -65,8 +65,13 @@ internal class CatalogPicker<T>(
 
     suspend fun load() {
         standInContent.fill { standInRead?.invoke()?.toLoad { PickerContent(it, terms = terms) } ?: CareLoad.Loading }
-        current.value = CareLoad.Loading
+        // Never back to Loading over a catalog already shown: the preload and an opening can overlap.
+        current.markLoading()
         current.value = read().toLoad { PickerContent(it, terms = terms) }
+    }
+
+    suspend fun loadUnlessReady() {
+        if (current.value !is CareLoad.Ready) load()
     }
 
     fun queryChanged(query: String) {

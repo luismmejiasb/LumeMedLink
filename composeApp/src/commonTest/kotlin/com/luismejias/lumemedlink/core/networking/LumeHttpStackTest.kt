@@ -369,6 +369,24 @@ class LumeHttpStackOriginTest {
     }
 
     @Test
+    fun onlyThePlatformsNoNetworkReadsAsOffline() = runTest {
+        // A backend that is down refuses the connection from a phone that is online: that is not «no internet»
+        // (seen with the local backend down, 2026-10-15). Both cases on the platform's own exception.
+        val offline = MockEngine { throw noNetworkFailure() }
+        var refusedCalls = 0
+        val refused = MockEngine {
+            refusedCalls++
+            throw refusedConnectionFailure()
+        }
+        fun client(engine: MockEngine) =
+            lumeHttpClient(BASE_URL, engine, RecordingLogSink(), securityEvents = NO_SECURITY_EVENTS)
+
+        assertEquals(AppError.Retryable(status = null, offline = true), stackError { client(offline).get("/v1/me") })
+        assertEquals(AppError.Retryable(status = null, offline = false), stackError { client(refused).get("/v1/me") })
+        assertEquals(3, refusedCalls, "a refused GET is still retried, bounded: 1 call + 2 retries")
+    }
+
+    @Test
     fun aTransportFailureCarriesNoUrlAndNoQuery() = runTest {
         // Ktor's own message for a timeout is "…[url=https://…/patients/11111111-1?rut=…]" — the
         // full URL with its query, which a generic catch or a crash reporter would receive.

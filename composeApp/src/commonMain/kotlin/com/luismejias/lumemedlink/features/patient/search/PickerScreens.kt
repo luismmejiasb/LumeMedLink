@@ -25,7 +25,6 @@ import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_search_clear
 import com.luismejias.lumemedlink.resources.search_chosen
 import com.luismejias.lumemedlink.resources.search_commune
-import com.luismejias.lumemedlink.resources.search_commune_note
 import com.luismejias.lumemedlink.resources.search_commune_prompt
 import com.luismejias.lumemedlink.resources.search_none_match
 import com.luismejias.lumemedlink.resources.search_results_count
@@ -103,7 +102,7 @@ internal fun SpecialtyScreen(model: SearchViewModel, onBack: () -> Unit) {
     }
 }
 
-/** e3: grouped by region, only communes with doctors of the chosen specialty. */
+/** e3: the whole catalog grouped by region, preloaded when Buscar opens. */
 @Composable
 internal fun CommuneScreen(model: SearchViewModel, onBack: () -> Unit) {
     val load by model.communes.state.collectAsState()
@@ -142,7 +141,6 @@ internal fun CommuneScreen(model: SearchViewModel, onBack: () -> Unit) {
                     )
                 }
             }
-            LumeCallout(text = stringResource(Res.string.search_commune_note))
         }
     }
 }

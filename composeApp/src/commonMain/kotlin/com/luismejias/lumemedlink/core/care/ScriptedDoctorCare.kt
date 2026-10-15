@@ -90,6 +90,20 @@ internal class ScriptedDoctorCare(
         val TODAY = CalendarDate(2026, 9, 16)
         val RENDON = CareDoctor("p-rendon", "Dra.", "Mariana", "Rendón", "Medicina Familiar")
 
+        /** Each patient's visits and how many days ago the last one was. */
+        val HISTORY = mapOf(
+            "c-ana" to (4 to 21),
+            "c-antonio" to (1 to 63),
+            "c-camila" to (7 to 9),
+            "c-carla" to (2 to 140),
+            "c-diego" to (3 to 35),
+            "c-pedro" to (5 to 17),
+            "c-rosa" to (1 to 280),
+            "c-victor" to (2 to 52),
+            "c-lucia" to (6 to 12),
+            "c-tomas" to (1 to 410),
+        )
+
         fun patient(id: String, given: String, family: String, rut: String, mobile: String?, email: String?) =
             PatientContact(
                 id = id,
@@ -98,6 +112,8 @@ internal class ScriptedDoctorCare(
                 rut = ChileanRut.parse(rut),
                 mobile = mobile?.let(PhoneNumber::chileanMobile),
                 email = email?.let(EmailAddress::parse),
+                visits = HISTORY.getValue(id).first,
+                lastVisit = TODAY.plusDays(-HISTORY.getValue(id).second),
             )
 
         val ANA = patient("c-ana", "Ana", "Rivas", "12.345.678-5", "+56977123345", "ana.rivas@correo.example")

@@ -63,8 +63,12 @@ internal sealed interface BookingResult {
 internal interface DirectorySearch {
     suspend fun specialties(): CareResult<List<Specialty>>
 
-    /** Only communes where the specialty has professionals ("Solo se listan comunas con médicos…", e3). */
-    suspend fun communes(specialtyCode: String): CareResult<List<Commune>>
+    /**
+     * The whole territorial catalog, whatever the specialty (the author's call, 2026-10-15): e3 listed only the
+     * communes where the specialty had doctors, and an empty directory left a picker with nothing to pick. A commune
+     * without doctors of the specialty is the results' empty state (e5) to say.
+     */
+    suspend fun communes(): CareResult<List<Commune>>
 
     suspend fun search(specialtyCode: String, communeCode: String): CareResult<List<DirectoryDoctor>>
 

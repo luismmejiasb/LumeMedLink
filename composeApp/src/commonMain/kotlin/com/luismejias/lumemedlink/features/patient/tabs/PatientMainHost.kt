@@ -347,7 +347,6 @@ internal fun PatientMainHost(
                         )
                         PatientTab.DOCTORS -> MyDoctorsScreen(
                             model = doctors,
-                            onOpen = {},
                             onCall = contact::dial,
                             onMail = contact::mail,
                             onSearch = { tabs.show(PatientTab.SEARCH) }.onlyIf(can.search),

@@ -53,15 +53,16 @@ private class Appointments(private val answer: CareResult<List<PatientAppointmen
     override suspend fun policy(): CareResult<CarePolicy> = CareResult.Ok(CarePolicy(24, listOf(24, 2)))
 }
 
-private fun visit(doctor: String, status: AppointmentStatus) = PatientAppointment(
-    id = "a-$doctor-$status",
-    doctor = CareDoctor(doctor, "Dra. Ana Sintética", ""),
-    date = CalendarDate(2026, 9, 1),
-    start = ClockTime(10, 0),
-    minutes = 30,
-    status = status,
-    place = CarePlace("", ""),
-)
+private fun visit(doctor: String, status: AppointmentStatus, date: CalendarDate = CalendarDate(2026, 9, 1)) =
+    PatientAppointment(
+        id = "a-$doctor-$status-$date",
+        doctor = CareDoctor(doctor, "Dra. Ana Sintética", ""),
+        date = date,
+        start = ClockTime(10, 0),
+        minutes = 30,
+        status = status,
+        place = CarePlace("", ""),
+    )
 
 private fun source(contacts: String, appointments: CareResult<List<PatientAppointment>>): RemoteMyDoctors {
     val engine = MockEngine { request ->
@@ -106,6 +107,27 @@ class RemoteMyDoctorsTest {
         ).value
         assertEquals(mapOf("pro-1" to 2, "pro-2" to 0), doctors.associate { it.doctor.id to it.attentions })
         assertEquals(false, doctors.first { it.doctor.id == "pro-2" }.sharesContact, "both channels null")
+    }
+
+    @Test
+    fun theLastVisitIsTheLatestCompletedOneAndNoneWithoutOne() = runTest {
+        val doctors = assertIs<CareResult.Ok<List<MyDoctor>>>(
+            source(
+                """{"items":[${contactJson("c-1", "pro-1", null, null)},${contactJson("c-1", "pro-2", null, null)}]}""",
+                CareResult.Ok(
+                    listOf(
+                        visit("pro-1", AppointmentStatus.COMPLETED, CalendarDate(2025, 11, 3)),
+                        visit("pro-1", AppointmentStatus.COMPLETED, CalendarDate(2026, 8, 20)),
+                        visit("pro-1", AppointmentStatus.CANCELLED, CalendarDate(2026, 9, 30)),
+                        visit("pro-2", AppointmentStatus.CONFIRMED, CalendarDate(2026, 10, 2)),
+                    ),
+                ),
+            ).myDoctors(),
+        ).value
+        assertEquals(
+            mapOf("pro-1" to CalendarDate(2026, 8, 20), "pro-2" to null),
+            doctors.associate { it.doctor.id to it.lastVisit },
+        )
     }
 
     @Test

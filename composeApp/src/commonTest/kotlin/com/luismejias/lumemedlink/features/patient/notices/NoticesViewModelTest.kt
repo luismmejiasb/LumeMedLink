@@ -27,14 +27,14 @@ class NoticesViewModelTest {
     @Test
     fun showingTheListSilencesTheBellAndTellsInicio() = runTest {
         val care = ScriptedPatientCare(latency = {})
-        assertEquals(CareResult.Ok(true), care.hasUnreadNotices())
+        assertEquals(CareResult.Ok(2), care.unreadNoticeCount())
         val model = NoticesViewModel(care)
 
         model.load()
 
         assertEquals(2, assertIs<CareLoad.Ready<*>>(model.state.value).content.let { (it as List<*>).size })
         assertEquals(true, model.seen.value)
-        assertEquals(CareResult.Ok(false), care.hasUnreadNotices())
+        assertEquals(CareResult.Ok(0), care.unreadNoticeCount())
     }
 
     @Test

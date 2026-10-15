@@ -44,9 +44,11 @@ internal class RemoteDirectory(
     private val zones: PlaceZones = PlaceZones(),
     private val today: () -> CalendarDate = ClinicWallClock(zones.fallback)::today,
 ) : DirectoryGateway {
-    private val communeCatalog = ReadOnce(emptyMap()) {
+    private val communeCatalog = ReadOnce(emptyMap()) { readCommuneCatalog() }
+
+    private suspend fun readCommuneCatalog(): Map<String, Commune> {
         val regions = contract.call(ContractOperations.LIST_REGIONS).associate { it.code to it.name }
-        contract.call(ContractOperations.LIST_COMMUNES)
+        return contract.call(ContractOperations.LIST_COMMUNES)
             .associate { it.code to Commune(it.code, it.name, regions[it.regionCode].orEmpty()) }
     }
 
@@ -57,19 +59,15 @@ internal class RemoteDirectory(
             .sortedBy { it.name }
     }
 
-    /** Only communes where the specialty has a bookable place (e3), named by the platform's territorial catalog. */
-    override suspend fun communes(specialtyCode: String): CareResult<List<Commune>> = careRead {
-        val found = contract.call(
-            ContractOperations.SEARCH_DIRECTORY,
-            SearchDirectoryDto(specialtyCode = specialtyCode),
-        )
-        val catalog = communeCatalog.get()
-        found.flatMap { it.locations }
-            .filter { it.bookable }
-            .mapNotNull { it.communeCode }
-            .distinct()
-            .mapNotNull(catalog::get)
-            .sortedBy { it.name }
+    /**
+     * The platform's territorial catalog, grouped by region in the catalog's order and alphabetical inside each. Read
+     * here without [ReadOnce]: the picker must see a failure as a failure, not as a catalog with nothing in it.
+     */
+    override suspend fun communes(): CareResult<List<Commune>> = careRead {
+        val regionOrder = mutableListOf<String>()
+        readCommuneCatalog().values
+            .onEach { if (it.region !in regionOrder) regionOrder += it.region }
+            .sortedWith(compareBy<Commune> { regionOrder.indexOf(it.region) }.thenBy { it.name })
     }
 
     /**
@@ -222,7 +220,7 @@ internal class RemoteDirectory(
 internal fun AppError.bookingFailure(): BookingFailure = when (problemCode()) {
     "pending_request_exists" -> BookingFailure.AlreadyPending
     "conflict", "booking_closed", "patient_unavailable" -> BookingFailure.SlotTaken
-    else -> if (this is AppError.Retryable && status == null) BookingFailure.Offline else BookingFailure.Unavailable
+    else -> if (this is AppError.Retryable && offline) BookingFailure.Offline else BookingFailure.Unavailable
 }
 
 /** `2026-10-15`, the contract's calendar date. */

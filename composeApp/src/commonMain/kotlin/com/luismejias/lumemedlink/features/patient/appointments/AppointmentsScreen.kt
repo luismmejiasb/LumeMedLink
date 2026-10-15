@@ -44,6 +44,7 @@ import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.screen.CareLoadView
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.core.screen.capitalized
+import com.luismejias.lumemedlink.core.screen.careRefresh
 import com.luismejias.lumemedlink.core.screen.relativeDayText
 import com.luismejias.lumemedlink.core.screen.shortDateText
 import com.luismejias.lumemedlink.core.screen.statusLabel
@@ -87,6 +88,7 @@ internal fun AppointmentsScreen(
     CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
+            refresh = careRefresh(model.pull, model::pullToRefresh),
             topBar = {
                 LumeNavBar(
                     title = stringResource(Res.string.appointments_title),
@@ -153,17 +155,11 @@ internal fun AppointmentsScreen(
                     AppointmentCard(
                         appointment = appointment,
                         today = content.today,
+                        changeWindowHours = content.changeWindowHours,
                         actionable = segment == AppointmentsSegment.UPCOMING,
                         onOpen = onOpen,
                         onChange = onChange,
                         onCancel = onCancel,
-                    )
-                }
-                if (segment == AppointmentsSegment.UPCOMING && content.upcoming.isNotEmpty()) {
-                    LumeCallout(
-                        runs = stringResource(Res.string.appointments_window, content.changeWindowHours).strongRuns(),
-                        style = LumeCalloutStyle.Info,
-                        surface = LumeCalloutSurface.Washed,
                     )
                 }
                 TabBarClearance()
@@ -176,6 +172,7 @@ internal fun AppointmentsScreen(
 private fun AppointmentCard(
     appointment: PatientAppointment,
     today: CalendarDate,
+    changeWindowHours: Int,
     actionable: Boolean,
     onOpen: (PatientAppointment) -> Unit,
     onChange: ((PatientAppointment) -> Unit)?,
@@ -218,30 +215,48 @@ private fun AppointmentCard(
                     text = stringResource(Res.string.appointments_requested_note),
                     color = LumeTextColor.Secondary,
                 )
-                actionable && onChange != null && onCancel != null -> LumeStack(
-                    axis = LumeStackAxis.Horizontal,
-                    style = LumeStackStyle.Fixed,
-                    alignment = LumeStackAlignment.Fill,
-                    spacing = { small },
-                ) {
-                    LumeButton(
-                        content = LumeButtonContent.Title(stringResource(Res.string.appointments_change)),
-                        emphasis = LumeButtonEmphasis.OutlineNeutral,
-                        size = LumeButtonSize.Pair,
-                        width = LumeButtonWidth.Fill,
-                        onClick = { onChange(appointment) },
+                actionable && onChange != null && onCancel != null -> {
+                    // In the card it governs, not at the foot of the scroll where it went out of sight (the author,
+                    // 2026-10-15).
+                    LumeCallout(
+                        runs = stringResource(Res.string.appointments_window, changeWindowHours).strongRuns(),
+                        style = LumeCalloutStyle.Info,
+                        surface = LumeCalloutSurface.Washed,
                     )
-                    LumeButton(
-                        content = LumeButtonContent.Title(stringResource(Res.string.appointments_cancel)),
-                        emphasis = LumeButtonEmphasis.Outline,
-                        role = LumeButtonRole.Destructive,
-                        size = LumeButtonSize.Pair,
-                        width = LumeButtonWidth.Fill,
-                        onClick = { onCancel(appointment) },
-                    )
+                    ChangeButtons(appointment, onChange, onCancel)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChangeButtons(
+    appointment: PatientAppointment,
+    onChange: (PatientAppointment) -> Unit,
+    onCancel: (PatientAppointment) -> Unit,
+) {
+    LumeStack(
+        axis = LumeStackAxis.Horizontal,
+        style = LumeStackStyle.Fixed,
+        alignment = LumeStackAlignment.Fill,
+        spacing = { small },
+    ) {
+        LumeButton(
+            content = LumeButtonContent.Title(stringResource(Res.string.appointments_change)),
+            emphasis = LumeButtonEmphasis.OutlineNeutral,
+            size = LumeButtonSize.Pair,
+            width = LumeButtonWidth.Fill,
+            onClick = { onChange(appointment) },
+        )
+        LumeButton(
+            content = LumeButtonContent.Title(stringResource(Res.string.appointments_cancel)),
+            emphasis = LumeButtonEmphasis.Outline,
+            role = LumeButtonRole.Destructive,
+            size = LumeButtonSize.Pair,
+            width = LumeButtonWidth.Fill,
+            onClick = { onCancel(appointment) },
+        )
     }
 }
 

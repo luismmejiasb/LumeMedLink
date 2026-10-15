@@ -168,6 +168,11 @@
 
     <!-- Lock screen (session) -->
     <string name="unlock_title">Hola de nuevo</string>
+    <string name="session_refused_biometrics_title">Activa Face ID o tu huella</string>
+    <string name="session_refused_biometrics_body">LumeMedLink usa la biometría de tu teléfono para proteger tu sesión. Actívala en los ajustes del teléfono y vuelve a ingresar.</string>
+    <string name="session_refused_title">No pudimos iniciar tu sesión</string>
+    <string name="session_refused_body">No quedó nada guardado en este teléfono. Vuelve a ingresar.</string>
+    <string name="session_refused_action">Volver a ingresar</string>
     <string name="unlock_body">Usa tu huella o tu rostro para volver a entrar.</string>
     <string name="unlock_action">Ingresar</string>
     <string name="unlock_use_password">Usar contraseña</string>
@@ -213,6 +218,7 @@
     <string name="date_short">%1$s %2$d %3$s</string>
     <string name="date_weekday_day">%1$s %2$d</string>
     <string name="date_day_month">%1$d %2$s</string>
+    <string name="date_day_month_year">%1$d %2$s %3$d</string>
     <string name="date_today">Hoy</string>
     <string name="date_tomorrow">Mañana</string>
     <string name="appointment_minutes">%1$d min</string>
@@ -222,7 +228,10 @@
     <string name="status_cancelled">Cancelada</string>
     <string name="home_greeting">Hola, %1$s</string>
     <string name="home_notices">Notificaciones</string>
-    <string name="home_notices_new">Hay novedades</string>
+    <plurals name="home_notices_unread">
+        <item quantity="one">%1$d sin leer</item>
+        <item quantity="other">%1$d sin leer</item>
+    </plurals>
     <string name="notices_empty_title">Sin notificaciones</string>
     <string name="notices_empty_body">Aquí verás los avisos que te mandamos por correo o SMS.</string>
     <string name="home_profile">Tu perfil</string>
@@ -263,6 +272,9 @@
         <item quantity="other">%1$d atenciones</item>
     </plurals>
     <string name="doctors_call">Llamar</string>
+    <string name="common_refresh">Actualizar</string>
+    <string name="common_refreshing">Actualizando</string>
+    <string name="last_visit">Última visita: %1$s</string>
     <string name="doctors_mail">Correo</string>
     <string name="doctors_private">No comparte su contacto. Agenda desde la app.</string>
     <string name="doctors_footer">Aquí aparecen los médicos que te han atendido. Cada médico decide si comparte su contacto.</string>
@@ -303,7 +315,6 @@
     <string name="search_specialty_none_title">No encontramos «%1$s»</string>
     <string name="search_specialty_none_body">Ningún médico de Lume atiende esa especialidad por ahora. Revisa cómo la escribiste.</string>
     <string name="search_commune_prompt">Buscar comuna</string>
-    <string name="search_commune_note">Solo se listan comunas con médicos de la especialidad elegida.</string>
     <string name="search_none_match">Nada coincide con tu búsqueda</string>
     <string name="search_chosen">Elegida</string>
     <string name="results_title">Médicos</string>

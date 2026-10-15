@@ -34,6 +34,8 @@ import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.input.SensitiveSearchField
 import com.luismejias.lumemedlink.core.screen.CareLoadView
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
+import com.luismejias.lumemedlink.core.screen.careRefresh
+import com.luismejias.lumemedlink.core.screen.dayMonthYearText
 import com.luismejias.lumemedlink.features.patient.parts.doctorMarker
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_search_clear
@@ -46,6 +48,7 @@ import com.luismejias.lumemedlink.resources.doctors_mail
 import com.luismejias.lumemedlink.resources.doctors_no_match
 import com.luismejias.lumemedlink.resources.doctors_private
 import com.luismejias.lumemedlink.resources.doctors_search_prompt
+import com.luismejias.lumemedlink.resources.last_visit
 import com.luismejias.lumemedlink.resources.search_doctor
 import com.luismejias.lumemedlink.resources.tab_doctors
 import org.jetbrains.compose.resources.pluralStringResource
@@ -56,12 +59,12 @@ import org.jetbrains.compose.resources.stringResource
  * field: the search field takes no text case, and a typed name must not enter the keyboard's dictionary.
  * Calling hands the number to the phone's dialer — what the doctor chose to share, nothing more. PROVISIONAL
  * (ADR-0046): the design's "Correo" button waits for the author (ADR-0007 closes the mail intent on Android), so
- * the address is shown, not acted on.
+ * the address is shown, not acted on. Read-only (the author, 2026-10-15): a doctor opens nothing, so no row shows a
+ * disclosure; what a doctor's detail could hold is for after the MVP.
  */
 @Composable
 internal fun MyDoctorsScreen(
     model: MyDoctorsViewModel,
-    onOpen: (MyDoctor) -> Unit,
     onCall: (String) -> Unit,
     onMail: (String) -> Unit,
     /** Null while the directory is off (ADR-0060): the empty state offers no search. */
@@ -72,6 +75,7 @@ internal fun MyDoctorsScreen(
     CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
+            refresh = careRefresh(model.pull, model::pullToRefresh),
             topBar = {
                 LumeNavBar(title = stringResource(Res.string.tab_doctors), titleStyle = LumeNavBarTitleStyle.Root)
             },
@@ -103,7 +107,7 @@ internal fun MyDoctorsScreen(
                             LumeStack(alignment = LumeStackAlignment.Fill, spacing = { medium }) {
                                 content.shown.forEachIndexed { index, entry ->
                                     if (index > 0) LumeDivider()
-                                    DoctorEntry(entry, onOpen, onCall, onMail)
+                                    DoctorEntry(entry, onCall, onMail)
                                 }
                             }
                         }
@@ -121,26 +125,22 @@ internal fun MyDoctorsScreen(
 }
 
 @Composable
-private fun DoctorEntry(
-    entry: MyDoctor,
-    onOpen: (MyDoctor) -> Unit,
-    onCall: (String) -> Unit,
-    onMail: (String) -> Unit,
-) {
+private fun DoctorEntry(entry: MyDoctor, onCall: (String) -> Unit, onMail: (String) -> Unit) {
     LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
         LumeList(
             items = listOf(entry),
             key = { it.doctor.id },
             style = LumeListStyle.Embedded,
-            onRowTap = onOpen,
         ) {
             LumeListRow(
                 textStyle = LumeListRowTextStyle.Strong,
                 title = it.doctor.displayName,
-                description = "${it.doctor.specialty} · " +
-                    pluralStringResource(Res.plurals.doctors_attentions, it.attentions, it.attentions),
+                description = listOfNotNull(
+                    "${it.doctor.specialty} · " +
+                        pluralStringResource(Res.plurals.doctors_attentions, it.attentions, it.attentions),
+                    it.lastVisit?.let { day -> stringResource(Res.string.last_visit, dayMonthYearText(day)) },
+                ).joinToString("\n"),
                 leading = doctorMarker(it.doctor),
-                disclosure = true,
             )
         }
         if (entry.sharesContact) {

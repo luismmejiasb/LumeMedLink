@@ -13,7 +13,7 @@ import kotlinx.datetime.TimeZone
  * so what is new is what was sent after the newest notice shown, kept in [mark]. Each notice names its clinic by the
  * patient's own profile there (`listMyPatientProfiles`), as the contract says to.
  *
- * Only the first page is read: it is the newest, and the bell asks only whether the newest is new.
+ * Only the first page is read: it is the newest, and the bell counts what on it is new.
  */
 internal class RemoteNotices(
     private val contract: ContractClient,
@@ -21,10 +21,10 @@ internal class RemoteNotices(
     /** A notice names no place, so it is shown on the clinics' own wall clock, the fallback zone (ADR-0063). */
     private val zone: TimeZone = PlaceZones().fallback,
 ) : NoticesSource {
-    override suspend fun hasUnreadNotices(): CareResult<Boolean> = careRead {
-        val newest = contract.call(ContractOperations.LIST_MY_NOTICES).items.maxOfOrNull { epochMillisOf(it.createdAt) }
+    override suspend fun unreadNoticeCount(): CareResult<Int> = careRead {
+        val sent = contract.call(ContractOperations.LIST_MY_NOTICES).items.map { epochMillisOf(it.createdAt) }
         val seen = mark.seenUntil()
-        newest != null && (seen == null || newest > seen)
+        sent.count { seen == null || it > seen }
     }
 
     override suspend fun notices(): CareResult<List<PatientNotice>> = careRead {

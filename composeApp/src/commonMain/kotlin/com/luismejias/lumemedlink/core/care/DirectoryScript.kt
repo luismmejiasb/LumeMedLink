@@ -78,12 +78,6 @@ internal object DirectoryScript {
         Listing("cardio", "13123", IBANEZ, PEDRO, 4.8, 33, 90, 5),
     )
 
-    fun communesWith(specialty: String): List<Commune> {
-        val withListings = LISTINGS.filter { it.specialty == specialty }.map { it.commune }.toSet()
-        // The design's e3 lists every commune of the region; the script keeps them all so e5 is reachable.
-        return if (withListings.isEmpty()) emptyList() else COMMUNES
-    }
-
     fun doctorsIn(
         specialty: String,
         commune: String,

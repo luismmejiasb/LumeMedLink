@@ -95,9 +95,21 @@ internal class ScriptedPatientCare(
     override suspend fun myDoctors(): CareResult<List<MyDoctor>> = answer(
         if (world == CareWorld.DESIGN) {
             listOf(
-                MyDoctor(RENDON, attentions = 6, phone = "+56 2 2345 6789", email = "consulta@lyon.example"),
-                MyDoctor(FUENTES, attentions = 2, phone = "+56 2 2987 6543", email = null),
-                MyDoctor(PINTO, attentions = 1, phone = null, email = null),
+                MyDoctor(
+                    RENDON,
+                    attentions = 6,
+                    phone = "+56 2 2345 6789",
+                    email = "consulta@lyon.example",
+                    lastVisit = TODAY.plusDays(-45),
+                ),
+                MyDoctor(
+                    FUENTES,
+                    attentions = 2,
+                    phone = "+56 2 2987 6543",
+                    email = null,
+                    lastVisit = TODAY.plusDays(-14),
+                ),
+                MyDoctor(PINTO, attentions = 1, phone = null, email = null, lastVisit = TODAY.plusDays(-300)),
             )
         } else {
             emptyList()
@@ -111,10 +123,9 @@ internal class ScriptedPatientCare(
         (if (world == CareWorld.DESIGN) 3 else 0) + rated.size,
     )
 
-    override suspend fun hasUnreadNotices(): CareResult<Boolean> {
-        val newest = scriptNotices().maxOfOrNull { it.sentAtEpochMillis }
+    override suspend fun unreadNoticeCount(): CareResult<Int> {
         val seen = noticesSeenUntil
-        return answer(newest != null && (seen == null || newest > seen))
+        return answer(scriptNotices().count { seen == null || it.sentAtEpochMillis > seen })
     }
 
     override suspend fun notices(): CareResult<List<PatientNotice>> = answer(scriptNotices())
@@ -128,8 +139,7 @@ internal class ScriptedPatientCare(
 
     override suspend fun specialties(): CareResult<List<Specialty>> = answer(DirectoryScript.SPECIALTIES)
 
-    override suspend fun communes(specialtyCode: String): CareResult<List<Commune>> =
-        answer(DirectoryScript.communesWith(specialtyCode))
+    override suspend fun communes(): CareResult<List<Commune>> = answer(DirectoryScript.COMMUNES)
 
     override suspend fun search(specialtyCode: String, communeCode: String): CareResult<List<DirectoryDoctor>> {
         if (communeCode == DirectoryScript.OFFLINE_COMMUNE) return CareResult.Failed(CareFailure.Offline)

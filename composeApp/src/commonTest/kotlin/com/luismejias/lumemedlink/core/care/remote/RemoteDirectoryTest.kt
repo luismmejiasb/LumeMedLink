@@ -27,6 +27,7 @@ import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 private class Mute : NetworkLogSink {
     override fun log(entry: NetworkLogEntry) = Unit
@@ -89,19 +90,14 @@ class RemoteDirectoryTest {
     }
 
     @Test
-    fun aSpecialtysCommunesAreWhereItHasABookablePlaceNamedByTheCatalog() = runTest {
+    fun theCommunesAreTheWholeCatalogWhateverTheSpecialtyAlphabeticalInsideTheirRegion() = runTest {
         val directory = Directory(CATALOGS)
-        val communes = assertIs<CareResult.Ok<List<Commune>>>(directory.gateway().communes("MEDICINA_FAMILIAR")).value
-        assertEquals(listOf(Commune("13101", "Santiago", "Metropolitana")), communes)
+        val communes = assertIs<CareResult.Ok<List<Commune>>>(directory.gateway().communes()).value
         assertEquals(
-            """{"specialtyCode":"MEDICINA_FAMILIAR"}""",
-            directory.bodies[
-                directory.seen.indexOfFirst {
-                    "search" in
-                        it
-                },
-            ],
+            listOf(Commune("13114", "Las Condes", "Metropolitana"), Commune("13101", "Santiago", "Metropolitana")),
+            communes,
         )
+        assertTrue(directory.seen.none { "search" in it }, "the catalog does not ask the directory")
     }
 
     @Test

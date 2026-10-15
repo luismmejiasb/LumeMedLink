@@ -74,4 +74,10 @@ internal enum class SecureStoreKey(val storageKey: String) {
      * here so the logout erases it and the next person's bell is their own.
      */
     NOTICES_SEEN_UNTIL("notices_seen_until_v1"),
+
+    /**
+     * Which side a session belongs to, patient or doctor (ADR-0066), so a relaunched and unlocked app opens the same
+     * side. Not a secret: here so the logout erases it with the session.
+     */
+    SESSION_ROLE("session_role_v1"),
 }

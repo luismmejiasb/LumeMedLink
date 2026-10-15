@@ -7,6 +7,7 @@ import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.PullRefresh
 import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.allOf
 import com.luismejias.lumemedlink.core.screen.markLoading
@@ -16,6 +17,8 @@ import com.luismejias.lumemedlink.features.patient.parts.cancelled
 import com.luismejias.lumemedlink.features.patient.parts.past
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
 import com.luismejias.lumemedlink.shared.CalendarDate
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,6 +63,13 @@ internal class AppointmentsViewModel(private val clock: ClinicClock, private val
         viewModelScope.launch { load() }
     }
 
+    /** The tab's pull to refresh: the same read, with the content kept on screen while it runs. */
+    val pull = PullRefresh()
+
+    fun pullToRefresh() {
+        viewModelScope.launch { pull.run { load() } }
+    }
+
     fun segmentChosen(segment: AppointmentsSegment) {
         shown.value = segment
     }
@@ -70,18 +80,22 @@ internal class AppointmentsViewModel(private val clock: ClinicClock, private val
         current.value = read(clock, appointments)
     }
 
-    private suspend fun read(clock: ClinicClock, source: AppointmentsSource): CareLoad<AppointmentsContent> {
-        val appointments = source.appointments()
-        val policy = source.policy()
-        return allOf(appointments, policy) {
-            val today = clock.today()
-            AppointmentsContent(
-                today = today,
-                upcoming = appointments.ok.upcoming(today),
-                past = appointments.ok.past(today),
-                cancelled = appointments.ok.cancelled(),
-                changeWindowHours = policy.ok.changeWindowHours,
-            )
+    /** Both reads run together, so a refusing backend costs one bounded retry, not two in a row. */
+    private suspend fun read(clock: ClinicClock, source: AppointmentsSource): CareLoad<AppointmentsContent> =
+        coroutineScope {
+            val appointmentsRead = async { source.appointments() }
+            val policyRead = async { source.policy() }
+            val appointments = appointmentsRead.await()
+            val policy = policyRead.await()
+            allOf(appointments, policy) {
+                val today = clock.today()
+                AppointmentsContent(
+                    today = today,
+                    upcoming = appointments.ok.upcoming(today),
+                    past = appointments.ok.past(today),
+                    cancelled = appointments.ok.cancelled(),
+                    changeWindowHours = policy.ok.changeWindowHours,
+                )
+            }
         }
-    }
 }

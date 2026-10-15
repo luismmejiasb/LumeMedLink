@@ -20,6 +20,9 @@ internal data class PatientContact(
     val rut: ChileanRut?,
     val mobile: PhoneNumber?,
     val email: EmailAddress?,
+    /** How many times the doctor attended them, and the day of the last — never why (the author, 2026-10-15). */
+    val visits: Int = 0,
+    val lastVisit: CalendarDate? = null,
 ) {
     val displayName: String get() = "$givenNames $familyNames"
 

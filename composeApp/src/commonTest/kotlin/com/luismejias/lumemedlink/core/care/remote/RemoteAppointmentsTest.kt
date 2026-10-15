@@ -13,6 +13,8 @@ import com.luismejias.lumemedlink.core.networking.NO_SECURITY_EVENTS
 import com.luismejias.lumemedlink.core.networking.NetworkLogEntry
 import com.luismejias.lumemedlink.core.networking.NetworkLogSink
 import com.luismejias.lumemedlink.core.networking.lumeHttpClient
+import com.luismejias.lumemedlink.core.networking.noNetworkFailure
+import com.luismejias.lumemedlink.core.networking.refusedConnectionFailure
 import com.luismejias.lumemedlink.shared.CalendarDate
 import com.luismejias.lumemedlink.shared.ClockTime
 import io.ktor.client.engine.mock.MockEngine
@@ -68,13 +70,15 @@ private class Backend(
             """"nidCode":null,"isSuppressed":false}]""",
     var change: Pair<HttpStatusCode, String> = HttpStatusCode.NoContent to "",
     var offline: Boolean = false,
+    var down: Boolean = false,
 ) {
     val requests = mutableListOf<Pair<String, String>>()
 
     suspend fun MockRequestHandleScope.answer(request: HttpRequestData): HttpResponseData {
         val path = request.url.encodedPath
         requests += (request.method.value + " " + path) to request.body.toByteArray().decodeToString()
-        if (offline) throw IllegalStateException("no route to host")
+        if (offline) throw noNetworkFailure()
+        if (down) throw refusedConnectionFailure()
         return when {
             path.endsWith("/v1/reference/specialties") -> respond(specialties.second, specialties.first, JSON)
             path.endsWith("/v1/patient/appointments") -> respond(appointments, HttpStatusCode.OK, JSON)
@@ -166,6 +170,7 @@ class RemoteAppointmentsTest {
     @Test
     fun noNetworkReadsAsOfflineAndAServerFailureAsUnavailable() = runTest {
         assertEquals(CareResult.Failed(CareFailure.Offline), Backend(offline = true).gateway().appointments())
+        assertEquals(CareResult.Failed(CareFailure.Unavailable), Backend(down = true).gateway().appointments())
         val failing = Backend(specialties = HttpStatusCode.OK to "[]", appointments = "not json")
         assertEquals(CareResult.Failed(CareFailure.Unavailable), failing.gateway().appointments())
     }

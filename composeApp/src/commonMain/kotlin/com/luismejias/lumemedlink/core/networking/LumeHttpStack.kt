@@ -123,7 +123,7 @@ internal fun lumeHttpClient(
                 // transport failure — a feature broken while closing a leak. `status == null` is
                 // the discriminator: an HTTP 5xx maps to Retryable WITH a status.
                 val mappedTransport = cause is AppErrorException &&
-                    cause.error == AppError.Retryable(status = null)
+                    (cause.error as? AppError.Retryable)?.status == null
                 request.method == HttpMethod.Get && (cause is IOException || mappedTransport)
             }
             exponentialDelay()
@@ -230,7 +230,10 @@ private fun lumeStackGuard(
             // catch in this codebase to call `currentCoroutineContext().ensureActive()`.
             // `LumeHttpStackTest.aCancelledCallerSeesRetryable` pins this behaviour so that a
             // future change to it is a decision rather than a surprise.
-            throw AppErrorException(AppError.Retryable(status = null))
+            //
+            // Read before the original is dropped: whether the platform said «no network». A
+            // boolean, never the exception — it is the exception that carries the URL.
+            throw AppErrorException(AppError.Retryable(status = null, offline = transport.meansNoNetwork()))
         }
     }
 

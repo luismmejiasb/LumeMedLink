@@ -16,6 +16,7 @@ import cl.lume.uicomposer.components.LumeCardInset
 import cl.lume.uicomposer.components.LumeCardStyle
 import cl.lume.uicomposer.components.LumeContainer
 import cl.lume.uicomposer.components.LumeContainerScroll
+import cl.lume.uicomposer.components.LumeCountBadge
 import cl.lume.uicomposer.components.LumeEmptyState
 import cl.lume.uicomposer.components.LumeEmptyStateLook
 import cl.lume.uicomposer.components.LumeEyebrow
@@ -43,6 +44,7 @@ import com.luismejias.lumemedlink.core.care.RatingPrompt
 import com.luismejias.lumemedlink.core.screen.AppointmentStatusTag
 import com.luismejias.lumemedlink.core.screen.CareLoadView
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
+import com.luismejias.lumemedlink.core.screen.careRefresh
 import com.luismejias.lumemedlink.core.screen.dayMonthText
 import com.luismejias.lumemedlink.core.screen.longDateText
 import com.luismejias.lumemedlink.core.screen.relativeDayText
@@ -59,7 +61,7 @@ import com.luismejias.lumemedlink.resources.home_greeting
 import com.luismejias.lumemedlink.resources.home_next
 import com.luismejias.lumemedlink.resources.home_next_today
 import com.luismejias.lumemedlink.resources.home_notices
-import com.luismejias.lumemedlink.resources.home_notices_new
+import com.luismejias.lumemedlink.resources.home_notices_unread
 import com.luismejias.lumemedlink.resources.home_profile
 import com.luismejias.lumemedlink.resources.home_rate_title
 import com.luismejias.lumemedlink.resources.home_waiting
@@ -69,6 +71,7 @@ import com.luismejias.lumemedlink.resources.rate_none
 import com.luismejias.lumemedlink.resources.rate_value
 import com.luismejias.lumemedlink.resources.search_doctor
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -92,6 +95,7 @@ internal fun HomeScreen(
     CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { home ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
+            refresh = careRefresh(model.pull, model::pullToRefresh),
             topBar = { HomeBar(home, onNotices, onProfile) },
         ) {
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { large }) {
@@ -160,7 +164,11 @@ private fun HomeBar(home: HomeContent, onNotices: (() -> Unit)?, onProfile: () -
         LumeNavBarAction.Glyph(
             LumeIcon.Bell,
             stringResource(Res.string.home_notices),
-            unread = if (home.unreadNotices) stringResource(Res.string.home_notices_new) else null,
+            // The kit draws nothing at 0, and Inicio reads a count it could not get as 0 (SecondaryRead): no red then.
+            badge = LumeCountBadge(
+                home.unreadNotices,
+                pluralStringResource(Res.plurals.home_notices_unread, home.unreadNotices, home.unreadNotices),
+            ),
             onClick = it,
         )
     }

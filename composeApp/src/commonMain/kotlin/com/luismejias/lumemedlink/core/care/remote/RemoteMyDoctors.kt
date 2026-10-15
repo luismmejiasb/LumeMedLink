@@ -6,9 +6,12 @@ import com.luismejias.lumemedlink.core.care.CareDoctor
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.care.MyDoctorsSource
+import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.networking.ContractClient
 import com.luismejias.lumemedlink.core.networking.contract.ContractOperations
 import com.luismejias.lumemedlink.core.networking.contract.SharedProfessionalContactListDtoItemsItem
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 /**
  * «Mis médicos» over the contract (task `0037`): `listMyProfessionalContacts`, the professionals who attended the
@@ -17,33 +20,39 @@ import com.luismejias.lumemedlink.core.networking.contract.SharedProfessionalCon
  * Two things the screen needs and the route does not say, derived here:
  * - **One entry per professional.** The route lists one per clinic, so a doctor who saw the patient at two clinics
  *   comes twice; the screen keys its list by the doctor. The channels are the first each clinic's entry shares.
- * - **How many attentions.** The completed appointments with that professional, from the patient's own list. The
- *   design shows the count; the contract has none to give.
+ * - **How many attentions, and the last.** The completed appointments with that professional, from the patient's own
+ *   list: their count and the latest day. The contract has neither to give.
  */
 internal class RemoteMyDoctors(
     private val contract: ContractClient,
     private val specialties: SpecialtyNames,
     private val appointments: AppointmentsSource,
 ) : MyDoctorsSource {
-    override suspend fun myDoctors(): CareResult<List<MyDoctor>> {
-        val attended = when (val read = appointments.appointments()) {
-            is CareResult.Failed -> return read
-            is CareResult.Ok -> read.value.filter { it.status == AppointmentStatus.COMPLETED }
-                .groupingBy { it.doctor.id }
-                .eachCount()
+    override suspend fun myDoctors(): CareResult<List<MyDoctor>> = coroutineScope {
+        // Together, so a refusing backend costs one bounded retry rather than one per read.
+        val names = async { specialties.all() }
+        val appointmentsRead = async { appointments.appointments() }
+        val contacts = async { careRead { contract.call(ContractOperations.LIST_MY_PROFESSIONAL_CONTACTS).items } }
+        val attended = when (val read = appointmentsRead.await()) {
+            is CareResult.Failed -> return@coroutineScope read
+            is CareResult.Ok -> read.value.filter { it.status == AppointmentStatus.COMPLETED }.groupBy { it.doctor.id }
         }
-        return careRead {
-            val names = specialties.all()
-            contract.call(ContractOperations.LIST_MY_PROFESSIONAL_CONTACTS).items
-                .groupBy { it.professionalId }
-                .map { (id, entries) -> entries.toMyDoctor(id, attended[id] ?: 0, names) }
+        when (val items = contacts.await()) {
+            is CareResult.Failed -> items
+            is CareResult.Ok -> {
+                val catalog = names.await()
+                CareResult.Ok(
+                    items.value.groupBy { it.professionalId }
+                        .map { (id, entries) -> entries.toMyDoctor(id, attended[id].orEmpty(), catalog) },
+                )
+            }
         }
     }
 }
 
 private fun List<SharedProfessionalContactListDtoItemsItem>.toMyDoctor(
     id: String,
-    attentions: Int,
+    attended: List<PatientAppointment>,
     specialties: Map<String, String>,
 ): MyDoctor {
     val first = first()
@@ -53,8 +62,9 @@ private fun List<SharedProfessionalContactListDtoItemsItem>.toMyDoctor(
             displayName = professionalDisplayName(first.givenName, first.familyName),
             specialty = firstNotNullOfOrNull { it.specialtyCode }?.let(specialties::get).orEmpty(),
         ),
-        attentions = attentions,
+        attentions = attended.size,
         phone = firstNotNullOfOrNull { it.phone },
         email = firstNotNullOfOrNull { it.email },
+        lastVisit = attended.maxOfOrNull { it.date },
     )
 }

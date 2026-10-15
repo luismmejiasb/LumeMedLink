@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luismejias.lumemedlink.core.care.AppointmentsSource
 import com.luismejias.lumemedlink.core.care.BookingGateway
-import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.Commune
 import com.luismejias.lumemedlink.core.care.DirectoryAvailability
@@ -50,10 +49,8 @@ internal class SearchViewModel(sources: SearchSources, logEvent: (AnalyticsEvent
         standInRead = { standInPatientCare().specialties() },
     ) { listOf(it.name) + it.synonyms }
     val communes = CatalogPicker(
-        read = { chosen.value.specialty?.let { directory.communes(it.code) } ?: CareResult.Ok(emptyList()) },
-        standInRead = {
-            chosen.value.specialty?.let { standInPatientCare().communes(it.code) } ?: CareResult.Ok(emptyList())
-        },
+        read = { directory.communes() },
+        standInRead = { standInPatientCare().communes() },
     ) { listOf(it.name) }
     val results = ResultsModel(directory, sources.clock::today) {
         standInPatientCare().let { stand -> ResultsModel(stand, stand::today) }
@@ -62,6 +59,12 @@ internal class SearchViewModel(sources: SearchSources, logEvent: (AnalyticsEvent
         standInPatientCare().let { stand -> ScheduleModel(stand, stand::appointments, stand::today) }
     }
     val booking = BookingModel(sources.booking, logEvent)
+
+    init {
+        // Preloaded (the author's call, 2026-10-15): the catalog does not depend on anything chosen, so the picker
+        // opens on it rather than on a wait.
+        launch { communes.load() }
+    }
 
     /** Runs a step of the flow in this ViewModel's scope — a screen never owns the work it starts. */
     fun launch(step: suspend SearchViewModel.() -> Unit) {
@@ -75,22 +78,16 @@ internal class SearchViewModel(sources: SearchSources, logEvent: (AnalyticsEvent
         specialties.load()
     }
 
+    /** The catalog was read when Buscar opened; only a failed or missing read is read again here. */
     suspend fun openCommune() {
         flow.push(SearchRoute.COMMUNE)
-        communes.load()
+        communes.loadUnlessReady()
     }
 
-    /** A new specialty drops the commune when it has no doctors of it — e3 lists only communes that do. */
-    suspend fun specialtyChosen(specialty: Specialty) {
-        val commune = chosen.value.commune
-        chosen.value = SearchCriteria(specialty, commune)
+    /** The two choices are independent: the commune list is the whole catalog, whatever the specialty. */
+    fun specialtyChosen(specialty: Specialty) {
+        chosen.value = chosen.value.copy(specialty = specialty)
         flow.back()
-        if (commune != null) {
-            val available = directory.communes(specialty.code)
-            if (available is CareResult.Ok && available.value.none { it.code == commune.code }) {
-                chosen.value = SearchCriteria(specialty, null)
-            }
-        }
     }
 
     fun communeChosen(commune: Commune) {

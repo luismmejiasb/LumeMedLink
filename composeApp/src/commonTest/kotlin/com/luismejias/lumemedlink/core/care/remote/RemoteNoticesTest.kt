@@ -71,22 +71,31 @@ class RemoteNoticesTest {
     fun theBellIsNewUntilTheNewestNoticeIsShownAndAnOlderMarkNeverMovesItBack() = runTest {
         val inbox = Inbox(TWO)
         val source = inbox.source()
-        assertEquals(CareResult.Ok(true), source.hasUnreadNotices())
+        assertEquals(CareResult.Ok(2), source.unreadNoticeCount())
 
         val newest = assertIs<CareResult.Ok<List<PatientNotice>>>(source.notices()).value.first().sentAtEpochMillis
         source.noticesSeen(newest)
-        assertEquals(CareResult.Ok(false), source.hasUnreadNotices())
+        assertEquals(CareResult.Ok(0), source.unreadNoticeCount())
 
         source.noticesSeen(newest - 1)
         assertEquals(newest.toString(), inbox.store.entries[SecureStoreKey.NOTICES_SEEN_UNTIL.storageKey])
     }
 
     @Test
+    fun theCountIsWhatWasSentAfterTheMark() = runTest {
+        val inbox = Inbox(TWO)
+        val source = inbox.source()
+        val older = assertIs<CareResult.Ok<List<PatientNotice>>>(source.notices()).value.last().sentAtEpochMillis
+        source.noticesSeen(older)
+        assertEquals(CareResult.Ok(1), source.unreadNoticeCount())
+    }
+
+    @Test
     fun anEmptyInboxRingsNothingAndAFailedReadFailsTheBell() = runTest {
-        assertEquals(CareResult.Ok(false), Inbox("""{"items":[],"nextCursor":null}""").source().hasUnreadNotices())
+        assertEquals(CareResult.Ok(0), Inbox("""{"items":[],"nextCursor":null}""").source().unreadNoticeCount())
         assertEquals(
             CareResult.Failed(CareFailure.Unavailable),
-            Inbox("", HttpStatusCode.InternalServerError).source().hasUnreadNotices(),
+            Inbox("", HttpStatusCode.InternalServerError).source().unreadNoticeCount(),
         )
     }
 

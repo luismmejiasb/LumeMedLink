@@ -3,6 +3,7 @@ package com.luismejias.lumemedlink.core.screen
 import androidx.compose.runtime.Composable
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.date_day_month
+import com.luismejias.lumemedlink.resources.date_day_month_year
 import com.luismejias.lumemedlink.resources.date_long
 import com.luismejias.lumemedlink.resources.date_short
 import com.luismejias.lumemedlink.resources.date_today
@@ -56,6 +57,15 @@ internal fun dayMonthText(date: CalendarDate): String = stringResource(
     Res.string.date_day_month,
     date.day,
     stringArrayResource(Res.array.months_short)[date.month - 1],
+)
+
+/** "2 sep 2026" / "Sep 2, 2026": a day that may be in another year, such as a last visit. */
+@Composable
+internal fun dayMonthYearText(date: CalendarDate): String = stringResource(
+    Res.string.date_day_month_year,
+    date.day,
+    stringArrayResource(Res.array.months_short)[date.month - 1],
+    date.year,
 )
 
 /** "Hoy" or "Mañana" when it is one of those, else null. */

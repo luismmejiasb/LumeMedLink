@@ -53,6 +53,8 @@ import com.luismejias.lumemedlink.core.logging.LogEvent
 import com.luismejias.lumemedlink.core.security.NoOpSecurityEventReporter
 import com.luismejias.lumemedlink.core.security.emittingIn
 import com.luismejias.lumemedlink.core.session.FailedAttemptLedger
+import com.luismejias.lumemedlink.core.session.SessionEntryOutcome
+import com.luismejias.lumemedlink.core.session.SessionEntryRefusal
 import com.luismejias.lumemedlink.core.session.SessionLock
 import com.luismejias.lumemedlink.core.session.SessionManager
 import com.luismejias.lumemedlink.core.session.SystemClock
@@ -126,7 +128,7 @@ public fun App(
     // What must outlive a rotation lives here; what holds the Activity does not (task 0009, ADR-0039).
     val shell = viewModel { ShellViewModel() }
     // The access flow (ADR-0044) runs against the SCRIPT of a contract that does not exist yet — chosen here and
-    // only here (ADR-0045), and it begins no session.
+    // only here (ADR-0045). Against the local platform its end begins a real session (ADR-0066); otherwise none.
     val secureStore = rememberSecureStore()
     // Firebase, bounded (ADR-0052): off from the factory, and on only while the person's consent says so. Without the
     // build's configuration it is the unconfigured no-op, and the app runs as before.
@@ -213,6 +215,13 @@ public fun App(
         )
     }
 
+    // A debug build against the local platform begins a REAL session when the access flow lets somebody in
+    // (ADR-0066): the slate erased, the biometric key made — required — and the lock armed. The script, and every
+    // release build with it, still begins none (ADR-0044).
+    val devSessions = environment.localBackend != null
+    var sessionRole by remember { mutableStateOf<AccessRole?>(null) }
+    var entryRefused by remember { mutableStateOf<SessionEntryRefusal?>(null) }
+
     var hasSession by remember { mutableStateOf(shell.hasSession ?: false) }
     val reauthenticating by shell.reauthenticating.collectAsState()
     val accessAttempt by access.attempt.collectAsState()
@@ -220,8 +229,10 @@ public fun App(
     var locked by remember { mutableStateOf(sessionLock.isLocked()) }
     val linkToOpen by links.toOpen.collectAsState()
     // The link centre follows the shell: a role once the access flow lets somebody in, open unless the lock is up.
-    LaunchedEffect(accessFinished, hasSession, locked) {
-        val role = when (accessFinished) {
+    // Whom the shell serves: the session's side once one exists (ADR-0066), else whoever the access flow let in.
+    val servedRole = if (devSessions && hasSession) sessionRole else accessFinished
+    LaunchedEffect(servedRole, hasSession, locked) {
+        val role = when (servedRole) {
             AccessRole.PATIENT -> LinkAudience.PATIENT
             AccessRole.DOCTOR -> LinkAudience.DOCTOR
             null -> null
@@ -229,8 +240,8 @@ public fun App(
         links.sessionChanged(LinkSession(role = role, unlocked = role != null && !(hasSession && locked)))
     }
     // The role follows whoever the access flow let in; at sign-out it goes before anything else does.
-    LaunchedEffect(accessFinished) {
-        when (accessFinished) {
+    LaunchedEffect(servedRole) {
+        when (servedRole) {
             AccessRole.PATIENT -> roles.signedIn(Role.PATIENT)
             AccessRole.DOCTOR -> roles.signedIn(Role.DOCTOR)
             null -> roles.signedOut()
@@ -323,12 +334,51 @@ public fun App(
         }
         hasSession = false
         shell.hasSession = false
+        sessionRole = null
         shell.reauthenticating.value = false
         links.forget()
         access.restart()
         patientScope.reset()
         doctorScope.reset()
         locked = true
+    }
+
+    // A session found at launch reopens its side once unlocked; one whose side cannot be read is ended (ADR-0066).
+    LaunchedEffect(hasSession) {
+        if (devSessions && hasSession && sessionRole == null) {
+            sessionRole = SessionRoleMark(secureStore).read()
+            if (sessionRole == null) endSession()
+        }
+    }
+
+    // THE ACCESS FLOW BEGINS THE SESSION (ADR-0066). A first sign-in, or «Usar contraseña» from the lock: either way
+    // establishSession erases what was there before writing anything.
+    LaunchedEffect(accessFinished, reauthenticating) {
+        val role = accessFinished ?: return@LaunchedEffect
+        if (!devSessions || (hasSession && !reauthenticating)) return@LaunchedEffect
+        val outcome = beginDevSession(role, sessionManager, secureStore, unlockGate, sessionLock, telemetryConsent)
+        // The erase took the theme and the language with it; the consent was carried across.
+        appearance.restore()
+        telemetryConsent.restore()
+        when (outcome) {
+            SessionEntryOutcome.Established -> {
+                sessionRole = role
+                hasSession = true
+                shell.hasSession = true
+                locked = false
+            }
+            is SessionEntryOutcome.Refused -> {
+                entryRefused = outcome.reason
+                sessionRole = null
+                hasSession = false
+                shell.hasSession = false
+                locked = true
+                links.forget()
+                access.restart()
+            }
+        }
+        // Last: it is a key of this effect, and the writes above must land before it restarts.
+        shell.reauthenticating.value = false
     }
 
     val dark = when (theme) {
@@ -360,10 +410,9 @@ public fun App(
                                 }
                             },
                     ) {
-                        // No session can begin from the access flow yet (ADR-0044): a patient lands in the scripted
-                        // main app (ADR-0046), a doctor in the pending one.
-                        val accessFlow = @Composable { onCancel: (() -> Unit)? ->
-                            val role = accessFinished
+                        // The side a person lands on (ADR-0046). [onSignOut] is the logout when a session exists, and
+                        // the script's return to the start when none does (ADR-0044).
+                        val mainHost = @Composable { role: AccessRole, onSignOut: () -> Unit ->
                             when (role) {
                                 AccessRole.PATIENT -> InSessionScope(patientScope) {
                                     PatientMainHost(
@@ -375,14 +424,7 @@ public fun App(
                                         link = linkToOpen,
                                         onLinkOpened = links::landed,
                                         features = features,
-                                        onSignOut = {
-                                            roles.signedOut()
-                                            links.forget()
-                                            patientScope.reset()
-                                            access.restart()
-                                            // A sign-out withdraws, as the logout's wipe does (ADR-0052 §2).
-                                            scope.launch { telemetryConsent.setGranted(false) }
-                                        },
+                                        onSignOut = onSignOut,
                                     )
                                 }
                                 AccessRole.DOCTOR -> InSessionScope(doctorScope) {
@@ -391,16 +433,31 @@ public fun App(
                                         link = linkToOpen,
                                         onLinkOpened = links::landed,
                                         features = features,
-                                        onSignOut = {
-                                            roles.signedOut()
-                                            links.forget()
-                                            doctorScope.reset()
-                                            access.restart()
-                                            scope.launch { telemetryConsent.setGranted(false) }
-                                        },
+                                        onSignOut = onSignOut,
                                     )
                                 }
-                                null -> AccessHost(viewModel = access, onCancel = onCancel)
+                            }
+                        }
+                        // Without a session (the script): back to the start, withdrawing the consent as the logout's
+                        // wipe does (ADR-0052 §2).
+                        val scriptedSignOut = {
+                            roles.signedOut()
+                            links.forget()
+                            patientScope.reset()
+                            doctorScope.reset()
+                            access.restart()
+                            scope.launch { telemetryConsent.setGranted(false) }
+                            Unit
+                        }
+                        val accessFlow = @Composable { onCancel: (() -> Unit)? ->
+                            val role = accessFinished
+                            val refused = entryRefused
+                            when {
+                                refused != null -> SessionRefusedScreen(refused) { entryRefused = null }
+                                role == null -> AccessHost(viewModel = access, onCancel = onCancel)
+                                // The session is being begun: nothing of the app is drawn before it exists.
+                                devSessions -> SessionEnteringScreen()
+                                else -> mainHost(role, scriptedSignOut)
                             }
                         }
                         when (resolveDestination(hasSession, locked)) {
@@ -428,9 +485,17 @@ public fun App(
                                 )
                             }
 
-                            AppDestination.Home -> HomeScreen(
-                                onSignOut = { scope.launch { endSession() } },
-                            )
+                            AppDestination.Home -> {
+                                val role = sessionRole
+                                if (devSessions && role != null) {
+                                    mainHost(role) { scope.launch { endSession() } }
+                                } else if (devSessions) {
+                                    // The side is being read back (the effect above); it ends the session if it can't.
+                                    SessionEnteringScreen()
+                                } else {
+                                    HomeScreen(onSignOut = { scope.launch { endSession() } })
+                                }
+                            }
                         }
                     }
                 }

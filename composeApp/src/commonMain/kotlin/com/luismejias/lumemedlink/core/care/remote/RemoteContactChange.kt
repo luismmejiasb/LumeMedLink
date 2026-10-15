@@ -111,7 +111,7 @@ internal fun AppError.contactFailure(): ContactChangeFailure = when (problemCode
         this is AppError.NotFound -> ContactChangeFailure.Closed
         // Too soon and the day's limit are both 429, and the stack carries no code for either.
         this is AppError.Retryable && status == TOO_MANY -> ContactChangeFailure.LimitReached
-        this is AppError.Retryable && status == null -> ContactChangeFailure.Offline
+        this is AppError.Retryable && offline -> ContactChangeFailure.Offline
         else -> ContactChangeFailure.Unavailable
     }
 }

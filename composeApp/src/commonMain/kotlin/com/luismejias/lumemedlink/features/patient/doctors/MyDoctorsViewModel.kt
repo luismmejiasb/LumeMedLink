@@ -6,6 +6,7 @@ import com.luismejias.lumemedlink.core.care.MyDoctor
 import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.standInPatientCare
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.PullRefresh
 import com.luismejias.lumemedlink.core.screen.StandIn
 import com.luismejias.lumemedlink.core.screen.folded
 import com.luismejias.lumemedlink.core.screen.markLoading
@@ -46,6 +47,13 @@ internal class MyDoctorsViewModel(private val care: MyDoctorsSource) : ViewModel
 
     fun refresh() {
         viewModelScope.launch { load() }
+    }
+
+    /** The tab's pull to refresh: the same read, with the content kept on screen while it runs. */
+    val pull = PullRefresh()
+
+    fun pullToRefresh() {
+        viewModelScope.launch { pull.run { load() } }
     }
 
     suspend fun load() {
