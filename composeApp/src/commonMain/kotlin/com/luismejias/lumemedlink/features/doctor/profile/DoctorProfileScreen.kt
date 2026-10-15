@@ -30,6 +30,7 @@ import com.luismejias.lumemedlink.core.screen.CareLoadView
 import com.luismejias.lumemedlink.core.screen.ProfileAvatar
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
+import com.luismejias.lumemedlink.core.screen.leftToRight
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.doctor_address
 import com.luismejias.lumemedlink.resources.doctor_corrections
@@ -119,7 +120,7 @@ private fun ProfileFields(profile: DoctorProfile) {
             description = when (field) {
                 ProfileField.SPECIALTY -> profile.doctor.specialty
                 ProfileField.ADDRESS -> profile.address
-                ProfileField.PHONE -> profile.phone
+                ProfileField.PHONE -> profile.phone.leftToRight()
             },
             trailing = LumeListAccessory.Button(LumeIcon.Edit, edits.getValue(field), LumeListButtonLook.Accent) {},
             textStyle = LumeListRowTextStyle.LabelOverValue,

@@ -36,6 +36,7 @@ import com.luismejias.lumemedlink.core.screen.CareLoadView
 import com.luismejias.lumemedlink.core.screen.ProfileAvatar
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
+import com.luismejias.lumemedlink.core.screen.leftToRight
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_cancel
 import com.luismejias.lumemedlink.resources.settings_appearance
@@ -319,13 +320,15 @@ private fun ProfileFields(
         when (field) {
             ProfileField.RUT -> LumeListRow(
                 title = stringResource(Res.string.settings_rut),
-                description = profile.rut?.display ?: stringResource(Res.string.settings_not_recorded),
+                description = profile.rut?.display?.leftToRight() ?: stringResource(Res.string.settings_not_recorded),
                 trailing = LumeListAccessory.Icon(LumeIcon.Lock, ""),
                 textStyle = LumeListRowTextStyle.LabelOverValue,
             )
             ProfileField.PHONE -> LumeListRow(
                 title = stringResource(Res.string.settings_phone),
-                description = profile.mobile?.display ?: stringResource(Res.string.settings_not_recorded),
+                description = profile.mobile?.display?.leftToRight() ?: stringResource(
+                    Res.string.settings_not_recorded,
+                ),
                 trailing = onEditPhone?.let { edit ->
                     LumeListAccessory.Button(
                         LumeIcon.Edit,
@@ -338,7 +341,7 @@ private fun ProfileFields(
             )
             ProfileField.EMAIL -> LumeListRow(
                 title = stringResource(Res.string.settings_email),
-                description = profile.email?.value ?: stringResource(Res.string.settings_not_recorded),
+                description = profile.email?.value?.leftToRight() ?: stringResource(Res.string.settings_not_recorded),
                 trailing = onEditEmail?.let { edit ->
                     LumeListAccessory.Button(
                         LumeIcon.Edit,

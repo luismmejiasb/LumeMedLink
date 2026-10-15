@@ -32,6 +32,7 @@ import com.luismejias.lumemedlink.core.input.SensitiveSearchField
 import com.luismejias.lumemedlink.core.screen.CareLoadView
 import com.luismejias.lumemedlink.core.screen.TabBarClearance
 import com.luismejias.lumemedlink.core.screen.dayMonthYearText
+import com.luismejias.lumemedlink.core.screen.leftToRight
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.common_search_clear
 import com.luismejias.lumemedlink.resources.doctor_call_named
@@ -124,7 +125,7 @@ private fun ContactRow(contact: PatientContact, onCall: (String) -> Unit, onMail
     LumeListRow(
         title = contact.displayName,
         description = listOfNotNull(
-            contact.mobile?.display,
+            contact.mobile?.display?.leftToRight(),
             listOfNotNull(
                 pluralStringResource(Res.plurals.doctors_attentions, contact.visits, contact.visits),
                 contact.lastVisit?.let { stringResource(Res.string.last_visit, dayMonthYearText(it)) },

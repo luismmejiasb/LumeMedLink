@@ -37,6 +37,7 @@ import com.luismejias.lumemedlink.core.input.SensitiveFieldPurpose
 import com.luismejias.lumemedlink.core.input.SensitivePhoneField
 import com.luismejias.lumemedlink.core.input.SensitiveTextField
 import com.luismejias.lumemedlink.core.screen.clockText
+import com.luismejias.lumemedlink.core.screen.leftToRight
 import com.luismejias.lumemedlink.core.screen.richRuns
 import com.luismejias.lumemedlink.core.screen.secondsUntil
 import com.luismejias.lumemedlink.core.session.Clock
@@ -447,7 +448,7 @@ internal fun SignUpDoneScreen(account: AccountSummary?, onContinue: () -> Unit) 
                         )
                         LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
                             LumeText(text = name, style = LumeTextStyle.HeadingSmall)
-                            LumeText(text = account.rut.display, color = LumeTextColor.Secondary)
+                            LumeText(text = account.rut.display.leftToRight(), color = LumeTextColor.Secondary)
                         }
                         LumeTag(text = stringResource(Res.string.sign_up_done_verified), style = LumeTagStyle.Success)
                     }
