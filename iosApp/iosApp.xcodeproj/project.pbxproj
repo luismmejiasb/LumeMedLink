@@ -34,9 +34,9 @@
 		1A0000000000000000000006 /* LumeMedLink.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LumeMedLink.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A0000000000000000000007 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		1A0000000000000000000008 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		1A0000000000000000000019 /* KotlinFrameworkStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KotlinFrameworkStamp.swift; sourceTree = DERIVED_FILE_DIR; };
 		1A0000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A0000000000000000000016 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
+		1A0000000000000000000019 /* KotlinFrameworkStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KotlinFrameworkStamp.swift; sourceTree = DERIVED_FILE_DIR; };
 		1A0000000000000000000020 /* FirebaseHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseHost.swift; sourceTree = "<group>"; };
 		1A000000000000000000002F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1A0000000000000000000040 /* iosAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -325,6 +325,7 @@
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JK8WCG57P2;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
 				GENERATE_INFOPLIST_FILE = NO;
@@ -355,6 +356,7 @@
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JK8WCG57P2;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
 				GENERATE_INFOPLIST_FILE = NO;
