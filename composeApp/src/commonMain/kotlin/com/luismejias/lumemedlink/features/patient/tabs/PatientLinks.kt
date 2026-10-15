@@ -3,6 +3,7 @@ package com.luismejias.lumemedlink.features.patient.tabs
 import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.links.DeepLinkEntry
 import com.luismejias.lumemedlink.features.patient.change.ChangeViewModel
+import com.luismejias.lumemedlink.features.patient.notices.NoticesViewModel
 import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 
 /**
@@ -18,9 +19,11 @@ internal suspend fun openPatientLink(
     tabs: PatientTabsViewModel,
     change: ChangeViewModel,
     rate: RateViewModel,
+    notices: NoticesViewModel,
 ) {
     change.closeForLink()
     rate.dismiss()
+    notices.close()
     when (link.entry) {
         DeepLinkEntry.HOME -> tabs.show(PatientTab.HOME)
         DeepLinkEntry.SEARCH -> tabs.show(PatientTab.SEARCH)
@@ -38,8 +41,11 @@ internal suspend fun openPatientLink(
         DeepLinkEntry.SETTINGS_COMPLAINTS,
         DeepLinkEntry.SETTINGS_PRIVACY,
         -> tabs.show(PatientTab.SETTINGS)
-        // Not designed yet: Inicio, where the bell is.
-        DeepLinkEntry.NOTICES, DeepLinkEntry.NOTICE_DETAIL -> tabs.show(PatientTab.HOME)
+        // The list behind the bell; a single notice has no screen of its own, so it opens the list too.
+        DeepLinkEntry.NOTICES, DeepLinkEntry.NOTICE_DETAIL -> {
+            tabs.show(PatientTab.HOME)
+            notices.show()
+        }
         // Never resolved to a patient (LinkCenter drops the other role's links).
         DeepLinkEntry.DOCTOR_AGENDA, DeepLinkEntry.DOCTOR_PATIENTS, DeepLinkEntry.DOCTOR_SETTINGS -> Unit
     }

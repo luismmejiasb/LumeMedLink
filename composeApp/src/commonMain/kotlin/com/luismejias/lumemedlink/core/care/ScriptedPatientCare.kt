@@ -44,6 +44,9 @@ internal class ScriptedPatientCare(
     /** The profile as this run left it: a confirmed contact change replaces its number or its address. */
     private var profile = PROFILE
 
+    /** When the newest notice shown was sent: the bell's own mark, as the app keeps it for the platform. */
+    private var noticesSeenUntil: Long? = null
+
     /** The contact change waiting for its code, as a server would keep it. */
     private var pendingContact: PendingContact? = null
 
@@ -108,7 +111,20 @@ internal class ScriptedPatientCare(
         (if (world == CareWorld.DESIGN) 3 else 0) + rated.size,
     )
 
-    override suspend fun hasUnreadNotices(): CareResult<Boolean> = answer(world == CareWorld.DESIGN)
+    override suspend fun hasUnreadNotices(): CareResult<Boolean> {
+        val newest = scriptNotices().maxOfOrNull { it.sentAtEpochMillis }
+        val seen = noticesSeenUntil
+        return answer(newest != null && (seen == null || newest > seen))
+    }
+
+    override suspend fun notices(): CareResult<List<PatientNotice>> = answer(scriptNotices())
+
+    override suspend fun noticesSeen(newestEpochMillis: Long) {
+        noticesSeenUntil = maxOf(noticesSeenUntil ?: newestEpochMillis, newestEpochMillis)
+    }
+
+    /** The design's world has two notices, the empty one none. Their words carry no clinical content (§1.0). */
+    private fun scriptNotices(): List<PatientNotice> = if (world == CareWorld.DESIGN) NOTICES else emptyList()
 
     override suspend fun specialties(): CareResult<List<Specialty>> = answer(DirectoryScript.SPECIALTIES)
 
@@ -369,6 +385,28 @@ internal class ScriptedPatientCare(
          * sample says something else.
          */
         val RATINGS = mapOf("a-rendon-0902" to SentRating(5, "Muy clara y puntual.", TODAY.plusDays(-14)))
+
+        /** Two notices as the platform words them: a reminder and a moved hour, newest first. Synthetic (§9). */
+        val NOTICES = listOf(
+            PatientNotice(
+                id = "n-2",
+                clinic = "Clínica Lyon",
+                title = "Recordatorio de tu hora",
+                text = "Tienes hora mañana a las 10:30 en Clínica Lyon.",
+                sentAtEpochMillis = 1_792_000_000_000,
+                sentOn = TODAY.plusDays(-1),
+                sentAt = ClockTime(10, 30),
+            ),
+            PatientNotice(
+                id = "n-1",
+                clinic = "Clínica Lyon",
+                title = "Tu hora cambió",
+                text = "Tu hora pasó al jueves 22 a las 09:00.",
+                sentAtEpochMillis = 1_791_900_000_000,
+                sentOn = TODAY.plusDays(-2),
+                sentAt = ClockTime(9, 0),
+            ),
+        )
 
         /** The design's "18.456.789-2" fails módulo 11 (ADR-0044, deviation 9); this one is valid. */
         val PROFILE = PatientProfile(

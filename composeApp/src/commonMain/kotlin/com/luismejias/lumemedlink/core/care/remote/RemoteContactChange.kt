@@ -17,7 +17,6 @@ import com.luismejias.lumemedlink.shared.EmailAddress
 import com.luismejias.lumemedlink.shared.PhoneNumber
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlin.time.Instant
 
 private const val TOO_MANY = 429
 
@@ -46,7 +45,7 @@ internal class RemoteContactChange(private val contract: ContractClient, private
                 ResendContactVerificationDto(ticket = change.ticket, value = change.value),
                 path = mapOf("verificationId" to change.id),
             )
-            ContactCodeDispatch(epochMillis(sent.expiresAt), epochMillis(sent.resendAvailableAt), change)
+            ContactCodeDispatch(epochMillisOf(sent.expiresAt), epochMillisOf(sent.resendAvailableAt), change)
         }
 
     /**
@@ -82,8 +81,8 @@ internal class RemoteContactChange(private val contract: ContractClient, private
                 RequestContactVerificationDto(channel = channel, value = value),
             )
             ContactCodeDispatch(
-                epochMillis(opened.expiresAt),
-                epochMillis(opened.resendAvailableAt),
+                epochMillisOf(opened.expiresAt),
+                epochMillisOf(opened.resendAvailableAt),
                 PendingContactChange(opened.id, opened.ticket, value),
             )
         }
@@ -116,5 +115,3 @@ internal fun AppError.contactFailure(): ContactChangeFailure = when (problemCode
         else -> ContactChangeFailure.Unavailable
     }
 }
-
-private fun epochMillis(instant: String): Long = Instant.parse(instant).toEpochMilliseconds()

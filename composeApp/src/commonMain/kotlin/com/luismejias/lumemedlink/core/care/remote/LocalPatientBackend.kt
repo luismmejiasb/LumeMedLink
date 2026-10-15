@@ -6,6 +6,8 @@ import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.ContactChangeGateway
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.MyDoctorsSource
+import com.luismejias.lumemedlink.core.care.NoticeMark
+import com.luismejias.lumemedlink.core.care.NoticesSource
 import com.luismejias.lumemedlink.core.care.PatientProfileSource
 import com.luismejias.lumemedlink.core.networking.AccountSide
 import com.luismejias.lumemedlink.core.networking.ContractClient
@@ -28,6 +30,8 @@ import io.ktor.client.engine.HttpClientEngine
 internal class LocalPatientBackend(
     baseUrl: String,
     securityEvents: SecurityEventEmitter,
+    /** The bell's read mark, kept on the phone because the platform keeps none. */
+    noticeMark: NoticeMark,
     logSink: NetworkLogSink = DiscardingNetworkLogSink,
     engine: HttpClientEngine = localBackendHttpEngine(),
 ) {
@@ -68,4 +72,5 @@ internal class LocalPatientBackend(
     val changes: AppointmentChanges = remoteAppointments
     val directory: DirectoryGateway = RemoteDirectory(contract, specialties, zones)
     val myDoctors: MyDoctorsSource = RemoteMyDoctors(contract, specialties, remoteAppointments)
+    val notices: NoticesSource = RemoteNotices(contract, noticeMark)
 }

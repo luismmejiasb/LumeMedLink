@@ -36,6 +36,9 @@ private fun wallTimeOf(instant: Instant, zone: TimeZone): WallTime {
 }
 
 /** Whole minutes from [start] to [end], two ISO 8601 instants. */
+/** A contract instant (`2026-09-28T21:35:25.250Z`) as milliseconds since the epoch: for ordering and countdowns. */
+internal fun epochMillisOf(instant: String): Long = Instant.parse(instant).toEpochMilliseconds()
+
 internal fun minutesBetween(start: String, end: String): Int =
     (Instant.parse(end) - Instant.parse(start)).inWholeMinutes.toInt()
 

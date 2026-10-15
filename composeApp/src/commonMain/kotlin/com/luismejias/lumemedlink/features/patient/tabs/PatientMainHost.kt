@@ -65,6 +65,8 @@ import com.luismejias.lumemedlink.features.patient.doctors.MyDoctorsViewModel
 import com.luismejias.lumemedlink.features.patient.home.HomeScreen
 import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
 import com.luismejias.lumemedlink.features.patient.home.homeSources
+import com.luismejias.lumemedlink.features.patient.notices.NoticesScreen
+import com.luismejias.lumemedlink.features.patient.notices.NoticesViewModel
 import com.luismejias.lumemedlink.features.patient.rating.RateSheet
 import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 import com.luismejias.lumemedlink.features.patient.search.SearchHost
@@ -139,6 +141,9 @@ private sealed interface PatientScreen {
     data class Change(val route: ChangeRoute) : PatientScreen
 
     data class Settings(val route: SettingsRoute) : PatientScreen
+
+    /** «Notificaciones», over «Inicio». */
+    data object Notices : PatientScreen
 }
 
 /**
@@ -172,6 +177,9 @@ internal fun PatientMainHost(
     val contactDone by contactChange.done.collectAsState()
     val change = viewModel { ChangeViewModel(changeSourcesOf(care, directory), logEvent) }
     val rate = viewModel { RateViewModel(care, logEvent) }
+    val notices = viewModel { NoticesViewModel(care) }
+    val noticesOpen by notices.open.collectAsState()
+    val noticesSeen by notices.seen.collectAsState()
     val photo = viewModel { ProfilePhotoModel() }
     val picker = rememberPhotoPicker(photo::picked)
     val contact = rememberDeviceContact()
@@ -212,8 +220,14 @@ internal fun PatientMainHost(
     val rateSentToast = stringResource(Res.string.rate_sent_toast)
     LaunchedEffect(link) {
         val opening = link ?: return@LaunchedEffect
-        openPatientLink(opening, tabs, change, rate)
+        openPatientLink(opening, tabs, change, rate, notices)
         onLinkOpened()
+    }
+    LaunchedEffect(noticesSeen) {
+        if (!noticesSeen) return@LaunchedEffect
+        // The bell on «Inicio» stops calling them new.
+        home.refresh()
+        notices.seenHandled()
     }
     LaunchedEffect(rateSent) {
         if (!rateSent) return@LaunchedEffect
@@ -249,14 +263,18 @@ internal fun PatientMainHost(
             change.openDirections(appointment)
         }
     }
+    // A link can open the list too, so its feature is checked here as well as on the bell (ADR-0060).
+    val showsNotices = noticesOpen && can.notices && selected == PatientTab.HOME
     val patientStack = buildList {
         add(PatientScreen.Tab(selected))
+        if (showsNotices) add(PatientScreen.Notices)
         settingsRoute?.let { settingsRoutes.forEach { add(PatientScreen.Settings(it)) } }
         changeRoutes.forEach { add(PatientScreen.Change(it)) }
     }
     val showsTabBar =
         changeRoute == null &&
             settingsRoute == null &&
+            !showsNotices &&
             (selected != PatientTab.SEARCH || searchRoutes.last().showsTabBar)
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -270,7 +288,13 @@ internal fun PatientMainHost(
             // detail and its change, or Configuración's pages. A tab switch replaces the root without a movement.
             LumeNavigationStack(
                 stack = patientStack,
-                onBack = { if (changeRoutes.isNotEmpty()) change.back() else settings.back() },
+                onBack = {
+                    when {
+                        changeRoutes.isNotEmpty() -> change.back()
+                        noticesOpen -> notices.close()
+                        else -> settings.back()
+                    }
+                },
             ) { screen ->
                 when (screen) {
                     is PatientScreen.Change -> when (screen.route) {
@@ -297,6 +321,7 @@ internal fun PatientMainHost(
                         ChangeRoute.CANCEL -> CancelScreen(change, care.today())
                     }
                     is PatientScreen.Settings -> SettingsPage(screen.route, settings)
+                    PatientScreen.Notices -> NoticesScreen(notices)
                     is PatientScreen.Tab -> when (screen.tab) {
                         PatientTab.HOME -> HomeScreen(
                             model = home,
@@ -307,7 +332,7 @@ internal fun PatientMainHost(
                             onOpenAppointment = { appointment -> change.launch { openDetail(appointment) } },
                             onRate = rate::open.onlyIf(can.rate),
                             onSearch = { tabs.show(PatientTab.SEARCH) }.onlyIf(can.search),
-                            onNotices = {}.onlyIf(can.notices),
+                            onNotices = notices::show.onlyIf(can.notices),
                             onProfile = { tabs.show(PatientTab.SETTINGS) },
                         )
                         PatientTab.SEARCH -> SearchHost(search, onBooked, canBook = can.book)

@@ -223,6 +223,8 @@
     <string name="home_greeting">Hola, %1$s</string>
     <string name="home_notices">Notificaciones</string>
     <string name="home_notices_new">Hay novedades</string>
+    <string name="notices_empty_title">Sin notificaciones</string>
+    <string name="notices_empty_body">Aquí verás los avisos que te mandamos por correo o SMS.</string>
     <string name="home_profile">Tu perfil</string>
     <string name="home_next">Próxima cita</string>
     <string name="home_next_today">Próxima cita · hoy</string>

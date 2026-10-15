@@ -214,6 +214,8 @@
     <string name="home_greeting">Hi, %1$s</string>
     <string name="home_notices">Notifications</string>
     <string name="home_notices_new">New updates</string>
+    <string name="notices_empty_title">No notifications</string>
+    <string name="notices_empty_body">The notices we send you by e-mail or SMS appear here.</string>
     <string name="home_profile">Your profile</string>
     <string name="home_next">Next appointment</string>
     <string name="home_next_today">Next appointment · today</string>

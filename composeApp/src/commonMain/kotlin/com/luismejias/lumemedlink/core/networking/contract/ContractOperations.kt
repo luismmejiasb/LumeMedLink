@@ -577,4 +577,136 @@ internal object ContractOperations {
         request = ConfirmContactVerificationDto.serializer(),
         response = ListSerializer(SelfProfileDto.serializer()),
     )
+
+    /**
+     * Your inbox (since 0.119.0, `ADR-0094`): the notices the platform sent you by e-mail or SMS, readable in the
+     * app, newest first. Each is one event, however many channels carried it, with the words it carried (dates,
+     * times and the clinic; never clinical content). Only the notices that went out, from clinics your account is
+     * linked to, since that link was made: one appears once it is sent and never disappears. There is no read mark
+     * on the platform: keep the newest `createdAt` you showed, and what is newer is new. Your read is audited at
+     * each clinic your account is linked to. Default 50 per page, clamped to 100. A `cursor` that is not a notice
+     * of yours is a 404.
+     */
+    val LIST_MY_NOTICES: ContractOperation<Unit, InboxPageDto> = ContractOperation(
+        id = "listMyNotices",
+        verb = ContractVerb.GET,
+        path = "/v1/patient/notices",
+        pathParameters = listOf(),
+        query = listOf(ContractQuery("limit", required = false), ContractQuery("cursor", required = false)),
+        request = Unit.serializer(),
+        response = InboxPageDto.serializer(),
+    )
+
+    /**
+     * Your attentions you may still rate (since 0.121.0): COMPLETED, not yet rated, and within 30 days of their
+     * end, newest first. Join them with `listMyAppointments` by `appointmentId`. Audited at each clinic your
+     * account is linked to.
+     */
+    val LIST_MY_RATEABLE_ATTENTIONS: ContractOperation<Unit, RateableListDto> = ContractOperation(
+        id = "listMyRateableAttentions",
+        verb = ContractVerb.GET,
+        path = "/v1/patient/rateable-attentions",
+        pathParameters = listOf(),
+        query = listOf(),
+        request = Unit.serializer(),
+        response = RateableListDto.serializer(),
+    )
+
+    /**
+     * Rate an attention of yours (since 0.121.0, `ADR-0095`): 1 to 5 stars and up to five closed aspects, never
+     * free text, and your consent. Once per attention, which must be COMPLETED, no later than 30 days after it
+     * ended. **Only the average and the count are public**, on the professional's directory entry; no practice
+     * reads your rating. A retry with the same `clientId` answers the rating it wrote. An attention already rated
+     * is a 409; one not completed, or past its window, a 422; one that is not yours a 404. While a restriction of
+     * processing stands on your record at that clinic, rating is refused (403 `processing_restricted`). You can
+     * withdraw it (`withdrawMyRating`); it also goes when your link to the clinic ends, when a restriction is
+     * registered, or with your erasure.
+     */
+    val RATE_MY_ATTENTION: ContractOperation<RateAttentionDto, RatingDto> = ContractOperation(
+        id = "rateMyAttention",
+        verb = ContractVerb.POST,
+        path = "/v1/patient/appointments/{id}/rating",
+        pathParameters = listOf("id"),
+        query = listOf(),
+        request = RateAttentionDto.serializer(),
+        response = RatingDto.serializer(),
+    )
+
+    /**
+     * The ratings you gave (since 0.121.0), newest first, at the clinics your account is linked to. Audited at
+     * each.
+     */
+    val LIST_MY_RATINGS: ContractOperation<Unit, RatingListDto> = ContractOperation(
+        id = "listMyRatings",
+        verb = ContractVerb.GET,
+        path = "/v1/patient/ratings",
+        pathParameters = listOf(),
+        query = listOf(),
+        request = Unit.serializer(),
+        response = RatingListDto.serializer(),
+    )
+
+    /**
+     * Withdraw a rating of yours (since 0.121.0): it is deleted, and the public average follows. One that is not
+     * yours is a 404.
+     */
+    val WITHDRAW_MY_RATING: ContractOperation<Unit, Unit> = ContractOperation(
+        id = "withdrawMyRating",
+        verb = ContractVerb.DELETE,
+        path = "/v1/patient/ratings/{id}",
+        pathParameters = listOf("id"),
+        query = listOf(),
+        request = Unit.serializer(),
+        response = Unit.serializer(),
+    )
+
+    /**
+     * The channels you object to receiving messages about your appointments by, at ONE clinic (`ADR-0061`, 0.72.0):
+     * one entry per channel with an opposition in force, who filed it — you, or the clinic for you on your word —
+     * and when. Empty when you object to none. A clinic you have no link at is a 404.
+     */
+    val LIST_MY_NOTIFICATION_OPT_OUTS: ContractOperation<Unit, List<NotificationOptOutDto>> = ContractOperation(
+        id = "listMyNotificationOptOuts",
+        verb = ContractVerb.GET,
+        path = "/v1/patient/profiles/{tenantId}/notification-opt-outs",
+        pathParameters = listOf("tenantId"),
+        query = listOf(),
+        request = Unit.serializer(),
+        response = ListSerializer(NotificationOptOutDto.serializer()),
+    )
+
+    /**
+     * Object to receiving messages about your appointments at ONE clinic by one channel (`ADR-0061`, 0.72.0; Ley
+     * 21.719). From then on that clinic's outbox cancels every message to you about your appointments by that
+     * channel — reminders and notices alike — and each cancellation is audited. Not affected: notices inside the
+     * app, and the notice that your contact data changed, which is a security notice and always reaches you. It is
+     * the clinic's channel only: to object at another clinic you are enrolled at, say so there. One opposition is
+     * in force per channel: filing it again answers `200` with the one in force, and writes nothing. It is not
+     * erasure: your data and your contact stay as they are. A clinic you have no link at is a 404.
+     */
+    val REGISTER_MY_NOTIFICATION_OPT_OUT: ContractOperation<RegisterNotificationOptOutDto, NotificationOptOutDto> = ContractOperation(
+        id = "registerMyNotificationOptOut",
+        verb = ContractVerb.POST,
+        path = "/v1/patient/profiles/{tenantId}/notification-opt-outs",
+        pathParameters = listOf("tenantId"),
+        query = listOf(),
+        request = RegisterNotificationOptOutDto.serializer(),
+        response = NotificationOptOutDto.serializer(),
+    )
+
+    /**
+     * Withdraw your opposition to a channel at ONE clinic (`ADR-0061`, 0.72.0), so that messages queued from then
+     * on reach you by it again. **Whoever filed it:** yours, or the clinic's on your word — the right is yours.
+     * With none in force it answers `204` as well: that is the end you asked for. A channel the contract does not
+     * name, and a clinic you have no link at, are 404.
+     */
+    val WITHDRAW_MY_NOTIFICATION_OPT_OUT: ContractOperation<Unit, Unit> = ContractOperation(
+        id = "withdrawMyNotificationOptOut",
+        verb = ContractVerb.DELETE,
+        path = "/v1/patient/profiles/{tenantId}/notification-opt-outs/{channel}",
+        pathParameters = listOf("tenantId", "channel"),
+        query = listOf(),
+        request = Unit.serializer(),
+        response = Unit.serializer(),
+    )
 }

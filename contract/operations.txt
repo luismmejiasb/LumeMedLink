@@ -31,3 +31,11 @@ getDirectoryProfessional        directory
 requestMyContactVerification   profile
 resendMyContactVerification    profile
 confirmMyContactVerification   profile
+listMyNotices                   notices
+listMyRateableAttentions        ratings
+rateMyAttention                 ratings
+listMyRatings                   ratings
+withdrawMyRating                ratings
+listMyNotificationOptOuts       reminders
+registerMyNotificationOptOut    reminders
+withdrawMyNotificationOptOut    reminders

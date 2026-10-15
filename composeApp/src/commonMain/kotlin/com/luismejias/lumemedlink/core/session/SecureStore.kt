@@ -68,4 +68,10 @@ internal enum class SecureStoreKey(val storageKey: String) {
      */
     APPEARANCE_THEME("appearance_theme_v1"),
     APPEARANCE_LANGUAGE("appearance_language_v1"),
+
+    /**
+     * When the newest notice shown was sent (task `0037`). The platform keeps no read mark, so the app keeps this one;
+     * here so the logout erases it and the next person's bell is their own.
+     */
+    NOTICES_SEEN_UNTIL("notices_seen_until_v1"),
 }

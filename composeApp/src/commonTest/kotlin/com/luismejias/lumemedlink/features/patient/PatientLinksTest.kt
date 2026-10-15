@@ -6,6 +6,7 @@ import com.luismejias.lumemedlink.core.links.DeepLinkEntry
 import com.luismejias.lumemedlink.features.patient.change.ChangeRoute
 import com.luismejias.lumemedlink.features.patient.change.ChangeViewModel
 import com.luismejias.lumemedlink.features.patient.change.changeSourcesOf
+import com.luismejias.lumemedlink.features.patient.notices.NoticesViewModel
 import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 import com.luismejias.lumemedlink.features.patient.tabs.PatientTab
 import com.luismejias.lumemedlink.features.patient.tabs.PatientTabsViewModel
@@ -30,6 +31,7 @@ class PatientLinksTest {
     private val tabs = PatientTabsViewModel()
     private val change = ChangeViewModel(changeSourcesOf(care, care))
     private val rate = RateViewModel(care)
+    private val notices = NoticesViewModel(care)
 
     @BeforeTest
     fun mainDispatcher() = Dispatchers.setMain(StandardTestDispatcher())
@@ -41,7 +43,7 @@ class PatientLinksTest {
 
     @Test
     fun aDetailLinkOpensThePatientsOwnAppointment() = runTest {
-        openPatientLink(detailOf("a-rendon-0902"), tabs, change, rate)
+        openPatientLink(detailOf("a-rendon-0902"), tabs, change, rate, notices)
         assertEquals(PatientTab.APPOINTMENTS, tabs.selected.value)
         assertEquals(listOf(ChangeRoute.DETAIL), change.routes.value)
     }
@@ -49,23 +51,31 @@ class PatientLinksTest {
     @Test
     fun anIdThatIsNotTheirsOpensNothing() = runTest {
         // A link grants navigation, never access: someone else's id lands on Mis citas and no further.
-        openPatientLink(detailOf("a-someone-else-01"), tabs, change, rate)
+        openPatientLink(detailOf("a-someone-else-01"), tabs, change, rate, notices)
         assertEquals(PatientTab.APPOINTMENTS, tabs.selected.value)
         assertTrue(change.routes.value.isEmpty())
     }
 
     @Test
     fun aLinkClosesWhatWasOpenBeforeLanding() = runTest {
-        openPatientLink(detailOf("a-rendon-0902"), tabs, change, rate)
-        openPatientLink(DeepLink(DeepLinkEntry.SETTINGS_REMINDERS), tabs, change, rate)
+        openPatientLink(detailOf("a-rendon-0902"), tabs, change, rate, notices)
+        openPatientLink(DeepLink(DeepLinkEntry.SETTINGS_REMINDERS), tabs, change, rate, notices)
         assertEquals(PatientTab.SETTINGS, tabs.selected.value)
         assertTrue(change.routes.value.isEmpty(), "the detail must not stay on top of Configuración")
     }
 
     @Test
-    fun theNoticeCentreLandsOnInicioUntilItIsDesigned() = runTest {
+    fun aNoticeLinkOpensTheListOverInicio() = runTest {
         tabs.show(PatientTab.DOCTORS)
-        openPatientLink(DeepLink(DeepLinkEntry.NOTICES), tabs, change, rate)
+        openPatientLink(DeepLink(DeepLinkEntry.NOTICES), tabs, change, rate, notices)
         assertEquals(PatientTab.HOME, tabs.selected.value)
+        assertTrue(notices.open.value)
+    }
+
+    @Test
+    fun anotherLinkClosesTheNoticesList() = runTest {
+        openPatientLink(DeepLink(DeepLinkEntry.NOTICES), tabs, change, rate, notices)
+        openPatientLink(DeepLink(DeepLinkEntry.SETTINGS), tabs, change, rate, notices)
+        assertEquals(false, notices.open.value)
     }
 }

@@ -286,10 +286,36 @@ internal interface RatingsGateway {
     suspend fun rate(appointmentId: String, draft: RatingDraft): CareResult<Unit>
 }
 
-/** The patient's notices. */
+/**
+ * One notice the platform sent the patient by e-mail or SMS, readable in the app (the platform's `ADR-0094`). Its words
+ * are the server's — dates, times and the clinic, never clinical content (§1.0) — shown as they came.
+ */
+internal data class PatientNotice(
+    val id: String,
+    /** The clinic that sent it, by the name of the patient's profile there; empty when the app cannot name it. */
+    val clinic: String,
+    val title: String,
+    /** Null when the platform can no longer render it: the title stands alone. */
+    val text: String?,
+    /** When it was sent, for ordering and for the bell's mark. */
+    val sentAtEpochMillis: Long,
+    /** The same moment on the clinics' wall clock, as the list shows it (ADR-0063). */
+    val sentOn: CalendarDate,
+    val sentAt: ClockTime,
+) {
+    override fun toString(): String = "PatientNotice(redacted)"
+}
+
+/** The patient's notices: the bell on «Inicio» and the list behind it (task `0037`). */
 internal interface NoticesSource {
-    /** Whether something waits behind the bell (p1). No contract (request 0008 §5). */
+    /** Whether a notice newer than the last one shown waits behind the bell (p1). */
     suspend fun hasUnreadNotices(): CareResult<Boolean>
+
+    /** The inbox, newest first: its first page, the platform's default size. */
+    suspend fun notices(): CareResult<List<PatientNotice>>
+
+    /** The notices up to [newestEpochMillis] were shown: the bell stops calling them new. */
+    suspend fun noticesSeen(newestEpochMillis: Long)
 }
 
 /**

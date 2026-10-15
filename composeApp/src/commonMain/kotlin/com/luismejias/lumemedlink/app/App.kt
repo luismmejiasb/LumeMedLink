@@ -35,6 +35,7 @@ import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.appearance.ProvideAppLanguage
 import com.luismejias.lumemedlink.core.appearance.ThemeChoice
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
+import com.luismejias.lumemedlink.core.care.NoticeMark
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
@@ -179,9 +180,12 @@ public fun App(
     // reader sees a wire to connect, not a channel to write.
     val securityEvents = remember { NoOpSecurityEventReporter }
     // A debug build's local platform (ADR-0062) serves each capability the contract has, and the script the rest:
-    // the composition below is the list (tasks 0036 and 0037). Without an environment, the patient's side is the script.
-    val localPatient = remember(environment) {
-        environment.localBackend?.let { LocalPatientBackend(it, securityEvents.emittingIn(scope)) }
+    // the composition below is the list (tasks 0036 and 0037). Without an environment, the patient's side is the
+    // script.
+    val localPatient = remember(environment, secureStore) {
+        environment.localBackend?.let { url ->
+            LocalPatientBackend(url, securityEvents.emittingIn(scope), NoticeMark(secureStore))
+        }
     }
     val patientCare: PatientCareGateway = remember(patientScript, localPatient) {
         localPatient?.let { local ->
@@ -192,7 +196,7 @@ public fun App(
                 changes = local.changes,
                 doctors = local.myDoctors,
                 ratings = patientScript,
-                notices = patientScript,
+                notices = local.notices,
                 contact = local.contact,
             )
         } ?: patientScript

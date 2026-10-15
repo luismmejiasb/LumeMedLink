@@ -40,6 +40,40 @@ internal value class EnrolPhoneDtoClient(val wire: String) {
     }
 }
 
+/** A value of the contract's vocabulary; an unknown one stays as sent. */
+@Serializable
+@JvmInline
+internal value class RateAttentionDtoAspectsItem(val wire: String) {
+    companion object {
+        val LONG_WAIT: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("LONG_WAIT")
+        val NOT_EXPLAINED: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("NOT_EXPLAINED")
+        val UNKIND: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("UNKIND")
+        val UNEXPECTED_CHARGE: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("UNEXPECTED_CHARGE")
+        val MOVED_HOUR: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("MOVED_HOUR")
+        val PUNCTUALITY: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("PUNCTUALITY")
+        val CLARITY: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("CLARITY")
+        val VISIT_TIME: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("VISIT_TIME")
+        val NOTICE: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("NOTICE")
+        val FACILITIES: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("FACILITIES")
+        val EXPLAINED_CLEARLY: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("EXPLAINED_CLEARLY")
+        val KIND: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("KIND")
+        val SOLVED_IT: RateAttentionDtoAspectsItem = RateAttentionDtoAspectsItem("SOLVED_IT")
+    }
+}
+
+/**
+ * The channel the patient objects to receiving messages about her appointments by: `EMAIL` or `SMS`. The notices
+ * inside the apps are not a channel that leaves the system, and are not affected.
+ */
+@Serializable
+@JvmInline
+internal value class RegisterNotificationOptOutDtoChannel(val wire: String) {
+    companion object {
+        val EMAIL: RegisterNotificationOptOutDtoChannel = RegisterNotificationOptOutDtoChannel("EMAIL")
+        val SMS: RegisterNotificationOptOutDtoChannel = RegisterNotificationOptOutDtoChannel("SMS")
+    }
+}
+
 /**
  * What the device or the session saw. Closed on input: a value the server cannot store is a 400. Since 0.101.0
  * three more for what LumeMedLink detects: `biometricKeyInvalidated` (the key protected by biometrics was
@@ -370,6 +404,47 @@ internal data class HolidayDto(
 }
 
 @Serializable
+internal data class InboxPageDto(
+    val items: List<InboxPageDtoItemsItem>,
+    /** Pass it back as `cursor` for the next page; `null` when there is none. Opaque. */
+    val nextCursor: String?,
+) {
+    override fun toString(): String = "InboxPageDto"
+}
+
+@Serializable
+internal data class InboxPageDtoItemsItem(
+    val id: String,
+    /**
+     * The clinic that sent it: one of your own profiles (`listMyPatientProfiles`), so you can name it with that
+     * list.
+     */
+    val clinicId: String,
+    /**
+     * Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values:
+     * APPOINTMENT_REMINDER, APPOINTMENT_CANCELLED, APPOINTMENT_RESCHEDULED, APPOINTMENT_RESCHEDULE_DECLINED,
+     * APPOINTMENT_REQUEST_EXPIRED, PATIENT_CONTACT_CHANGED, APPOINTMENT_PROPOSED, APPOINTMENT_CONFIRMED,
+     * PATIENT_IDENTITY_CORRECTED, PHONE_SUPERSEDED. What the notice is about. Open vocabulary: show an unknown one
+     * by its `title` and `text`.
+     */
+    val kind: String,
+    /** The words the e-mail carried as its subject. */
+    val title: String,
+    /**
+     * The words the e-mail and the SMS carried: dates, times and the clinic, never clinical content. `null` when
+     * they can no longer be rendered: show the title.
+     */
+    val text: String?,
+    /**
+     * When it was sent to you, at the platform's clock. An ISO 8601 instant in UTC, always with three fractional
+     * digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.
+     */
+    val createdAt: String,
+) {
+    override fun toString(): String = "InboxPageDtoItemsItem"
+}
+
+@Serializable
 internal data class MeDto(
     val userId: String,
     val email: String,
@@ -454,6 +529,29 @@ internal data class MyRoleDto(
     val sides: List<String>,
 ) {
     override fun toString(): String = "MyRoleDto"
+}
+
+@Serializable
+internal data class NotificationOptOutDto(
+    /**
+     * Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values:
+     * EMAIL, SMS. The channel she objects to receiving messages about her appointments by.
+     */
+    val channel: String,
+    /**
+     * Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values:
+     * PRACTICE, PATIENT. `PATIENT` when she filed it herself; `PRACTICE` when the clinic filed it for her, on her
+     * word. It decides who withdraws it: she withdraws any opposition of hers, and the practice withdraws only what
+     * the practice filed.
+     */
+    val registeredBy: String,
+    /**
+     * When it was filed, by the platform's clock. An ISO 8601 instant in UTC, always with three fractional digits
+     * and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.
+     */
+    val registeredAt: String,
+) {
+    override fun toString(): String = "NotificationOptOutDto"
 }
 
 @Serializable
@@ -716,10 +814,105 @@ internal data class PatientContactChangePageDtoItemsItemChangesItem(
 }
 
 @Serializable
+internal data class RateAttentionDto(
+    val stars: Int,
+    /** Closed aspects of the attention; never free text. Each at most once. */
+    val aspects: List<RateAttentionDtoAspectsItem>? = null,
+    /** Your key for this rating: a retry with it answers the rating it wrote. */
+    val clientId: String,
+    /** Your consent, given by rating: the rating is processed and counted in the public average. */
+    val consent: Boolean,
+    /**
+     * The version of the consent text the app showed you. It is kept with the rating, which is the record of your
+     * consent.
+     */
+    val consentVersion: String,
+) {
+    override fun toString(): String = "RateAttentionDto"
+}
+
+@Serializable
+internal data class RateableListDto(
+    val items: List<RateableListDtoItemsItem>,
+) {
+    override fun toString(): String = "RateableListDto"
+}
+
+@Serializable
+internal data class RateableListDtoItemsItem(
+    val appointmentId: String,
+    val clinicId: String,
+    /**
+     * An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in
+     * `2026-09-28T21:35:25.250Z`.
+     */
+    val endsAt: String,
+    /**
+     * The last instant it may be rated: 30 days after it ended. An ISO 8601 instant in UTC, always with three
+     * fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.
+     */
+    val rateableUntil: String,
+) {
+    override fun toString(): String = "RateableListDtoItemsItem"
+}
+
+@Serializable
+internal data class RatingDto(
+    val id: String,
+    val appointmentId: String,
+    /** The clinic of the attention: one of your own profiles. */
+    val clinicId: String,
+    val stars: Int,
+    val aspects: List<String>,
+    /**
+     * An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in
+     * `2026-09-28T21:35:25.250Z`.
+     */
+    val createdAt: String,
+) {
+    override fun toString(): String = "RatingDto"
+}
+
+@Serializable
+internal data class RatingListDto(
+    val items: List<RatingListDtoItemsItem>,
+) {
+    override fun toString(): String = "RatingListDto"
+}
+
+@Serializable
+internal data class RatingListDtoItemsItem(
+    val id: String,
+    val appointmentId: String,
+    /** The clinic of the attention: one of your own profiles. */
+    val clinicId: String,
+    val stars: Int,
+    val aspects: List<String>,
+    /**
+     * An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in
+     * `2026-09-28T21:35:25.250Z`.
+     */
+    val createdAt: String,
+) {
+    override fun toString(): String = "RatingListDtoItemsItem"
+}
+
+@Serializable
 internal data class RedeemEnrolmentDto(
     val code: String,
 ) {
     override fun toString(): String = "RedeemEnrolmentDto"
+}
+
+@Serializable
+internal data class RegisterNotificationOptOutDto(
+    /**
+     * The channel the patient objects to receiving messages about her appointments by: `EMAIL` or `SMS`. The
+     * notices inside the apps are not a channel that leaves the system, and are not affected.
+     */
+    val channel: RegisterNotificationOptOutDtoChannel,
+) {
+    override fun toString(): String = "RegisterNotificationOptOutDto"
 }
 
 @Serializable
