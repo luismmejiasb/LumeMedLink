@@ -44,6 +44,7 @@ import com.luismejias.lumemedlink.core.features.Feature
 import com.luismejias.lumemedlink.core.features.FeatureGate
 import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.LocalStandInsShown
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoFlow
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
@@ -162,9 +163,34 @@ internal fun PatientMainHost(
     /** What the patient may see (ADR-0060). */
     features: FeatureGate,
     onSignOut: () -> Unit,
+    /**
+     * Whether a waiting screen may be drawn from the design's script (ADR-0055). Off against the platform: the kit's
+     * placeholder was measured drawing that script unredacted, so the wait read as the person's own data.
+     */
+    showsStandIns: Boolean = true,
     /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
     link: DeepLink? = null,
     onLinkOpened: () -> Unit = {},
+) {
+    CompositionLocalProvider(LocalStandInsShown provides showsStandIns) {
+        PatientTabs(care, directory, consent, appearance, logEvent, features, onSignOut, link, onLinkOpened)
+    }
+}
+
+@Composable
+@Suppress("LongParameterList")
+private fun PatientTabs(
+    care: PatientCareGateway,
+    directory: DirectoryGateway,
+    consent: TelemetryConsent,
+    appearance: Appearance,
+    logEvent: (AnalyticsEvent) -> Unit,
+    /** What the patient may see (ADR-0060). */
+    features: FeatureGate,
+    onSignOut: () -> Unit,
+    /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
+    link: DeepLink?,
+    onLinkOpened: () -> Unit,
 ) {
     val tabs = viewModel { PatientTabsViewModel() }
     val home = viewModel { HomeViewModel(care.homeSources()) }

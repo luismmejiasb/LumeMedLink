@@ -2,6 +2,7 @@ package com.luismejias.lumemedlink.core.screen
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import cl.lume.uicomposer.components.LumeButtonContent
@@ -69,6 +70,14 @@ internal class StandIn<T> {
     }
 }
 
+/**
+ * Whether a screen may wait as itself, drawn from the design's script (ADR-0055). The composition root turns it off
+ * when the app talks to the platform (the author, 2026-10-15: no design data where the app is wired): the kit's
+ * placeholder was measured drawing that script unredacted, so a waiting screen read as the person's own data. With it
+ * off, a screen waits as the kit's generic skeleton, which carries no data at all.
+ */
+internal val LocalStandInsShown = staticCompositionLocalOf { true }
+
 /** Sets a load flow to [CareLoad.Loading] unless it already holds content: a retry keeps what was shown. */
 internal fun <T> MutableStateFlow<CareLoad<T>>.markLoading() {
     if (value !is CareLoad.Ready) value = CareLoad.Loading
@@ -117,7 +126,8 @@ internal fun <T> CareLoadView(
             is CareLoad.Ready -> Unit
         }
     }
-    val shown = (load as? CareLoad.Ready)?.content ?: standIn.takeIf { load is CareLoad.Loading }
+    val drawnStandIn = standIn.takeIf { LocalStandInsShown.current }
+    val shown = (load as? CareLoad.Ready)?.content ?: drawnStandIn.takeIf { load is CareLoad.Loading }
     when {
         shown != null -> LumePlaceholder(
             stringResource(Res.string.care_loading),
