@@ -50,7 +50,7 @@ private fun List<SharedProfessionalContactListDtoItemsItem>.toMyDoctor(
     return MyDoctor(
         doctor = CareDoctor(
             id = id,
-            displayName = professionalDisplayName(first.professionalTitle, first.givenName, first.familyName),
+            displayName = professionalDisplayName(first.givenName, first.familyName),
             specialty = firstNotNullOfOrNull { it.specialtyCode }?.let(specialties::get).orEmpty(),
         ),
         attentions = attentions,

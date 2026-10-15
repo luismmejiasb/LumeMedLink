@@ -85,7 +85,7 @@ class RemoteMyDoctorsTest {
             ).myDoctors(),
         ).value
         val one = doctors.single()
-        assertEquals("Dra. Ana Sintética" to "Cardiología", one.doctor.displayName to one.doctor.specialty)
+        assertEquals("Ana Sintética" to "Cardiología", one.doctor.displayName to one.doctor.specialty)
         assertEquals("+56223456789" to "ana@consulta.test", one.phone to one.email)
     }
 

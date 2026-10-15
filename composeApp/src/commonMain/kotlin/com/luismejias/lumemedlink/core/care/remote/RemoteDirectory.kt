@@ -204,7 +204,7 @@ internal class RemoteDirectory(
     ) = DirectoryDoctor(
         doctor = CareDoctor(
             id = id,
-            displayName = professionalDisplayName(professionalTitle, givenName, familyName),
+            displayName = professionalDisplayName(givenName, familyName),
             specialty = specialtyCode?.let(names::get).orEmpty(),
         ),
         locationId = placeId,

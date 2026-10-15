@@ -15,6 +15,7 @@ import com.luismejias.lumemedlink.features.patient.home.HomeViewModel
 import com.luismejias.lumemedlink.features.patient.home.homeSources
 import com.luismejias.lumemedlink.features.patient.parts.awaitingConfirmation
 import com.luismejias.lumemedlink.features.patient.parts.cancelled
+import com.luismejias.lumemedlink.features.patient.parts.isAhead
 import com.luismejias.lumemedlink.features.patient.parts.past
 import com.luismejias.lumemedlink.features.patient.parts.upcoming
 import com.luismejias.lumemedlink.features.patient.settings.settingsModel
@@ -120,6 +121,18 @@ class PatientTabsTest {
         assertEquals(listOf(24, 2), content.remindersHoursBefore)
         assertFalse("Camila" in content.toString())
         assertFalse("Soto" in content.profile.toString())
+    }
+
+    @Test
+    fun aDayGoneByIsNotAheadWhateverStatusTheServerStillHolds() {
+        // The detail offers a change only to what is ahead; the server can leave a past visit «CONFIRMED».
+        val today = CalendarDate(2026, 10, 14)
+        fun on(day: CalendarDate, status: AppointmentStatus) =
+            PatientAppointment("a", DOCTOR, day, ClockTime(10, 0), 30, status, PLACE)
+        assertFalse(on(today.plusDays(-10), AppointmentStatus.CONFIRMED).isAhead(today))
+        assertTrue(on(today, AppointmentStatus.CONFIRMED).isAhead(today))
+        assertTrue(on(today.plusDays(1), AppointmentStatus.REQUESTED).isAhead(today))
+        assertFalse(on(today.plusDays(1), AppointmentStatus.CANCELLED).isAhead(today))
     }
 
     @Test

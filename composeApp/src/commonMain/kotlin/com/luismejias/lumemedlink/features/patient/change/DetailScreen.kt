@@ -51,6 +51,7 @@ import com.luismejias.lumemedlink.core.screen.longDateText
 import com.luismejias.lumemedlink.core.screen.relativeDayText
 import com.luismejias.lumemedlink.core.screen.richRuns
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
+import com.luismejias.lumemedlink.features.patient.parts.isAhead
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.confirm_place
 import com.luismejias.lumemedlink.resources.confirm_when
@@ -106,13 +107,13 @@ internal fun AppointmentDetailScreen(
     PushedScreen(
         title = stringResource(Res.string.detail_title),
         onBack = model::back,
-        action = { ready?.let { DetailActions(it, model, canChange, onBookAgain) } },
+        action = { ready?.let { DetailActions(it, today, model, canChange, onBookAgain) } },
     ) {
         CareLoadView(load, standIn, onRetry = {
             ready?.appointment?.let { appointment -> model.launch { detail.load(appointment) } }
         }) { content ->
             val appointment = content.appointment
-            val upcoming = appointment.status in UPCOMING
+            val upcoming = appointment.status in UPCOMING && appointment.isAhead(today)
             DetailHeader(appointment)
             if (appointment.status == AppointmentStatus.REQUESTED) {
                 LumeCallout(
@@ -275,12 +276,13 @@ private fun RatingCard(rating: SentRating?, onRate: (Int) -> Unit) {
 @Composable
 private fun DetailActions(
     content: DetailContent,
+    today: CalendarDate,
     model: ChangeViewModel,
     canChange: Boolean,
     onBookAgain: ((PatientAppointment) -> Unit)?,
 ) {
     val appointment = content.appointment
-    if (appointment.status !in UPCOMING) {
+    if (appointment.status !in UPCOMING || !appointment.isAhead(today)) {
         if (onBookAgain == null) return
         LumeButton(
             content = LumeButtonContent.Title(stringResource(Res.string.detail_book_again)),

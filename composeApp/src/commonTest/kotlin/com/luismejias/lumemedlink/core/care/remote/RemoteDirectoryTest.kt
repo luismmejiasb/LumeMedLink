@@ -119,7 +119,7 @@ class RemoteDirectoryTest {
             directory.gateway().search("MEDICINA_FAMILIAR", "13101"),
         ).value
         val one = results.single()
-        assertEquals("Dra. Ana Sintética", one.doctor.displayName)
+        assertEquals("Ana Sintética", one.doctor.displayName, "the profession never goes before the name")
         assertEquals("Medicina Familiar", one.doctor.specialty)
         assertEquals("loc-1", one.locationId)
         assertEquals("Santiago", one.commune)

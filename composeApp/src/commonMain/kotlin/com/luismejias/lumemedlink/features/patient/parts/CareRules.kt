@@ -11,7 +11,13 @@ private val CLOSED = setOf(AppointmentStatus.COMPLETED, AppointmentStatus.CANCEL
  * one already attended is past even if it was today.
  */
 internal fun List<PatientAppointment>.upcoming(today: CalendarDate): List<PatientAppointment> =
-    filter { it.date >= today && it.status !in CLOSED }.sortedWith(compareBy({ it.date }, { it.start }))
+    filter { it.isAhead(today) }.sortedWith(compareBy({ it.date }, { it.start }))
+
+/**
+ * The one rule for «still ahead», for the lists and for a single appointment's detail: from today on and not closed.
+ * A day gone by is past whatever status the server still holds, so it offers no change.
+ */
+internal fun PatientAppointment.isAhead(today: CalendarDate): Boolean = date >= today && status !in CLOSED
 
 /** What is behind and was not cancelled — attended, or its day gone by — most recent first. */
 internal fun List<PatientAppointment>.past(today: CalendarDate): List<PatientAppointment> {
