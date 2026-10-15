@@ -158,7 +158,10 @@ internal class SignUpProfileModel(private val gateway: PatientAccessGateway, pri
     }
 }
 
-/** 2b. The second consent is the Ley 21.719 authorization: required, and marked so once the rest is ready (2b-e1). */
+/**
+ * 2b. The second consent is the Ley 21.719 authorization: required, and named as missing once «Continuar» is tried
+ * (2b-e1).
+ */
 internal data class SignUpCredentialsState(
     val entry: NewPasswordEntry = NewPasswordEntry(),
     val acceptedTerms: Boolean = false,
@@ -166,9 +169,14 @@ internal data class SignUpCredentialsState(
     /** The third consent, optional (ADR-0051 §4): crash reports with a crash-only key. Never blocks «Continuar». */
     val acceptedTelemetry: Boolean = false,
     val offline: Boolean = false,
+    /** «Continuar» was pressed with a required consent missing; nothing is said before (the author, 2026-10-14). */
+    val triedWithoutConsents: Boolean = false,
 ) {
-    /** Everything else is right and a consent is still missing: the row says it is required. */
-    val consentRequired: Boolean get() = entry.acceptable && !(acceptedTerms && acceptedDataUse)
+    /** The person tried to continue and a required consent is still missing: the step says so, once. */
+    val consentRequired: Boolean get() = triedWithoutConsents && !(acceptedTerms && acceptedDataUse)
+
+    /** «Continuar» is pressable once the password is right, so a missing consent is told by trying, not up front. */
+    val canContinue: Boolean get() = entry.acceptable
 
     val canSubmit: Boolean get() = entry.acceptable && acceptedTerms && acceptedDataUse
 
@@ -199,7 +207,10 @@ internal class SignUpCredentialsModel(
     suspend fun submit(): StepOutcome {
         val typed = current.value
         val profile = profileOf() ?: return flow.blocked()
-        if (!typed.canSubmit) return ShortRejection
+        if (!typed.canSubmit) {
+            if (typed.canContinue) edit { copy(triedWithoutConsents = true) }
+            return ShortRejection
+        }
         val credentials = SignUpCredentials(typed.entry.password, typed.acceptedTerms, typed.acceptedDataUse)
         return gateway.submitCredentials(profile, credentials).settle(
             flow,

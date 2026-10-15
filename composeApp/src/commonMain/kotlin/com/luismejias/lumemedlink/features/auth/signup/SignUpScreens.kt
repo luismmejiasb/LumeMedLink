@@ -277,7 +277,7 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
             AccessPrimaryButton(
                 title = stringResource(if (state.offline) Res.string.common_retry else Res.string.common_continue),
                 loadingMessage = stringResource(Res.string.common_loading),
-                enabled = state.canSubmit,
+                enabled = state.canContinue,
                 retryEpoch = retryEpoch,
                 run = model::submit,
             )
@@ -285,9 +285,8 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
         footer = {
             // The consents are part of "Continuar": pinned over it, under the keyboard (the author, ADR-0054).
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { small }) {
-                // One message for the missing consents, no row marked (the author, 2026-10-13). The optional one
-                // keeps saying it is optional: hiding that would make its consent a deceived one (Ley 21.719,
-                // ADR-0052), so it was not built.
+                // One message for the missing consents, no row marked (the author, 2026-10-13), and only once
+                // «Continuar» was pressed without them (the author, 2026-10-14).
                 if (state.consentRequired) {
                     LumeCallout(
                         text = stringResource(Res.string.sign_up_consents_needed),
@@ -302,9 +301,9 @@ internal fun SignUpCredentialsScreen(model: SignUpCredentialsModel, retryEpoch: 
                     onGrantedChange = model::termsChanged,
                     text = stringResource(Res.string.sign_up_terms_statement).richRuns(onLink = {}),
                 )
-                // Second, between the required two (the author, 2026-10-13), and still optional and saying so (ADR-0051
-                // §4): a consent the person cannot refuse is not consent. Google is named in the privacy notice, not
-                // here (ADR-0052 §9).
+                // Second, between the required two (the author, 2026-10-13). Optional, and no longer labelled so (the
+                // author, 2026-10-14, ADR-0052's note): it starts unticked and never blocks «Continuar». Google is
+                // named in the privacy notice, not here (ADR-0052 §9).
                 LumeConsentRow(
                     granted = state.acceptedTelemetry,
                     onGrantedChange = model::telemetryChanged,

@@ -145,3 +145,9 @@ So the suite is allowed, and what it may carry is closed in code and asserted by
   goes into the threat model.
 - The author creates the Firebase project and the APNs key. Until the configuration files exist, the app runs as it
   does today.
+
+## Note (2026-10-14) — 2b's optional row no longer says «opcional»
+
+The author asked to remove the word, by form, knowing the reason the code gave for keeping it: a consent that does not
+say it is optional could read as required (Ley 21.719). The row still starts unticked, and «Continuar» never waits on
+it, so refusing it costs nothing. The required two are named only after «Continuar» is pressed without them.

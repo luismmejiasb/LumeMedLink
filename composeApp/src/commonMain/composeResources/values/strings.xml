@@ -580,7 +580,7 @@
     <string name="photo_open_settings">Abrir Ajustes</string>
     <string name="photo_not_now">Ahora no</string>
     <!-- ADR-0051 · Reportes de error -->
-    <string name="sign_up_telemetry_statement">Autorizo la recopilación de errores y estadísticas de uso para mejorar mi experiencia dentro de la app · opcional</string>
+    <string name="sign_up_telemetry_statement">Autorizo la recopilación de errores y estadísticas de uso para mejorar mi experiencia dentro de la app</string>
     <string name="settings_telemetry">Errores y estadísticas</string>
     <string name="settings_telemetry_body">Enviados a Google, sin tu nombre ni tus citas</string>
     <!-- 2026-10-13 · Configuración: apariencia, idioma, privacidad, términos, licencias, pie -->

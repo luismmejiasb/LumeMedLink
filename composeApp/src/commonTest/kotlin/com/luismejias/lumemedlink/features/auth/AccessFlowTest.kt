@@ -11,6 +11,7 @@ import com.luismejias.lumemedlink.features.auth.flow.AccessRole
 import com.luismejias.lumemedlink.features.auth.flow.AccessRoute
 import com.luismejias.lumemedlink.features.auth.flow.AccessText
 import com.luismejias.lumemedlink.features.auth.flow.OfflineOutcome
+import com.luismejias.lumemedlink.features.auth.flow.ShortRejection
 import com.luismejias.lumemedlink.features.auth.flow.StepOutcome
 import com.luismejias.lumemedlink.features.auth.shared.PasswordRules
 import com.luismejias.lumemedlink.features.auth.signup.SignUpProfileState
@@ -116,7 +117,10 @@ class AccessFlowTest {
         val credentials = attempt.signUpCredentials
         credentials.passwordChanged("Synthetic1!")
         credentials.repeatedChanged("Synthetic1!")
-        assertTrue(credentials.state.value.consentRequired, "the missing consents are named once the rest is ready")
+        assertFalse(credentials.state.value.consentRequired, "nothing is said before «Continuar» is pressed")
+        assertTrue(credentials.state.value.canContinue)
+        assertEquals(ShortRejection, credentials.submit())
+        assertTrue(credentials.state.value.consentRequired, "the missing consents are named once continuing was tried")
         credentials.termsChanged(true)
         credentials.dataUseChanged(true)
         assertEquals(StepOutcome.Advanced, credentials.submit())
