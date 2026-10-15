@@ -30,10 +30,12 @@ import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.ContactKind
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
+import com.luismejias.lumemedlink.core.care.InMemoryProfilePhoto
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
 import com.luismejias.lumemedlink.core.care.RatingPrompt
+import com.luismejias.lumemedlink.core.device.platformPhotoCodec
 import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberDirections
@@ -180,7 +182,9 @@ internal fun PatientMainHost(
     val notices = viewModel { NoticesViewModel(care) }
     val noticesOpen by notices.open.collectAsState()
     val noticesSeen by notices.seen.collectAsState()
-    val photo = viewModel { ProfilePhotoModel() }
+    // The patient's photo on the platform (ADR-0064). The contract has no photo operations yet (backend task `0150`,
+    // PENDING): until it does, the platform's side is held in memory, inside the session's store.
+    val photo = viewModel { ProfilePhotoModel(InMemoryProfilePhoto(), platformPhotoCodec()) }
     val picker = rememberPhotoPicker(photo::picked)
     val contact = rememberDeviceContact()
     val directions = rememberDirections()

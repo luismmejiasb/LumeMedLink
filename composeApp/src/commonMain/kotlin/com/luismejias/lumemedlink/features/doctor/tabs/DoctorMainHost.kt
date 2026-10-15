@@ -23,6 +23,8 @@ import cl.lume.uicomposer.components.LumeToastHost
 import cl.lume.uicomposer.components.rememberLumeToastHostState
 import cl.lume.uicomposer.foundations.LumeIcon
 import com.luismejias.lumemedlink.core.care.DoctorCareGateway
+import com.luismejias.lumemedlink.core.care.InMemoryProfilePhoto
+import com.luismejias.lumemedlink.core.device.platformPhotoCodec
 import com.luismejias.lumemedlink.core.device.rememberDeviceContact
 import com.luismejias.lumemedlink.core.device.rememberPhotoPicker
 import com.luismejias.lumemedlink.core.features.Feature
@@ -95,7 +97,9 @@ internal fun DoctorMainHost(
     val agenda = viewModel { AgendaViewModel(care) }
     val patients = viewModel { DoctorPatientsViewModel(care) }
     val profile = viewModel { DoctorProfileViewModel(care) }
-    val photo = viewModel { ProfilePhotoModel() }
+    // The doctor's own photo waits on backend request `0016` (the author's call of 2026-10-15): until it has a
+    // contract it stays in memory, as ADR-0050 built it.
+    val photo = viewModel { ProfilePhotoModel(InMemoryProfilePhoto(), platformPhotoCodec()) }
     val picker = rememberPhotoPicker(photo::picked)
     LaunchedEffect(link) {
         val opening = link ?: return@LaunchedEffect

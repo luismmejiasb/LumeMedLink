@@ -38,3 +38,17 @@ The author decided two things on 2026-10-14:
 - k3's «No pudimos subir tu foto · Reintentar» gets a real failure from the upload.
 - A face next to an appointment with a specialist reveals more than either alone (§1.0). The doctor's view is
   therefore limited to the patient's own clinics, by the platform, never by the app.
+
+## Progress (2026-10-15)
+
+- **Built behind a protocol, not connected.** `core/care/ProfilePhoto.kt`: `ProfilePhotoGateway` (read, upload,
+  remove), `ProfilePhotoSync` (k3 keeps the previous photo on a failed upload and retries the same one; a read that
+  is refused, missing or failed is the initials, in silence — ADR-0067), and `InMemoryProfilePhoto`, the platform's
+  side held in memory inside the session's store until the contract lands. `core/device/PhotoCodec` turns the crop
+  into JPEG and the platform's bytes back into a bitmap. Removing is confirmed. A sign-out clears it (§8.13).
+- **Still pending:** the contract (backend task `0150`, PENDING; contract `0.132.0` has no photo operations). The
+  remote gateway, with 403 and 404 as «no photo», is written when it lands, and only then is ADR-0050 §2 closed as
+  superseded.
+- **The doctor's photo** is its own request (`0016`, the author's call of 2026-10-15). Until it has a contract, the
+  doctor's own photo in m3 stays in memory as ADR-0050 built it.
+

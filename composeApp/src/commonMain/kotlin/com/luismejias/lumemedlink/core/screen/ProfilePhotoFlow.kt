@@ -12,6 +12,7 @@ import cl.lume.uicomposer.components.LumeAlertPresentation
 import cl.lume.uicomposer.components.LumeAvatar
 import cl.lume.uicomposer.components.LumeAvatarAction
 import cl.lume.uicomposer.components.LumeAvatarSize
+import cl.lume.uicomposer.components.LumeButtonRole
 import cl.lume.uicomposer.components.LumeImageCropper
 import cl.lume.uicomposer.components.LumeImageCropperLabels
 import cl.lume.uicomposer.components.LumeList
@@ -28,6 +29,7 @@ import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.device.PhotoPicker
 import com.luismejias.lumemedlink.core.device.PhotoSource
 import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.common_retry
 import com.luismejias.lumemedlink.resources.photo_cancel
 import com.luismejias.lumemedlink.resources.photo_change
 import com.luismejias.lumemedlink.resources.photo_crop_center
@@ -46,8 +48,14 @@ import com.luismejias.lumemedlink.resources.photo_open_settings
 import com.luismejias.lumemedlink.resources.photo_options_title
 import com.luismejias.lumemedlink.resources.photo_pick
 import com.luismejias.lumemedlink.resources.photo_remove
+import com.luismejias.lumemedlink.resources.photo_remove_body
+import com.luismejias.lumemedlink.resources.photo_remove_confirm
+import com.luismejias.lumemedlink.resources.photo_remove_failed
+import com.luismejias.lumemedlink.resources.photo_remove_title
 import com.luismejias.lumemedlink.resources.photo_take
 import com.luismejias.lumemedlink.resources.photo_updated
+import com.luismejias.lumemedlink.resources.photo_upload_failed_body
+import com.luismejias.lumemedlink.resources.photo_upload_failed_title
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -70,19 +78,24 @@ private enum class PhotoOption { TAKE, PICK, REMOVE }
 
 /**
  * k1–k4 over whichever screen shows the avatar: the options sheet, the circle (k2, over the whole screen, tab bar
- * included — so the host draws this last), «Foto actualizada» (k3) and the refusal with its way to the settings (k4).
- * The photo stays in memory (ADR-0050).
+ * included — so the host draws this last), «Foto actualizada» or «No pudimos subir tu foto · Reintentar» (k3), the
+ * confirmation before removing, and the refusal with its way to the settings (k4). The photo goes to the platform
+ * through the API and comes back as a bitmap (ADR-0064); on the phone it stays in memory (ADR-0050).
  */
 @Composable
 internal fun ProfilePhotoFlow(model: ProfilePhotoModel, picker: PhotoPicker, toasts: LumeToastHostState) {
     val step by model.step.collectAsState()
     val photo by model.photo.collectAsState()
-    val updated by model.updated.collectAsState()
+    val news by model.news.collectAsState()
     val updatedText = stringResource(Res.string.photo_updated)
-    LaunchedEffect(updated) {
-        if (!updated) return@LaunchedEffect
-        toasts.show(updatedText, LumeStatusStyle.Success)
-        model.updatedSeen()
+    val removeFailedText = stringResource(Res.string.photo_remove_failed)
+    LaunchedEffect(news) {
+        when (news) {
+            PhotoNews.UPDATED -> toasts.show(updatedText, LumeStatusStyle.Success)
+            PhotoNews.REMOVE_FAILED -> toasts.show(removeFailedText, LumeStatusStyle.Error)
+            null -> return@LaunchedEffect
+        }
+        model.newsSeen()
     }
     PhotoOptionsSheet(
         visible = step == PhotoStep.Options,
@@ -104,7 +117,7 @@ internal fun ProfilePhotoFlow(model: ProfilePhotoModel, picker: PhotoPicker, toa
                     model.dismiss()
                     picker.pick(PhotoSource.GALLERY)
                 }
-                PhotoOption.REMOVE -> model.remove()
+                PhotoOption.REMOVE -> model.askRemove()
             }
         },
         onDismiss = model::dismiss,
@@ -127,6 +140,28 @@ internal fun ProfilePhotoFlow(model: ProfilePhotoModel, picker: PhotoPicker, toa
         style = LumeStatusStyle.Warning,
         presentation = LumeAlertPresentation.Result,
         glyph = if (camera) LumeIcon.Camera else LumeIcon.Photo,
+    )
+    LumeAlert(
+        visible = step == PhotoStep.ConfirmRemove,
+        title = stringResource(Res.string.photo_remove_title),
+        message = stringResource(Res.string.photo_remove_body),
+        confirm = LumeAlertAction(
+            stringResource(Res.string.photo_remove_confirm),
+            role = LumeButtonRole.Destructive,
+            onSelect = model::remove,
+        ),
+        cancel = LumeAlertAction(stringResource(Res.string.photo_cancel), onSelect = model::dismiss),
+    )
+    // k3's failure keeps the previous photo; the kit's toast takes no action, so «Reintentar» is this alert's.
+    LumeAlert(
+        visible = step == PhotoStep.UploadFailed,
+        title = stringResource(Res.string.photo_upload_failed_title),
+        message = stringResource(Res.string.photo_upload_failed_body),
+        confirm = LumeAlertAction(stringResource(Res.string.common_retry), onSelect = model::retryUpload),
+        cancel = LumeAlertAction(stringResource(Res.string.photo_not_now), onSelect = model::dropFailedUpload),
+        style = LumeStatusStyle.Error,
+        presentation = LumeAlertPresentation.Result,
+        glyph = LumeIcon.Photo,
     )
     (step as? PhotoStep.Cropping)?.let { cropping ->
         LumeImageCropper(

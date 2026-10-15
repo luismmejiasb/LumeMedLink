@@ -2,7 +2,10 @@
 # Saves a screenshot of each of the patient's wired screens (task 0037), by running the ScreenTour UI test on the
 # repo's own simulator. Android cannot be pictured: every window with personal data is FLAG_SECURE (§8.3).
 #
-#   Scripts/tour-screens.sh [--device <udid>] [--out <folder>]
+#   Scripts/tour-screens.sh [--device <udid>] [--out <folder>] [--test <ScreenTour method>] [--variant light|dark|ax|rtl]
+#
+# --variant sets the simulator's appearance (dark), its text size (ax: the largest accessibility size) or the
+# layout direction (rtl), and puts the simulator back to light and the default size afterwards.
 #
 # The Debug build talks to the platform on this Mac (ADR-0062); start it first, or every screen shows its offline
 # state. The pictures land in --out (default: ../tmp/screens-<time>), outside the repo: they are synthetic, and still
@@ -13,10 +16,14 @@ cd "$(dirname "$0")/.."
 SIM_NAME="LumeMedLink · iPhone 17 · iOS 26.5"
 DEVICE=""
 OUT="../tmp/screens-$(date +%Y%m%d-%H%M%S)"
+TEST="ScreenTour"
+VARIANT="light"
 while [ $# -gt 0 ]; do
     case "$1" in
         --device) shift; DEVICE="${1:-}" ;;
         --out) shift; OUT="${1:-}" ;;
+        --test) shift; TEST="ScreenTour/${1:-}" ;;
+        --variant) shift; VARIANT="${1:-}" ;;
         *) echo "unknown argument: $1"; exit 2 ;;
     esac
     shift
@@ -41,10 +48,24 @@ xcrun simctl spawn "$DEVICE" notifyutil -p com.apple.BiometricKit.enrollmentChan
 # A fresh install: the tour starts at the welcome screen, never on a session a previous run left.
 xcrun simctl uninstall "$DEVICE" com.luismejias.lumemedlink 2>/dev/null || true
 
+RTL=0
+case "$VARIANT" in
+    light) xcrun simctl ui "$DEVICE" appearance light ;;
+    dark) xcrun simctl ui "$DEVICE" appearance dark ;;
+    ax) xcrun simctl ui "$DEVICE" content_size accessibility-extra-extra-extra-large ;;
+    rtl) RTL=1 ;;
+    *) echo "unknown variant: $VARIANT"; exit 2 ;;
+esac
+restore_simulator() {
+    xcrun simctl ui "$DEVICE" appearance light 2>/dev/null || true
+    xcrun simctl ui "$DEVICE" content_size large 2>/dev/null || true
+}
+trap restore_simulator EXIT
+
 # A TEST_RUNNER_ variable in xcodebuild's environment reaches the test runner without its prefix.
-TEST_RUNNER_SCREENSHOT_DIR="$OUT" xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp \
-    -configuration Debug -destination "id=$DEVICE" -derivedDataPath ../tmp/dd-medlink \
-    -only-testing:iosAppUITests/ScreenTour > "$OUT/tour.log" 2>&1 || echo "WARN the tour reported failures; see $OUT/tour.log"
+TEST_RUNNER_SCREENSHOT_DIR="$OUT" TEST_RUNNER_TOUR_RTL="$RTL" xcodebuild test -project iosApp/iosApp.xcodeproj \
+    -scheme iosApp -configuration Debug -destination "id=$DEVICE" -derivedDataPath ../tmp/dd-medlink \
+    -only-testing:"iosAppUITests/$TEST" > "$OUT/tour.log" 2>&1 || echo "WARN the tour reported failures; see $OUT/tour.log"
 
 ls "$OUT"/*.png >/dev/null 2>&1 || { echo "FAIL no screenshot was saved; see $OUT/tour.log"; exit 1; }
 echo "screens: $OUT"

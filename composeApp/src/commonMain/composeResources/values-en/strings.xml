@@ -582,6 +582,12 @@
     <string name="photo_denied_camera_body">To take a photo, allow access in Settings. Your photo is only used on your profile.</string>
     <string name="photo_open_settings">Open Settings</string>
     <string name="photo_not_now">Not now</string>
+    <string name="photo_remove_title">Remove your photo?</string>
+    <string name="photo_remove_body">Your initials will show again.</string>
+    <string name="photo_remove_confirm">Remove</string>
+    <string name="photo_remove_failed">We couldn’t remove your photo</string>
+    <string name="photo_upload_failed_title">We couldn’t upload your photo</string>
+    <string name="photo_upload_failed_body">Your previous photo stays.</string>
     <!-- ADR-0051 · Reportes de error -->
     <string name="sign_up_telemetry_statement">I allow collecting errors and usage statistics to improve my experience in the app</string>
     <string name="settings_telemetry">Errors and statistics</string>
