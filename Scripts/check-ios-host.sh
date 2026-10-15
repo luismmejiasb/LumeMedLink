@@ -282,13 +282,16 @@ managers=$(find iosApp \( -name Podfile -o -name Package.swift -o -name Cartfile
 [ -n "$managers" ] && fail "ios-host: a dependency manager file in the host" \
     "The host's one dependency goes through the Xcode project and its committed Package.resolved (§8.8)." "$managers"
 FIREBASE_HOST="iosApp/iosApp/FirebaseHost.swift"
+UI_TESTS="iosApp/iosAppUITests"
 imports=$(for f in $(find iosApp -name '*.swift' -not -path '*/build/*' 2>/dev/null); do
     python3 Scripts/lib/uncomment.py --lang c --strip-strings "$f" 2>/dev/null |
         grep -nE '^[[:space:]]*(@testable[[:space:]]+)?import[[:space:]]+' | sed "s|^|$f:|"
 done | grep -vE 'import[[:space:]]+(SwiftUI|UIKit|Foundation|LumeMedLink)[[:space:]]*$' |
-    grep -vE "^$FIREBASE_HOST:[0-9]+:[[:space:]]*import[[:space:]]+(FirebaseCore|FirebaseCrashlytics|FirebaseAnalytics|FirebaseRemoteConfig|FirebaseMessaging)[[:space:]]*$" || true)
+    grep -vE "^$FIREBASE_HOST:[0-9]+:[[:space:]]*import[[:space:]]+(FirebaseCore|FirebaseCrashlytics|FirebaseAnalytics|FirebaseRemoteConfig|FirebaseMessaging)[[:space:]]*$" |
+    # The UI-test bundle (task 0037) links XCTest and nothing else; it is its own product, never inside the app.
+    grep -vE "^$UI_TESTS/[^:]+:[0-9]+:[[:space:]]*import[[:space:]]+XCTest[[:space:]]*$" || true)
 [ -n "$imports" ] && fail "ios-host: the host imports a module it is not allowed to link" \
-    "Allowed: SwiftUI, UIKit, Foundation, the Kotlin framework, and Firebase's five modules inside FirebaseHost.swift only (ADR-0052)." "$imports"
+    "Allowed: SwiftUI, UIKit, Foundation, the Kotlin framework, Firebase's five modules inside FirebaseHost.swift only (ADR-0052), and XCTest inside iosAppUITests only." "$imports"
 
 # ── ABSENCE, in the Swift ───────────────────────────────────────────────────────────────────────
 hits=$(swift_code 'UIPasteboard')

@@ -50,3 +50,6 @@ hay nada que cambiar.
 ## Avance
 
 - 2026-10-14: abierta.
+- «Mis médicos» y los avisos, cableados y probados.
+- **Capturas** (ADR-0065, decisión del autor): el target `iosAppUITests` y `Scripts/tour-screens.sh` recorren las
+  pantallas cableadas en el simulador del repo y guardan una captura de cada una fuera del repo.

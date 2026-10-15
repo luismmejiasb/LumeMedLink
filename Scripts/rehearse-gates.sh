@@ -241,6 +241,20 @@ f.write_text(s.replace(old, "if (false) {", 1))
 # The cover that follows screen capture (task 0017): stop observing it, or uncover on activation
 # regardless, and a recording carries the agenda off the phone with the app in front.
 # Two objects under one ID: the asset catalog that took a script phase's ID (2026-10-14).
+bait "XCTest linked into the app host itself" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp/iOSApp.swift"
+s = p.read_text()
+assert s.count("import UIKit\n") == 1
+p.write_text(s.replace("import UIKit\n", "import UIKit\nimport XCTest\n"))
+'
+bait "the UI-test bundle importing more than XCTest" check-ios-host.sh '
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]) / "iosApp/iosAppUITests/ScreenTour.swift"
+s = p.read_text()
+assert s.count("import XCTest\n") == 1
+p.write_text(s.replace("import XCTest\n", "import XCTest\nimport Network\n"))
+'
 bait "two objects declared under one ID in the iOS project" check-ios-host.sh '
 import sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "iosApp/iosApp.xcodeproj/project.pbxproj"
