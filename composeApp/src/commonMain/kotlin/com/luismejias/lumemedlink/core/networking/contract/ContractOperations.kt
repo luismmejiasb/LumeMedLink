@@ -709,4 +709,42 @@ internal object ContractOperations {
         request = Unit.serializer(),
         response = Unit.serializer(),
     )
+
+    /**
+     * One professional's agenda between two instants, as LumeMedLink draws it (since 0.103.0): who, when, where and
+     * in what state, the patient's given name and family initial — and nothing about the record of the act: no
+     * document flag, no seal, no motivo. `listAgenda`'s rules: at most 62 days, refused rather than truncated; a
+     * doctor reads any colleague's agenda (ADR-0066) and a receptionist only the ones assigned to them; the same
+     * `status` and `channel` filters; a patient under a restriction of processing is absent. Convert with
+     * `timeZone`. Reachable from LumeMedLink. Read the patient's contact with `listPatientContactCards`.
+     */
+    val LIST_AGENDA_CARDS: ContractOperation<Unit, AgendaCardsDto> = ContractOperation(
+        id = "listAgendaCards",
+        verb = ContractVerb.GET,
+        path = "/v1/orgs/{tenantId}/agenda-cards",
+        pathParameters = listOf("tenantId"),
+        query = listOf(ContractQuery("professionalId", required = true), ContractQuery("from", required = true), ContractQuery("to", required = true), ContractQuery("status", required = false), ContractQuery("channel", required = false)),
+        request = Unit.serializer(),
+        response = AgendaCardsDto.serializer(),
+    )
+
+    /**
+     * One page of the practice's patients as contacts (since 0.103.0): name, phone, e-mail and previsión, **and
+     * nothing clinical — not even as a null field**. The roster's page and order (newest first, 50 by default,
+     * clamped to 100) and its audit line. A patient under a restriction of processing stays, as in the roster: it
+     * is how the practice reaches her. No address. Reachable from LumeMedLink. A well-formed `cursor` that is not a
+     * row this list could hold is a 404 too since 0.93.0, audited as a denial: on a list of one patient, a row of
+     * another patient; on a list of one order, a row of another order; on a list of the whole practice, a row this
+     * practice does not hold. A row it could hold that this page leaves out — another `type`, or one deleted,
+     * invalidated or reviewed between two pages — still marks where the next page starts, and no row is skipped.
+     */
+    val LIST_PATIENT_CONTACT_CARDS: ContractOperation<Unit, PatientContactCardPageDto> = ContractOperation(
+        id = "listPatientContactCards",
+        verb = ContractVerb.GET,
+        path = "/v1/orgs/{tenantId}/patient-contact-cards",
+        pathParameters = listOf("tenantId"),
+        query = listOf(ContractQuery("limit", required = false), ContractQuery("cursor", required = false)),
+        request = Unit.serializer(),
+        response = PatientContactCardPageDto.serializer(),
+    )
 }

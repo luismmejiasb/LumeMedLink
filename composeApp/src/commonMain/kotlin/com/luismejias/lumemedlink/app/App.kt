@@ -39,6 +39,7 @@ import com.luismejias.lumemedlink.core.care.NoticeMark
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
 import com.luismejias.lumemedlink.core.care.ScriptedPatientCare
+import com.luismejias.lumemedlink.core.care.remote.LocalDoctorBackend
 import com.luismejias.lumemedlink.core.care.remote.LocalPatientBackend
 import com.luismejias.lumemedlink.core.features.FeatureGate
 import com.luismejias.lumemedlink.core.features.RemoteConfigFlagSource
@@ -165,7 +166,6 @@ public fun App(
     val patientScope = viewModel { SessionScope() }
     val patientScript = remember { ScriptedPatientCare() }
     val doctorScope = viewModel(key = "doctor-scope") { SessionScope() }
-    val doctorCare = remember { ScriptedDoctorCare() }
     val unlockGate = rememberUnlockGate(secureStore) ?: AbsentUnlockGate
     val sessionManager = remember(secureStore) {
         SessionManager(TokenStore(secureStore), UnwiredRefreshClient())
@@ -188,6 +188,12 @@ public fun App(
         environment.localBackend?.let { url ->
             LocalPatientBackend(url, securityEvents.emittingIn(scope), NoticeMark(secureStore))
         }
+    }
+    // The doctor's side: the local platform's two non-clinical views when a debug build has one (ADR-0061's amendment),
+    // the design's script otherwise.
+    val doctorCare = remember(environment) {
+        environment.localBackend?.let { url -> LocalDoctorBackend(url, securityEvents.emittingIn(scope)).care }
+            ?: ScriptedDoctorCare()
     }
     val patientCare: PatientCareGateway = remember(patientScript, localPatient) {
         localPatient?.let { local ->
@@ -432,6 +438,7 @@ public fun App(
                                 AccessRole.DOCTOR -> InSessionScope(doctorScope) {
                                     DoctorMainHost(
                                         care = doctorCare,
+                                        showsStandIns = !devSessions,
                                         link = linkToOpen,
                                         onLinkOpened = links::landed,
                                         features = features,

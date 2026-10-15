@@ -31,6 +31,7 @@ import com.luismejias.lumemedlink.core.features.Feature
 import com.luismejias.lumemedlink.core.features.FeatureGate
 import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.LocalStandInsShown
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoFlow
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoModel
@@ -89,9 +90,26 @@ internal fun DoctorMainHost(
     /** What the doctor may see (ADR-0060). */
     features: FeatureGate,
     onSignOut: () -> Unit,
+    /** Whether a waiting screen may be drawn from the design's script (ADR-0055); off against the platform. */
+    showsStandIns: Boolean = true,
     /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
     link: DeepLink? = null,
     onLinkOpened: () -> Unit = {},
+) {
+    CompositionLocalProvider(LocalStandInsShown provides showsStandIns) {
+        DoctorTabs(care, features, onSignOut, link, onLinkOpened)
+    }
+}
+
+@Composable
+private fun DoctorTabs(
+    care: DoctorCareGateway,
+    /** What the doctor may see (ADR-0060). */
+    features: FeatureGate,
+    onSignOut: () -> Unit,
+    /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
+    link: DeepLink?,
+    onLinkOpened: () -> Unit,
 ) {
     val tabs = viewModel { DoctorTabsViewModel() }
     val agenda = viewModel { AgendaViewModel(care) }

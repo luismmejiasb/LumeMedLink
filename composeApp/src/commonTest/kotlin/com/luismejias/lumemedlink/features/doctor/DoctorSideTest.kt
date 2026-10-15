@@ -19,7 +19,6 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 // Synthetic only (§9): the design's sample patients.
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -89,9 +88,9 @@ class DoctorSideTest {
     @Test
     fun theContactSwitchIsTheServersAfterARead() = runTest {
         val profile = DoctorProfileViewModel(script).also { it.load() }
-        assertTrue((profile.state.value as CareLoad.Ready).content.sharesContact)
+        assertEquals(true, (profile.state.value as CareLoad.Ready).content.sharesContact)
         profile.shareContact(false)
         profile.load()
-        assertFalse((profile.state.value as CareLoad.Ready).content.sharesContact, "the write stuck")
+        assertEquals(false, (profile.state.value as CareLoad.Ready).content.sharesContact, "the write stuck")
     }
 }

@@ -1,7 +1,8 @@
 # Every operation LumeMedLink may call (ADR-0061). One operationId per line, then the area that uses it.
 # The generator refuses any operation outside /v1/patient/, /v1/directory/, /v1/reference/, /v1/me and the two
-# platform routes (/v1/app-availability, /v1/security-events): nothing clinical is generated, so nothing clinical
-# can be called. devToken is the local platform's dev route, from contract/dev-auth.json (ADR-0062).
+# platform routes (/v1/app-availability, /v1/security-events), plus the doctor's two non-clinical views under
+# /v1/orgs/ by their exact path (ADR-0061's amendment of 2026-10-15): nothing clinical is generated, so nothing
+# clinical can be called. devToken is the local platform's dev route, from contract/dev-auth.json (ADR-0062).
 me                              access
 redeemPatientEnrolment          access
 enrolMyPatientPhone             access
@@ -39,3 +40,5 @@ withdrawMyRating                ratings
 listMyNotificationOptOuts       reminders
 registerMyNotificationOptOut    reminders
 withdrawMyNotificationOptOut    reminders
+listAgendaCards                 doctor
+listPatientContactCards         doctor

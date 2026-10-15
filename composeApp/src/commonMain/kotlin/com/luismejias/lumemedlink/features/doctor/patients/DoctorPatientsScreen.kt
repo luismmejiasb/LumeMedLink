@@ -72,15 +72,13 @@ internal fun DoctorPatientsScreen(model: DoctorPatientsViewModel, onCall: (Strin
                     clearLabel = stringResource(Res.string.common_search_clear),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                LumeText(
-                    text = pluralStringResource(
-                        Res.plurals.doctor_patients_count,
-                        content.roster.attendedCount,
-                        content.roster.attendedCount,
-                    ),
-                    style = LumeTextStyle.TextSmall,
-                    color = LumeTextColor.Secondary,
-                )
+                content.roster.attendedCount?.let { attended ->
+                    LumeText(
+                        text = pluralStringResource(Res.plurals.doctor_patients_count, attended, attended),
+                        style = LumeTextStyle.TextSmall,
+                        color = LumeTextColor.Secondary,
+                    )
+                }
                 if (content.shown.isEmpty()) {
                     LumeCallout(text = stringResource(Res.string.doctor_patients_none))
                 } else {
@@ -127,7 +125,7 @@ private fun ContactRow(contact: PatientContact, onCall: (String) -> Unit, onMail
         description = listOfNotNull(
             contact.mobile?.display?.leftToRight(),
             listOfNotNull(
-                pluralStringResource(Res.plurals.doctors_attentions, contact.visits, contact.visits),
+                contact.visits?.let { pluralStringResource(Res.plurals.doctors_attentions, it, it) },
                 contact.lastVisit?.let { stringResource(Res.string.last_visit, dayMonthYearText(it)) },
             ).joinToString(" · "),
         ).joinToString("\n"),

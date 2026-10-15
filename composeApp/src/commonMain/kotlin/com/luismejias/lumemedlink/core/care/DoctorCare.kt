@@ -20,8 +20,11 @@ internal data class PatientContact(
     val rut: ChileanRut?,
     val mobile: PhoneNumber?,
     val email: EmailAddress?,
-    /** How many times the doctor attended them, and the day of the last — never why (the author, 2026-10-15). */
-    val visits: Int = 0,
+    /**
+     * How many times the doctor attended them, and the day of the last — never why (the author, 2026-10-15). Null when
+     * nothing says: the contract's contact cards carry neither, and a false zero is worse than no number (ADR-0067).
+     */
+    val visits: Int? = null,
     val lastVisit: CalendarDate? = null,
 ) {
     val displayName: String get() = "$givenNames $familyNames"
@@ -38,14 +41,19 @@ internal data class AgendaEntry(
     val date: CalendarDate,
     val start: ClockTime,
     val minutes: Int,
-    val kind: VisitKind,
+    /** Null when nothing says: the contract names the channel, not first visit or follow-up. Never guessed. */
+    val kind: VisitKind?,
     val status: AppointmentStatus,
 ) {
     override fun toString(): String = "AgendaEntry(id=$id, status=$status)"
 }
 
 /** The doctor's contacts and how many patients they have attended in all (m2's «142 pacientes atendidos»). */
-internal data class PatientRoster(val contacts: List<PatientContact>, val attendedCount: Int) {
+internal data class PatientRoster(
+    val contacts: List<PatientContact>,
+    /** Null when the platform does not count them: the line is left out. */
+    val attendedCount: Int?,
+) {
     override fun toString(): String = "PatientRoster(contacts=${contacts.size})"
 }
 
@@ -53,13 +61,14 @@ internal data class PatientRoster(val contacts: List<PatientContact>, val attend
 internal data class DoctorProfile(
     val doctor: CareDoctor,
     val linkedToLumeMed: Boolean,
-    val address: String,
-    val phone: String,
+    /** Each of these is null when the platform does not tell this app: its row is left out, never filled in. */
+    val address: String?,
+    val phone: String?,
     /** «Compartir mi contacto»: one switch, for all their patients — the contract's rule. */
-    val sharesContact: Boolean,
+    val sharesContact: Boolean?,
     val rating: Double?,
     val ratingCount: Int,
-    val pendingCorrections: Int,
+    val pendingCorrections: Int?,
 ) {
     override fun toString(): String = "DoctorProfile(redacted)"
 }

@@ -192,13 +192,15 @@ private fun RequestCard(request: AgendaEntry, count: Int, model: AgendaViewModel
                 )
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
                     LumeText(text = request.patient.displayName, weight = LumeTextWeight.Strong)
+                    val day = weekdayDayText(request.date).capitalized()
+                    val kind = request.kind?.let { visitKindText(it).lowercase() }
                     LumeText(
-                        text = stringResource(
-                            Res.string.doctor_request_line,
-                            weekdayDayText(request.date).capitalized(),
-                            request.start.display,
-                            visitKindText(request.kind).lowercase(),
-                        ),
+                        // The kind only when something says it (the contract names the channel, not the visit).
+                        text = if (kind != null) {
+                            stringResource(Res.string.doctor_request_line, day, request.start.display, kind)
+                        } else {
+                            "$day · ${request.start.display}"
+                        },
                         style = LumeTextStyle.TextSmall,
                         color = LumeTextColor.Secondary,
                     )
@@ -263,7 +265,7 @@ private fun DayCard(content: AgendaContent) {
                     val status = statusLabel(entry.status)
                     LumeListRow(
                         title = entry.patient.displayName,
-                        description = visitKindText(entry.kind),
+                        description = entry.kind?.let { visitKindText(it) },
                         leading = LumeListAccessory.Time(
                             entry.start.display,
                             next = LumeListAccessory.Avatar(

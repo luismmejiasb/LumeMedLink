@@ -440,6 +440,11 @@ import sys, pathlib
 f = pathlib.Path(sys.argv[1]) / "contract/operations.txt"
 f.write_text(f.read_text() + "recordDiagnosis                 appointments\n")
 '
+bait "a third route under /v1/orgs/, the whole agenda, added to the allowlist" check-contract.sh '
+import sys, pathlib
+f = pathlib.Path(sys.argv[1]) / "contract/operations.txt"
+f.write_text(f.read_text() + "listAgenda                      doctor\n")
+'
 bait "the diagnosis catalog added under an allowed prefix" check-contract.sh '
 import sys, pathlib
 f = pathlib.Path(sys.argv[1]) / "contract/operations.txt"

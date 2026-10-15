@@ -39,6 +39,9 @@ ALLOWED_PREFIXES = ("/v1/patient/", "/v1/directory/", "/v1/reference/", "/v1/me/
 # Two platform routes every app tier has, by their exact path: the kill switch (§8.15) and the security-event channel
 # (ADR-0023). Exact, so that `/v1/platform/security-events`, the platform's own trail, stays out.
 ALLOWED_EXACT = ("/v1/me", "/v1/patient", "/v1/app-availability", "/v1/security-events")
+# The doctor's side (the author's call of 2026-10-15, ADR-0061's amendment): exactly the two non-clinical views the
+# platform built for LumeMedLink, by their exact template — never the `/v1/orgs/` prefix, under which the ficha lives.
+ALLOWED_DOCTOR_VIEWS = ("/v1/orgs/{tenantId}/agenda-cards", "/v1/orgs/{tenantId}/patient-contact-cards")
 # Clinical content under an allowed prefix, refused by name (ADR-0001): the diagnosis catalog lives under /v1/reference/.
 CLINICAL_PREFIXES = ("/v1/reference/cie10",)
 UNSUPPORTED = ("oneOf", "allOf", "anyOf", "discriminator", "not")
@@ -64,7 +67,12 @@ def fail(message: str) -> None:
 def allowed_path(path: str) -> bool:
     if path.startswith(CLINICAL_PREFIXES):
         return False
-    return path in ALLOWED_EXACT or path in DEV_PATHS or path.startswith(ALLOWED_PREFIXES)
+    return (
+        path in ALLOWED_EXACT
+        or path in ALLOWED_DOCTOR_VIEWS
+        or path in DEV_PATHS
+        or path.startswith(ALLOWED_PREFIXES)
+    )
 
 
 def read_allowlist() -> list[str]:

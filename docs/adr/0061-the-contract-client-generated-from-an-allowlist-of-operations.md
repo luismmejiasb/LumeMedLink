@@ -62,3 +62,18 @@ decode. The contract's statuses are an open vocabulary, and LumeMed reads an unk
 - Adding a feature that needs a new operation is one line in the allowlist and a regenerate, reviewed like code.
 - The client knows nothing clinical, because nothing clinical is generated. The data-boundary gate keeps meaning
   what it says.
+
+## Amendment (2026-10-15) — the doctor's two non-clinical views
+
+By the author's decision by form: the doctor's side of LumeMedLink leaves the script for the two views the platform
+built for this app, **by their exact path template**, never by prefix — `/v1/orgs/` is where the ficha lives:
+
+- `GET /v1/orgs/{tenantId}/agenda-cards` (`listAgendaCards`): who, when, where and in what state; the patient's given
+  name and family initial; nothing about the record of the act.
+- `GET /v1/orgs/{tenantId}/patient-contact-cards` (`listPatientContactCards`): the patient's names, phone, e-mail and
+  insurance, as a contact.
+
+`ALLOWED_DOCTOR_VIEWS` in the generator names the two; a third route under `/v1/orgs/` is still refused, and
+`rehearse-gates.sh` proves it with `listAgenda`, the full agenda. The practice and the professional profile come from
+`/v1/me`, already allowed. Confirming or rejecting a request and sharing the contact have no allowed operation, so
+`RemoteDoctorCare` answers them as failures rather than pretending.

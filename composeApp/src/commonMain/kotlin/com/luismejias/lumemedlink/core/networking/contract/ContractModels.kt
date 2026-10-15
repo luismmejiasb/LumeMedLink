@@ -154,6 +154,56 @@ internal value class WithdrawMyAppointmentRequestDtoCancellationReason(val wire:
 }
 
 @Serializable
+internal data class AgendaCardsDto(
+    /** IANA zone the practice's wall clock belongs to, e.g. America/Santiago. */
+    val timeZone: String,
+    val items: List<AgendaCardsDtoItemsItem>,
+) {
+    override fun toString(): String = "AgendaCardsDto"
+}
+
+@Serializable
+internal data class AgendaCardsDtoItemsItem(
+    val id: String,
+    val patientId: String,
+    val patientGivenName: String,
+    val patientFamilyInitial: String,
+    val professionalId: String,
+    /**
+     * When the hour begins. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as
+     * in `2026-09-28T21:35:25.250Z`.
+     */
+    val startsAt: String,
+    /**
+     * When the hour ends. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in
+     * `2026-09-28T21:35:25.250Z`.
+     */
+    val endsAt: String,
+    /**
+     * Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values:
+     * REQUESTED, SCHEDULED, CONFIRMED, CANCELLED, COMPLETED, NO_SHOW.
+     */
+    val status: String,
+    /**
+     * Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values:
+     * IN_PERSON, TELEMEDICINE, HOME_VISIT.
+     */
+    val channel: String,
+    val locationLabel: String?,
+    val specialtyCode: String?,
+    /**
+     * When this request becomes due to expire if nobody answers it: the platform's request window after it was made
+     * (ADR-0056). `null` for anything that is not an open `REQUESTED` row; a sealed one never expires. The platform
+     * ends it with a sweep, so it may stay open a while after this instant. Draw any countdown from this instant,
+     * never from a number of hours. Once ended the row reads `CANCELLED`; who ended it, and why, is on the
+     * appointment (`listAppointments`), not on the agenda.
+     */
+    val requestExpiresAt: String?,
+) {
+    override fun toString(): String = "AgendaCardsDtoItemsItem"
+}
+
+@Serializable
 internal data class AvailabilityDto(
     /**
      * Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values:
@@ -733,6 +783,36 @@ internal data class PatientAppointmentDtoLocationAddress(
     val regionCode: String?,
 ) {
     override fun toString(): String = "PatientAppointmentDtoLocationAddress"
+}
+
+@Serializable
+internal data class PatientContactCardPageDto(
+    val items: List<PatientContactCardPageDtoItemsItem>,
+    val nextCursor: String?,
+) {
+    override fun toString(): String = "PatientContactCardPageDto"
+}
+
+@Serializable
+internal data class PatientContactCardPageDtoItemsItem(
+    val patientId: String,
+    val givenName: String,
+    val familyName: String,
+    val secondFamilyName: String?,
+    /** The name the patient asked to be called by, when they gave one; `null` otherwise. */
+    val socialName: String?,
+    /** Canonical E.164, or `null` when the ficha has none. */
+    val phone: String?,
+    val email: String?,
+    /**
+     * Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values:
+     * FONASA, ISAPRE, DIPRECA, CAPREDENA, SISA, NONE, OTHER, UNKNOWN.
+     */
+    val insuranceKind: String?,
+    /** The insurer's name as the practice recorded it, or `null`. */
+    val insuranceName: String?,
+) {
+    override fun toString(): String = "PatientContactCardPageDtoItemsItem"
 }
 
 @Serializable

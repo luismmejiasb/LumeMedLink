@@ -71,7 +71,10 @@ internal fun DoctorProfileScreen(
             CareLoadView(load, standIn, onRetry = model::refresh, spacing = { large }) { profile ->
                 ProfileHeader(profile, photo)
                 ProfileFields(profile)
-                if (showsShare) ShareRow(profile, onShare = { share -> model.launch { shareContact(share) } })
+                val shares = profile.sharesContact
+                if (showsShare && shares != null) {
+                    ShareRow(shares, onShare = { share -> model.launch { shareContact(share) } })
+                }
                 ProfileEntries(profile)
                 SignOut(onSignOut)
             }
@@ -108,8 +111,14 @@ private fun ProfileFields(profile: DoctorProfile) {
         ProfileField.PHONE to stringResource(Res.string.doctor_phone),
     )
     val edits = labels.mapValues { (_, label) -> stringResource(Res.string.doctor_edit_named, label.lowercase()) }
+    // A field the platform does not tell this app is left out, never shown empty (ADR-0067).
+    val values = mapOf(
+        ProfileField.SPECIALTY to profile.doctor.specialty.takeIf { it.isNotBlank() },
+        ProfileField.ADDRESS to profile.address,
+        ProfileField.PHONE to profile.phone?.leftToRight(),
+    )
     LumeList(
-        items = ProfileField.entries,
+        items = ProfileField.entries.filter { values[it] != null },
         key = { it },
         scrolls = false,
         background = Color.Transparent,
@@ -117,11 +126,7 @@ private fun ProfileFields(profile: DoctorProfile) {
     ) { field ->
         LumeListRow(
             title = labels.getValue(field),
-            description = when (field) {
-                ProfileField.SPECIALTY -> profile.doctor.specialty
-                ProfileField.ADDRESS -> profile.address
-                ProfileField.PHONE -> profile.phone.leftToRight()
-            },
+            description = values[field],
             trailing = LumeListAccessory.Button(LumeIcon.Edit, edits.getValue(field), LumeListButtonLook.Accent) {},
             textStyle = LumeListRowTextStyle.LabelOverValue,
         )
@@ -129,7 +134,7 @@ private fun ProfileFields(profile: DoctorProfile) {
 }
 
 @Composable
-private fun ShareRow(profile: DoctorProfile, onShare: (Boolean) -> Unit) {
+private fun ShareRow(shares: Boolean, onShare: (Boolean) -> Unit) {
     val share = stringResource(Res.string.doctor_share)
     LumeList(
         items = listOf(Unit),
@@ -147,7 +152,7 @@ private fun ShareRow(profile: DoctorProfile, onShare: (Boolean) -> Unit) {
                 emphasis = LumeListTileEmphasis.Washed,
             ),
             trailing = LumeListAccessory.Toggle(
-                checked = profile.sharesContact,
+                checked = shares,
                 onCheckedChange = onShare,
                 contentDescription = share,
             ),
@@ -178,17 +183,13 @@ private fun ProfileEntries(profile: DoctorProfile) {
             )
             ProfileEntry.CORRECTIONS -> LumeListRow(
                 title = stringResource(Res.string.doctor_corrections),
-                description = pluralStringResource(
-                    Res.plurals.doctor_corrections_body,
-                    profile.pendingCorrections,
-                    profile.pendingCorrections,
-                ),
-                leading = LumeListAccessory.Tile(LumeIcon.Flag, LumeTileTint.Amber),
-                trailing = if (profile.pendingCorrections > 0) {
-                    LumeListAccessory.Tag(profile.pendingCorrections.toString(), LumeTagStyle.Warning)
-                } else {
-                    LumeListAccessory.None
+                description = profile.pendingCorrections?.let {
+                    pluralStringResource(Res.plurals.doctor_corrections_body, it, it)
                 },
+                leading = LumeListAccessory.Tile(LumeIcon.Flag, LumeTileTint.Amber),
+                trailing = profile.pendingCorrections?.takeIf { it > 0 }
+                    ?.let { LumeListAccessory.Tag(it.toString(), LumeTagStyle.Warning) }
+                    ?: LumeListAccessory.None,
                 disclosure = true,
                 textStyle = LumeListRowTextStyle.Strong,
             )

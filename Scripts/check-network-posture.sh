@@ -158,14 +158,17 @@ done
 
 # ── 2c. The engine without TLS is the local backend's alone (ADR-0062) ──────────────────────────
 # platformHttpEngine() refuses plain http underneath the stack. localBackendHttpEngine() lets it through, so it may be
-# built by LocalPatientBackend and nowhere else; comments are blanked by the tokenizer (ADR-0029).
-LOCAL_ENGINE_OWNER="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/care/remote/LocalPatientBackend.kt"
+# built by the two local backends, the patient's and the doctor's (ADR-0061's amendment of 2026-10-15), and nowhere
+# else; each named by its whole path, and comments are blanked by the tokenizer (ADR-0029).
+LOCAL_ENGINE_DIR="composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/care/remote"
 for f in $(find composeApp/src -path '*Test*' -prune -o -name '*.kt' -print 2>/dev/null); do
-    [ "$f" = "$LOCAL_ENGINE_OWNER" ] && continue
-    case "$f" in *PlatformHttpEngine*.kt) continue ;; esac
+    case "$f" in
+        "$LOCAL_ENGINE_DIR/LocalPatientBackend.kt" | "$LOCAL_ENGINE_DIR/LocalDoctorBackend.kt") continue ;;
+        *PlatformHttpEngine*.kt) continue ;;
+    esac
     hit=$(python3 Scripts/lib/uncomment.py --lang c "$f" 2>/dev/null | grep -n 'localBackendHttpEngine' || true)
     [ -n "$hit" ] && fail "network: $f builds the engine without TLS" \
-        "Only LocalPatientBackend may build localBackendHttpEngine() (ADR-0062)." "$hit"
+        "Only LocalPatientBackend and LocalDoctorBackend may build localBackendHttpEngine() (ADR-0062)." "$hit"
 done
 
 # ── 2d. iOS: the Swift host names the local backend only in a Debug build (ADR-0062) ───────────

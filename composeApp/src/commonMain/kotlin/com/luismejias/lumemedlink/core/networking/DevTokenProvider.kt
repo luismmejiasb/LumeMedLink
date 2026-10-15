@@ -15,6 +15,9 @@ import kotlinx.coroutines.sync.withLock
  */
 internal const val DEV_PATIENT = "dev-patient"
 
+/** The platform seed's clinician linked to a LumeMedLink account (`dev-seed.ts`): the doctor's side. Synthetic. */
+internal const val DEV_DOCTOR_LINK = "dev-doctor-link"
+
 /**
  * The local platform's dev token, for a debug build's local environment only (ADR-0062): never Identity Platform,
  * never a real person (§9). It lives in memory and is never written anywhere: a dev token is not a session (ADR-0059
