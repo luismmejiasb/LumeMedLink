@@ -6,6 +6,7 @@ import com.luismejias.lumemedlink.core.care.ClinicClock
 import com.luismejias.lumemedlink.core.care.ContactChangeGateway
 import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.NoticesSource
+import com.luismejias.lumemedlink.core.care.OverbookRequests
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfileSource
 import com.luismejias.lumemedlink.core.care.RatingsGateway
@@ -23,6 +24,7 @@ internal class ComposedPatientCare(
     ratings: RatingsGateway,
     notices: NoticesSource,
     contact: ContactChangeGateway,
+    overbooks: OverbookRequests,
 ) : PatientCareGateway,
     ClinicClock by clock,
     PatientProfileSource by profile,
@@ -31,4 +33,5 @@ internal class ComposedPatientCare(
     MyDoctorsSource by doctors,
     RatingsGateway by ratings,
     NoticesSource by notices,
-    ContactChangeGateway by contact
+    ContactChangeGateway by contact,
+    OverbookRequests by overbooks

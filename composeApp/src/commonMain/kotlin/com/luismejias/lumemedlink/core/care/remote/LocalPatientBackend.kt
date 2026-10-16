@@ -8,6 +8,7 @@ import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.MyDoctorsSource
 import com.luismejias.lumemedlink.core.care.NoticeMark
 import com.luismejias.lumemedlink.core.care.NoticesSource
+import com.luismejias.lumemedlink.core.care.OverbookRequests
 import com.luismejias.lumemedlink.core.care.PatientProfileSource
 import com.luismejias.lumemedlink.core.care.RatingsGateway
 import com.luismejias.lumemedlink.core.networking.AccountSide
@@ -72,6 +73,7 @@ internal class LocalPatientBackend(
     val appointments: AppointmentsSource = remoteAppointments
     val changes: AppointmentChanges = remoteAppointments
     val directory: DirectoryGateway = RemoteDirectory(contract, specialties, zones)
+    val overbooks: OverbookRequests = RemoteOverbooks(contract, directory)
     val myDoctors: MyDoctorsSource = RemoteMyDoctors(contract, specialties, remoteAppointments)
     val notices: NoticesSource = RemoteNotices(contract, noticeMark)
     val ratings: RatingsGateway = RemoteRatings(contract, remoteAppointments, zones)

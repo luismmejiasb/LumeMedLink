@@ -44,6 +44,9 @@ internal enum class Feature {
     /** The patient's notices. */
     NOTICES,
 
+    /** Asking a practice for an overbook, the list of requests and taking one back (ADR-0069). */
+    OVERBOOK_REQUESTS,
+
     /** The doctor's day. */
     DOCTOR_AGENDA,
 
@@ -74,6 +77,7 @@ internal fun ruleOf(feature: Feature): FeatureRule = when (feature) {
     Feature.CONTACT_CHANGE -> patient(RemoteFlag.FEATURE_CONTACT_CHANGE)
     Feature.RATINGS -> patient(RemoteFlag.FEATURE_RATINGS)
     Feature.NOTICES -> patient(RemoteFlag.FEATURE_NOTICES)
+    Feature.OVERBOOK_REQUESTS -> patient(RemoteFlag.FEATURE_OVERBOOK_REQUESTS)
     Feature.DOCTOR_AGENDA -> doctor(RemoteFlag.FEATURE_DOCTOR_AGENDA)
     Feature.DOCTOR_REQUESTS -> doctor(RemoteFlag.FEATURE_DOCTOR_REQUESTS)
     Feature.DOCTOR_PATIENTS -> doctor(RemoteFlag.FEATURE_DOCTOR_PATIENTS)

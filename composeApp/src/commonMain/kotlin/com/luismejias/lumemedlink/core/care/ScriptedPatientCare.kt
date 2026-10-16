@@ -47,6 +47,12 @@ internal class ScriptedPatientCare(
     /** When the newest notice shown was sent: the bell's own mark, as the app keeps it for the platform. */
     private var noticesSeenUntil: Long? = null
 
+    /** The overbook requests of this run, newest first, from the design's one recorded call (ADR-0069). */
+    private val overbooks = if (world == CareWorld.DESIGN) mutableListOf(OVERBOOK_BY_PHONE) else mutableListOf()
+
+    /** What this run asked for, by its client key: a retry answers the same request. */
+    private val askedOverbooks = mutableMapOf<String, OverbookRequest>()
+
     /** The contact change waiting for its code, as a server would keep it. */
     private var pendingContact: PendingContact? = null
 
@@ -247,6 +253,50 @@ internal class ScriptedPatientCare(
         return ChangeResult.Done
     }
 
+    override suspend fun overbookRequests(): CareResult<List<OverbookRequest>> = answer(overbooks.toList())
+
+    override suspend fun requestOverbook(draft: OverbookDraft, clientId: String): OverbookResult {
+        overbookRefusal()?.let { return it }
+        askedOverbooks[clientId]?.let { return OverbookResult.Done(it) }
+        val listing = DirectoryScript.doctor(draft.doctorId, TODAY, NOW, ::isBooked)
+        return when {
+            listing?.takesOverbookRequests != true -> OverbookResult.Failed(OverbookFailure.NotTaken)
+            overbooks.any { it.waiting && it.doctor?.id == draft.doctorId } ->
+                OverbookResult.Failed(OverbookFailure.AlreadyWaiting)
+            else -> {
+                val asked = OverbookRequest(
+                    id = "o-$clientId",
+                    doctor = listing.doctor,
+                    clinic = listing.place.detail.substringBefore(" · "),
+                    status = OverbookRequestStatus.PENDING,
+                    askedOn = TODAY,
+                    byPhone = false,
+                )
+                askedOverbooks[clientId] = asked
+                overbooks.add(0, asked)
+                OverbookResult.Done(asked)
+            }
+        }
+    }
+
+    override suspend fun withdrawOverbookRequest(request: OverbookRequest): OverbookResult {
+        overbookRefusal()?.let { return it }
+        val index = overbooks.indexOfFirst { it.id == request.id }
+        if (index < 0 || !overbooks[index].waiting) return OverbookResult.Failed(OverbookFailure.NoLongerWaiting)
+        val withdrawn = overbooks[index].copy(status = OverbookRequestStatus.WITHDRAWN)
+        overbooks[index] = withdrawn
+        return OverbookResult.Done(withdrawn)
+    }
+
+    private suspend fun overbookRefusal(): OverbookResult? {
+        latency()
+        return failure?.let {
+            OverbookResult.Failed(
+                if (it == CareFailure.Offline) OverbookFailure.Offline else OverbookFailure.Unavailable,
+            )
+        }
+    }
+
     override suspend fun requestPhoneChange(mobile: PhoneNumber): ContactChangeResult<ContactCodeDispatch> =
         contactAnswer { ContactChangeResult.Ok(sendContactCode(PendingContact(mobile, null, 0, 0))) }
 
@@ -342,6 +392,17 @@ internal class ScriptedPatientCare(
 
         val LYON = CarePlace("Av. Providencia 1208, oficina 503", "Centro Médico Lyon · Providencia, Santiago")
         val ALCANTARA = CarePlace("Alcántara 200, piso 4", "Clínica Alcántara · Las Condes, Santiago")
+
+        /** A request the practice recorded from a call and declined: the list's other origin and verdict. */
+        val OVERBOOK_BY_PHONE = OverbookRequest(
+            id = "o-pinto-0910",
+            doctor = PINTO,
+            clinic = "Clínica Alcántara",
+            status = OverbookRequestStatus.DECLINED,
+            askedOn = TODAY.plusDays(-6),
+            byPhone = true,
+        )
+
         val APOQUINDO = CarePlace("Av. Apoquindo 3600, oficina 1102", "Centro Apoquindo · Las Condes, Santiago")
 
         val APPOINTMENTS = listOf(

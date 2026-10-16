@@ -54,9 +54,22 @@ CLINICAL='diagnosis|diagnostico|diagnóstico|cie10|icd10|bloodType|grupoSanguine
 # serial name, a query key or a label, and every one of those crosses the boundary too.
 SCAN=$(mktemp)
 trap 'rm -f "$SCAN"' EXIT
+# The names an ADR admitted, each a WHOLE identifier, never a fragment: a line passes only when every clinical match
+# on it is one of these, so `RENEW_PRESCRIPTION_NOTE`, or a second clinical name beside it, still fails.
+#   RENEW_PRESCRIPTION — ADR-0069: the closed, non-clinical reason «Renovar una receta» of an overbook request,
+#   which asks for an hour and moves no prescription (ADR-0007). It must be sent, so its wire value exists here.
+ADMITTED='RENEW_PRESCRIPTION'
 for f in $KT_FILES; do
     python3 Scripts/lib/uncomment.py --lang c "$f" 2>/dev/null |
-        grep -niE "[A-Za-z_]*($CLINICAL)[A-Za-z_]*" | sed "s|^|$f:|" >> "$SCAN"
+        grep -niE "[A-Za-z_]*($CLINICAL)[A-Za-z_]*" |
+        python3 -c '
+import re, sys
+clinical, admitted = sys.argv[1], set(sys.argv[2].split("|"))
+for line in sys.stdin:
+    names = re.findall(r"[A-Za-z_]*(?:" + clinical + r")[A-Za-z_]*", line, flags=re.I)
+    if any(n not in admitted for n in names):
+        sys.stdout.write(line)
+' "$CLINICAL" "$ADMITTED" | sed "s|^|$f:|" >> "$SCAN"
 done
 
 if [ -s "$SCAN" ]; then

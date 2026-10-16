@@ -332,6 +332,20 @@ d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias
 (d / "BaitBoundary.kt").write_text(
     "package com.luismejias.lumemedlink.core.session\n\ninternal class AllergyBanner\n")
 '
+# ADR-0069 admits one whole identifier; a name that only contains it, or a clinical name beside it, still fails.
+bait "a clinical name built on the admitted overbook reason" check-data-boundary.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session"
+(d / "BaitBoundary.kt").write_text(
+    "package com.luismejias.lumemedlink.core.session\n\ninternal const val RENEW_PRESCRIPTION_NOTE = 1\n")
+'
+bait "a clinical name on the same line as the admitted overbook reason" check-data-boundary.sh '
+import sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "composeApp/src/commonMain/kotlin/com/luismejias/lumemedlink/core/session"
+(d / "BaitBoundary.kt").write_text(
+    "package com.luismejias.lumemedlink.core.session\n\n"
+    "internal val pair = \"RENEW_PRESCRIPTION\" to \"dosage\"\n")
+'
 bait "the distribution checksum emptied but the line kept" check-wrapper.sh '
 import sys, pathlib, re
 p = pathlib.Path(sys.argv[1]) / "gradle/wrapper/gradle-wrapper.properties"

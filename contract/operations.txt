@@ -42,3 +42,6 @@ registerMyNotificationOptOut    reminders
 withdrawMyNotificationOptOut    reminders
 listAgendaCards                 doctor
 listPatientContactCards         doctor
+requestMyOverbook               overbooks
+listMyOverbookRequests          overbooks
+withdrawMyOverbookRequest       overbooks

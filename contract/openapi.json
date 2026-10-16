@@ -1737,7 +1737,7 @@
     },
     "/v1/orgs/{tenantId}/patients/{patientId}/appointments": {
       "post": {
-        "description": "Book an appointment. Overlapping the professional’s active agenda is a `409 professional_busy` (until 0.127.0 the generic `conflict`), which you can confirm as an overbook (below).\n\n**Who asked decides whether it is born confirmed** (ADR-0057, 0.61.0). `requestedBy: PATIENT` — she asked, by phone or in person — books it `CONFIRMED`, confirmed by the practice; left out or `PRACTICE`, the practice proposes it and it waits `SCHEDULED` until she confirms it. A DOCTOR books an hour she asked for only on their own agenda, since booking it confirms it (403 otherwise); a proposal stays open to any member. A home visit that is confirmed keeps the patient's address as it was then (`homeVisitAddress`).\n\n**Closed time is a `409` you can confirm** (ADR-0086 §6, 0.95.0): an hour inside an absence of the professional, on a holiday they did not open, or inside the break they keep after an appointment answers `closed_time_absence`, `closed_time_holiday` or `closed_time_break`; the same request with that kind in `confirmClosedTime` books it.\n\n**A taken hour is a `409` you can confirm too** (ADR-0100, 0.127.0): the same request with `overbook` — its reason, and a doctor's optional note — books it over the hour the professional holds, as an overbook (`overbookReason` on every read). Who may is who may book. The platform caps them per professional and day (`overbook_limit_reached`). A key you used for another booking is still `conflict`.",
+        "description": "Book an appointment. Overlapping the professional’s active agenda is a `409 professional_busy` (until 0.127.0 the generic `conflict`), which you can confirm as an overbook (below).\n\n**Who asked decides whether it is born confirmed** (ADR-0057, 0.61.0). `requestedBy: PATIENT` — she asked, by phone or in person — books it `CONFIRMED`, confirmed by the practice; left out or `PRACTICE`, the practice proposes it and it waits `SCHEDULED` until she confirms it. A DOCTOR books an hour she asked for only on their own agenda, since booking it confirms it (403 otherwise); a proposal stays open to any member. A home visit that is confirmed keeps the patient's address as it was then (`homeVisitAddress`).\n\n**Closed time is a `409` you can confirm** (ADR-0086 §6, 0.95.0): an hour inside an absence of the professional, on a holiday they did not open, or inside the break they keep after an appointment answers `closed_time_absence`, `closed_time_holiday` or `closed_time_break`; the same request with that kind in `confirmClosedTime` books it.\n\n**A taken hour is a `409` you can confirm too** (ADR-0100, 0.127.0): the same request with `overbook` — its reason, and a doctor's optional note — books it over the hour the professional holds, as an overbook (`overbookReason` on every read). Who may is who may book. **Since 0.134.0 an overbook is the practice's mark wherever it lands** (ADR-0104): sent at once for an hour the overbook planner offered (`getOverbookOptions`), free or not, it books an overbook. The platform caps them per professional and day (`overbook_limit_reached`). A key you used for another booking is still `conflict`.",
         "operationId": "book",
         "parameters": [
           {
@@ -2432,7 +2432,7 @@
     },
     "/v1/orgs/{tenantId}/patients/{patientId}/appointments/{id}/reschedule": {
       "post": {
-        "description": "Move an appointment to a new time, and optionally a new place, in ONE operation (`ADR-0054`, 0.55.0). The old hour is cancelled as the practice's act — `cancellationReason` required, `cancellationNote` optional, exactly as `cancelAppointment` cancels — and the new one is booked in the same transaction, for the same patient and the SAME professional, with `rescheduledFromId` pointing at the old one. Returns the NEW appointment.\n\n**Who may:** the same as cancelling — STAFF and ADMIN for any appointment of the practice, a DOCTOR for their own (403 otherwise). Only a `SCHEDULED` or `CONFIRMED` appointment moves: a request, a cancelled or finished one is a 409, and so is a SEALED record. The new hour meets every refusal `book` meets: 404 for a patient whose ficha was deleted or for an unknown place, 409 for a retired place — **including the old hour's own place when you name none**, since nothing new is booked where the practice no longer attends — `professional_busy` for the professional's overlap, and `patient_unavailable` when the patient is busy at that hour. If she had asked to move this same hour and the practice had not answered yet, that request is withdrawn, for the `cancellationReason` you give here.\n\n**`clientId` is required.** A retry answers 200 with the move that already happened — also when it arrives while the first attempt is still running. One key names one write: a key you already used for a booking or for another move is a 409, and `book` answers a key used for a move with a 409 as well. The patient is told with a service notice that names both hours and the clinic, and nothing else.\n\n**The new hour on closed time is a `409` you can confirm**, as in `book` (ADR-0086 §6, 0.95.0): the hour being left and her request to move it are not neighbours for the break.\n\n**The new hour over a taken one is a `409 professional_busy` you can confirm with `overbook`**, as in `book` (ADR-0100, 0.127.0). The hour being left does not count against the day's limit, since this move cancels it; an overbook moved to a free hour lands as an ordinary one.",
+        "description": "Move an appointment to a new time, and optionally a new place, in ONE operation (`ADR-0054`, 0.55.0). The old hour is cancelled as the practice's act — `cancellationReason` required, `cancellationNote` optional, exactly as `cancelAppointment` cancels — and the new one is booked in the same transaction, for the same patient and the SAME professional, with `rescheduledFromId` pointing at the old one. Returns the NEW appointment.\n\n**Who may:** the same as cancelling — STAFF and ADMIN for any appointment of the practice, a DOCTOR for their own (403 otherwise). Only a `SCHEDULED` or `CONFIRMED` appointment moves: a request, a cancelled or finished one is a 409, and so is a SEALED record. The new hour meets every refusal `book` meets: 404 for a patient whose ficha was deleted or for an unknown place, 409 for a retired place — **including the old hour's own place when you name none**, since nothing new is booked where the practice no longer attends — `professional_busy` for the professional's overlap, and `patient_unavailable` when the patient is busy at that hour. If she had asked to move this same hour and the practice had not answered yet, that request is withdrawn, for the `cancellationReason` you give here.\n\n**`clientId` is required.** A retry answers 200 with the move that already happened — also when it arrives while the first attempt is still running. One key names one write: a key you already used for a booking or for another move is a 409, and `book` answers a key used for a move with a 409 as well. The patient is told with a service notice that names both hours and the clinic, and nothing else.\n\n**The new hour on closed time is a `409` you can confirm**, as in `book` (ADR-0086 §6, 0.95.0): the hour being left and her request to move it are not neighbours for the break.\n\n**The new hour over a taken one is a `409 professional_busy` you can confirm with `overbook`**, as in `book` (ADR-0100, 0.127.0). The hour being left does not count against the day's limit, since this move cancels it. Since 0.134.0 a move sent with `overbook` lands as an overbook on a free hour too (ADR-0104); one sent without it lands as an ordinary hour.",
         "operationId": "rescheduleAppointment",
         "parameters": [
           {
@@ -6188,6 +6188,454 @@
         ]
       }
     },
+    "/v1/orgs/{tenantId}/professionals/{id}/reminders": {
+      "get": {
+        "description": "The two reminders the platform sends before every hour of this professional’s agenda (task 0151, `ADR-0034`), with the closed list of leads and the channels that really send. **The defaults are today’s reminders**: 24 h and 2 h, both on, by e-mail, asking nothing.\n\n**Who may:** the professional their own, and the PRACTICE_ADMIN anyone’s — the rule of `setBookingPolicy`. Another professional’s profile, and one that is not this practice’s, are a 404. Audited, the refusal too.",
+        "operationId": "getReminderSettings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID — resolved and authorized by the guard.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "professionals"
+        ]
+      },
+      "put": {
+        "description": "Replace the two reminders before every hour of this professional’s agenda (task 0151, `ADR-0034`). Both rules and every field are required. The first reminder’s lead must be longer than the second’s, each lead one of `leadHoursOptions`, and each channel one of `channelOptions` (today only `EMAIL`).\n\n**What changes:** the next pass of the reminder sweep reads it, for every hour of the agenda, including hours already booked. A reminder is still sent only if the hour was already booked when its lead began, and **each of the two at most once per hour**: moving a lead after that reminder went out does not send it again. A reminder already queued is not withdrawn.\n\nWhether she receives it is still decided at send time: the reminders consent, her objection to a channel and a restriction of processing stop it. **Who may:** as `getReminderSettings`. Audited.",
+        "operationId": "setReminderSettings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID — resolved and authorized by the guard.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReminderSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "professionals"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/professionals/{id}/overbook-rules": {
+      "get": {
+        "description": "The overbook rules of this professional (task 0156, `ADR-0104`): how many a day before the overbook planner warns, how long one lasts, where it may go, and whether patients may ask for one from LumeMedLink, with the closed lists to draw. **The defaults:** two a day, 15 minutes, in a gap or after a block, only the practice asks. The warning refuses nothing; the platform’s limit does.\n\n**Who may:** the professional their own, and the PRACTICE_ADMIN anyone’s — the rule of `getReminderSettings`. Another professional’s profile, a retired one and one that is not this practice’s are a 404; a receptionist a 403. Audited.",
+        "operationId": "getOverbookRules",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID — resolved and authorized by the guard.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookRulesDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "professionals"
+        ]
+      },
+      "put": {
+        "description": "Replace the overbook rules of this professional (task 0156, `ADR-0104`). Every field is required: `maxPerDay` 0 to 20, `minutes` one of `minutesOptions`, `placement` one of `placementOptions`. The planner reads them at once; overbooks already booked are not touched. **Who may:** as `getOverbookRules`. Audited.",
+        "operationId": "setOverbookRules",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID — resolved and authorized by the guard.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOverbookRulesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookRulesDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "professionals"
+        ]
+      }
+    },
     "/v1/orgs/{tenantId}/professionals/{id}/absences": {
       "post": {
         "description": "Declare an absence: a RANGE `[startsAt, endsAt)` (`ADR-0062`, 0.73.0; the author, 2026-09-26). During it the agenda is closed: no hour of it is offered and a patient cannot book in it, and **a patient is shown the closed period** (`listDirectoryClosedPeriods`). **The professional is still found**, as they chose; an absence closes hours and not a person. An absence has a start and an end, always: only retiring the profile has none, and that is `retireProfile`. At most 730 days; it may begin in the past, since a leave declared late closes the hours that are left, **and it is stored from the moment it is declared** (the part that already went by closes nothing, so the `startsAt` that comes back is never earlier than that instant); it cannot be over already. The professional declares their own, and a receptionist those of the professionals assigned to her; an administrator is refused at the guard (403). **Appointments already booked inside it are not touched**, and the practice's own booking is not restricted by it yet (ADR-0086 §6, slice (6)). Two absences of one professional cannot overlap (409). Audited.",
@@ -9554,6 +10002,1331 @@
         "summary": "",
         "tags": [
           "home-visits"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/professionals/{id}/agenda-statistics": {
+      "get": {
+        "description": "What this professional’s agenda adds up to for the week and the month that hold `date` (task 0152, `ADR-0103`): the week’s hours and the week before’s, the declared and the booked time of each day, the slowest day, the confirmed and the waiting hours, the five rows of «Tipos de atención», and for the month the attended, moved and missed hours, the no-shows against the month before, the demand by band and how the hours arrived (`origin`). Every share states its base, and a share over nothing is `null`.\n\nCounted by the platform from what the agenda records; nothing clinical is read. Weeks (ISO, Monday first), months, days and bands are the agenda’s wall clock, America/Santiago. A patient under a restriction of processing, or whose record was retired, contributes nothing, and nothing says how many there were. No figure carries a cause.\n\n**Who may:** the professional their own, and the PRACTICE_ADMIN anyone’s — the rule of `getReminderSettings`. Another professional’s profile, a retired one and one that is not this practice’s are a 404; a receptionist is a 403. Audited, the refusal too.",
+        "operationId": "getAgendaStatistics",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "A civil date, `YYYY-MM-DD`, on the agenda’s clock (America/Santiago): for `getAgendaStatistics` its week and its month, for `getReminderDashboard` that day and its month. Default: today.",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgendaStatisticsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "professionals"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/professionals/{id}/reminders/dashboard": {
+      "get": {
+        "description": "How this professional’s reminders went on `date` (task 0152, `ADR-0103`): the two rules with their state (task 0151), the channels and whether each sends, every reminder sent that day for their hours with the state of its hour now, and the no-shows of the month against the month before and over the last three months. The list carries the patient’s id, never her name, and the audit line names the patients it listed. A reminder that did not go out (no consent, her objection to the channel, a restriction) is not in it.\n\nCounted by the platform from what the agenda records; nothing clinical is read. Weeks (ISO, Monday first), months, days and bands are the agenda’s wall clock, America/Santiago. A patient under a restriction of processing, or whose record was retired, contributes nothing, and nothing says how many there were. No figure carries a cause.\n\n**Who may:** the professional their own, and the PRACTICE_ADMIN anyone’s — the rule of `getReminderSettings`. Another professional’s profile, a retired one and one that is not this practice’s are a 404; a receptionist is a 403. Audited, the refusal too.",
+        "operationId": "getReminderDashboard",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "A civil date, `YYYY-MM-DD`, on the agenda’s clock (America/Santiago): for `getAgendaStatistics` its week and its month, for `getReminderDashboard` that day and its month. Default: today.",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderDashboardDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "professionals"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/professionals/{id}/overbook-days": {
+      "get": {
+        "description": "Step 2 of the overbook planner (task 0156, `ADR-0104`): the days of this professional’s agenda over a range (default two weeks from today, at most 31 days), each with its state, its live hours and its overbooks, the professional’s warning and the platform’s limit. A day that is not `OPEN` cannot be chosen.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her. Another agenda, a retired profile and one that is not this practice’s are a 404; a practice administrator is a 403. Audited.",
+        "operationId": "getOverbookDays",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "The first civil day, on the agenda’s clock (America/Santiago). Default: today.",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "The last civil day, included. Default: 14 days from `from`. At most 31 days in one read.",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookDaysDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "professionals"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/professionals/{id}/overbook-options": {
+      "get": {
+        "description": "Step 3 of the overbook planner (task 0156, `ADR-0104`): where an overbook can go on one day of this professional’s agenda — in a gap that displaces nobody, or after a block, extending the day — which one is recommended, which fall on the patient’s own hours, the closed stretches with their reason, and whether the day has reached the professional’s warning or the platform’s limit. Options ahead of now only. Book the one chosen with `book` and `overbook`.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her. Another agenda, a retired profile and one that is not this practice’s are a 404; a practice administrator is a 403. Audited.",
+        "operationId": "getOverbookOptions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque professional-profile id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "The civil day, on the agenda’s clock (America/Santiago).",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "patientId",
+            "required": false,
+            "in": "query",
+            "description": "The patient the overbook is for: an option that falls on one of her own hours reads `unavailableReason: PATIENT_BUSY`. A patient who is not this practice’s is a 404.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookOptionsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "professionals"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/patients/{patientId}/overbook-requests": {
+      "post": {
+        "description": "Record a request for an overbook that came by PHONE (task 0157, `ADR-0105`): the professional, the urgency and a non-clinical reason, from closed lists. One request waits per patient and professional: a second is `409 pending_request_exists`, unless it is a retry of the same `clientId`, which answers the one it made. Granting it is `book` with `overbook`, then `grantOverbookRequest`.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. A request of another agenda or another practice is a 404. Audited.",
+        "operationId": "recordOverbookRequest",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "path",
+            "description": "Opaque patient id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordOverbookRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookRequestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`pending_request_exists`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/overbook-requests": {
+      "get": {
+        "description": "The requests for an overbook of the agendas the caller runs (task 0157, `ADR-0105`), optionally of one professional and one status, most urgent first and then the one that has waited longest. They come from LumeMedLink or by phone; none carries clinical data. A patient under a restriction of processing is left out, and the audit line names the patients it listed.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. A request of another agenda or another practice is a 404. Audited.",
+        "operationId": "listOverbookRequests",
+        "parameters": [
+          {
+            "name": "professionalProfileId",
+            "required": false,
+            "in": "query",
+            "description": "One professional; omitted, every agenda the caller runs.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "One status; omitted, all. «Pendientes» is `PENDING`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "GRANTED",
+                "DECLINED",
+                "WITHDRAWN"
+              ]
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookRequestListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/overbook-requests/{id}": {
+      "patch": {
+        "description": "Correct the urgency of a request that waits (task 0157): she proposes it from her app, the practice decides. A request that no longer waits is `409 conflict`.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. A request of another agenda or another practice is a 404. Audited.",
+        "operationId": "setOverbookRequestUrgency",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque request id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOverbookRequestUrgencyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookRequestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`conflict`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/overbook-requests/{id}/decline": {
+      "post": {
+        "description": "Decline a request that waits (task 0157, `ADR-0105`). Her e-mail is queued with the author’s text: «No fue posible darle un sobrecupo. Puede reservar una hora desde la app LumeMedLink.» — no hour, no reason; the outbox does not send it while she is restricted, objected to e-mail or has none. A request already declined answers as it did and queues nothing more; one granted or withdrawn is `409 conflict`.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. A request of another agenda or another practice is a 404. Audited.",
+        "operationId": "declineOverbookRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque request id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookRequestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`conflict`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/overbook-requests/{id}/grant": {
+      "post": {
+        "description": "Grant a request that waits with the overbook that answers it (task 0157, `ADR-0105`): book it first with `book` and `overbook` — the planner’s `getOverbookOptions` with her `patientId` says where —, then name it here. It must be a live overbook of the same patient with the same professional, booked after she asked: anything else is `409 conflict`, as a request that no longer waits. The booking already told her of her hour.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. A request of another agenda or another practice is a 404. Audited.",
+        "operationId": "grantOverbookRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque request id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrantOverbookRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverbookRequestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`conflict`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/patient/overbook-requests": {
+      "post": {
+        "description": "Ask a professional’s practice for an overbook (task 0157, `ADR-0105`): the professional by the directory’s id, an urgency you propose and a non-clinical reason, from closed lists. **Only a professional whose rule lets patients ask** can be asked, at a clinic you are enrolled at: anything else is a 404, which does not say which. One request waits per professional (`409 pending_request_exists`); a retry of the same `clientId` answers the one you made. The practice grants it with an hour, which reaches you as any booking does, or declines it, which you are told by e-mail.",
+        "operationId": "requestMyOverbook",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestMyOverbookDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyOverbookRequestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`pending_request_exists`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      },
+      "get": {
+        "description": "Your requests for an overbook, at every clinic you are enrolled at, newest first (task 0157). At most 100.",
+        "operationId": "listMyOverbookRequests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyOverbookRequestListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      }
+    },
+    "/v1/patient/overbook-requests/{id}/withdraw": {
+      "post": {
+        "description": "Withdraw one of your requests while it waits (task 0157). One that no longer waits is `409 conflict`.",
+        "operationId": "withdrawMyOverbookRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque request id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyOverbookRequestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`conflict`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
         ]
       }
     },
@@ -22891,7 +24664,7 @@
   "info": {
     "title": "lumemed-cloud API",
     "description": "Backend contract for the Lume Cloud medical platform. Errors are RFC 9457 problem+json. A string's `minLength` and `maxLength` count UTF-16 code units, as JavaScript counts them: a character outside the Basic Multilingual Plane, such as most emoji, counts two, and an emoji built from several characters (a flag, a skin tone) counts each of them. Count the same way before sending, or a text within a limit counted another way is refused with 400.",
-    "version": "0.131.0",
+    "version": "0.135.0",
     "contact": {}
   },
   "tags": [
@@ -25424,6 +27197,10 @@
               "PRACTICE"
             ]
           },
+          "referred": {
+            "description": "The practice marks the hour as referred from another professional or provider (ADR-0103, 0.133.0): the appointment reads `origin: REFERRAL`, and the agenda's statistics count it apart. Omitted or `false`, it reads `origin: PRACTICE`. Who referred her is not recorded. Written once: a move keeps it, and nothing changes it afterwards.",
+            "type": "boolean"
+          },
           "confirmClosedTime": {
             "description": "The kinds of closed time of the professional you confirm this hour may fall on (ADR-0086 §6, 0.95.0): `ABSENCE` (inside an absence), `HOLIDAY` (a holiday they did not open, with no extra hours covering it), `BREAK` (inside the break they keep after an appointment). **Left out, an hour on closed time is a `409`** whose `type` names the first kind it falls on (`closed_time_absence`, `closed_time_holiday`, `closed_time_break`); re-send the same request with that kind here to book it. Name only what you were told: a kind you did not confirm is refused again, even if it appeared since. Nothing opens to patients, and the audit trail records the hour as placed on closed time, and on which.",
             "type": "array",
@@ -25438,7 +27215,7 @@
             }
           },
           "overbook": {
-            "description": "Book this hour over one the professional already holds, as an OVERBOOK (ADR-0100, 0.127.0). **Left out, a taken hour is a `409 professional_busy`**; re-send the same request with this to book it. The hour is an overbook only if it is still taken when it lands: sent for a free hour, it books an ordinary one and `overbookReason` reads `null`. An overbook is never over the PATIENT's own commitments (`patient_unavailable` stays), it meets closed time as any hour (the hour it overlaps is not its break), and the professional may hold only as many on one day as the platform allows: past it, `409 overbook_limit_reached`. Audited as an overbook.",
+            "description": "Book this hour as an OVERBOOK (ADR-0100, 0.127.0; ADR-0104, 0.134.0). **Left out, a taken hour is a `409 professional_busy`**; re-send the same request with this to book it over the hour. **Since 0.134.0 it is the practice's mark wherever it lands**: sent for a free hour — a gap or the end of a block that `getOverbookOptions` offered — it books an overbook too, and counts against the day's limit. Until 0.133.0 a free hour booked an ordinary one. An overbook is never over the PATIENT's own commitments (`patient_unavailable` stays), it meets closed time as any hour (the hour it overlaps is not its break), and the professional may hold only as many on one day as the platform allows: past it, `409 overbook_limit_reached`. Audited as an overbook.",
             "type": "object",
             "properties": {
               "reason": {
@@ -25563,7 +27340,7 @@
             "nullable": true
           },
           "overbookReason": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENCY, UNPOSTPONABLE_FOLLOW_UP, PATIENT_REQUEST, OTHER. Why the practice booked this hour over one the professional already held (ADR-0100, 0.127.0): an OVERBOOK, to draw apart and to count. `null` for an ordinary hour. Set when it is booked and never changed; an overbook that is cancelled keeps it.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENCY, UNPOSTPONABLE_FOLLOW_UP, PATIENT_REQUEST, OTHER. Why the practice booked this hour as an OVERBOOK (ADR-0100, 0.127.0): over an hour the professional held, or, since 0.134.0, in a gap or after a block (ADR-0104). To draw apart and to count. `null` for an ordinary hour. Set when it is booked and never changed; an overbook that is cancelled keeps it.",
             "type": "string",
             "nullable": true
           },
@@ -25603,6 +27380,11 @@
           },
           "requestedBy": {
             "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT, PRACTICE. Which side asked for this appointment (ADR-0057, 0.61.0): `PATIENT` — she asked, from LumeMedLink or by phone or in person — or `PRACTICE`, which proposed the hour to her. **The other side confirms it.** While it waits, the appointment reads `REQUESTED` or `SCHEDULED`: a `SCHEDULED` one asked for by the practice waits for her (she confirms from LumeMedLink, or the practice for her by phone, `transition` to `CONFIRMED`), and one asked for by her waits for the practice. An appointment can also end — cancelled, attended or missed — without ever being confirmed. `null` on an appointment made before 0.61.0: not recorded, never «nobody».",
+            "type": "string",
+            "nullable": true
+          },
+          "origin": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ONLINE, PRACTICE, REFERRAL. How the appointment arrived (ADR-0103, 0.133.0): `ONLINE`, booked by her from LumeMedLink or the directory; `PRACTICE`, booked by the practice with `book` — also when she asked by phone or in person, which `requestedBy: PATIENT` says; `REFERRAL`, booked by the practice and marked as referred from another professional or provider (`book` with `referred: true`). The database stamps it by who writes, and a moved hour keeps the origin of the one it replaces. `null` on an appointment made before 0.133.0, or moved from one: not recorded.",
             "type": "string",
             "nullable": true
           },
@@ -25681,6 +27463,7 @@
           "rescheduleReason",
           "requestExpiresAt",
           "requestedBy",
+          "origin",
           "confirmedBy",
           "confirmedAt",
           "homeVisitAddress"
@@ -25778,7 +27561,7 @@
                   "nullable": true
                 },
                 "overbookReason": {
-                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENCY, UNPOSTPONABLE_FOLLOW_UP, PATIENT_REQUEST, OTHER. Why the practice booked this hour over one the professional already held (ADR-0100, 0.127.0): an OVERBOOK, to draw apart and to count. `null` for an ordinary hour. Set when it is booked and never changed; an overbook that is cancelled keeps it.",
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENCY, UNPOSTPONABLE_FOLLOW_UP, PATIENT_REQUEST, OTHER. Why the practice booked this hour as an OVERBOOK (ADR-0100, 0.127.0): over an hour the professional held, or, since 0.134.0, in a gap or after a block (ADR-0104). To draw apart and to count. `null` for an ordinary hour. Set when it is booked and never changed; an overbook that is cancelled keeps it.",
                   "type": "string",
                   "nullable": true
                 },
@@ -25818,6 +27601,11 @@
                 },
                 "requestedBy": {
                   "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT, PRACTICE. Which side asked for this appointment (ADR-0057, 0.61.0): `PATIENT` — she asked, from LumeMedLink or by phone or in person — or `PRACTICE`, which proposed the hour to her. **The other side confirms it.** While it waits, the appointment reads `REQUESTED` or `SCHEDULED`: a `SCHEDULED` one asked for by the practice waits for her (she confirms from LumeMedLink, or the practice for her by phone, `transition` to `CONFIRMED`), and one asked for by her waits for the practice. An appointment can also end — cancelled, attended or missed — without ever being confirmed. `null` on an appointment made before 0.61.0: not recorded, never «nobody».",
+                  "type": "string",
+                  "nullable": true
+                },
+                "origin": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ONLINE, PRACTICE, REFERRAL. How the appointment arrived (ADR-0103, 0.133.0): `ONLINE`, booked by her from LumeMedLink or the directory; `PRACTICE`, booked by the practice with `book` — also when she asked by phone or in person, which `requestedBy: PATIENT` says; `REFERRAL`, booked by the practice and marked as referred from another professional or provider (`book` with `referred: true`). The database stamps it by who writes, and a moved hour keeps the origin of the one it replaces. `null` on an appointment made before 0.133.0, or moved from one: not recorded.",
                   "type": "string",
                   "nullable": true
                 },
@@ -25896,6 +27684,7 @@
                 "rescheduleReason",
                 "requestExpiresAt",
                 "requestedBy",
+                "origin",
                 "confirmedBy",
                 "confirmedAt",
                 "homeVisitAddress"
@@ -26039,7 +27828,7 @@
             }
           },
           "overbook": {
-            "description": "Book this hour over one the professional already holds, as an OVERBOOK (ADR-0100, 0.127.0). **Left out, a taken hour is a `409 professional_busy`**; re-send the same request with this to book it. The hour is an overbook only if it is still taken when it lands: sent for a free hour, it books an ordinary one and `overbookReason` reads `null`. An overbook is never over the PATIENT's own commitments (`patient_unavailable` stays), it meets closed time as any hour (the hour it overlaps is not its break), and the professional may hold only as many on one day as the platform allows: past it, `409 overbook_limit_reached`. Audited as an overbook.",
+            "description": "Book this hour as an OVERBOOK (ADR-0100, 0.127.0; ADR-0104, 0.134.0). **Left out, a taken hour is a `409 professional_busy`**; re-send the same request with this to book it over the hour. **Since 0.134.0 it is the practice's mark wherever it lands**: sent for a free hour — a gap or the end of a block that `getOverbookOptions` offered — it books an overbook too, and counts against the day's limit. Until 0.133.0 a free hour booked an ordinary one. An overbook is never over the PATIENT's own commitments (`patient_unavailable` stays), it meets closed time as any hour (the hour it overlaps is not its break), and the professional may hold only as many on one day as the platform allows: past it, `409 overbook_limit_reached`. Audited as an overbook.",
             "type": "object",
             "properties": {
               "reason": {
@@ -26158,13 +27947,18 @@
                   "type": "string",
                   "nullable": true
                 },
+                "origin": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ONLINE, PRACTICE, REFERRAL. How the appointment arrived (ADR-0103, 0.133.0): `ONLINE`, booked by her from LumeMedLink or the directory; `PRACTICE`, booked by the practice with `book` — also when she asked by phone or in person, which `requestedBy: PATIENT` says; `REFERRAL`, booked by the practice and marked as referred from another professional or provider (`book` with `referred: true`). The database stamps it by who writes, and a moved hour keeps the origin of the one it replaces. `null` on an appointment made before 0.133.0, or moved from one: not recorded.",
+                  "type": "string",
+                  "nullable": true
+                },
                 "confirmedBy": {
                   "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT, PRACTICE, PRACTICE_FOR_PATIENT. How it was confirmed (ADR-0057, 0.61.0): `PATIENT`, by her from LumeMedLink; `PRACTICE`, by the practice as the side that was asked — booking an hour she asked for, confirming one she booked, or accepting her request — and also on an appointment made before 0.61.0, where nobody on record asked; `PRACTICE_FOR_PATIENT`, by the practice on her behalf, by phone, for an hour it proposed. It never changes once set. `null` while it is not confirmed, on one that ended without a confirmation, and on one confirmed before 0.61.0: not recorded.",
                   "type": "string",
                   "nullable": true
                 },
                 "overbookReason": {
-                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENCY, UNPOSTPONABLE_FOLLOW_UP, PATIENT_REQUEST, OTHER. Why the practice booked this hour over one the professional already held (ADR-0100, 0.127.0): an OVERBOOK, to draw apart and to count. `null` for an ordinary hour. Set when it is booked and never changed; an overbook that is cancelled keeps it.",
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENCY, UNPOSTPONABLE_FOLLOW_UP, PATIENT_REQUEST, OTHER. Why the practice booked this hour as an OVERBOOK (ADR-0100, 0.127.0): over an hour the professional held, or, since 0.134.0, in a gap or after a block (ADR-0104). To draw apart and to count. `null` for an ordinary hour. Set when it is booked and never changed; an overbook that is cancelled keeps it.",
                   "type": "string",
                   "nullable": true
                 },
@@ -26192,6 +27986,7 @@
                 "rescheduledFromId",
                 "requestExpiresAt",
                 "requestedBy",
+                "origin",
                 "confirmedBy",
                 "overbookReason",
                 "closedAt"
@@ -27307,6 +29102,259 @@
             "exclusiveMaximum": false
           }
         }
+      },
+      "ReminderSettingsDto": {
+        "type": "object",
+        "properties": {
+          "first": {
+            "description": "The earlier reminder.",
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "leadHours": {
+                "description": "Hours before the hour starts, one of `leadHoursOptions`.",
+                "type": "integer"
+              },
+              "channels": {
+                "description": "How it is sent. Today only `EMAIL` sends.",
+                "type": "array",
+                "items": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EMAIL, SMS.",
+                  "type": "string"
+                }
+              },
+              "asksConfirmation": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "enabled",
+              "leadHours",
+              "channels",
+              "asksConfirmation"
+            ]
+          },
+          "second": {
+            "description": "The later reminder, closer to the hour.",
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "leadHours": {
+                "description": "Hours before the hour starts, one of `leadHoursOptions`.",
+                "type": "integer"
+              },
+              "channels": {
+                "description": "How it is sent. Today only `EMAIL` sends.",
+                "type": "array",
+                "items": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EMAIL, SMS.",
+                  "type": "string"
+                }
+              },
+              "asksConfirmation": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "enabled",
+              "leadHours",
+              "channels",
+              "asksConfirmation"
+            ]
+          },
+          "leadHoursOptions": {
+            "description": "The closed list of leads the platform accepts, in hours, shortest first. A client draws these and writes no number of its own.",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "channelOptions": {
+            "description": "The channels that really send today. A client offers these and no other; a channel without a provider is not here.",
+            "type": "array",
+            "items": {
+              "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EMAIL, SMS.",
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "first",
+          "second",
+          "leadHoursOptions",
+          "channelOptions"
+        ]
+      },
+      "SetReminderSettingsDto": {
+        "type": "object",
+        "properties": {
+          "first": {
+            "description": "The earlier reminder. Its lead must be longer than the second's, switched on or not.",
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "description": "Whether this reminder is sent. Off, nothing else in it is used, and it is kept as it is.",
+                "type": "boolean"
+              },
+              "leadHours": {
+                "description": "Hours before the hour starts. One of 1, 2, 3, 6, 12, 24, 48, 72 — the list `leadHoursOptions` publishes; any other value is a 400.",
+                "type": "integer"
+              },
+              "channels": {
+                "description": "How it is sent, at least one, each once. **Only the channels in `channelOptions` are accepted**: `SMS` has no provider yet, and a rule that names it is a 400. Her objection to a channel (`ADR-0061`) still wins at send time.",
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 2,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "EMAIL",
+                    "SMS"
+                  ]
+                }
+              },
+              "asksConfirmation": {
+                "description": "Whether the reminder invites her to confirm or cancel from her app (`confirmMyAppointment`, `cancelMyAppointment`). **Only where she can do both**: an hour the practice proposed that still waits for her (`SCHEDULED`, `requestedBy: PRACTICE`), while `cancelCutoffHours` still lets her cancel it, to a patient whose record is linked to the app. The cutoff is judged when the reminder goes out, not when she reads it, and a suspended account keeps its link and is still invited (the portal answers it 403). On any other hour the reminder says what it always said. A cancellation reaches the practice's notices (`ADR-0099`); a confirmation is seen in the agenda, and nobody is notified.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "enabled",
+              "leadHours",
+              "channels",
+              "asksConfirmation"
+            ]
+          },
+          "second": {
+            "description": "The later reminder, closer to the hour.",
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "description": "Whether this reminder is sent. Off, nothing else in it is used, and it is kept as it is.",
+                "type": "boolean"
+              },
+              "leadHours": {
+                "description": "Hours before the hour starts. One of 1, 2, 3, 6, 12, 24, 48, 72 — the list `leadHoursOptions` publishes; any other value is a 400.",
+                "type": "integer"
+              },
+              "channels": {
+                "description": "How it is sent, at least one, each once. **Only the channels in `channelOptions` are accepted**: `SMS` has no provider yet, and a rule that names it is a 400. Her objection to a channel (`ADR-0061`) still wins at send time.",
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 2,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "EMAIL",
+                    "SMS"
+                  ]
+                }
+              },
+              "asksConfirmation": {
+                "description": "Whether the reminder invites her to confirm or cancel from her app (`confirmMyAppointment`, `cancelMyAppointment`). **Only where she can do both**: an hour the practice proposed that still waits for her (`SCHEDULED`, `requestedBy: PRACTICE`), while `cancelCutoffHours` still lets her cancel it, to a patient whose record is linked to the app. The cutoff is judged when the reminder goes out, not when she reads it, and a suspended account keeps its link and is still invited (the portal answers it 403). On any other hour the reminder says what it always said. A cancellation reaches the practice's notices (`ADR-0099`); a confirmation is seen in the agenda, and nobody is notified.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "enabled",
+              "leadHours",
+              "channels",
+              "asksConfirmation"
+            ]
+          }
+        },
+        "required": [
+          "first",
+          "second"
+        ]
+      },
+      "OverbookRulesDto": {
+        "type": "object",
+        "properties": {
+          "maxPerDay": {
+            "description": "How many a day before the planner warns. It refuses nothing.",
+            "type": "integer"
+          },
+          "minutes": {
+            "description": "How long an overbook the planner places lasts, one of `minutesOptions`.",
+            "type": "integer"
+          },
+          "placement": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: GAP, END_OF_BLOCK, BOTH. Where the overbook planner places one (`getOverbookOptions`): `GAP`, in a gap between two hours that the public grid cannot offer; `END_OF_BLOCK`, right after a block ends, which extends the day; `BOTH`. Never on a break, a closed day or an absence.",
+            "type": "string"
+          },
+          "patientRequests": {
+            "description": "Whether patients may ask this professional for an overbook from LumeMedLink (`requestMyOverbook`, task 0157, ADR-0105). `false`, the default: only the practice records a request, by phone (`recordOverbookRequest`).",
+            "type": "boolean"
+          },
+          "minutesOptions": {
+            "description": "The closed list of lengths the platform accepts, shortest first. A client draws these.",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "placementOptions": {
+            "description": "The places a rule may name.",
+            "type": "array",
+            "items": {
+              "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: GAP, END_OF_BLOCK, BOTH.",
+              "type": "string"
+            }
+          },
+          "maxPerDayLimit": {
+            "description": "The highest `maxPerDay` the platform accepts.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "maxPerDay",
+          "minutes",
+          "placement",
+          "patientRequests",
+          "minutesOptions",
+          "placementOptions",
+          "maxPerDayLimit"
+        ]
+      },
+      "SetOverbookRulesDto": {
+        "type": "object",
+        "properties": {
+          "maxPerDay": {
+            "description": "How many overbooks a day before the planner WARNS, 0 to 20 (ADR-0104). **It refuses nothing**: the platform’s own limit is the only one that refuses (`409 overbook_limit_reached`), whatever this says.",
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "maximum": 20,
+            "exclusiveMaximum": false
+          },
+          "minutes": {
+            "description": "How long an overbook the planner places lasts. One of 10, 15, 20, 30 — the list `minutesOptions` publishes.",
+            "type": "integer"
+          },
+          "placement": {
+            "description": "Where the overbook planner places one (`getOverbookOptions`): `GAP`, in a gap between two hours that the public grid cannot offer; `END_OF_BLOCK`, right after a block ends, which extends the day; `BOTH`. Never on a break, a closed day or an absence.",
+            "type": "string",
+            "enum": [
+              "GAP",
+              "END_OF_BLOCK",
+              "BOTH"
+            ]
+          },
+          "patientRequests": {
+            "description": "Whether patients may ask this professional for an overbook from LumeMedLink (`requestMyOverbook`, task 0157, ADR-0105). `false`, the default: only the practice records a request, by phone (`recordOverbookRequest`). Omitted, it keeps what it was: it arrived in 0.135.0, after the other three.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "maxPerDay",
+          "minutes",
+          "placement"
+        ]
       },
       "DeclareAbsenceDto": {
         "type": "object",
@@ -29389,6 +31437,1329 @@
         "required": [
           "dischargedOn",
           "reason"
+        ]
+      },
+      "AgendaStatisticsDto": {
+        "type": "object",
+        "properties": {
+          "week": {
+            "type": "object",
+            "properties": {
+              "startsOn": {
+                "description": "The Monday of the week (ISO weeks).",
+                "type": "string"
+              },
+              "isoYear": {
+                "type": "integer"
+              },
+              "isoWeek": {
+                "description": "The ISO number of the week in `isoYear`.",
+                "type": "integer"
+              },
+              "appointments": {
+                "description": "Hours of the week that are not cancelled. The base of every share in `kinds`.",
+                "type": "integer"
+              },
+              "previousWeekAppointments": {
+                "description": "The same count for the week before. The difference is `appointments` minus this.",
+                "type": "integer"
+              },
+              "declaredMinutes": {
+                "description": "The time the agenda declares for the week, the sum of `days`.",
+                "type": "integer"
+              },
+              "bookedMinutes": {
+                "description": "The part of the declared time that live hours cover, the sum of `days`.",
+                "type": "integer"
+              },
+              "occupancy": {
+                "description": "`bookedMinutes` over `declaredMinutes`.",
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer"
+                  },
+                  "percent": {
+                    "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "count",
+                  "percent"
+                ]
+              },
+              "confirmed": {
+                "description": "Hours of the week, not cancelled, that were confirmed — by either side, and whatever happened to them afterwards — over `appointments`. An hour confirmed and then cancelled is not counted.",
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer"
+                  },
+                  "percent": {
+                    "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "count",
+                  "percent"
+                ]
+              },
+              "awaitingConfirmation": {
+                "description": "Hours of the week still waiting for a side to confirm them (`REQUESTED`, `SCHEDULED`).",
+                "type": "integer"
+              },
+              "days": {
+                "description": "The seven days of the week, Monday first, zero included: a day the agenda does not declare reads `declaredMinutes: 0`.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "description": "A civil date, `YYYY-MM-DD`, on the agenda’s clock.",
+                      "type": "string"
+                    },
+                    "isoWeekday": {
+                      "description": "1 = Monday … 7 = Sunday.",
+                      "type": "integer"
+                    },
+                    "declaredMinutes": {
+                      "description": "The weekly blocks of the day at its active places, plus its extra openings there, less its absences. A holiday the professional did not open declares nothing, as the booking reads it. Breaks between hours are part of it.",
+                      "type": "integer"
+                    },
+                    "bookedMinutes": {
+                      "description": "The part of the declared time that live hours cover. An overbook’s minutes count once; an hour outside the declared time adds nothing.",
+                      "type": "integer"
+                    },
+                    "occupancy": {
+                      "description": "`bookedMinutes` over `declaredMinutes`; `percent` is `null` on a day that declares nothing.",
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "percent": {
+                          "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                          "type": "number",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "percent"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "date",
+                    "isoWeekday",
+                    "declaredMinutes",
+                    "bookedMinutes",
+                    "occupancy"
+                  ]
+                }
+              },
+              "slowestDay": {
+                "description": "The day with the most declared time left unbooked, the earliest on a tie. `null` when the week declares none. Nothing says why.",
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "description": "A civil date, `YYYY-MM-DD`, on the agenda’s clock.",
+                    "type": "string"
+                  },
+                  "freeMinutes": {
+                    "description": "Declared minutes left unbooked.",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "date",
+                  "freeMinutes"
+                ],
+                "nullable": true
+              },
+              "kinds": {
+                "description": "The five rows of «Tipos de atención», each over `appointments`. They mix the channel, the first visit and the state, so they do not add up to 100.",
+                "type": "object",
+                "properties": {
+                  "inPerson": {
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  },
+                  "telemedicine": {
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  },
+                  "homeVisit": {
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  },
+                  "firstVisit": {
+                    "description": "Hours with no earlier hour of the same patient with the same professional that was neither cancelled nor missed. A moved first visit is still the first.",
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  },
+                  "awaitingConfirmation": {
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  }
+                },
+                "required": [
+                  "inPerson",
+                  "telemedicine",
+                  "homeVisit",
+                  "firstVisit",
+                  "awaitingConfirmation"
+                ]
+              }
+            },
+            "required": [
+              "startsOn",
+              "isoYear",
+              "isoWeek",
+              "appointments",
+              "previousWeekAppointments",
+              "declaredMinutes",
+              "bookedMinutes",
+              "occupancy",
+              "confirmed",
+              "awaitingConfirmation",
+              "days",
+              "slowestDay",
+              "kinds"
+            ]
+          },
+          "month": {
+            "type": "object",
+            "properties": {
+              "month": {
+                "description": "`YYYY-MM`, on the agenda’s clock.",
+                "type": "string"
+              },
+              "appointments": {
+                "description": "Hours of the month that are not cancelled, plus those cancelled by a move (`rescheduled`). The base of `completed`, `rescheduled` and `noShows`.",
+                "type": "integer"
+              },
+              "completed": {
+                "description": "Hours marked `COMPLETED`.",
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer"
+                  },
+                  "percent": {
+                    "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "count",
+                  "percent"
+                ]
+              },
+              "rescheduled": {
+                "description": "Hours of the month that were moved: cancelled, with a new hour made from them that outlived the cancellation. A request to move that was declined, expired or withdrawn does not make the hour a moved one.",
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer"
+                  },
+                  "percent": {
+                    "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "count",
+                  "percent"
+                ]
+              },
+              "noShows": {
+                "description": "Hours marked `NO_SHOW`.",
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer"
+                  },
+                  "percent": {
+                    "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "count",
+                  "percent"
+                ]
+              },
+              "previousMonthNoShows": {
+                "type": "integer"
+              },
+              "noShowChangePercent": {
+                "description": "The change of the no-shows against the previous month, in percent with one decimal. `null` when that month had none.",
+                "type": "number",
+                "nullable": true
+              },
+              "bands": {
+                "description": "Bands of 2 hours, chosen by the platform: every band the weekly blocks touch, zero included, and any other the month’s hours started in. Most demanded first, then by hour. Nothing says why a band fills.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "startsAt": {
+                      "description": "`HH:MM`, wall clock.",
+                      "type": "string"
+                    },
+                    "endsAt": {
+                      "description": "`HH:MM`, wall clock; `00:00` closes the last band of a day.",
+                      "type": "string"
+                    },
+                    "appointments": {
+                      "description": "Live hours of the month that start in the band.",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "startsAt",
+                    "endsAt",
+                    "appointments"
+                  ]
+                }
+              },
+              "origin": {
+                "description": "How the month’s live hours arrived (ADR-0103), each over the hours that are not cancelled.",
+                "type": "object",
+                "properties": {
+                  "online": {
+                    "description": "`origin: ONLINE`: booked by her from LumeMedLink or the directory.",
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  },
+                  "practice": {
+                    "description": "`origin: PRACTICE`: booked by the practice, also when she asked by phone.",
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  },
+                  "referral": {
+                    "description": "`origin: REFERRAL`: booked by the practice as a referral.",
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  },
+                  "notRecorded": {
+                    "description": "Hours made before 0.133.0, which did not record how they arrived.",
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "percent": {
+                        "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                        "type": "number",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "count",
+                      "percent"
+                    ]
+                  }
+                },
+                "required": [
+                  "online",
+                  "practice",
+                  "referral",
+                  "notRecorded"
+                ]
+              }
+            },
+            "required": [
+              "month",
+              "appointments",
+              "completed",
+              "rescheduled",
+              "noShows",
+              "previousMonthNoShows",
+              "noShowChangePercent",
+              "bands",
+              "origin"
+            ]
+          }
+        },
+        "required": [
+          "week",
+          "month"
+        ]
+      },
+      "ReminderDashboardDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "description": "The day «today» means.",
+            "type": "string"
+          },
+          "rules": {
+            "description": "The two reminders as `getReminderSettings` reads them (task 0151). There is no other kind of reminder.",
+            "type": "object",
+            "properties": {
+              "first": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "description": "`true`: active; `false`: paused.",
+                    "type": "boolean"
+                  },
+                  "leadHours": {
+                    "type": "integer"
+                  },
+                  "channels": {
+                    "type": "array",
+                    "items": {
+                      "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EMAIL, SMS.",
+                      "type": "string"
+                    }
+                  },
+                  "asksConfirmation": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled",
+                  "leadHours",
+                  "channels",
+                  "asksConfirmation"
+                ]
+              },
+              "second": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "description": "`true`: active; `false`: paused.",
+                    "type": "boolean"
+                  },
+                  "leadHours": {
+                    "type": "integer"
+                  },
+                  "channels": {
+                    "type": "array",
+                    "items": {
+                      "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EMAIL, SMS.",
+                      "type": "string"
+                    }
+                  },
+                  "asksConfirmation": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled",
+                  "leadHours",
+                  "channels",
+                  "asksConfirmation"
+                ]
+              }
+            },
+            "required": [
+              "first",
+              "second"
+            ]
+          },
+          "channels": {
+            "description": "Every channel the platform knows, and whether it sends. Today `EMAIL` sends and `SMS` is not configured; WhatsApp is not a channel.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "channel": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EMAIL, SMS.",
+                  "type": "string"
+                },
+                "state": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: SENDING, NOT_CONFIGURED. `SENDING`: the platform sends it. `NOT_CONFIGURED`: it has no provider, and a rule may not name it.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "channel",
+                "state"
+              ]
+            }
+          },
+          "today": {
+            "description": "The state of the reminded hours now, counted per reminder in `sentToday`: an hour reminded twice that day counts twice. Not attributed to the reminder: an hour may have been confirmed before it.",
+            "type": "object",
+            "properties": {
+              "sent": {
+                "description": "Reminders sent on the day: the length of `sentToday`. The base of the three shares.",
+                "type": "integer"
+              },
+              "confirmed": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer"
+                  },
+                  "percent": {
+                    "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "count",
+                  "percent"
+                ]
+              },
+              "cancelled": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer"
+                  },
+                  "percent": {
+                    "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "count",
+                  "percent"
+                ]
+              },
+              "noResponse": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer"
+                  },
+                  "percent": {
+                    "description": "`count` over the stated base, in percent with one decimal. `null` when the base is zero.",
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "count",
+                  "percent"
+                ]
+              }
+            },
+            "required": [
+              "sent",
+              "confirmed",
+              "cancelled",
+              "noResponse"
+            ]
+          },
+          "sentToday": {
+            "description": "Every reminder that went out on the day for this professional’s hours, oldest first. One hour can appear twice, once per reminder.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "appointmentId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "patientId": {
+                  "description": "For the app to draw the name from the record it already reads. The audit line names her.",
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "startsAt": {
+                  "description": "When the reminded hour starts, an instant.",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "slot": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: FIRST, SECOND.",
+                  "type": "string",
+                  "nullable": true
+                },
+                "channel": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EMAIL, SMS.",
+                  "type": "string"
+                },
+                "sentAt": {
+                  "description": "When the outbox sent it, an instant on the database’s clock.",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "hourState": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: CONFIRMED, CANCELLED, NO_RESPONSE. The hour’s state now: `CANCELLED`, `CONFIRMED` (by either side, at any time, also before 0.61.0 recorded how), or `NO_RESPONSE`.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "appointmentId",
+                "patientId",
+                "startsAt",
+                "slot",
+                "channel",
+                "sentAt",
+                "hourState"
+              ]
+            }
+          },
+          "month": {
+            "description": "`YYYY-MM` of `date`.",
+            "type": "string"
+          },
+          "monthNoShows": {
+            "type": "integer"
+          },
+          "previousMonthNoShows": {
+            "type": "integer"
+          },
+          "noShowChangePercent": {
+            "description": "In percent with one decimal; `null` when the previous month had none.",
+            "type": "number",
+            "nullable": true
+          },
+          "impact": {
+            "description": "The no-shows of the last 3 months, the month of `date` last. Nothing says the reminders caused them.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "month": {
+                  "type": "string"
+                },
+                "appointments": {
+                  "description": "The month’s hours, counted as `getAgendaStatistics` counts them.",
+                  "type": "integer"
+                },
+                "noShows": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "month",
+                "appointments",
+                "noShows"
+              ]
+            }
+          }
+        },
+        "required": [
+          "date",
+          "rules",
+          "channels",
+          "today",
+          "sentToday",
+          "month",
+          "monthNoShows",
+          "previousMonthNoShows",
+          "noShowChangePercent",
+          "impact"
+        ]
+      },
+      "OverbookDaysDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "rules": {
+            "type": "object",
+            "properties": {
+              "maxPerDay": {
+                "description": "The professional’s warning (`getOverbookRules`). It refuses nothing.",
+                "type": "integer"
+              },
+              "minutes": {
+                "description": "How long an option lasts.",
+                "type": "integer"
+              },
+              "placement": {
+                "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: GAP, END_OF_BLOCK, BOTH.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "maxPerDay",
+              "minutes",
+              "placement"
+            ]
+          },
+          "platformLimit": {
+            "description": "The platform’s limit of overbooks per professional and day: past it, `book` answers `409 overbook_limit_reached`.",
+            "type": "integer"
+          },
+          "days": {
+            "description": "Every day of the range, in order. A day that is not `OPEN` cannot be chosen.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "description": "`YYYY-MM-DD`.",
+                  "type": "string"
+                },
+                "isoWeekday": {
+                  "description": "1 = Monday … 7 = Sunday.",
+                  "type": "integer"
+                },
+                "state": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: OPEN, NOT_WORKING_DAY, HOLIDAY, ABSENT. `OPEN`: the agenda declares time that day. `NOT_WORKING_DAY`: no block and no extra opening. `HOLIDAY`: a holiday the professional did not open closed its weekly blocks (ADR-0086 §1). `ABSENT`: absences cover every block.",
+                  "type": "string"
+                },
+                "appointments": {
+                  "description": "Live hours of the professional that start that day, overbooks included.",
+                  "type": "integer"
+                },
+                "overbooks": {
+                  "description": "Of them, the overbooks. At `rules.maxPerDay` the app warns; at `platformLimit` the day takes no more.",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "date",
+                "isoWeekday",
+                "state",
+                "appointments",
+                "overbooks"
+              ]
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "rules",
+          "platformLimit",
+          "days"
+        ]
+      },
+      "OverbookOptionsDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "state": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: OPEN, NOT_WORKING_DAY, HOLIDAY, ABSENT. `OPEN`: the agenda declares time that day. `NOT_WORKING_DAY`: no block and no extra opening. `HOLIDAY`: a holiday the professional did not open closed its weekly blocks (ADR-0086 §1). `ABSENT`: absences cover every block.",
+            "type": "string"
+          },
+          "rules": {
+            "type": "object",
+            "properties": {
+              "maxPerDay": {
+                "description": "The professional’s warning (`getOverbookRules`). It refuses nothing.",
+                "type": "integer"
+              },
+              "minutes": {
+                "description": "How long an option lasts.",
+                "type": "integer"
+              },
+              "placement": {
+                "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: GAP, END_OF_BLOCK, BOTH.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "maxPerDay",
+              "minutes",
+              "placement"
+            ]
+          },
+          "overbooks": {
+            "description": "Overbooks already booked that day.",
+            "type": "integer"
+          },
+          "overProfessionalMax": {
+            "description": "`overbooks` has reached `rules.maxPerDay`: the app warns («ya tienes 2 sobrecupos el miércoles»). Booking is still allowed.",
+            "type": "boolean"
+          },
+          "platformLimit": {
+            "type": "integer"
+          },
+          "platformLimitReached": {
+            "description": "`overbooks` has reached `platformLimit`: `book` would answer `409 overbook_limit_reached`.",
+            "type": "boolean"
+          },
+          "freePublicSlots": {
+            "description": "Ordinary slots of the day still free and ahead: an hour that needs no overbook. A gap that holds one is not offered as an overbook.",
+            "type": "integer"
+          },
+          "options": {
+            "description": "Where an overbook can go, in order, filtered by `rules.placement`. Book one with `book`, its `startsAt` and `endsAt`, and `overbook` (ADR-0104): it needs no `confirmClosedTime`, since no option falls on a break or an absence. Empty on a day that is not `OPEN`.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "startsAt": {
+                  "description": "When the overbook would start, an instant.",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endsAt": {
+                  "description": "When it would end: `startsAt` plus `rules.minutes`.",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "kind": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: GAP, END_OF_BLOCK. `GAP`: free time between two hours, after their breaks, that the public grid cannot offer — it displaces nobody. `END_OF_BLOCK`: right after a block ends and after the last hour of it, before the next block — it extends the day.",
+                  "type": "string"
+                },
+                "extendsMinutes": {
+                  "description": "How far past the end of its block it goes; 0 for a gap.",
+                  "type": "integer"
+                },
+                "recommended": {
+                  "description": "The first available gap, else the end of block that extends the day least. At most one.",
+                  "type": "boolean"
+                },
+                "unavailableReason": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_BUSY. `PATIENT_BUSY`: it falls on one of her own hours at this practice.",
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "startsAt",
+                "endsAt",
+                "kind",
+                "extendsMinutes",
+                "recommended",
+                "unavailableReason"
+              ]
+            }
+          },
+          "closed": {
+            "description": "The stretches of the day where nothing can go, with their reason, for the app to draw greyed out.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "startsAt": {
+                  "description": "Start of the closed stretch, an instant.",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endsAt": {
+                  "description": "End of the closed stretch, an instant.",
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "reason": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ABSENCE, BETWEEN_BLOCKS. `ABSENCE`: a declared absence. `BETWEEN_BLOCKS`: the time between two blocks, such as the lunch break.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "startsAt",
+                "endsAt",
+                "reason"
+              ]
+            }
+          }
+        },
+        "required": [
+          "date",
+          "state",
+          "rules",
+          "overbooks",
+          "overProfessionalMax",
+          "platformLimit",
+          "platformLimitReached",
+          "freePublicSlots",
+          "options",
+          "closed"
+        ]
+      },
+      "RecordOverbookRequestDto": {
+        "type": "object",
+        "properties": {
+          "professionalProfileId": {
+            "description": "The professional she asks for, an agenda the caller runs.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "urgency": {
+            "description": "How urgent: `URGENT`, `PRIORITY` or `NORMAL`. The patient proposes it from her app; the practice may correct it while it waits.",
+            "type": "string",
+            "enum": [
+              "URGENT",
+              "PRIORITY",
+              "NORMAL"
+            ]
+          },
+          "reason": {
+            "description": "Why she asks, from a closed NON-CLINICAL list (ADR-0105): `EARLIER_FOLLOW_UP` («Adelantar mi control»), `REVIEW_RESULTS` («Revisar resultados de exámenes»), `RENEW_PRESCRIPTION` («Renovar una receta»), `OTHER`. No free text, no symptom.",
+            "type": "string",
+            "enum": [
+              "EARLIER_FOLLOW_UP",
+              "REVIEW_RESULTS",
+              "RENEW_PRESCRIPTION",
+              "OTHER"
+            ]
+          },
+          "clientId": {
+            "description": "Your own key for THIS request, so a retry answers the request it already made instead of a `409 pending_request_exists`. Unique to you within this patient.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "professionalProfileId",
+          "urgency",
+          "reason"
+        ]
+      },
+      "OverbookRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "professionalProfileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "origin": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_APP, PHONE. `PATIENT_APP`: she asked from LumeMedLink. `PHONE`: the practice recorded her call.",
+            "type": "string"
+          },
+          "urgency": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENT, PRIORITY, NORMAL. How urgent: `URGENT`, `PRIORITY` or `NORMAL`. The patient proposes it from her app; the practice may correct it while it waits.",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EARLIER_FOLLOW_UP, REVIEW_RESULTS, RENEW_PRESCRIPTION, OTHER. Why she asks, from a closed NON-CLINICAL list (ADR-0105): `EARLIER_FOLLOW_UP` («Adelantar mi control»), `REVIEW_RESULTS` («Revisar resultados de exámenes»), `RENEW_PRESCRIPTION` («Renovar una receta»), `OTHER`. No free text, no symptom.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PENDING, GRANTED, DECLINED, WITHDRAWN. `PENDING` waits for the practice. `GRANTED`: an overbook answers it (`appointmentId`). `DECLINED`: the practice said no, and she was told. `WITHDRAWN`: she took it back. Only `PENDING` changes.",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "When the platform created this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "description": "When it stopped waiting; `null` while it waits.",
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "appointmentId": {
+            "description": "The overbook that granted it; `null` until then.",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "patientId": {
+            "description": "Her record at this practice.",
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "professionalProfileId",
+          "origin",
+          "urgency",
+          "reason",
+          "status",
+          "createdAt",
+          "resolvedAt",
+          "appointmentId",
+          "patientId"
+        ]
+      },
+      "OverbookRequestListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Most urgent first, then the one that has waited longest. At most 500. A patient under a restriction of processing is left out.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "professionalProfileId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "origin": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_APP, PHONE. `PATIENT_APP`: she asked from LumeMedLink. `PHONE`: the practice recorded her call.",
+                  "type": "string"
+                },
+                "urgency": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENT, PRIORITY, NORMAL. How urgent: `URGENT`, `PRIORITY` or `NORMAL`. The patient proposes it from her app; the practice may correct it while it waits.",
+                  "type": "string"
+                },
+                "reason": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EARLIER_FOLLOW_UP, REVIEW_RESULTS, RENEW_PRESCRIPTION, OTHER. Why she asks, from a closed NON-CLINICAL list (ADR-0105): `EARLIER_FOLLOW_UP` («Adelantar mi control»), `REVIEW_RESULTS` («Revisar resultados de exámenes»), `RENEW_PRESCRIPTION` («Renovar una receta»), `OTHER`. No free text, no symptom.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PENDING, GRANTED, DECLINED, WITHDRAWN. `PENDING` waits for the practice. `GRANTED`: an overbook answers it (`appointmentId`). `DECLINED`: the practice said no, and she was told. `WITHDRAWN`: she took it back. Only `PENDING` changes.",
+                  "type": "string"
+                },
+                "createdAt": {
+                  "description": "When the platform created this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                  "type": "string"
+                },
+                "resolvedAt": {
+                  "description": "When it stopped waiting; `null` while it waits.",
+                  "type": "string",
+                  "format": "date-time",
+                  "nullable": true
+                },
+                "appointmentId": {
+                  "description": "The overbook that granted it; `null` until then.",
+                  "type": "string",
+                  "format": "uuid",
+                  "nullable": true
+                },
+                "patientId": {
+                  "description": "Her record at this practice.",
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "id",
+                "professionalProfileId",
+                "origin",
+                "urgency",
+                "reason",
+                "status",
+                "createdAt",
+                "resolvedAt",
+                "appointmentId",
+                "patientId"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "SetOverbookRequestUrgencyDto": {
+        "type": "object",
+        "properties": {
+          "urgency": {
+            "description": "How urgent: `URGENT`, `PRIORITY` or `NORMAL`. The patient proposes it from her app; the practice may correct it while it waits.",
+            "type": "string",
+            "enum": [
+              "URGENT",
+              "PRIORITY",
+              "NORMAL"
+            ]
+          }
+        },
+        "required": [
+          "urgency"
+        ]
+      },
+      "GrantOverbookRequestDto": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "description": "The overbook that answers it: booked with `book` and `overbook`, for the same patient with the same professional, after she asked.",
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "appointmentId"
+        ]
+      },
+      "RequestMyOverbookDto": {
+        "type": "object",
+        "properties": {
+          "professionalId": {
+            "description": "The professional, by the id the directory returned. Only one whose overbook rules let patients ask can be asked; any other is a 404.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "urgency": {
+            "description": "How urgent: `URGENT`, `PRIORITY` or `NORMAL`. The patient proposes it from her app; the practice may correct it while it waits.",
+            "type": "string",
+            "enum": [
+              "URGENT",
+              "PRIORITY",
+              "NORMAL"
+            ]
+          },
+          "reason": {
+            "description": "Why she asks, from a closed NON-CLINICAL list (ADR-0105): `EARLIER_FOLLOW_UP` («Adelantar mi control»), `REVIEW_RESULTS` («Revisar resultados de exámenes»), `RENEW_PRESCRIPTION` («Renovar una receta»), `OTHER`. No free text, no symptom.",
+            "type": "string",
+            "enum": [
+              "EARLIER_FOLLOW_UP",
+              "REVIEW_RESULTS",
+              "RENEW_PRESCRIPTION",
+              "OTHER"
+            ]
+          },
+          "clientId": {
+            "description": "Your own key for THIS request, so a retry answers the request it already made instead of a `409 pending_request_exists`. Unique to you within this patient.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "professionalId",
+          "urgency",
+          "reason"
+        ]
+      },
+      "MyOverbookRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "professionalProfileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "origin": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_APP, PHONE. `PATIENT_APP`: she asked from LumeMedLink. `PHONE`: the practice recorded her call.",
+            "type": "string"
+          },
+          "urgency": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENT, PRIORITY, NORMAL. How urgent: `URGENT`, `PRIORITY` or `NORMAL`. The patient proposes it from her app; the practice may correct it while it waits.",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EARLIER_FOLLOW_UP, REVIEW_RESULTS, RENEW_PRESCRIPTION, OTHER. Why she asks, from a closed NON-CLINICAL list (ADR-0105): `EARLIER_FOLLOW_UP` («Adelantar mi control»), `REVIEW_RESULTS` («Revisar resultados de exámenes»), `RENEW_PRESCRIPTION` («Renovar una receta»), `OTHER`. No free text, no symptom.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PENDING, GRANTED, DECLINED, WITHDRAWN. `PENDING` waits for the practice. `GRANTED`: an overbook answers it (`appointmentId`). `DECLINED`: the practice said no, and she was told. `WITHDRAWN`: she took it back. Only `PENDING` changes.",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "When the platform created this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "description": "When it stopped waiting; `null` while it waits.",
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "appointmentId": {
+            "description": "The overbook that granted it; `null` until then.",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "clinicId": {
+            "description": "The clinic she asked, one she is enrolled at.",
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "professionalProfileId",
+          "origin",
+          "urgency",
+          "reason",
+          "status",
+          "createdAt",
+          "resolvedAt",
+          "appointmentId",
+          "clinicId"
+        ]
+      },
+      "MyOverbookRequestListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Hers, newest first. At most 100.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "professionalProfileId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "origin": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_APP, PHONE. `PATIENT_APP`: she asked from LumeMedLink. `PHONE`: the practice recorded her call.",
+                  "type": "string"
+                },
+                "urgency": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENT, PRIORITY, NORMAL. How urgent: `URGENT`, `PRIORITY` or `NORMAL`. The patient proposes it from her app; the practice may correct it while it waits.",
+                  "type": "string"
+                },
+                "reason": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: EARLIER_FOLLOW_UP, REVIEW_RESULTS, RENEW_PRESCRIPTION, OTHER. Why she asks, from a closed NON-CLINICAL list (ADR-0105): `EARLIER_FOLLOW_UP` («Adelantar mi control»), `REVIEW_RESULTS` («Revisar resultados de exámenes»), `RENEW_PRESCRIPTION` («Renovar una receta»), `OTHER`. No free text, no symptom.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PENDING, GRANTED, DECLINED, WITHDRAWN. `PENDING` waits for the practice. `GRANTED`: an overbook answers it (`appointmentId`). `DECLINED`: the practice said no, and she was told. `WITHDRAWN`: she took it back. Only `PENDING` changes.",
+                  "type": "string"
+                },
+                "createdAt": {
+                  "description": "When the platform created this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                  "type": "string"
+                },
+                "resolvedAt": {
+                  "description": "When it stopped waiting; `null` while it waits.",
+                  "type": "string",
+                  "format": "date-time",
+                  "nullable": true
+                },
+                "appointmentId": {
+                  "description": "The overbook that granted it; `null` until then.",
+                  "type": "string",
+                  "format": "uuid",
+                  "nullable": true
+                },
+                "clinicId": {
+                  "description": "The clinic she asked, one she is enrolled at.",
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "id",
+                "professionalProfileId",
+                "origin",
+                "urgency",
+                "reason",
+                "status",
+                "createdAt",
+                "resolvedAt",
+                "appointmentId",
+                "clinicId"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "OrderExamDto": {
@@ -32217,7 +35588,7 @@
                   "format": "uuid"
                 },
                 "kind": {
-                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: APPOINTMENT_REMINDER, APPOINTMENT_CANCELLED, APPOINTMENT_RESCHEDULED, APPOINTMENT_RESCHEDULE_DECLINED, APPOINTMENT_REQUEST_EXPIRED, PATIENT_CONTACT_CHANGED, APPOINTMENT_PROPOSED, APPOINTMENT_CONFIRMED, PATIENT_IDENTITY_CORRECTED, PHONE_SUPERSEDED. What the notice is about. Open vocabulary: show an unknown one by its `title` and `text`.",
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: APPOINTMENT_REMINDER, APPOINTMENT_CANCELLED, APPOINTMENT_RESCHEDULED, APPOINTMENT_RESCHEDULE_DECLINED, APPOINTMENT_REQUEST_EXPIRED, PATIENT_CONTACT_CHANGED, APPOINTMENT_PROPOSED, APPOINTMENT_CONFIRMED, PATIENT_IDENTITY_CORRECTED, PHONE_SUPERSEDED, OVERBOOK_REQUEST_DECLINED. What the notice is about. Open vocabulary: show an unknown one by its `title` and `text`.",
                   "type": "string"
                 },
                 "title": {
@@ -33014,13 +36385,18 @@
                   "type": "string",
                   "nullable": true
                 },
+                "origin": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ONLINE, PRACTICE, REFERRAL. How the appointment arrived (ADR-0103, 0.133.0): `ONLINE`, booked by her from LumeMedLink or the directory; `PRACTICE`, booked by the practice with `book` — also when she asked by phone or in person, which `requestedBy: PATIENT` says; `REFERRAL`, booked by the practice and marked as referred from another professional or provider (`book` with `referred: true`). The database stamps it by who writes, and a moved hour keeps the origin of the one it replaces. `null` on an appointment made before 0.133.0, or moved from one: not recorded.",
+                  "type": "string",
+                  "nullable": true
+                },
                 "confirmedBy": {
                   "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT, PRACTICE, PRACTICE_FOR_PATIENT. How it was confirmed (ADR-0057, 0.61.0): `PATIENT`, by her from LumeMedLink; `PRACTICE`, by the practice as the side that was asked — booking an hour she asked for, confirming one she booked, or accepting her request — and also on an appointment made before 0.61.0, where nobody on record asked; `PRACTICE_FOR_PATIENT`, by the practice on her behalf, by phone, for an hour it proposed. It never changes once set. `null` while it is not confirmed, on one that ended without a confirmation, and on one confirmed before 0.61.0: not recorded.",
                   "type": "string",
                   "nullable": true
                 },
                 "overbookReason": {
-                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENCY, UNPOSTPONABLE_FOLLOW_UP, PATIENT_REQUEST, OTHER. Why the practice booked this hour over one the professional already held (ADR-0100, 0.127.0): an OVERBOOK, to draw apart and to count. `null` for an ordinary hour. Set when it is booked and never changed; an overbook that is cancelled keeps it.",
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: URGENCY, UNPOSTPONABLE_FOLLOW_UP, PATIENT_REQUEST, OTHER. Why the practice booked this hour as an OVERBOOK (ADR-0100, 0.127.0): over an hour the professional held, or, since 0.134.0, in a gap or after a block (ADR-0104). To draw apart and to count. `null` for an ordinary hour. Set when it is booked and never changed; an overbook that is cancelled keeps it.",
                   "type": "string",
                   "nullable": true
                 },
@@ -33052,6 +36428,7 @@
                 "rescheduledFromId",
                 "requestExpiresAt",
                 "requestedBy",
+                "origin",
                 "confirmedBy",
                 "overbookReason",
                 "closedAt",

@@ -349,4 +349,5 @@ internal interface PatientCareGateway :
     MyDoctorsSource,
     RatingsGateway,
     NoticesSource,
-    ContactChangeGateway
+    ContactChangeGateway,
+    OverbookRequests

@@ -98,6 +98,7 @@ internal enum class RemoteFlag(val key: String, val default: Boolean) {
     FEATURE_CONTACT_CHANGE("feature_contact_change", default = true),
     FEATURE_RATINGS("feature_ratings", default = true),
     FEATURE_NOTICES("feature_notices", default = true),
+    FEATURE_OVERBOOK_REQUESTS("feature_overbook_requests", default = true),
     FEATURE_DOCTOR_AGENDA("feature_doctor_agenda", default = true),
     FEATURE_DOCTOR_REQUESTS("feature_doctor_requests", default = true),
     FEATURE_DOCTOR_PATIENTS("feature_doctor_patients", default = true),

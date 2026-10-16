@@ -26,6 +26,7 @@ private val PATIENT_FEATURES = setOf(
     Feature.CONTACT_CHANGE,
     Feature.RATINGS,
     Feature.NOTICES,
+    Feature.OVERBOOK_REQUESTS,
 )
 
 /** The doctor's features, by hand for the same reason. */

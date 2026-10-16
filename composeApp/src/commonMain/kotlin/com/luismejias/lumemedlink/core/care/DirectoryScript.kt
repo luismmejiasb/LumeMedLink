@@ -68,10 +68,12 @@ internal object DirectoryScript {
         val attentions: Int,
         /** Days after today of the first hour shown as «Próxima hora». */
         val firstDayOffset: Int,
+        /** The professional lets patients ask for an overbook (ADR-0069). */
+        val takesOverbookRequests: Boolean = false,
     )
 
     private val LISTINGS = listOf(
-        Listing("mgen", "13123", RENDON, LYON, 4.9, 128, 640, 1),
+        Listing("mgen", "13123", RENDON, LYON, 4.9, 128, 640, 1, takesOverbookRequests = true),
         Listing("mgen", "13123", CONTRERAS, PEDRO, 4.7, 86, 310, 2),
         Listing("mgen", "13123", VERA, LYON, 4.8, 41, 120, 5),
         Listing("cardio", "13114", SALAS, ALCANTARA, 4.6, 52, 200, 1),
@@ -95,6 +97,7 @@ internal object DirectoryScript {
             attentions = listing.attentions,
             nextSlot = slots(listing.doctor.id, today, today.plusDays(BOOKING_HORIZON_DAYS), today, now)
                 .firstOrNull { !taken(listing.doctor.id, it) && it.date >= today.plusDays(listing.firstDayOffset) },
+            takesOverbookRequests = listing.takesOverbookRequests,
         )
     }
 

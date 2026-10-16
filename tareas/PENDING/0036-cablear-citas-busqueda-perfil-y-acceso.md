@@ -182,3 +182,22 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
 - **Falta:**
   - la fase B, que ahora incluye el reingreso con clave y TOTP antes de cambiar un contacto;
   - la foto, cuando la plataforma construya el pedido `0015`.
+
+## Avance 2026-10-16 — el sobrecupo que el paciente pide
+
+- **La fase B y la foto siguen bloqueadas** en la plataforma: sus tareas `0146` (ingreso con RUT) y `0150` (foto)
+  están en PENDING.
+- **Contrato 0.135.0** (commit `243f1a12` de la plataforma, su tarea `0157` y su `ADR-0105`). Las operaciones que ya
+  usábamos no cambiaron.
+- **Decidido por formulario (ADR-0069):**
+  - pedir no es ofrecer: la app nunca muestra un sobrecupo como hora, sólo deja pedirlo donde el profesional lo abrió;
+  - los cuatro motivos de la plataforma, acotados: el motivo se ve sólo en la hoja donde se elige;
+  - la entrada queda oculta hasta que el directorio diga quién recibe solicitudes (pedido `0017`).
+- **Construido, sin pantalla todavía:** `OverbookRequests` (pedir, listar, retirar) sobre el contrato y en el guion,
+  tras `Feature.OVERBOOK_REQUESTS`. `DirectoryDoctor.takesOverbookRequests` es `false` en todo lo que responde la
+  plataforma.
+- **Gate de frontera:** admite `RENEW_PRESCRIPTION` como identificador entero (ADR-0069), con dos cebos nuevos: un
+  nombre que lo contiene y un nombre clínico en la misma línea siguen en rojo.
+- **Falta:** la hoja para pedir y la lista de solicitudes (la ubicación la decide el autor), y la corrida contra la
+  plataforma local.
+
