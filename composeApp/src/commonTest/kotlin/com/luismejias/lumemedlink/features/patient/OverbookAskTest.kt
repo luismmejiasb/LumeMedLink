@@ -126,6 +126,10 @@ class OverbookAskTest {
         model.send()
         val listed = (design.overbookRequests() as CareResult.Ok<List<OverbookRequest>>).value
         assertEquals("p-rendon", listed.first().doctor?.id)
-        assertEquals(CareResult.Failed(CareFailure.Offline), ScriptedPatientCare(failure = CareFailure.Offline, latency = {}).overbookRequests())
+        assertEquals(
+            CareResult.Failed(CareFailure.Offline),
+            ScriptedPatientCare(failure = CareFailure.Offline, latency = {
+            }).overbookRequests(),
+        )
     }
 }

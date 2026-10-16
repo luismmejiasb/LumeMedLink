@@ -46,13 +46,13 @@ import com.luismejias.lumemedlink.core.screen.shortDateText
 import com.luismejias.lumemedlink.features.patient.parts.DoctorIdentity
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
 import com.luismejias.lumemedlink.resources.Res
-import com.luismejias.lumemedlink.resources.overbook_ask
 import com.luismejias.lumemedlink.resources.filters_apply
 import com.luismejias.lumemedlink.resources.filters_attention
 import com.luismejias.lumemedlink.resources.filters_availability
 import com.luismejias.lumemedlink.resources.filters_clear
 import com.luismejias.lumemedlink.resources.filters_four_stars
 import com.luismejias.lumemedlink.resources.filters_sort
+import com.luismejias.lumemedlink.resources.overbook_ask
 import com.luismejias.lumemedlink.resources.rating_spoken
 import com.luismejias.lumemedlink.resources.results_book
 import com.luismejias.lumemedlink.resources.results_change

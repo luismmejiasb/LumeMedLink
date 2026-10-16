@@ -1,11 +1,11 @@
 package com.luismejias.lumemedlink.features.patient.search
 
-import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import cl.lume.uicomposer.components.LumeNavigationStack
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
+import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 
 /**
  * The Buscar tab's stack, drawn (ADR-0045). [onBooked] tells the tab host that an appointment now exists, and
