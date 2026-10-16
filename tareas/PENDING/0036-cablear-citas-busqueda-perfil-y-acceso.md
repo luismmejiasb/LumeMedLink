@@ -219,7 +219,9 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
 - **El generador** ahora tipa los cuerpos de imagen y rechaza cualquier otro cuerpo que no sea JSON; antes caían a
   `Unit` en silencio. El cebo nuevo da rojo con el generador nuevo y verde con el viejo.
 - **Falta:**
-  - la foto del médico en las filas de lista (Mis médicos, Citas): necesita que el avatar de fila del kit acepte una
-    imagen, y eso es trabajo del kit con autorización del autor;
+  - la foto del médico en las filas de lista (Mis médicos, Citas, solicitudes de sobrecupo). **El autor autorizó el
+    pedido al kit el 2026-10-16**: `photo: Painter? = null` en `LumeListAccessory.Avatar`, con la regla de
+    `LumeNavBarAction.Initials(photo)` (Crop dentro del disco, iniciales debajo mientras carga, si falla o con null;
+    aditivo). **No se entregó**: la sesión del kit ya no estaba. Se le entrega a la próxima sesión de LumeUIComposer;
   - verla en el simulador.
 
