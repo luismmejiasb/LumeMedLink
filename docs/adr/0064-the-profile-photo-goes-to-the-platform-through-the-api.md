@@ -52,3 +52,18 @@ The author decided two things on 2026-10-14:
 - **The doctor's photo** is its own request (`0016`, the author's call of 2026-10-15). Until it has a contract, the
   doctor's own photo in m3 stays in memory as ADR-0050 built it.
 
+## Wired (2026-10-16)
+
+- **The patient's photo is on the contract** (0.136.0, the platform's `ADR-0106`, its answer `0082`):
+  `RemoteProfilePhoto` reads, uploads and removes it, replacing the in-memory stand-in wherever the platform answers.
+  A 404 or a 403 is the initials; a refused photo leaves the previous one, and k3 offers «Reintentar».
+- **The professional's photo too** (0.137.0, request `0016`, the platform's answer `0083`): `getProfessionalPhoto`,
+  read once per professional per session, at most four at a time, in memory only, inside the session's store. It
+  heads the cards that name a doctor: Inicio's next appointment and rating prompt, the detail, the results and the
+  booking. **A list row cannot show it yet**: the kit's row avatar takes initials only.
+- **Image bodies in the generated client.** The contract declares them as `image` media types with a binary schema.
+  The generator types them as `ContractImage`, which `ContractClient` sends and reads as raw bytes, never JSON. Any
+  other body is now refused by name. Until today such a body fell through to `Unit` in silence, which would have
+  generated an upload with no body and a read with no answer. A bait in `rehearse-gates.sh` is red with the new
+  generator and green with the old one.
+

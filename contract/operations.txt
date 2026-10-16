@@ -45,3 +45,7 @@ listPatientContactCards         doctor
 requestMyOverbook               overbooks
 listMyOverbookRequests          overbooks
 withdrawMyOverbookRequest       overbooks
+putMyPhoto                      photo
+getMyPhoto                      photo
+deleteMyPhoto                   photo
+getProfessionalPhoto            photo

@@ -459,6 +459,20 @@ import sys, pathlib
 f = pathlib.Path(sys.argv[1]) / "contract/operations.txt"
 f.write_text(f.read_text() + "listAgenda                      doctor\n")
 '
+# A body neither JSON nor image bytes used to be generated as Unit, in silence: a photo upload with no body (2026-10-16).
+# The contract is re-pinned in the bait, so only the generator's refusal can turn the gate red.
+bait "an allowed operation whose body is neither JSON nor an image" check-contract.sh '
+import sys, pathlib, json, hashlib, re
+root = pathlib.Path(sys.argv[1])
+c = root / "contract/openapi.json"
+spec = json.loads(c.read_text())
+op = spec["paths"]["/v1/patient/photo"]["put"]
+op["requestBody"]["content"] = {"text/csv": {"schema": {"type": "string"}}}
+c.write_text(json.dumps(spec))
+pin = root / "contract/PIN"
+digest = hashlib.sha256(c.read_bytes()).hexdigest()
+pin.write_text(re.sub(r"sha256=\w+", "sha256=" + digest, pin.read_text()))
+'
 bait "the diagnosis catalog added under an allowed prefix" check-contract.sh '
 import sys, pathlib
 f = pathlib.Path(sys.argv[1]) / "contract/operations.txt"

@@ -6,7 +6,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import cl.lume.uicomposer.components.LumeAvatar
 import cl.lume.uicomposer.components.LumeAvatarSize
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
@@ -39,7 +38,6 @@ import cl.lume.uicomposer.components.LumeTextColor
 import cl.lume.uicomposer.components.LumeTextStyle
 import cl.lume.uicomposer.components.LumeTextWeight
 import cl.lume.uicomposer.foundations.LumeIcon
-import cl.lume.uicomposer.tokens.LumeTileTint
 import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.SentRating
@@ -50,6 +48,7 @@ import com.luismejias.lumemedlink.core.screen.dayMonthText
 import com.luismejias.lumemedlink.core.screen.longDateText
 import com.luismejias.lumemedlink.core.screen.relativeDayText
 import com.luismejias.lumemedlink.core.screen.richRuns
+import com.luismejias.lumemedlink.features.patient.parts.DoctorAvatar
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
 import com.luismejias.lumemedlink.features.patient.parts.isAhead
 import com.luismejias.lumemedlink.resources.Res
@@ -149,12 +148,7 @@ internal fun AppointmentDetailScreen(
 @Composable
 private fun DetailHeader(appointment: PatientAppointment) {
     LumeStack(modifier = Modifier.fillMaxWidth(), alignment = LumeStackAlignment.Center, spacing = { xSmall }) {
-        LumeAvatar(
-            initials = appointment.doctor.initials,
-            size = LumeAvatarSize.Large,
-            tint = LumeTileTint.deterministic(appointment.doctor.id),
-            contentDescription = appointment.doctor.displayName,
-        )
+        DoctorAvatar(appointment.doctor, LumeAvatarSize.Large)
         LumeText(
             text = appointment.doctor.displayName,
             style = LumeTextStyle.HeadingMedium,

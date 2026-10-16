@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import cl.lume.uicomposer.components.LumeAvatar
 import cl.lume.uicomposer.components.LumeButton
 import cl.lume.uicomposer.components.LumeButtonContent
 import cl.lume.uicomposer.components.LumeButtonEmphasis
@@ -51,6 +50,7 @@ import com.luismejias.lumemedlink.core.screen.longDateText
 import com.luismejias.lumemedlink.core.screen.relativeDayText
 import com.luismejias.lumemedlink.core.screen.shortDateText
 import com.luismejias.lumemedlink.core.screen.weekdayDayText
+import com.luismejias.lumemedlink.features.patient.parts.DoctorAvatar
 import com.luismejias.lumemedlink.resources.Res
 import com.luismejias.lumemedlink.resources.app_name
 import com.luismejias.lumemedlink.resources.appointment_minutes
@@ -214,11 +214,7 @@ private fun NextAppointmentCard(
                 AppointmentStatusTag(next.status)
             }
             LumeStack(axis = LumeStackAxis.Horizontal, alignment = LumeStackAlignment.Center, spacing = { medium }) {
-                LumeAvatar(
-                    initials = next.doctor.initials,
-                    tint = LumeTileTint.deterministic(next.doctor.id),
-                    contentDescription = next.doctor.displayName,
-                )
+                DoctorAvatar(next.doctor)
                 LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
                     LumeText(text = next.doctor.displayName, style = LumeTextStyle.HeadingSmall)
                     LumeText(text = next.doctor.specialty, style = LumeTextStyle.TextSmall)
@@ -274,11 +270,7 @@ private fun NextAppointmentCard(
 private fun RatingCard(rating: RatingPrompt, onRate: (RatingPrompt, Int) -> Unit) {
     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
         LumeStack(axis = LumeStackAxis.Horizontal, alignment = LumeStackAlignment.Center) {
-            LumeAvatar(
-                initials = rating.doctor.initials,
-                tint = LumeTileTint.deterministic(rating.doctor.id),
-                contentDescription = rating.doctor.displayName,
-            )
+            DoctorAvatar(rating.doctor)
             LumeStack(alignment = LumeStackAlignment.Start, spacing = { xSmall }) {
                 LumeText(text = stringResource(Res.string.home_rate_title), weight = LumeTextWeight.Strong)
                 LumeText(

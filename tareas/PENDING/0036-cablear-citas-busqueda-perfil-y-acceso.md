@@ -209,3 +209,17 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
   - ver la sección en el simulador: `dev-patient` no tiene solicitudes en la siembra, y crear una toca la base local
     de la plataforma.
 
+## Avance 2026-10-16 (tarde) — las dos fotos
+
+- **Contrato 0.137.0** (commit `d4347b82` de la plataforma): la foto del paciente (su `0150`, respuesta `0082`) y la
+  del médico (su `0160`, respuesta `0083`).
+- **La foto del paciente, cableada** en lugar del sustituto en memoria. Contra el guion sigue en memoria.
+- **La foto del médico, en los encabezados de tarjeta** (Inicio, detalle, resultados y reserva), con tope de cuatro
+  lecturas a la vez y sólo en memoria.
+- **El generador** ahora tipa los cuerpos de imagen y rechaza cualquier otro cuerpo que no sea JSON; antes caían a
+  `Unit` en silencio. El cebo nuevo da rojo con el generador nuevo y verde con el viejo.
+- **Falta:**
+  - la foto del médico en las filas de lista (Mis médicos, Citas): necesita que el avatar de fila del kit acepte una
+    imagen, y eso es trabajo del kit con autorización del autor;
+  - verla en el simulador.
+

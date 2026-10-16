@@ -2,6 +2,6 @@
 # match this hash. To update: copy packages/contracts/openapi.json from lumemed-cloud-platform, write its new hash,
 # commit and version here, and run Scripts/generate-contract.py. Copy it from a COMMIT (`git show <sha>:packages/
 # contracts/openapi.json`), never from the platform's working tree, which may hold its session's work in progress.
-sha256=38692b6d36b089d511928cbe4275323b34c7f4eead1717d91f25feb328ff9ca1
-version=0.135.0
-platform_commit=243f1a122948c756cb4185610c3b2419afcebbee
+sha256=5a1fd0d209fc7073b89a567fa66c0d818d730162e6d0ac1a3d8abf8ebfa060bc
+version=0.137.0
+platform_commit=d4347b820761aace0ead6e781339f461076f6c95

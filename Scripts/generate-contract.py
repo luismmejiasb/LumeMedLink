@@ -234,6 +234,26 @@ class Generator:
         self.classes[name] = body
         return name
 
+    def body_type(self, op_id: str, content: dict, role: str) -> str:
+        """A body's Kotlin type: JSON by its schema, image bytes as `ContractImage`, none as `Unit`. Anything else is
+        refused by name: it used to fall through to `Unit`, which generated a photo upload with no body and a photo
+        read with no answer, and nothing said so (2026-10-16)."""
+        if not content:
+            return "Unit"
+        if "application/json" in content:
+            if set(content) != {"application/json"}:
+                fail(f"{op_id}: a {role.lower()} that is JSON and something else, {sorted(content)}")
+            schema = content["application/json"].get("schema")
+            return self.type_of(schema, pascal(op_id), role) if schema else "Unit"
+        images = all(
+            media.startswith("image/") and body.get("schema", {}).get("format") == "binary"
+            for media, body in content.items()
+        )
+        if images:
+            return "ContractImage"
+        fail(f"{op_id}: a {role.lower()} of {sorted(content)}, neither JSON nor image bytes")
+        return "Unit"
+
     # ── Operations ───────────────────────────────────────────────────────────────────────────────────
     def operations(self, allowed: list[str]) -> list[dict]:
         found = {}
@@ -255,13 +275,11 @@ class Generator:
             query = [(p["name"], bool(p.get("required"))) for p in params if p.get("in") == "query"]
             if sorted(path_params) != sorted(re.findall(r"\{([^}]+)\}", path)):
                 fail(f"{op_id}: the path's parameters and the declared ones differ")
-            body = op.get("requestBody", {}).get("content", {}).get("application/json", {}).get("schema")
-            request = self.type_of(body, pascal(op_id), "Request") if body else "Unit"
+            request = self.body_type(op_id, op.get("requestBody", {}).get("content", {}), "Request")
             response = "Unit"
             for code in sorted(op.get("responses", {})):
                 if code.startswith("2"):
-                    content = op["responses"][code].get("content", {}).get("application/json", {}).get("schema")
-                    response = self.type_of(content, pascal(op_id), "Response") if content else "Unit"
+                    response = self.body_type(op_id, op["responses"][code].get("content", {}), "Response")
                     break
             result.append({
                 "id": op_id, "verb": verb, "path": path, "path_params": path_params, "query": query,
@@ -271,6 +289,8 @@ class Generator:
 
 
 def serializer(kotlin_type: str) -> str:
+    if kotlin_type == "ContractImage":
+        return "ContractImage.Bytes"
     if kotlin_type.startswith("List<"):
         return f"ListSerializer({serializer(kotlin_type[5:-1])})"
     if kotlin_type in ("Unit", "String", "Int", "Long", "Double", "Boolean"):

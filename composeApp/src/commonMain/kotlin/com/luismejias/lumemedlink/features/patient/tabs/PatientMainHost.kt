@@ -31,9 +31,12 @@ import com.luismejias.lumemedlink.core.care.AppointmentStatus
 import com.luismejias.lumemedlink.core.care.ContactKind
 import com.luismejias.lumemedlink.core.care.DirectoryGateway
 import com.luismejias.lumemedlink.core.care.InMemoryProfilePhoto
+import com.luismejias.lumemedlink.core.care.NoProfessionalPhotos
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.PatientProfile
+import com.luismejias.lumemedlink.core.care.ProfessionalPhotoSource
+import com.luismejias.lumemedlink.core.care.ProfilePhotoGateway
 import com.luismejias.lumemedlink.core.care.RatingPrompt
 import com.luismejias.lumemedlink.core.device.platformPhotoCodec
 import com.luismejias.lumemedlink.core.device.rememberAddressClipboard
@@ -44,6 +47,8 @@ import com.luismejias.lumemedlink.core.features.Feature
 import com.luismejias.lumemedlink.core.features.FeatureGate
 import com.luismejias.lumemedlink.core.links.DeepLink
 import com.luismejias.lumemedlink.core.screen.CareLoad
+import com.luismejias.lumemedlink.core.screen.DoctorPhotos
+import com.luismejias.lumemedlink.core.screen.LocalDoctorPhotos
 import com.luismejias.lumemedlink.core.screen.LocalStandInsShown
 import com.luismejias.lumemedlink.core.screen.LocalTabBarClearance
 import com.luismejias.lumemedlink.core.screen.ProfilePhotoFlow
@@ -171,9 +176,17 @@ internal fun PatientMainHost(
     /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
     link: DeepLink? = null,
     onLinkOpened: () -> Unit = {},
+    /** Where the patient's photo lives (ADR-0064): called once, inside the session's store. */
+    photoGateway: () -> ProfilePhotoGateway = ::InMemoryProfilePhoto,
+    /** The professionals' photos (backend request `0016`); none against the script. */
+    professionalPhotos: ProfessionalPhotoSource = NoProfessionalPhotos,
 ) {
-    CompositionLocalProvider(LocalStandInsShown provides showsStandIns) {
-        PatientTabs(care, directory, consent, appearance, logEvent, features, onSignOut, link, onLinkOpened)
+    // In the session's store, like every model here: a sign-out drops every photo it read (§8.13).
+    val doctorPhotos = viewModel { DoctorPhotos(professionalPhotos, platformPhotoCodec()) }
+    CompositionLocalProvider(LocalStandInsShown provides showsStandIns, LocalDoctorPhotos provides doctorPhotos) {
+        PatientTabs(
+            care, directory, consent, appearance, logEvent, features, onSignOut, link, onLinkOpened, photoGateway,
+        )
     }
 }
 
@@ -191,6 +204,7 @@ private fun PatientTabs(
     /** What a link or a notification asks to open now (ADR-0053); [onLinkOpened] once it has. */
     link: DeepLink?,
     onLinkOpened: () -> Unit,
+    photoGateway: () -> ProfilePhotoGateway,
 ) {
     val tabs = viewModel { PatientTabsViewModel() }
     val home = viewModel { HomeViewModel(care.homeSources()) }
@@ -208,9 +222,8 @@ private fun PatientTabs(
     val notices = viewModel { NoticesViewModel(care) }
     val noticesOpen by notices.open.collectAsState()
     val noticesSeen by notices.seen.collectAsState()
-    // The patient's photo on the platform (ADR-0064). The contract has no photo operations yet (backend task `0150`,
-    // PENDING): until it does, the platform's side is held in memory, inside the session's store.
-    val photo = viewModel { ProfilePhotoModel(InMemoryProfilePhoto(), platformPhotoCodec()) }
+    // The patient's photo on the platform (ADR-0064, contract 0.136.0), or held in memory against the script.
+    val photo = viewModel { ProfilePhotoModel(photoGateway(), platformPhotoCodec()) }
     val picker = rememberPhotoPicker(photo::picked)
     val contact = rememberDeviceContact()
     val directions = rememberDirections()

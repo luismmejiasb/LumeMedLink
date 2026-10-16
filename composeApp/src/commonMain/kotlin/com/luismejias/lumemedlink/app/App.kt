@@ -35,6 +35,8 @@ import com.luismejias.lumemedlink.core.appearance.Appearance
 import com.luismejias.lumemedlink.core.appearance.ProvideAppLanguage
 import com.luismejias.lumemedlink.core.appearance.ThemeChoice
 import com.luismejias.lumemedlink.core.auth.ScriptedAccessGateway
+import com.luismejias.lumemedlink.core.care.InMemoryProfilePhoto
+import com.luismejias.lumemedlink.core.care.NoProfessionalPhotos
 import com.luismejias.lumemedlink.core.care.NoticeMark
 import com.luismejias.lumemedlink.core.care.PatientCareGateway
 import com.luismejias.lumemedlink.core.care.ScriptedDoctorCare
@@ -434,6 +436,10 @@ public fun App(
                                         onLinkOpened = links::landed,
                                         features = features,
                                         onSignOut = onSignOut,
+                                        // The platform's photo when there is one; the in-memory stand-in otherwise,
+                                        // made inside the session's store so a sign-out drops it (ADR-0064).
+                                        photoGateway = { localPatient?.photo ?: InMemoryProfilePhoto() },
+                                        professionalPhotos = localPatient?.professionalPhotos ?: NoProfessionalPhotos,
                                     )
                                 }
                                 AccessRole.DOCTOR -> InSessionScope(doctorScope) {

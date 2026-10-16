@@ -24659,18 +24659,850 @@
           "patient-portal"
         ]
       }
+    },
+    "/v1/patient/photo": {
+      "put": {
+        "description": "Write or replace your profile photo. Your doctors and the reception of every clinic where you are a patient see it, so they recognise you; the practice administrator does not. A photo refused leaves the one you had.",
+        "operationId": "putMyPhoto",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "A JPEG or a PNG, as raw bytes (`Content-Type: image/jpeg` or `image/png`), at most 1048576 bytes and between 128 and 1024 pixels on each side. The bytes decide the format, not the header. HEIC, WebP, AVIF and GIF are answered 415 `photo_format_unsupported`: convert them to JPEG on the device (the crop already does), and send the pixels upright, because the EXIF orientation is not kept. Anything that is not an image is 422 `photo_unreadable`, and an image outside the sides is 422 `photo_dimensions_out_of_range`.\n\n**The platform keeps a JPEG it encoded itself**, never the bytes it received: no EXIF, no location, no comment survives, and transparency is laid over white. A 503 `service_unavailable` means every decoder was busy: retry after `Retry-After`.",
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoFactsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`photo_format_unsupported`) Also `unsupported_media_type`: a `Content-Type` this operation does not read.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content (`photo_unreadable`)\n\nUnprocessable Content (`photo_dimensions_out_of_range`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable (`service_unavailable`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      },
+      "get": {
+        "description": "Your profile photo. A 404 means you have none.",
+        "operationId": "getMyPhoto",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The photo as `image/jpeg` bytes, the one the platform encoded. It is answered `Cache-Control: no-store`, as every response: keep it in memory for the screen and ask again for the next one. There is one size; the app scales it.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      },
+      "delete": {
+        "description": "Delete your profile photo; your clinics stop seeing it at once. A 404 means you had none.",
+        "operationId": "deleteMyPhoto",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/patients/{patientId}/photo": {
+      "get": {
+        "description": "The photo the patient put on her LumeMedLink account, so you recognise her. The doctor and the reception read it; the practice administrator is 403.\n\n**A 404 is «no photo», and the app shows her initials:** she has none, she is not enrolled in the app, her access was cut, or the ficha is not yours. Under a restriction of processing (Ley 21.719) it is 403 `processing_restricted`, which the app shows the same way. Each read is audited, without the image.",
+        "operationId": "getPatientPhoto",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "path",
+            "description": "Patient UUID (the opaque id, never the RUT — §6).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID — resolved and authorized by the guard.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo as `image/jpeg` bytes, the one the platform encoded. It is answered `Cache-Control: no-store`, as every response: keep it in memory for the screen and ask again for the next one. There is one size; the app scales it.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)\n\nForbidden (`processing_restricted`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      }
+    },
+    "/v1/me/photo": {
+      "put": {
+        "description": "Write or replace your profile photo. The patients of every clinic where you have a professional profile see it, so they recognise who attends them; a patient who finds you in the directory sees it only once you turn that on (`setMyProfessionalPhotoDirectory`). A 404 means you have no live professional profile. A photo refused leaves the one you had.",
+        "operationId": "putMyProfessionalPhoto",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "A JPEG or a PNG, as raw bytes (`Content-Type: image/jpeg` or `image/png`), at most 1048576 bytes and between 128 and 1024 pixels on each side. The bytes decide the format, not the header. HEIC, WebP, AVIF and GIF are answered 415 `photo_format_unsupported`: convert them to JPEG on the device (the crop already does), and send the pixels upright, because the EXIF orientation is not kept. Anything that is not an image is 422 `photo_unreadable`, and an image outside the sides is 422 `photo_dimensions_out_of_range`.\n\n**The platform keeps a JPEG it encoded itself**, never the bytes it received: no EXIF, no location, no comment survives, and transparency is laid over white. A 503 `service_unavailable` means every decoder was busy: retry after `Retry-After`.",
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfessionalPhotoFactsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`photo_format_unsupported`) Also `unsupported_media_type`: a `Content-Type` this operation does not read.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content (`photo_unreadable`)\n\nUnprocessable Content (`photo_dimensions_out_of_range`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable (`service_unavailable`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      },
+      "get": {
+        "description": "Your profile photo. A 404 means you have none.",
+        "operationId": "getMyProfessionalPhoto",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The photo as `image/jpeg` bytes, the one the platform encoded. It is answered `Cache-Control: no-store`, as every response: keep it in memory for the screen and ask again for the next one. There is one size; the app scales it.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      },
+      "delete": {
+        "description": "Delete your profile photo; no patient sees it from then on. A 404 means you had none.",
+        "operationId": "deleteMyProfessionalPhoto",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      }
+    },
+    "/v1/me/photo/directory": {
+      "get": {
+        "description": "Whether the directory shows your photo. A 404 means you have no photo.",
+        "operationId": "getMyProfessionalPhotoDirectory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoDirectoryAnswerDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      },
+      "put": {
+        "description": "Show your photo to a patient who finds you in the directory, or stop. It applies to the photo you have and to the ones that replace it, until you delete it: a photo put after a deletion starts off. A 404 means you have no photo yet: put one first.",
+        "operationId": "setMyProfessionalPhotoDirectory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoDirectoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoDirectoryAnswerDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      }
+    },
+    "/v1/patient/professionals/{professionalId}/photo": {
+      "get": {
+        "description": "The photo of a professional, so you recognise who attends you. You see it when you are a patient of a clinic where they practise (an active link to the app there), and in the directory only when they chose to show it there.\n\n**A 404 is «no photo», and the app shows their initials:** they have none, you are not their patient and they do not show it in the directory, or the profile is gone. One photo per request; there is no batch read.",
+        "operationId": "getProfessionalPhoto",
+        "parameters": [
+          {
+            "name": "professionalId",
+            "required": true,
+            "in": "path",
+            "description": "The opaque professional-profile id the directory, your appointments and your contacts already carry.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo as `image/jpeg` bytes, the one the platform encoded. It is answered `Cache-Control: no-store`, as every response: keep it in memory for the screen and ask again for the next one. There is one size; the app scales it.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "profile-photos"
+        ]
+      }
     }
   },
   "info": {
     "title": "lumemed-cloud API",
     "description": "Backend contract for the Lume Cloud medical platform. Errors are RFC 9457 problem+json. A string's `minLength` and `maxLength` count UTF-16 code units, as JavaScript counts them: a character outside the Basic Multilingual Plane, such as most emoji, counts two, and an emoji built from several characters (a flag, a skin tone) counts each of them. Count the same way before sending, or a text within a limit counted another way is refused with 400.",
-    "version": "0.135.0",
+    "version": "0.137.0",
     "contact": {}
   },
   "tags": [
     {
       "name": "health",
       "description": "Liveness and readiness probes"
+    },
+    {
+      "name": "profile-photos",
+      "description": "Profile photos: the patient's, re-encoded by the platform, read by her clinics (ADR-0106)"
     },
     {
       "name": "access-log",
@@ -24927,7 +25759,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -36103,7 +36935,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -36231,7 +37063,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -36501,7 +37333,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -38355,6 +39187,91 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "PhotoFactsDto": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "description": "Width of the kept JPEG, in pixels.",
+            "type": "integer"
+          },
+          "height": {
+            "description": "Height of the kept JPEG, in pixels.",
+            "type": "integer"
+          },
+          "byteSize": {
+            "description": "Size of the kept JPEG, in bytes.",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "description": "When the platform last changed this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "byteSize",
+          "updatedAt"
+        ],
+        "description": "The photo the platform kept: its size, never its bytes."
+      },
+      "ProfessionalPhotoFactsDto": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "description": "Width of the kept JPEG, in pixels.",
+            "type": "integer"
+          },
+          "height": {
+            "description": "Height of the kept JPEG, in pixels.",
+            "type": "integer"
+          },
+          "byteSize": {
+            "description": "Size of the kept JPEG, in bytes.",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "description": "When the platform last changed this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "inDirectory": {
+            "description": "Whether a patient who finds you in the directory sees it. Your own patients see it either way.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "byteSize",
+          "updatedAt",
+          "inDirectory"
+        ],
+        "description": "The photo the platform kept for you: its size, never its bytes, and whether the directory shows it."
+      },
+      "PhotoDirectoryAnswerDto": {
+        "type": "object",
+        "properties": {
+          "inDirectory": {
+            "description": "Whether a patient who finds you in the directory sees your photo. **Off until you turn it on**: the directory shows only what you chose to share. The patients of your clinics see it either way.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "inDirectory"
+        ]
+      },
+      "PhotoDirectoryDto": {
+        "type": "object",
+        "properties": {
+          "inDirectory": {
+            "description": "Whether a patient who finds you in the directory sees your photo. **Off until you turn it on**: the directory shows only what you chose to share. The patients of your clinics see it either way.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "inDirectory"
         ]
       },
       "PortableTextSpan": {

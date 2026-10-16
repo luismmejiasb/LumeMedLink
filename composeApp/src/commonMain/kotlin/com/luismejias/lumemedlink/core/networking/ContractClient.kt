@@ -1,14 +1,19 @@
 package com.luismejias.lumemedlink.core.networking
 
+import com.luismejias.lumemedlink.core.networking.contract.ContractImage
 import com.luismejias.lumemedlink.core.networking.contract.ContractOperation
 import com.luismejias.lumemedlink.shared.AppError
 import io.ktor.client.HttpClient
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsBytes
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
+import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.TextContent
+import io.ktor.http.contentType
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.encodeURLPathPart
 import kotlinx.serialization.KSerializer
@@ -34,10 +39,15 @@ internal class ContractClient(private val http: HttpClient) {
     ): Response {
         val response = http.request(contractUrl(operation, path, query)) {
             method = HttpMethod.parse(operation.verb.name)
-            if (!operation.request.isUnit()) {
-                setBody(TextContent(contractJson.encodeToString(operation.request, body), ContentType.Application.Json))
+            when {
+                body is ContractImage -> setBody(ByteArrayContent(body.bytes, ContentType.parse(body.mediaType)))
+                !operation.request.isUnit() ->
+                    setBody(
+                        TextContent(contractJson.encodeToString(operation.request, body), ContentType.Application.Json),
+                    )
             }
         }
+        if (operation.response.isImage()) return imageOf(response, operation.response)
         // An operation that answers nothing still decodes through its own serializer, so no cast is needed.
         val text = if (operation.response.isUnit()) EMPTY_OBJECT else response.bodyAsText()
         return try {
@@ -91,6 +101,23 @@ internal fun contractUrl(
 private const val EMPTY_OBJECT = "{}"
 
 private fun KSerializer<*>.isUnit(): Boolean = descriptor.serialName == "kotlin.Unit"
+
+private fun KSerializer<*>.isImage(): Boolean = descriptor.serialName == ContractImage.Bytes.SERIAL_NAME
+
+/**
+ * An answer the contract declares as an image's bytes. One that is not an image — an interstitial, a JSON error page
+ * that came back 2xx — is the server answering something the app cannot use, like an undecodable JSON answer.
+ */
+private suspend fun <Response> imageOf(response: HttpResponse, serializer: KSerializer<Response>): Response {
+    val type = response.contentType()?.withoutParameters()
+    if (type == null || type.contentType != "image") {
+        throw AppErrorException(AppError.Unexpected(status = response.status.value, problemType = null))
+    }
+    // The generator gives an image answer only the ContractImage marker, so [Response] is ContractImage here.
+    check(serializer.isImage())
+    @Suppress("UNCHECKED_CAST")
+    return ContractImage(response.bodyAsBytes(), type.toString()) as Response
+}
 
 /** The contract's JSON: a field the server added since this build is ignored, never an error (an additive change). */
 private val contractJson = Json { ignoreUnknownKeys = true }
