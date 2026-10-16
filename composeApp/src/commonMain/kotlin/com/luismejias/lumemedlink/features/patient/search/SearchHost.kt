@@ -1,5 +1,6 @@
 package com.luismejias.lumemedlink.features.patient.search
 
+import com.luismejias.lumemedlink.core.care.DirectoryDoctor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -16,6 +17,8 @@ internal fun SearchHost(
     onBooked: (status: AppointmentStatus, showAppointments: Boolean) -> Unit,
     /** Whether a result offers «Agendar» (ADR-0060). */
     canBook: Boolean,
+    /** «Pedir sobrecupo» on a result whose professional takes requests (ADR-0069); null while the feature is off. */
+    onAskOverbook: ((DirectoryDoctor) -> Unit)? = null,
 ) {
     val routes by model.flow.routes.collectAsState()
     val back: () -> Unit = { model.flow.back() }
@@ -30,7 +33,7 @@ internal fun SearchHost(
             )
             SearchRoute.SPECIALTY -> SpecialtyScreen(model, back)
             SearchRoute.COMMUNE -> CommuneScreen(model, back)
-            SearchRoute.RESULTS -> ResultsScreen(model, back, canBook)
+            SearchRoute.RESULTS -> ResultsScreen(model, back, canBook, onAskOverbook)
             SearchRoute.FILTERS -> FiltersScreen(model, back)
             SearchRoute.AVAILABILITY -> AvailabilityScreen(model, back)
             SearchRoute.SCHEDULE -> ScheduleScreen(model, back)

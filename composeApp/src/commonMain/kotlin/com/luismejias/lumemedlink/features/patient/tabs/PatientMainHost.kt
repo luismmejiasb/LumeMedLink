@@ -76,6 +76,8 @@ import com.luismejias.lumemedlink.features.patient.home.homeSources
 import com.luismejias.lumemedlink.features.patient.notices.NoticesScreen
 import com.luismejias.lumemedlink.features.patient.notices.NoticesViewModel
 import com.luismejias.lumemedlink.features.patient.rating.RateSheet
+import com.luismejias.lumemedlink.features.patient.overbook.OverbookSheet
+import com.luismejias.lumemedlink.features.patient.overbook.OverbookViewModel
 import com.luismejias.lumemedlink.features.patient.rating.RateViewModel
 import com.luismejias.lumemedlink.features.patient.search.SearchHost
 import com.luismejias.lumemedlink.features.patient.search.SearchViewModel
@@ -89,6 +91,7 @@ import com.luismejias.lumemedlink.features.patient.settings.SettingsScreen
 import com.luismejias.lumemedlink.features.patient.settings.SettingsViewModel
 import com.luismejias.lumemedlink.features.patient.settings.settingsSources
 import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.overbook_sent_toast
 import com.luismejias.lumemedlink.resources.booked_toast
 import com.luismejias.lumemedlink.resources.cancelled_toast
 import com.luismejias.lumemedlink.resources.contact_email_done
@@ -219,6 +222,9 @@ private fun PatientTabs(
     val contactDone by contactChange.done.collectAsState()
     val change = viewModel { ChangeViewModel(changeSourcesOf(care, directory), logEvent) }
     val rate = viewModel { RateViewModel(care, logEvent) }
+    val overbook = viewModel { OverbookViewModel(care) }
+    val overbookSent by overbook.sent.collectAsState()
+    val overbookSentToast = stringResource(Res.string.overbook_sent_toast)
     val notices = viewModel { NoticesViewModel(care) }
     val noticesOpen by notices.open.collectAsState()
     val noticesSeen by notices.seen.collectAsState()
@@ -271,6 +277,13 @@ private fun PatientTabs(
         // The bell on «Inicio» stops calling them new.
         home.refresh()
         notices.seenHandled()
+    }
+    LaunchedEffect(overbookSent) {
+        if (!overbookSent) return@LaunchedEffect
+        // «Citas» lists it under «Solicitudes de sobrecupo».
+        appointments.refresh()
+        toasts.show(overbookSentToast, LumeStatusStyle.Success)
+        overbook.sentSeen()
     }
     LaunchedEffect(rateSent) {
         if (!rateSent) return@LaunchedEffect
@@ -378,7 +391,12 @@ private fun PatientTabs(
                             onNotices = notices::show.onlyIf(can.notices),
                             onProfile = { tabs.show(PatientTab.SETTINGS) },
                         )
-                        PatientTab.SEARCH -> SearchHost(search, onBooked, canBook = can.book)
+                        PatientTab.SEARCH -> SearchHost(
+                            search,
+                            onBooked,
+                            canBook = can.book,
+                            onAskOverbook = overbook::open.onlyIf(can.overbooks),
+                        )
                         PatientTab.APPOINTMENTS -> AppointmentsScreen(
                             model = appointments,
                             onOpen = { appointment -> change.launch { openDetail(appointment) } },
@@ -459,6 +477,7 @@ private fun PatientTabs(
             onDismiss = change::dismissSheet,
         )
         RateSheet(rate, onComplaint = {})
+        OverbookSheet(overbook)
         ContactChangeSheet(contactChange)
         ProfilePhotoFlow(photo, picker, toasts)
         // Above the floating bar, as k3 draws it, never over it.

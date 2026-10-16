@@ -58,7 +58,9 @@ trap 'rm -f "$SCAN"' EXIT
 # on it is one of these, so `RENEW_PRESCRIPTION_NOTE`, or a second clinical name beside it, still fails.
 #   RENEW_PRESCRIPTION — ADR-0069: the closed, non-clinical reason «Renovar una receta» of an overbook request,
 #   which asks for an hour and moves no prescription (ADR-0007). It must be sent, so its wire value exists here.
-ADMITTED='RENEW_PRESCRIPTION'
+#   overbook_reason_renew_prescription — the same reason's label, the one string resource that names it, so the sheet
+#   can show it (ADR-0069 point 2: only where it is picked).
+ADMITTED='RENEW_PRESCRIPTION|overbook_reason_renew_prescription'
 for f in $KT_FILES; do
     python3 Scripts/lib/uncomment.py --lang c "$f" 2>/dev/null |
         grep -niE "[A-Za-z_]*($CLINICAL)[A-Za-z_]*" |

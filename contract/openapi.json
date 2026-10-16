@@ -25487,12 +25487,929 @@
           "profile-photos"
         ]
       }
+    },
+    "/v1/orgs/{tenantId}/patients/{patientId}/waiting-list": {
+      "post": {
+        "description": "Put a patient on the waiting list for one of her hours, as she asked by phone (task 0158, `ADR-0107`), with what she takes. The hour must be booked (`SCHEDULED` or `CONFIRMED`) and not started: anything else is `409 waiting_list_hour_not_waitable`. A preference for a call or a home visit needs an hour of that channel, because a move keeps it (`409 waiting_list_preference_mismatch`). One entry waits per hour: a second is `409 waiting_list_entry_exists`, unless it is a retry of the same `clientId`.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. An entry of another agenda or another practice is a 404. Audited.",
+        "operationId": "recordWaitingListEntry",
+        "parameters": [
+          {
+            "name": "patientId",
+            "required": true,
+            "in": "path",
+            "description": "Opaque patient id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordWaitingListEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitingListEntryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`waiting_list_entry_exists`)\n\nConflict (`waiting_list_hour_not_waitable`)\n\nConflict (`waiting_list_preference_mismatch`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/waiting-list": {
+      "get": {
+        "description": "Who waits for an earlier hour on the agendas the caller runs (task 0158, `ADR-0107`), optionally of one professional: her current hour, since when she waits, her place in line, what she takes, and the hour offered to her right now. An entry whose hour was cancelled, done or started is no longer listed. A patient under a restriction of processing is left out, and the audit line names the patients it listed.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. An entry of another agenda or another practice is a 404. Audited.",
+        "operationId": "listWaitingList",
+        "parameters": [
+          {
+            "name": "professionalProfileId",
+            "required": false,
+            "in": "query",
+            "description": "One professional; omitted, every agenda the caller runs.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitingListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/waiting-list/{id}/withdraw": {
+      "post": {
+        "description": "Take an entry off the waiting list; an hour offered to her and not yet answered is let go, so it can go to the next one. An entry that no longer waits, or whose offer she is accepting right now, is `409 waiting_list_entry_closed`; a retry of a withdrawal answers it.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. An entry of another agenda or another practice is a 404. Audited.",
+        "operationId": "withdrawWaitingListEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque entry id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitingListEntryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`waiting_list_entry_closed`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/orgs/{tenantId}/waiting-list/offers": {
+      "post": {
+        "description": "«Ofrecer» (task 0158, `ADR-0107`): offer a freed hour of a professional to the patient who has waited longest and takes it — her own hour is later, her preference and her hour's channel take this one, she is enrolled in LumeMedLink, nothing else is open to her, and this hour was not offered to her before. Nothing is offered by itself when an hour is cancelled. The hour must be exactly a free slot of that professional at that place (`409 waiting_list_hour_taken` otherwise) and start at least an hour from now (`409 waiting_list_hour_too_soon`). An offer to somebody whose own hour has gone since lets the hour go first. She is told by e-mail, with no hour in it, and has 2 hours to accept in her app, never past an hour before the hour itself (`expiresAt`); the e-mail may reach her after that. Pressed again on the same hour while the offer is open is `409 waiting_list_hour_offered`; once it is answered or expired, it goes to the next one. Nobody to offer it to is `409 waiting_list_no_candidate`.\n\n**Who may is who may book** (`ADR-0066`): a doctor on the agendas they run, a receptionist on the ones assigned to her; a practice administrator is a 403. An entry of another agenda or another practice is a 404. Audited.",
+        "operationId": "offerWaitingListHour",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant (org) UUID.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfferWaitingListHourDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitingListOfferedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`waiting_list_hour_taken`)\n\nConflict (`waiting_list_hour_offered`)\n\nConflict (`waiting_list_no_candidate`)\n\nConflict (`waiting_list_hour_too_soon`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/v1/patient/waiting-list": {
+      "post": {
+        "description": "Ask to be moved earlier: put one of your hours on the waiting list, with what you take. When an earlier hour is freed, the practice may offer it to you, and you have 2 hours to accept it here (`acceptMyWaitingListOffer`). The hour must be booked and not started (`409 waiting_list_hour_not_waitable`); a preference for a call or a home visit needs an hour of that channel (`409 waiting_list_preference_mismatch`); one entry per hour (`409 waiting_list_entry_exists`), unless it is a retry of the same `clientId`.",
+        "operationId": "joinMyWaitingList",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinMyWaitingListDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitingListEntryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (`validation_failed`) Also `unstorable_text`: a text field carries a NUL or a lone surrogate.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`waiting_list_entry_exists`)\n\nConflict (`waiting_list_hour_not_waitable`)\n\nConflict (`waiting_list_preference_mismatch`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large (`payload_too_large`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type (`unsupported_media_type`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      },
+      "get": {
+        "description": "Your entries that wait for an earlier hour, at every clinic you are enrolled at, each with the hour offered to you right now, if any. An entry whose hour was cancelled, done or started is not listed. **The offer here is what counts:** the e-mail that told you may arrive after `expiresAt`.",
+        "operationId": "listMyWaitingList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWaitingListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      }
+    },
+    "/v1/patient/waiting-list/{id}/withdraw": {
+      "post": {
+        "description": "Leave the waiting list for that hour; an hour offered to you and not answered is let go. A retry answers it.",
+        "operationId": "leaveMyWaitingList",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Opaque entry id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitingListEntryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`waiting_list_entry_closed`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      }
+    },
+    "/v1/patient/waiting-list/offers/{offerId}/accept": {
+      "post": {
+        "description": "Take the earlier hour: the platform moves your hour to it, and your professional is told. The answer names the hour you were moved to (`appointmentId`); a retry answers the same, and one cut short is resumed. Past `expiresAt`, answered already, or your hour gone is `409 waiting_list_offer_closed`; an hour taken or closed since it was offered is `409 waiting_list_hour_taken`, and the offer stays open until its time.",
+        "operationId": "acceptMyWaitingListOffer",
+        "parameters": [
+          {
+            "name": "offerId",
+            "required": true,
+            "in": "path",
+            "description": "Opaque offer id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitingListOfferDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`waiting_list_offer_closed`)\n\nConflict (`waiting_list_hour_taken`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      }
+    },
+    "/v1/patient/waiting-list/offers/{offerId}/decline": {
+      "post": {
+        "description": "Let the earlier hour pass. You stay on the list for your hour. Past `expiresAt` or answered is `409 waiting_list_offer_closed`.",
+        "operationId": "declineMyWaitingListOffer",
+        "parameters": [
+          {
+            "name": "offerId",
+            "required": true,
+            "in": "path",
+            "description": "Opaque offer id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitingListOfferDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unstorable Text (`unstorable_text`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (`unauthorized`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (`forbidden`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found (`not_found`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (`waiting_list_offer_closed`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests (`rate_limited`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "idp-bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "patient-portal"
+        ]
+      }
     }
   },
   "info": {
     "title": "lumemed-cloud API",
     "description": "Backend contract for the Lume Cloud medical platform. Errors are RFC 9457 problem+json. A string's `minLength` and `maxLength` count UTF-16 code units, as JavaScript counts them: a character outside the Basic Multilingual Plane, such as most emoji, counts two, and an emoji built from several characters (a flag, a skin tone) counts each of them. Count the same way before sending, or a text within a limit counted another way is refused with 400.",
-    "version": "0.137.0",
+    "version": "0.139.0",
     "contact": {}
   },
   "tags": [
@@ -25759,7 +26676,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, waiting_list_entry_exists, waiting_list_hour_not_waitable, waiting_list_no_candidate, waiting_list_hour_offered, waiting_list_hour_too_soon, waiting_list_preference_mismatch, waiting_list_entry_closed, waiting_list_offer_closed, waiting_list_hour_taken, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -36420,7 +37337,7 @@
                   "format": "uuid"
                 },
                 "kind": {
-                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: APPOINTMENT_REMINDER, APPOINTMENT_CANCELLED, APPOINTMENT_RESCHEDULED, APPOINTMENT_RESCHEDULE_DECLINED, APPOINTMENT_REQUEST_EXPIRED, PATIENT_CONTACT_CHANGED, APPOINTMENT_PROPOSED, APPOINTMENT_CONFIRMED, PATIENT_IDENTITY_CORRECTED, PHONE_SUPERSEDED, OVERBOOK_REQUEST_DECLINED. What the notice is about. Open vocabulary: show an unknown one by its `title` and `text`.",
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: APPOINTMENT_REMINDER, APPOINTMENT_CANCELLED, APPOINTMENT_RESCHEDULED, APPOINTMENT_RESCHEDULE_DECLINED, APPOINTMENT_REQUEST_EXPIRED, PATIENT_CONTACT_CHANGED, APPOINTMENT_PROPOSED, APPOINTMENT_CONFIRMED, PATIENT_IDENTITY_CORRECTED, PHONE_SUPERSEDED, OVERBOOK_REQUEST_DECLINED, WAITING_LIST_OFFER. What the notice is about. Open vocabulary: show an unknown one by its `title` and `text`.",
                   "type": "string"
                 },
                 "title": {
@@ -36935,7 +37852,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, waiting_list_entry_exists, waiting_list_hour_not_waitable, waiting_list_no_candidate, waiting_list_hour_offered, waiting_list_hour_too_soon, waiting_list_preference_mismatch, waiting_list_entry_closed, waiting_list_offer_closed, waiting_list_hour_taken, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -37063,7 +37980,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, waiting_list_entry_exists, waiting_list_hour_not_waitable, waiting_list_no_candidate, waiting_list_hour_offered, waiting_list_hour_too_soon, waiting_list_preference_mismatch, waiting_list_entry_closed, waiting_list_offer_closed, waiting_list_hour_taken, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -37333,7 +38250,7 @@
             "type": "integer"
           },
           "code": {
-            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: validation_failed, cancel_operation_required, unauthorized, forbidden, not_found, not_provisioned, session_superseded, phone_not_enrolled, conflict, stale_write, unprocessable, cancellation_window_closed, record_sealed, identification_locked, payload_too_large, unstorable_text, unsupported_media_type, photo_format_unsupported, photo_unreadable, photo_dimensions_out_of_range, addendum_window_closed, closed_time_absence, closed_time_holiday, closed_time_break, working_hours_overlap, rut_already_registered, working_hours_slot_too_long, agenda_slot_too_long, link_subject_is_a_patient, professional_busy, overbook_limit_reached, recent_sign_in_required, contact_unchanged, contact_needs_verification, contact_verification_too_soon, contact_verification_limit_reached, contact_verification_code_mismatch, contact_verification_expired, contact_verification_closed, patient_unavailable, pending_request_exists, request_already_answered, booking_closed, quota_exceeded, integrity_failed, processing_restricted, waiting_list_entry_exists, waiting_list_hour_not_waitable, waiting_list_no_candidate, waiting_list_hour_offered, waiting_list_hour_too_soon, waiting_list_preference_mismatch, waiting_list_entry_closed, waiting_list_offer_closed, waiting_list_hour_taken, rate_limited, service_unavailable, internal. Adding a code is a MINOR change (§9): a client that switches on it carries a default arm.",
             "type": "string"
           },
           "detail": {
@@ -37621,6 +38538,10 @@
               "count"
             ],
             "nullable": true
+          },
+          "overbookRequestable": {
+            "description": "Whether this patient could ask them for an overbook now (since 0.139.0, task 0161): `true` exactly when both conditions `requestMyOverbook` reads before its `404` hold — their rule lets patients ask, and she is enrolled at their clinic in LumeMedLink. `false` otherwise: when she is not enrolled there, when their rule does not let patients ask, for a suspended account (whose request is a `403`), and for every caller who is not a patient (the clinic's app). It says who may be asked, not that a request will be granted, and it can change between this read and the request: the `404` of `requestMyOverbook` stays the final word.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -37630,7 +38551,8 @@
           "specialtyCode",
           "professionalTitle",
           "locations",
-          "rating"
+          "rating",
+          "overbookRequestable"
         ]
       },
       "ClosedPeriodDto": {
@@ -39272,6 +40194,666 @@
         },
         "required": [
           "inDirectory"
+        ]
+      },
+      "RecordWaitingListEntryDto": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "description": "Her hour, the one she wants earlier: booked, and not started.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "preference": {
+            "description": "What she takes, from a closed list (ADR-0107): `ANY` (any hour), `MORNINGS` (one that starts before 13:00 in the clinic's clock), `TELEMEDICINE` (only a call) or `HOME_VISIT` (only a visit at home). A move keeps her hour's channel, so she is only ever offered an hour of the channel she already has.",
+            "type": "string",
+            "enum": [
+              "ANY",
+              "MORNINGS",
+              "TELEMEDICINE",
+              "HOME_VISIT"
+            ]
+          },
+          "clientId": {
+            "description": "Your own key for THIS entry, so a retry answers the entry it already made instead of a `409 waiting_list_entry_exists`. Unique to you within this patient.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "appointmentId",
+          "preference"
+        ]
+      },
+      "WaitingListEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientId": {
+            "description": "Her record at this practice.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "appointmentId": {
+            "description": "Her hour, the one she wants earlier.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "appointmentStartsAt": {
+            "description": "When her hour starts now. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "professionalProfileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "preference": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ANY, MORNINGS, TELEMEDICINE, HOME_VISIT. What she takes, from a closed list (ADR-0107): `ANY` (any hour), `MORNINGS` (one that starts before 13:00 in the clinic's clock), `TELEMEDICINE` (only a call) or `HOME_VISIT` (only a visit at home). A move keeps her hour's channel, so she is only ever offered an hour of the channel she already has.",
+            "type": "string"
+          },
+          "origin": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_APP, PHONE. `PATIENT_APP`: she joined from LumeMedLink. `PHONE`: the practice put her on it.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: WAITING, MOVED, WITHDRAWN. `WAITING` waits for an earlier hour. `MOVED`: she accepted an offer and her hour was moved. `WITHDRAWN`: she or the practice took it off the list. Only `WAITING` changes.",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "When the platform created this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "description": "When it stopped waiting; `null` while it waits. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "patientId",
+          "appointmentId",
+          "appointmentStartsAt",
+          "professionalProfileId",
+          "preference",
+          "origin",
+          "status",
+          "createdAt",
+          "resolvedAt"
+        ]
+      },
+      "WaitingListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Who waits, per professional, the one who has waited longest first. A patient under a restriction of processing is left out.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "patientId": {
+                  "description": "Her record at this practice.",
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "appointmentId": {
+                  "description": "Her hour, the one she wants earlier.",
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "appointmentStartsAt": {
+                  "description": "When her hour starts now. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                  "type": "string"
+                },
+                "professionalProfileId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "preference": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ANY, MORNINGS, TELEMEDICINE, HOME_VISIT. What she takes, from a closed list (ADR-0107): `ANY` (any hour), `MORNINGS` (one that starts before 13:00 in the clinic's clock), `TELEMEDICINE` (only a call) or `HOME_VISIT` (only a visit at home). A move keeps her hour's channel, so she is only ever offered an hour of the channel she already has.",
+                  "type": "string"
+                },
+                "origin": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_APP, PHONE. `PATIENT_APP`: she joined from LumeMedLink. `PHONE`: the practice put her on it.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: WAITING, MOVED, WITHDRAWN. `WAITING` waits for an earlier hour. `MOVED`: she accepted an offer and her hour was moved. `WITHDRAWN`: she or the practice took it off the list. Only `WAITING` changes.",
+                  "type": "string"
+                },
+                "createdAt": {
+                  "description": "When the platform created this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                  "type": "string"
+                },
+                "resolvedAt": {
+                  "description": "When it stopped waiting; `null` while it waits. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                  "type": "string",
+                  "nullable": true
+                },
+                "place": {
+                  "description": "Her place among those waiting for this professional, 1 the first. Counted over everyone waiting, so it does not shift when somebody is hidden.",
+                  "type": "integer"
+                },
+                "openOffer": {
+                  "description": "The hour offered to her right now; `null` when none is open.",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "entryId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "professionalProfileId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "startsAt": {
+                      "description": "When the offered hour starts. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string"
+                    },
+                    "endsAt": {
+                      "description": "When the offered hour ends. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string"
+                    },
+                    "practiceLocationId": {
+                      "description": "The place of the offered hour.",
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "status": {
+                      "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: OPEN, ACCEPTING, ACCEPTED, DECLINED, EXPIRED. `OPEN` waits for her answer until `expiresAt`. `ACCEPTING`: she said yes and her hour is being moved; it holds the hour as `OPEN` does. `ACCEPTED`: her hour was moved to it (`appointmentId`). `DECLINED`: she let it pass, the entry left the list, or her own hour went. `EXPIRED`: its time ran out.",
+                      "type": "string"
+                    },
+                    "offeredAt": {
+                      "description": "When it was offered; the platform's clock. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "description": "Until when she may accept: 2 hours after it was offered, and never later than 1 hour before the hour itself. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string"
+                    },
+                    "resolvedAt": {
+                      "description": "When it stopped being open; `null` while open. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "appointmentId": {
+                      "description": "The hour her acceptance moved her to; `null` until then.",
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "entryId",
+                    "professionalProfileId",
+                    "startsAt",
+                    "endsAt",
+                    "practiceLocationId",
+                    "status",
+                    "offeredAt",
+                    "expiresAt",
+                    "resolvedAt",
+                    "appointmentId"
+                  ],
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "patientId",
+                "appointmentId",
+                "appointmentStartsAt",
+                "professionalProfileId",
+                "preference",
+                "origin",
+                "status",
+                "createdAt",
+                "resolvedAt",
+                "place",
+                "openOffer"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "OfferWaitingListHourDto": {
+        "type": "object",
+        "properties": {
+          "professionalProfileId": {
+            "description": "The professional whose hour was freed: an agenda the caller runs.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "practiceLocationId": {
+            "description": "The place of the hour, one of the professional's.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "description": "The channel of the hour. Only a patient whose own hour has this channel can take it.",
+            "type": "string",
+            "enum": [
+              "IN_PERSON",
+              "TELEMEDICINE",
+              "HOME_VISIT"
+            ]
+          },
+          "startsAt": {
+            "description": "When the freed hour starts: at least an hour from now. An ISO 8601 instant in UTC ending in `Z`, as in `2026-09-28T13:00:00Z`; seconds and their fractions are optional, and an offset, even `+00:00`, is a 400.",
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "description": "When the freed hour ends, after it starts. An ISO 8601 instant in UTC ending in `Z`, as in `2026-09-28T13:00:00Z`; seconds and their fractions are optional, and an offset, even `+00:00`, is a 400.",
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "professionalProfileId",
+          "practiceLocationId",
+          "channel",
+          "startsAt",
+          "endsAt"
+        ]
+      },
+      "WaitingListOfferedDto": {
+        "type": "object",
+        "properties": {
+          "offer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "entryId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "professionalProfileId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "startsAt": {
+                "description": "When the offered hour starts. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                "type": "string"
+              },
+              "endsAt": {
+                "description": "When the offered hour ends. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                "type": "string"
+              },
+              "practiceLocationId": {
+                "description": "The place of the offered hour.",
+                "type": "string",
+                "format": "uuid",
+                "nullable": true
+              },
+              "status": {
+                "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: OPEN, ACCEPTING, ACCEPTED, DECLINED, EXPIRED. `OPEN` waits for her answer until `expiresAt`. `ACCEPTING`: she said yes and her hour is being moved; it holds the hour as `OPEN` does. `ACCEPTED`: her hour was moved to it (`appointmentId`). `DECLINED`: she let it pass, the entry left the list, or her own hour went. `EXPIRED`: its time ran out.",
+                "type": "string"
+              },
+              "offeredAt": {
+                "description": "When it was offered; the platform's clock. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                "type": "string"
+              },
+              "expiresAt": {
+                "description": "Until when she may accept: 2 hours after it was offered, and never later than 1 hour before the hour itself. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                "type": "string"
+              },
+              "resolvedAt": {
+                "description": "When it stopped being open; `null` while open. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                "type": "string",
+                "nullable": true
+              },
+              "appointmentId": {
+                "description": "The hour her acceptance moved her to; `null` until then.",
+                "type": "string",
+                "format": "uuid",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "entryId",
+              "professionalProfileId",
+              "startsAt",
+              "endsAt",
+              "practiceLocationId",
+              "status",
+              "offeredAt",
+              "expiresAt",
+              "resolvedAt",
+              "appointmentId"
+            ]
+          },
+          "entry": {
+            "description": "The entry it went to: the one who waited longest and takes it.",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "patientId": {
+                "description": "Her record at this practice.",
+                "type": "string",
+                "format": "uuid"
+              },
+              "appointmentId": {
+                "description": "Her hour, the one she wants earlier.",
+                "type": "string",
+                "format": "uuid"
+              },
+              "appointmentStartsAt": {
+                "description": "When her hour starts now. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                "type": "string"
+              },
+              "professionalProfileId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "preference": {
+                "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ANY, MORNINGS, TELEMEDICINE, HOME_VISIT. What she takes, from a closed list (ADR-0107): `ANY` (any hour), `MORNINGS` (one that starts before 13:00 in the clinic's clock), `TELEMEDICINE` (only a call) or `HOME_VISIT` (only a visit at home). A move keeps her hour's channel, so she is only ever offered an hour of the channel she already has.",
+                "type": "string"
+              },
+              "origin": {
+                "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_APP, PHONE. `PATIENT_APP`: she joined from LumeMedLink. `PHONE`: the practice put her on it.",
+                "type": "string"
+              },
+              "status": {
+                "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: WAITING, MOVED, WITHDRAWN. `WAITING` waits for an earlier hour. `MOVED`: she accepted an offer and her hour was moved. `WITHDRAWN`: she or the practice took it off the list. Only `WAITING` changes.",
+                "type": "string"
+              },
+              "createdAt": {
+                "description": "When the platform created this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                "type": "string"
+              },
+              "resolvedAt": {
+                "description": "When it stopped waiting; `null` while it waits. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "patientId",
+              "appointmentId",
+              "appointmentStartsAt",
+              "professionalProfileId",
+              "preference",
+              "origin",
+              "status",
+              "createdAt",
+              "resolvedAt"
+            ]
+          }
+        },
+        "required": [
+          "offer",
+          "entry"
+        ]
+      },
+      "JoinMyWaitingListDto": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "description": "Her hour, the one she wants earlier: booked, and not started.",
+            "type": "string",
+            "format": "uuid"
+          },
+          "preference": {
+            "description": "What she takes, from a closed list (ADR-0107): `ANY` (any hour), `MORNINGS` (one that starts before 13:00 in the clinic's clock), `TELEMEDICINE` (only a call) or `HOME_VISIT` (only a visit at home). A move keeps her hour's channel, so she is only ever offered an hour of the channel she already has.",
+            "type": "string",
+            "enum": [
+              "ANY",
+              "MORNINGS",
+              "TELEMEDICINE",
+              "HOME_VISIT"
+            ]
+          },
+          "clientId": {
+            "description": "Your own key for THIS entry, so a retry answers the entry it already made instead of a `409 waiting_list_entry_exists`. Unique to you within this patient.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "appointmentId",
+          "preference"
+        ]
+      },
+      "MyWaitingListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Her entries that wait, the oldest first. At most 100.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "patientId": {
+                  "description": "Her record at this practice.",
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "appointmentId": {
+                  "description": "Her hour, the one she wants earlier.",
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "appointmentStartsAt": {
+                  "description": "When her hour starts now. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                  "type": "string"
+                },
+                "professionalProfileId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "preference": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: ANY, MORNINGS, TELEMEDICINE, HOME_VISIT. What she takes, from a closed list (ADR-0107): `ANY` (any hour), `MORNINGS` (one that starts before 13:00 in the clinic's clock), `TELEMEDICINE` (only a call) or `HOME_VISIT` (only a visit at home). A move keeps her hour's channel, so she is only ever offered an hour of the channel she already has.",
+                  "type": "string"
+                },
+                "origin": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: PATIENT_APP, PHONE. `PATIENT_APP`: she joined from LumeMedLink. `PHONE`: the practice put her on it.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: WAITING, MOVED, WITHDRAWN. `WAITING` waits for an earlier hour. `MOVED`: she accepted an offer and her hour was moved. `WITHDRAWN`: she or the practice took it off the list. Only `WAITING` changes.",
+                  "type": "string"
+                },
+                "createdAt": {
+                  "description": "When the platform created this record. Set by the platform, never sent by a client. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                  "type": "string"
+                },
+                "resolvedAt": {
+                  "description": "When it stopped waiting; `null` while it waits. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                  "type": "string",
+                  "nullable": true
+                },
+                "clinicId": {
+                  "description": "The clinic of the entry, one she is enrolled at.",
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "openOffer": {
+                  "description": "The earlier hour offered to her right now; accept it or let it pass. `null` when none.",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "entryId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "professionalProfileId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "startsAt": {
+                      "description": "When the offered hour starts. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string"
+                    },
+                    "endsAt": {
+                      "description": "When the offered hour ends. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string"
+                    },
+                    "practiceLocationId": {
+                      "description": "The place of the offered hour.",
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "status": {
+                      "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: OPEN, ACCEPTING, ACCEPTED, DECLINED, EXPIRED. `OPEN` waits for her answer until `expiresAt`. `ACCEPTING`: she said yes and her hour is being moved; it holds the hour as `OPEN` does. `ACCEPTED`: her hour was moved to it (`appointmentId`). `DECLINED`: she let it pass, the entry left the list, or her own hour went. `EXPIRED`: its time ran out.",
+                      "type": "string"
+                    },
+                    "offeredAt": {
+                      "description": "When it was offered; the platform's clock. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "description": "Until when she may accept: 2 hours after it was offered, and never later than 1 hour before the hour itself. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string"
+                    },
+                    "resolvedAt": {
+                      "description": "When it stopped being open; `null` while open. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "appointmentId": {
+                      "description": "The hour her acceptance moved her to; `null` until then.",
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "entryId",
+                    "professionalProfileId",
+                    "startsAt",
+                    "endsAt",
+                    "practiceLocationId",
+                    "status",
+                    "offeredAt",
+                    "expiresAt",
+                    "resolvedAt",
+                    "appointmentId"
+                  ],
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "patientId",
+                "appointmentId",
+                "appointmentStartsAt",
+                "professionalProfileId",
+                "preference",
+                "origin",
+                "status",
+                "createdAt",
+                "resolvedAt",
+                "clinicId",
+                "openOffer"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "WaitingListOfferDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "professionalProfileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startsAt": {
+            "description": "When the offered hour starts. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "endsAt": {
+            "description": "When the offered hour ends. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "practiceLocationId": {
+            "description": "The place of the offered hour.",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
+            "description": "Open vocabulary — new values may appear; treat an unknown one as opaque, never as an error. Known values: OPEN, ACCEPTING, ACCEPTED, DECLINED, EXPIRED. `OPEN` waits for her answer until `expiresAt`. `ACCEPTING`: she said yes and her hour is being moved; it holds the hour as `OPEN` does. `ACCEPTED`: her hour was moved to it (`appointmentId`). `DECLINED`: she let it pass, the entry left the list, or her own hour went. `EXPIRED`: its time ran out.",
+            "type": "string"
+          },
+          "offeredAt": {
+            "description": "When it was offered; the platform's clock. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "expiresAt": {
+            "description": "Until when she may accept: 2 hours after it was offered, and never later than 1 hour before the hour itself. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "description": "When it stopped being open; `null` while open. An ISO 8601 instant in UTC, always with three fractional digits and a trailing `Z`, as in `2026-09-28T21:35:25.250Z`.",
+            "type": "string",
+            "nullable": true
+          },
+          "appointmentId": {
+            "description": "The hour her acceptance moved her to; `null` until then.",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "entryId",
+          "professionalProfileId",
+          "startsAt",
+          "endsAt",
+          "practiceLocationId",
+          "status",
+          "offeredAt",
+          "expiresAt",
+          "resolvedAt",
+          "appointmentId"
         ]
       },
       "PortableTextSpan": {

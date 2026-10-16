@@ -46,6 +46,7 @@ import com.luismejias.lumemedlink.core.screen.shortDateText
 import com.luismejias.lumemedlink.features.patient.parts.DoctorIdentity
 import com.luismejias.lumemedlink.features.patient.parts.PushedScreen
 import com.luismejias.lumemedlink.resources.Res
+import com.luismejias.lumemedlink.resources.overbook_ask
 import com.luismejias.lumemedlink.resources.filters_apply
 import com.luismejias.lumemedlink.resources.filters_attention
 import com.luismejias.lumemedlink.resources.filters_availability
@@ -107,7 +108,12 @@ internal fun slotText(slot: Slot, today: CalendarDate): String =
  * (request 0008 §4). «Agendar» and the doctor's row both open a1.
  */
 @Composable
-internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit, canBook: Boolean) {
+internal fun ResultsScreen(
+    model: SearchViewModel,
+    onBack: () -> Unit,
+    canBook: Boolean,
+    onAskOverbook: ((DirectoryDoctor) -> Unit)? = null,
+) {
     val load by model.results.state.collectAsState()
     val standIn by model.results.standIn.collectAsState()
     val criteria by model.criteria.collectAsState()
@@ -228,14 +234,21 @@ internal fun ResultsScreen(model: SearchViewModel, onBack: () -> Unit, canBook: 
             if (shown.isEmpty()) LumeCallout(text = stringResource(Res.string.results_filtered_empty))
             shown.forEach { entry ->
                 val book = if (canBook) ({ model.launch { schedule(entry) } }) else null
-                DoctorResultCard(entry, content.today, book)
+                // Only where the professional takes requests: the platform says so per result (ADR-0069).
+                val ask = onAskOverbook?.takeIf { entry.takesOverbookRequests }?.let { { it(entry) } }
+                DoctorResultCard(entry, content.today, book, ask)
             }
         }
     }
 }
 
 @Composable
-private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook: (() -> Unit)?) {
+private fun DoctorResultCard(
+    entry: DirectoryDoctor,
+    today: CalendarDate,
+    onBook: (() -> Unit)?,
+    onAskOverbook: (() -> Unit)?,
+) {
     LumeCard(modifier = Modifier.fillMaxWidth(), style = LumeCardStyle.Filled) {
         LumeStack(alignment = LumeStackAlignment.Fill, spacing = { medium }) {
             DoctorIdentity(entry.doctor, listOf(entry.doctor.specialty)) { DoctorRating(entry) }
@@ -264,6 +277,16 @@ private fun DoctorResultCard(entry: DirectoryDoctor, today: CalendarDate, onBook
                         onClick = onBook,
                     )
                 }
+            }
+            // The secondary action under «Agendar», stressed when there is no hour to book (ADR-0069's placement).
+            if (onAskOverbook != null) {
+                LumeButton(
+                    content = LumeButtonContent.Title(stringResource(Res.string.overbook_ask)),
+                    emphasis = if (entry.nextSlot == null) LumeButtonEmphasis.Tonal else LumeButtonEmphasis.Plain,
+                    size = LumeButtonSize.Card,
+                    width = LumeButtonWidth.Fill,
+                    onClick = onAskOverbook,
+                )
             }
         }
     }

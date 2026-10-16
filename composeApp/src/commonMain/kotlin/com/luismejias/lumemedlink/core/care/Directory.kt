@@ -33,8 +33,8 @@ internal data class DirectoryDoctor(
     val attentions: Int,
     val nextSlot: Slot?,
     /**
-     * The professional lets patients ask for an overbook (ADR-0069). No contract yet (request 0017): false wherever the
-     * platform answers, so the entry stays hidden until the directory says it.
+     * The professional lets this patient ask for an overbook (ADR-0069): the directory's `overbookRequestable` (request
+     * `0017`, contract 0.139.0), false at a clinic where the patient is not enrolled.
      */
     val takesOverbookRequests: Boolean = false,
 ) {

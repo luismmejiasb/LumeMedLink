@@ -35,7 +35,7 @@ private class Mute : NetworkLogSink {
 
 /** A professional of the directory, synthetic (§9), with a bookable place in 13101 and one closed in 13114. */
 private const val ENTRY = """{"id":"pro-1","givenName":"Ana","familyName":"Sintética","specialtyCode":"MEDICINA_FAMILIAR",
-    "professionalTitle":"Dra.","rating":{"average":4.5,"count":12},
+    "professionalTitle":"Dra.","rating":{"average":4.5,"count":12},"overbookRequestable":true,
     "locations":[{"id":"loc-1","name":"Sede Norte","communeCode":"13101","regionCode":"13","bookable":true,
                   "timeZone":"America/Santiago"},
                  {"id":"loc-2","name":"Sede Sur","communeCode":"13114","regionCode":"13","bookable":false,
@@ -120,6 +120,7 @@ class RemoteDirectoryTest {
         assertEquals("loc-1", one.locationId)
         assertEquals("Santiago", one.commune)
         assertEquals(4.5 to 12, one.rating to one.ratingCount)
+        assertTrue(one.takesOverbookRequests, "the directory says who takes overbook requests (request 0017)")
         assertEquals(
             Slot(CalendarDate(2026, 10, 20), ClockTime(9, 0), 30),
             one.nextSlot,

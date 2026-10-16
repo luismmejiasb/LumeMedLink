@@ -213,6 +213,8 @@ internal class RemoteDirectory(
         // No contract (request 0008 §4): the design's attentions and next hour are not published.
         attentions = 0,
         nextSlot = null,
+        // The platform's own answer (request 0017, contract 0.139.0): the same view that decides requestMyOverbook.
+        takesOverbookRequests = overbookRequestable,
     )
 }
 
