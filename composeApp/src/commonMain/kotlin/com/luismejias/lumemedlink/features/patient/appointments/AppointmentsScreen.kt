@@ -81,10 +81,13 @@ internal fun AppointmentsScreen(
     onCancel: ((PatientAppointment) -> Unit)?,
     /** Null while the directory is off: no way into «Buscar» is drawn. */
     onSearch: (() -> Unit)?,
+    /** False while overbook requests are off (ADR-0069): no section is drawn. */
+    showsOverbooks: Boolean = false,
 ) {
     val load by model.state.collectAsState()
     val standIn by model.standIn.collectAsState()
     val segment by model.segment.collectAsState()
+    val withdrawalFailure by model.withdrawalFailure.collectAsState()
     CareLoadView(load, standIn, onRetry = model::refresh, standalone = true) { content ->
         LumeContainer(
             scroll = LumeContainerScroll.Scrollable,
@@ -126,6 +129,9 @@ internal fun AppointmentsScreen(
                     AppointmentsSegment.UPCOMING -> content.upcoming
                     AppointmentsSegment.PAST -> content.past
                     AppointmentsSegment.CANCELLED -> content.cancelled
+                }
+                if (segment == AppointmentsSegment.UPCOMING && showsOverbooks) {
+                    OverbookSection(content.overbooks, withdrawalFailure, model::withdrawOverbook)
                 }
                 if (shown.isEmpty()) {
                     LumeEmptyState(

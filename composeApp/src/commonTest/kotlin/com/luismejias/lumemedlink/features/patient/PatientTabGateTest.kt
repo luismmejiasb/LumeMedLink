@@ -41,12 +41,12 @@ class PatientTabGateTest {
 
     @Test
     fun withEveryFeatureEveryActionInsideTheScreensIsThere() {
-        assertEquals(PatientActions(true, true, true, true, true, true), patientActions(Feature.entries.toSet()))
+        assertEquals(PatientActions(true, true, true, true, true, true, true), patientActions(Feature.entries.toSet()))
     }
 
     @Test
     fun withNothingAvailableNoActionHasADoor() {
-        assertEquals(PatientActions(false, false, false, false, false, false), patientActions(emptySet()))
+        assertEquals(PatientActions(false, false, false, false, false, false, false), patientActions(emptySet()))
     }
 
     @Test
@@ -56,8 +56,9 @@ class PatientTabGateTest {
         assertEquals(false, patientActions(all - Feature.RATINGS).rate)
         assertEquals(false, patientActions(all - Feature.NOTICES).notices)
         assertEquals(false, patientActions(all - Feature.CONTACT_CHANGE).changeContact)
+        assertEquals(false, patientActions(all - Feature.OVERBOOK_REQUESTS).overbooks)
         assertEquals(
-            PatientActions(true, true, false, true, true, true),
+            PatientActions(true, true, false, true, true, true, true),
             patientActions(all - Feature.BOOKING),
             "booking off leaves the directory and everything else",
         )

@@ -51,3 +51,15 @@ Three things in this repo stood against wiring it as built:
   recorded.
 - If the directory never carries the rule, the fallback is to offer the button to everyone and read the `404` as
   «no recibe solicitudes», which the author turned down for now.
+
+## Placement (2026-10-16, the author's decision by form)
+
+- **The list is a section of «Citas»**, «Solicitudes de sobrecupo», above the upcoming appointments and only when
+  there is one. Each row: the professional, the clinic, the status and the day it was asked; a waiting one can be
+  taken back.
+- **The entry is in the results**, as a secondary action under «Agendar» on a professional who takes requests,
+  stressed when they have no hour within the horizon. It appears once request `0017` is built.
+- The platform took request `0017` as its task `0161` (its commit `9cf81e0d`): one boolean on the directory's
+  professional, read from the same view that decides `requestMyOverbook`, and `false` at a clinic where the patient is
+  not enrolled.
+

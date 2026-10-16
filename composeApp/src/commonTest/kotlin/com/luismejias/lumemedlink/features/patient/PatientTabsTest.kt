@@ -10,6 +10,8 @@ import com.luismejias.lumemedlink.core.care.CarePolicy
 import com.luismejias.lumemedlink.core.care.CareResult
 import com.luismejias.lumemedlink.core.care.CareWorld
 import com.luismejias.lumemedlink.core.care.NoticesSource
+import com.luismejias.lumemedlink.core.care.OverbookRequest
+import com.luismejias.lumemedlink.core.care.OverbookRequests
 import com.luismejias.lumemedlink.core.care.PatientAppointment
 import com.luismejias.lumemedlink.core.care.RatingPrompt
 import com.luismejias.lumemedlink.core.care.RatingsGateway
@@ -115,7 +117,7 @@ class PatientTabsTest {
         assertNull(home.givenNames, "«Hola» alone")
         assertFalse(home.appointmentsRead, "neither the hero card nor «no tienes citas»")
         assertEquals(0, home.unreadNotices)
-        val appointments = AppointmentsViewModel(offline, offline).also { it.load() }
+        val appointments = AppointmentsViewModel(offline, offline, offline).also { it.load() }
         assertEquals(CareLoad.Failed(CareFailure.Offline), appointments.state.value)
         assertEquals(CareLoad.Failed(CareFailure.Offline), MyDoctorsViewModel(offline).also { it.load() }.state.value)
         assertEquals(
@@ -132,10 +134,15 @@ class PatientTabsTest {
         val noPolicy = object : AppointmentsSource by design {
             override suspend fun policy(): CareResult<CarePolicy> = CareResult.Failed(CareFailure.Unavailable)
         }
+        val noOverbooks = object : OverbookRequests by design {
+            override suspend fun overbookRequests(): CareResult<List<OverbookRequest>> =
+                CareResult.Failed(CareFailure.Offline)
+        }
         val appointments = assertIs<CareLoad.Ready<AppointmentsContent>>(
-            AppointmentsViewModel(design, noPolicy).also { it.load() }.state.value,
+            AppointmentsViewModel(design, noPolicy, noOverbooks).also { it.load() }.state.value,
         ).content
         assertNull(appointments.changeWindowHours, "the 24 h note is left out")
+        assertTrue(appointments.overbooks.isEmpty(), "and so is «Solicitudes de sobrecupo»")
         assertTrue(appointments.upcoming.isNotEmpty(), "and the appointments show")
 
         val noRatings = object : RatingsGateway by design {
@@ -154,7 +161,11 @@ class PatientTabsTest {
 
     @Test
     fun theBadgeCountsOnlyRequestsStillWaiting() = runTest {
-        val content = (AppointmentsViewModel(design, design).also { it.load() }.state.value as CareLoad.Ready).content
+        val content = (
+            AppointmentsViewModel(design, design, design).also {
+                it.load()
+            }.state.value as CareLoad.Ready
+            ).content
         assertEquals(1, content.awaiting)
         assertEquals(2, content.upcoming.size)
         assertEquals(listOf(AppointmentStatus.COMPLETED, AppointmentStatus.COMPLETED), content.past.map { it.status })

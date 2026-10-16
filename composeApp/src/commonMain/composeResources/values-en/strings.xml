@@ -257,6 +257,17 @@
     <string name="appointments_empty_upcoming">You have no upcoming appointments yet</string>
     <string name="appointments_empty_past">You have no past appointments yet</string>
     <string name="appointments_empty_cancelled">You have no cancelled appointments</string>
+    <string name="overbooks_title">Overbook requests</string>
+    <string name="overbook_status_pending">Pending</string>
+    <string name="overbook_status_granted">Granted</string>
+    <string name="overbook_status_declined">Not possible</string>
+    <string name="overbook_status_withdrawn">Withdrawn</string>
+    <string name="overbook_asked_on">Asked on %1$s</string>
+    <string name="overbook_by_phone">Recorded by phone</string>
+    <string name="overbook_unnamed">Your professional</string>
+    <string name="overbook_withdraw">Withdraw</string>
+    <string name="overbook_granted_note">The practice gave you an hour: you’ll find it in your upcoming appointments.</string>
+    <string name="overbook_withdraw_failed">We couldn’t withdraw the request. Please try again.</string>
     <string name="doctors_search_prompt">Search your doctors</string>
     <string name="common_search_clear">Clear search</string>
     <plurals name="doctors_attentions">

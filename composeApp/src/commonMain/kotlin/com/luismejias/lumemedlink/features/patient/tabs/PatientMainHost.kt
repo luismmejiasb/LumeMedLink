@@ -195,7 +195,7 @@ private fun PatientTabs(
     val tabs = viewModel { PatientTabsViewModel() }
     val home = viewModel { HomeViewModel(care.homeSources()) }
     val search = viewModel { SearchViewModel(searchSourcesOf(care, directory), logEvent) }
-    val appointments = viewModel { AppointmentsViewModel(care, care) }
+    val appointments = viewModel { AppointmentsViewModel(care, care, care) }
     val doctors = viewModel { MyDoctorsViewModel(care) }
     val settings = viewModel {
         SettingsViewModel(care.settingsSources(), consent, appearance) { Res.readBytes(LICENSES_FILE).decodeToString() }
@@ -374,6 +374,7 @@ private fun PatientTabs(
                             }.onlyIf(can.changeAppointments),
                             onCancel = change::cancelAppointment.onlyIf(can.changeAppointments),
                             onSearch = { tabs.show(PatientTab.SEARCH) }.onlyIf(can.search),
+                            showsOverbooks = can.overbooks,
                         )
                         PatientTab.DOCTORS -> MyDoctorsScreen(
                             model = doctors,

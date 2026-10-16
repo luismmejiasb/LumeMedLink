@@ -198,6 +198,14 @@ paciente no puede ver. Las respuestas están en esta conversación y en las ADRs
   plataforma.
 - **Gate de frontera:** admite `RENEW_PRESCRIPTION` como identificador entero (ADR-0069), con dos cebos nuevos: un
   nombre que lo contiene y un nombre clínico en la misma línea siguen en rojo.
-- **Falta:** la hoja para pedir y la lista de solicitudes (la ubicación la decide el autor), y la corrida contra la
-  plataforma local.
+- **La ubicación, decidida por formulario** (enmienda de ADR-0069): la lista es una sección de «Citas», y la entrada
+  irá en los resultados, bajo «Agendar».
+- **La sección «Solicitudes de sobrecupo», construida:** en «Próximas», sólo cuando hay alguna. Muestra las que esperan
+  y las respondidas en los últimos 30 días, cada una con profesional, clínica, estado y fecha, nunca el motivo. Una que
+  espera se puede retirar; una que la consulta respondió antes sólo se vuelve a leer.
+- **La plataforma tomó el pedido `0017` como su tarea `0161`**, todavía sin construir.
+- **Falta:**
+  - la hoja para pedir, cuando exista la `0161`;
+  - ver la sección en el simulador: `dev-patient` no tiene solicitudes en la siembra, y crear una toca la base local
+    de la plataforma.
 

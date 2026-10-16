@@ -266,6 +266,17 @@
     <string name="appointments_empty_upcoming">Aún no tienes citas próximas</string>
     <string name="appointments_empty_past">Aún no tienes citas pasadas</string>
     <string name="appointments_empty_cancelled">No tienes citas canceladas</string>
+    <string name="overbooks_title">Solicitudes de sobrecupo</string>
+    <string name="overbook_status_pending">Pendiente</string>
+    <string name="overbook_status_granted">Concedida</string>
+    <string name="overbook_status_declined">No fue posible</string>
+    <string name="overbook_status_withdrawn">Retirada</string>
+    <string name="overbook_asked_on">Pedida el %1$s</string>
+    <string name="overbook_by_phone">Registrada por teléfono</string>
+    <string name="overbook_unnamed">Tu profesional</string>
+    <string name="overbook_withdraw">Retirar</string>
+    <string name="overbook_granted_note">La consulta te dio una hora: la encuentras en tus próximas citas.</string>
+    <string name="overbook_withdraw_failed">No pudimos retirar la solicitud. Inténtalo de nuevo.</string>
     <string name="doctors_search_prompt">Buscar entre tus médicos</string>
     <string name="common_search_clear">Borrar búsqueda</string>
     <plurals name="doctors_attentions">

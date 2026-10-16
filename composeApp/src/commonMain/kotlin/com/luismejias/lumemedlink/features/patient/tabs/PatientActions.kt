@@ -23,6 +23,8 @@ internal data class PatientActions(
     val notices: Boolean,
     /** The phone's and the e-mail's pencils. */
     val changeContact: Boolean,
+    /** «Solicitudes de sobrecupo» on «Citas», and taking one back (ADR-0069). */
+    val overbooks: Boolean,
 )
 
 internal fun patientActions(available: Set<Feature>): PatientActions = PatientActions(
@@ -32,6 +34,7 @@ internal fun patientActions(available: Set<Feature>): PatientActions = PatientAc
     rate = Feature.RATINGS in available,
     notices = Feature.NOTICES in available,
     changeContact = Feature.CONTACT_CHANGE in available,
+    overbooks = Feature.OVERBOOK_REQUESTS in available,
 )
 
 /** [action] when [allowed], else no action at all: the screen then draws no door for it. */
